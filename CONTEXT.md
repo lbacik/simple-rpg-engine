@@ -22,6 +22,10 @@ _Avoid_: Exit, door, edge
 A single piece of pre-written narration with Choices, either triggered within a Location (on entering it, or on the player's demand) or reached only by following on from another Scene.
 _Avoid_: Event, page, node
 
+**Illustration**:
+An optional picture shown with a Scene, supplied by the Scenario and described by alternative text; a Scene is complete without one.
+_Avoid_: Artwork, picture, banner
+
 **Choice**:
 An option offered by a Scene, optionally gated by a Condition and optionally resolved by a Test, leading to an Outcome.
 _Avoid_: Option, answer, link
