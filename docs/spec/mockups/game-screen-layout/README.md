@@ -5,7 +5,7 @@ Throwaway primary source for [Game screen layout: narration, choices, Character 
 ## Run
 
 ```sh
-python3 prototypes/game-screen-layout/serve.py
+python3 docs/spec/mockups/game-screen-layout/serve.py
 ```
 
 Open http://127.0.0.1:4310/?variant=A. No dependencies or build step. Alternatively, open `index.html` directly. The preview toolbar and floating variant switcher are restricted to localhost/file access; this prototype has no production build target.
@@ -45,7 +45,7 @@ The developer approved the amended prototype in live review. The [resolution com
 
 Combat presentation, Location-map layout/travel interactions, and authoritative Playthrough-state rules belong to other tickets. This prototype does not resolve them. No combat or map widget is invented here. Prototype controls can jump to states without performing game transitions. Item quantities, narration, and the fixed Test rolls are illustrative.
 
-The decision ticket is resolved. Preserve this source on `prototype/game-screen-layout`; do not merge the throwaway implementation into the production application. The remaining illustration-asset contract is tracked in [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14).
+The decision ticket is resolved. This source is kept as a spec mockup (see `docs/spec/ui.md`); do not import the throwaway implementation into the production application. The remaining illustration-asset contract is tracked in [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14).
 
 ## Preview verification
 

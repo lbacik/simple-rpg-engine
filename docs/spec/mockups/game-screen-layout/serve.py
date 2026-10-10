@@ -1,4 +1,4 @@
-"""Serve the throwaway game-screen prototype locally: python3 prototypes/game-screen-layout/serve.py."""
+"""Serve the throwaway game-screen prototype locally: python3 docs/spec/mockups/game-screen-layout/serve.py."""
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from functools import partial
