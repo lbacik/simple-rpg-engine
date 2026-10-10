@@ -4,7 +4,7 @@ title: The Altar
 trigger: on-demand
 repeatable: true
 when:
-  not: { has: silver-charm }
+  not: { has: { item: silver-charm } }
 illustration: chapel-altar
 text: |
   On the cracked altar lies a small silver disc on a chain, untouched by

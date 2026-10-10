@@ -12,7 +12,7 @@ text: |
 choices:
   - id: use-key
     text: Turn the bronze key in the serpent lock.
-    when: { has: barrow-key }
+    when: { has: { item: barrow-key } }
     outcome:
       text: |
         The key turns with a groan, and the slab swings inwards on hidden
@@ -45,7 +45,7 @@ choices:
       attribute: { name: might, atLeast: 2 }
     test:
       attribute: might
-      difficulty: very hard
+      difficulty: very-hard
       success:
         text: |
           Stone grinds on stone, and the slab shifts just enough for you to

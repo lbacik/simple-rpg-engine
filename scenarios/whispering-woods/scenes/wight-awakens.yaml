@@ -19,7 +19,7 @@ choices:
     when:
       all:
         - { flag: knows-wight-name }
-        - { has: silver-charm }
+        - { has: { item: silver-charm } }
     test:
       attribute: presence
       difficulty: hard
