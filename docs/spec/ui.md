@@ -107,7 +107,7 @@ Rejected actions refresh the current state and show a transient notice, such as 
 | [Combat presentation](mockups/combat-presentation/combat-presentation.prototype.html) | three Combat presentations; **B** (Range zones) is selected; its `CombatCore` module implements the Combat rules | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Location map](mockups/location-map/location-map.prototype.html) | four map presentations; **B** (author coordinates) is selected | open the file; `?variant=A\|B\|C\|D` |
 
-The mockups are copied unchanged from their prototype branches. Their own notes still name their original `prototypes/` paths and say they should stay out of the production branch: they live here as specification artifacts, not as application code, and must not be imported into `src/`.
+The mockups are throwaway specification artifacts, not application code, and must not be imported into `src/`.
 
 ## Sources
 
