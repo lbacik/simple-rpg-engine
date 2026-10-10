@@ -1,0 +1,13 @@
+id: barrow-mound
+name: Barrow Mound
+description: |
+  A long grassy mound crowned with standing stones. At its foot, a door of a
+  single grey slab is carved with runes.
+map: { x: 88, y: 62 }
+scenes: [barrow-door]
+connections:
+  - to: ruined-chapel
+    label: Return to the chapel
+  - to: barrow-tomb
+    label: Enter the barrow
+    when: { flag: barrow-open }

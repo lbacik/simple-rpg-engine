@@ -1,0 +1,11 @@
+id: ashford
+name: Ashford
+description: |
+  A huddle of thatched cottages around a muddy green and a stone well. The
+  villagers keep their doors shut and their eyes on the dark line of the woods.
+map: { x: 15, y: 60 }
+scenes: [arrival, village-return, well-rumours]
+connections:
+  - to: forest-edge
+    label: Take the cart track towards the woods
+    when: { flag: quest-accepted }

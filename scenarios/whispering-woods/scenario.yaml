@@ -1,0 +1,60 @@
+# The Whispering Woods: the example Scenario for the prototype.
+# Manifest and entry point. Every content file is listed explicitly by type;
+# the section a file is listed under decides its content type.
+
+schemaVersion: 1
+id: whispering-woods
+title: The Whispering Woods
+description: >-
+  A girl has vanished from the village of Ashford, and the woods beyond the
+  fields have begun to whisper. Find her before the barrow claims her.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+
+intro: |
+  Rain has followed you for three days along the old road. When the roofs of
+  Ashford finally rise out of the mist, the village bell is ringing, though it
+  is neither noon nor dusk.
+
+startLocation: ashford
+deathEnding: death
+
+flags:
+  - quest-accepted
+  - knows-wight-name
+  - bandit-gone
+  - wolf-evaded
+  - barrow-open
+
+locations:
+  - locations/ashford.yaml
+  - locations/forest-edge.yaml
+  - locations/hunters-camp.yaml
+  - locations/wolf-hollow.yaml
+  - locations/ruined-chapel.yaml
+  - locations/barrow-mound.yaml
+  - locations/barrow-tomb.yaml
+
+scenes:
+  - scenes/arrival.yaml
+  - scenes/elder-plea.yaml
+  - scenes/village-return.yaml
+  - scenes/well-rumours.yaml
+  - scenes/whispers.yaml
+  - scenes/camp-standoff.yaml
+  - scenes/search-camp.yaml
+  - scenes/wolf-den.yaml
+  - scenes/wolf-again.yaml
+  - scenes/chapel-threshold.yaml
+  - scenes/chapel-altar.yaml
+  - scenes/chapel-prayer.yaml
+  - scenes/barrow-door.yaml
+  - scenes/wight-awakens.yaml
+
+items: [items.yaml]
+enemies: [enemies.yaml]
+encounters: [encounters.yaml]
+templates: [templates.yaml]
+endings: [endings.yaml]
+images: [images.yaml]

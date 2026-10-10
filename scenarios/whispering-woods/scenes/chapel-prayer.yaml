@@ -1,0 +1,17 @@
+# Once (the default); offered only while the Character is wounded.
+id: chapel-prayer
+title: Kneel at the Altar
+trigger: on-demand
+when:
+  health: { atMost: 11 }
+text: |
+  The stillness of the ruined chapel invites you to rest. Rain drips through
+  the ivy, and for a moment the woods are silent.
+choices:
+  - id: pray
+    text: Kneel and pray.
+    outcome:
+      text: |
+        A calm settles over you, and the ache of your wounds eases.
+      effects:
+        - heal: 4

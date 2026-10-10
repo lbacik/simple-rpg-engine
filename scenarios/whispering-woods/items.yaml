@@ -1,0 +1,83 @@
+# Item catalog. Three kinds: equipment, consumable, key.
+
+# Weapons
+- id: hunting-bow
+  kind: equipment
+  name: Hunting Bow
+  description: A supple yew bow, good for deer and for keeping trouble at a distance.
+  slot: weapon
+  reach: ranged
+  damage: 3
+
+- id: sword
+  kind: equipment
+  name: Sword
+  description: A plain soldier's blade, nicked but well kept.
+  slot: weapon
+  damage: 3
+
+- id: walking-staff
+  kind: equipment
+  name: Walking Staff
+  description: An ash staff shod with iron. It steadies the feet as much as it cracks skulls.
+  slot: weapon
+  damage: 2
+  bonus: agility
+
+- id: woodsman-axe
+  kind: equipment
+  name: Woodsman's Axe
+  description: A heavy, long-hafted axe made for felling oaks.
+  slot: weapon
+  damage: 4
+
+# Outfits
+- id: hunters-cloak
+  kind: equipment
+  name: Hunter's Cloak
+  description: Mottled green wool that blends into the undergrowth.
+  slot: outfit
+  bonus: agility
+
+- id: chain-shirt
+  kind: equipment
+  name: Chain Shirt
+  description: Heavy rings that teach the shoulders to carry weight.
+  slot: outfit
+  bonus: might
+
+# Talismans
+- id: silver-charm
+  kind: equipment
+  name: Silver Charm
+  description: >-
+    A tarnished silver disc engraved with a hawk. Whoever wears it speaks with
+    a voice the dead seem to heed.
+  slot: talisman
+  bonus: presence
+  magic: true
+
+# Consumables
+- id: healing-herbs
+  kind: consumable
+  name: Healing Herbs
+  description: A bundle of yarrow and comfrey, chewed and pressed onto wounds.
+  heal: 3
+
+- id: elder-tonic
+  kind: consumable
+  name: Elder's Tonic
+  description: A dark, bitter draught. Brenna swears it once brought a drowned man back.
+  heal: 6
+  magic: true
+
+# Key Items
+- id: barrow-key
+  kind: key
+  name: Barrow Key
+  description: A cold bronze key, green with age, shaped like a coiled serpent.
+
+- id: old-almanac
+  kind: key
+  name: Old Almanac
+  description: A scholar's almanac of local legends, its margins crowded with notes.

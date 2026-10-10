@@ -1,0 +1,17 @@
+id: search-camp
+title: Search the Camp
+trigger: on-demand
+when:
+  any:
+    - { defeated: camp-bandit }
+    - { flag: bandit-gone }
+text: |
+  Under the lean-to, wrapped in oilcloth, lie the hunters' things: a
+  long-hafted axe and a pouch of dried herbs.
+choices:
+  - id: take
+    text: Take what is useful.
+    outcome:
+      effects:
+        - give-item: { item: woodsman-axe }
+        - give-item: { item: healing-herbs, quantity: 2 }

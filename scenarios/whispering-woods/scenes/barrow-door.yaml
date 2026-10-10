@@ -1,0 +1,62 @@
+# Repeatable: fires on every arrival until the door is open.
+id: barrow-door
+title: The Sealed Door
+trigger: on-enter
+repeatable: true
+when:
+  not: { flag: barrow-open }
+text: |
+  The grey slab is fitted so closely into the mound that a knife blade would
+  not pass between the stones. A serpent-shaped keyhole sits beneath a band
+  of runes.
+choices:
+  - id: use-key
+    text: Turn the bronze key in the serpent lock.
+    when: { has: barrow-key }
+    outcome:
+      text: |
+        The key turns with a groan, and the slab swings inwards on hidden
+        pivots. You step into the dark.
+      effects:
+        - take-item: { item: barrow-key }
+        - set-flag: barrow-open
+      move: barrow-tomb
+  - id: read-runes
+    text: Read the runes aloud.
+    test:
+      attribute: wits
+      difficulty: hard
+      success:
+        text: |
+          The last syllable leaves your lips and the slab sinks into the
+          earth. You step into the dark.
+        effects:
+          - set-flag: barrow-open
+        move: barrow-tomb
+      failure:
+        text: |
+          You stumble over an ancient word, and the runes flare with a cold
+          that burns.
+        effects:
+          - damage: 2
+  - id: force-door
+    text: Put your shoulder to the slab.
+    when:
+      attribute: { name: might, atLeast: 2 }
+    test:
+      attribute: might
+      difficulty: very hard
+      success:
+        text: |
+          Stone grinds on stone, and the slab shifts just enough for you to
+          squeeze through.
+        effects:
+          - set-flag: barrow-open
+        move: barrow-tomb
+      failure:
+        text: |
+          The slab does not move, and something in your shoulder does.
+        effects:
+          - damage: 1
+  - id: step-away
+    text: Step away from the door.

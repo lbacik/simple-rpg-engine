@@ -1,0 +1,23 @@
+# Repeatable while the charm lies on the altar, so stepping back loses nothing.
+id: chapel-altar
+title: The Altar
+trigger: on-demand
+repeatable: true
+when:
+  not: { has: silver-charm }
+illustration: chapel-altar
+text: |
+  On the cracked altar lies a small silver disc on a chain, untouched by
+  moss or rust. A hawk is engraved on its face.
+choices:
+  - id: take-charm
+    text: Take the charm.
+    outcome:
+      text: |
+        The silver is warm in your palm. Through a gap in the wall you notice
+        standing stones on a mound to the east.
+      effects:
+        - give-item: { item: silver-charm }
+        - reveal: barrow-mound
+  - id: step-back
+    text: Leave it where it lies, for now.

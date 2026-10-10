@@ -1,0 +1,33 @@
+id: whispers
+title: The Whispering Trees
+trigger: on-enter
+text: |
+  As you step under the first oaks, the murmur of the leaves swells around
+  you, rising and falling like a voice repeating the same word over and over.
+choices:
+  - id: listen
+    text: Stand still and try to make out the word.
+    test:
+      attribute: wits
+      difficulty: easy
+      success:
+        text: |
+          The leaves hiss it again and again: *Aldric... Aldric...* A name,
+          and an old one.
+        effects:
+          - set-flag: knows-wight-name
+      failure:
+        text: |
+          Whatever the trees are saying, it slips away the harder you listen.
+  - id: consult-almanac
+    text: Look up the whispering woods in your almanac.
+    when: { has: old-almanac }
+    outcome:
+      text: |
+        A margin note in faded ink: "The woods speak the name of Lord Aldric,
+        oath-breaker, laid in the barrow beyond the pilgrims' chapel."
+      effects:
+        - set-flag: knows-wight-name
+        - reveal: ruined-chapel
+  - id: press-on
+    text: Ignore the voices and press on.

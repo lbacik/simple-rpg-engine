@@ -1,0 +1,14 @@
+id: forest-edge
+name: Forest Edge
+description: |
+  The fields end at a wall of old oaks. Even without wind, the leaves murmur,
+  and the murmur almost sounds like words.
+map: { x: 38, y: 50 }
+scenes: [whispers]
+connections:
+  - to: ashford
+    label: Return to the village
+  - to: hunters-camp
+    label: Follow the trampled trail north
+  - to: wolf-hollow
+    label: Descend into the hollow

@@ -1,0 +1,31 @@
+# Offered again after an escape or a retreat, while the wolf still bars the way.
+id: wolf-again
+title: Deal with the Wolf
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - { fired: wolf-den }
+    - not: { defeated: hollow-wolf }
+    - not: { flag: wolf-evaded }
+text: |
+  The wolf still prowls by the fallen beech, watching you.
+choices:
+  - id: fight
+    text: Attack the wolf.
+    outcome:
+      start-combat: hollow-wolf
+  - id: sneak
+    text: Try to slip past it again.
+    test:
+      attribute: agility
+      difficulty: hard
+      success:
+        text: |
+          This time you move like a shadow, and the wolf never turns its head.
+        effects:
+          - set-flag: wolf-evaded
+      failure:
+        text: |
+          The wolf has learned your scent. It springs.
+        start-combat: hollow-wolf

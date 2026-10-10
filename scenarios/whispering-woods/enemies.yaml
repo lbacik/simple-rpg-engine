@@ -1,0 +1,27 @@
+# Enemy catalog: reusable kinds of opponents, placed through Encounters.
+
+- id: grey-wolf
+  name: Grey Wolf
+  description: Lean and scarred, with eyes that catch the light like coins.
+  attributes: { might: 2, agility: 2, wits: 1, presence: 0 }
+  health: 8
+  damage: 2
+  reach: melee
+
+- id: bandit-archer
+  name: Bandit Archer
+  description: A ragged deserter with a longbow and nothing left to lose.
+  attributes: { might: 1, agility: 2, wits: 1, presence: 1 }
+  health: 6
+  damage: 2
+  reach: ranged
+
+- id: barrow-wight
+  name: Aldric, the Barrow Wight
+  description: >-
+    A lord of the old kingdom, bound to his grave by a broken oath. Frost
+    creeps from his rusted mail.
+  attributes: { might: 3, agility: 1, wits: 2, presence: 3 }
+  health: 14
+  damage: 3
+  reach: melee

@@ -1,0 +1,43 @@
+# Follow-on Scene: no trigger, reached only through `next` from arrival.
+id: elder-plea
+title: Brenna's Plea
+text: |
+  "Three nights ago my granddaughter Mira followed a voice into the woods.
+  Since then the trees have been *whispering*. The hunters who might have
+  tracked her are gone. You are all we have, {name}."
+choices:
+  - id: accept
+    text: Promise to find Mira.
+    outcome:
+      text: |
+        Brenna presses a bundle of herbs into your hands. "The cart track
+        leads to the forest edge. Go with the saints."
+      effects:
+        - set-flag: quest-accepted
+        - give-item: { item: healing-herbs }
+        - reveal: forest-edge
+  - id: haggle
+    text: Ask what the village can offer for your trouble.
+    test:
+      attribute: presence
+      difficulty: ordinary
+      success:
+        text: |
+          Brenna studies you, then fetches a stoppered flask from her cottage.
+          "My mother's tonic. It is worth more than our silver. Bring her
+          back."
+        effects:
+          - set-flag: quest-accepted
+          - give-item: { item: elder-tonic }
+          - reveal: forest-edge
+      failure:
+        text: |
+          "We have nothing left but hope," she says coldly. "Take the cart
+          track to the woods, if you are going."
+        effects:
+          - set-flag: quest-accepted
+          - reveal: forest-edge
+  - id: refuse
+    text: Tell her it is not your concern.
+    outcome:
+      end: walked-away

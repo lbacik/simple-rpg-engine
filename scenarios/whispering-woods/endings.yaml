@@ -1,0 +1,31 @@
+# Ending catalog. `death` is the death Ending named in the manifest.
+
+- id: death
+  kind: defeat
+  title: Lost to the Woods
+  text: |
+    Your strength runs out among the roots and stones. In Ashford they will
+    ring the bell again, this time for you.
+
+- id: walked-away
+  kind: defeat
+  title: The Road Goes On
+  text: |
+    You turn your collar up against the rain and leave Ashford to its grief.
+    For years afterwards, travellers speak of the woods that whisper a girl's
+    name.
+
+- id: mira-rescued
+  kind: victory
+  title: Home Before Dark
+  text: |
+    You carry Mira out of the barrow and down through the quiet woods. The
+    whole of Ashford is waiting at the gate, and for once the bell rings for
+    joy.
+
+- id: laid-to-rest
+  kind: victory
+  title: The Oath Released
+  text: |
+    At the sound of his name, Aldric lowers his blade. "Released," he
+    whispers, and is gone. Mira wakes, and the woods fall silent at last.

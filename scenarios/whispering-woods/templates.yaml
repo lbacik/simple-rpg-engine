@@ -1,0 +1,29 @@
+# Character Template catalog. Base Attributes are 0-3 and sum to exactly 6.
+# Starting Equipment is equipped, at most one item per slot.
+
+- id: hunter
+  name: Hunter
+  description: You know the woods, their paths and their silences.
+  attributes: { might: 1, agility: 3, wits: 2, presence: 0 }
+  items:
+    - { item: hunting-bow }
+    - { item: hunters-cloak }
+    - { item: healing-herbs, quantity: 2 }
+
+- id: soldier
+  name: Soldier
+  description: You marched under three banners and walked away from all of them.
+  attributes: { might: 3, agility: 1, wits: 0, presence: 2 }
+  items:
+    - { item: sword }
+    - { item: chain-shirt }
+    - { item: healing-herbs }
+
+- id: scholar
+  name: Scholar
+  description: You came to Ashford for its legends. Now you may have to live one.
+  attributes: { might: 0, agility: 1, wits: 3, presence: 2 }
+  items:
+    - { item: walking-staff }
+    - { item: old-almanac }
+    - { item: healing-herbs, quantity: 2 }

@@ -1,0 +1,36 @@
+# A trap without player agency: an on-enter Scene whose Choices carry the Tests.
+id: chapel-threshold
+title: The Sunken Floor
+trigger: on-enter
+text: |
+  The chapel floor has sagged into the crypt below. The flagstones between
+  the door and the altar tilt and grind under the slightest weight.
+choices:
+  - id: step-carefully
+    text: Pick your way across, stone by stone.
+    test:
+      attribute: agility
+      difficulty: easy
+      success:
+        text: |
+          You hop from stone to stone and reach the altar steps unharmed.
+      failure:
+        text: |
+          A flagstone gives way and you drop to the waist into the crypt,
+          scraping your ribs on the broken edge.
+        effects:
+          - damage: 2
+  - id: test-floor
+    text: Probe the stones before trusting your weight to them.
+    test:
+      attribute: wits
+      difficulty: easy
+      success:
+        text: |
+          You find the line of sound stones along the old wall and follow it
+          to the altar.
+      failure:
+        text: |
+          The stone you judged sound is the first to crack beneath you.
+        effects:
+          - damage: 2

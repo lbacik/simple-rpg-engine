@@ -1,0 +1,16 @@
+id: wolf-hollow
+name: Wolf Hollow
+description: |
+  A damp hollow choked with ferns. Gnawed bones lie between the roots of a
+  fallen beech.
+map: { x: 60, y: 72 }
+scenes: [wolf-den, wolf-again]
+connections:
+  - to: forest-edge
+    label: Climb back to the forest edge
+  - to: ruined-chapel
+    label: Take the path past the den
+    when:
+      any:
+        - { defeated: hollow-wolf }
+        - { flag: wolf-evaded }

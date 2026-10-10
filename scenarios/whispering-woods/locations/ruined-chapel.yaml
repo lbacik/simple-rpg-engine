@@ -1,0 +1,12 @@
+id: ruined-chapel
+name: Ruined Chapel
+description: |
+  Four broken walls and a sky for a roof. Ivy has swallowed the saints carved
+  over the door, but the altar still stands.
+map: { x: 75, y: 38 }
+scenes: [chapel-threshold, chapel-altar, chapel-prayer]
+connections:
+  - to: wolf-hollow
+    label: Go back down to the hollow
+  - to: barrow-mound
+    label: Follow the old procession way

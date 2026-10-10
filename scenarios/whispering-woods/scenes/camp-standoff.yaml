@@ -1,0 +1,39 @@
+# Repeatable: fires on every visit while the bandit holds the camp.
+id: camp-standoff
+title: An Arrow at the Ready
+trigger: on-enter
+repeatable: true
+when:
+  all:
+    - not: { defeated: camp-bandit }
+    - not: { flag: bandit-gone }
+text: |
+  A man in a torn army coat rises from behind the lean-to, bow half drawn.
+  "That's close enough. Whatever you're after, it's mine now."
+choices:
+  - id: fight
+    text: Draw your weapon.
+    outcome:
+      start-combat: camp-bandit
+  - id: parley
+    text: Tell him what you are really after.
+    once: true
+    test:
+      attribute: presence
+      difficulty: hard
+      success:
+        text: |
+          He listens, and his bow sinks. "A child? In there?" He tosses you a
+          bronze key. "Took it off a dead man by the barrow. I want no part of
+          that place." He shoulders his pack and is gone.
+        effects:
+          - set-flag: bandit-gone
+          - give-item: { item: barrow-key }
+      failure:
+        text: |
+          "Nice story," he sneers, and looses.
+        start-combat: camp-bandit
+  - id: withdraw
+    text: Back away slowly.
+    outcome:
+      move: forest-edge

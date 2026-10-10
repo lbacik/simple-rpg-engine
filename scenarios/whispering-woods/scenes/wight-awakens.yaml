@@ -1,0 +1,38 @@
+# Repeatable: the wight confronts the Character on every entry until defeated.
+id: wight-awakens
+title: The Wight Awakens
+trigger: on-enter
+repeatable: true
+when:
+  not: { defeated: wight-fight }
+text: |
+  The figure on the bier sits up. Blue light burns in the hollows of its helm.
+  "Who comes to steal my bride?" it rasps, and its rusted blade scrapes free
+  of the scabbard.
+choices:
+  - id: fight
+    text: Fight the wight for Mira.
+    outcome:
+      start-combat: wight-fight
+  - id: name-him
+    text: Raise the silver charm and call him by his name.
+    when:
+      all:
+        - { flag: knows-wight-name }
+        - { has: silver-charm }
+    test:
+      attribute: presence
+      difficulty: hard
+      success:
+        text: |
+          "Aldric, your oath is broken and your lord is dust. Let her go."
+          The charm flares, and the blade wavers.
+        end: laid-to-rest
+      failure:
+        text: |
+          Your voice cracks on the name. The wight laughs and comes for you.
+        start-combat: wight-fight
+  - id: flee
+    text: Back away up the passage.
+    outcome:
+      move: barrow-mound

@@ -1,0 +1,49 @@
+# Encounter catalog: named, single placements of Enemies.
+# Each has opening narration, a required escape Outcome and an optional
+# victory Outcome.
+
+- id: camp-bandit
+  enemy: bandit-archer
+  startRange: far
+  text: |
+    The archer backs towards the trees and draws, an arrow already nocked.
+  victory:
+    text: |
+      The bandit slumps against the cold firepit. A bronze key on a thong
+      hangs from his belt.
+    effects:
+      - give-item: { item: barrow-key }
+  escape:
+    text: |
+      You crash back through the undergrowth as arrows hiss into the ferns.
+    move: forest-edge
+
+- id: hollow-wolf
+  enemy: grey-wolf
+  startRange: far
+  text: |
+    The wolf lowers its head and comes at you in long, silent bounds.
+  victory:
+    text: |
+      The wolf collapses among the roots. Beyond its den, a path climbs
+      towards broken stone walls.
+  escape:
+    text: |
+      You scramble up the bank and run until the growling fades behind you.
+    move: forest-edge
+
+- id: wight-fight
+  enemy: barrow-wight
+  startRange: near
+  text: |
+    Aldric rises from his bier, and the cold of the grave rolls over you.
+  victory:
+    text: |
+      The wight crumbles into dust and rust. Mira opens her eyes and reaches
+      for your hand.
+    end: mira-rescued
+  escape:
+    text: |
+      You stumble back up the passage into the grey daylight. Behind you, the
+      wight does not follow; it never leaves its tomb.
+    move: barrow-mound

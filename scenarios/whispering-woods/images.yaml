@@ -1,0 +1,7 @@
+# Image catalog. Paths are relative to the Scenario directory.
+
+- id: chapel-altar
+  path: images/chapel-altar.png
+  alt: >-
+    A roofless stone chapel overgrown with ivy; on a cracked altar, a small
+    silver disc catches a shaft of light.

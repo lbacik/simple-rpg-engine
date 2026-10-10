@@ -1,0 +1,22 @@
+id: arrival
+title: The Bell of Ashford
+trigger: on-enter
+text: |
+  A grey-haired woman in a mud-spattered apron hurries across the green
+  towards you, the bell rope still swinging behind her.
+
+  "You carry a weapon and you came by the woods road," she says. "Then you
+  are either very brave or very lost. I am Brenna, elder of Ashford. Will you
+  hear me out?"
+choices:
+  - id: listen
+    text: Hear her out.
+    outcome:
+      next: elder-plea
+  - id: refuse
+    text: Shake your head and keep walking.
+    outcome:
+      text: |
+        Brenna's shoulders drop. She says nothing more as you pass the last
+        cottage.
+      end: walked-away

@@ -1,0 +1,10 @@
+id: barrow-tomb
+name: Barrow Tomb
+description: |
+  A low stone chamber lit by a cold blue glow. On a bier lies a figure in
+  rusted mail; at its feet, a girl sleeps in a nest of grave-cloths.
+map: { x: 92, y: 85 }
+scenes: [wight-awakens]
+connections:
+  - to: barrow-mound
+    label: Climb back into daylight

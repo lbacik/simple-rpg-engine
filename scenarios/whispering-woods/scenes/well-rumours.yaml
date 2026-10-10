@@ -1,0 +1,26 @@
+id: well-rumours
+title: Gossip at the Well
+trigger: on-demand
+when: { flag: quest-accepted }
+text: |
+  Two old men lean on the well, arguing in low voices about the barrow on the
+  far side of the woods, and about the lord who was buried there "with his
+  oath still on his lips".
+choices:
+  - id: listen-closely
+    text: Linger and listen closely.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          Between their grumbles you catch it: the lord's name was **Aldric**,
+          and the pilgrims' chapel stands on the way to his barrow.
+        effects:
+          - set-flag: knows-wight-name
+          - reveal: ruined-chapel
+      failure:
+        text: |
+          They notice you listening and fall silent, glaring until you move on.
+  - id: leave
+    text: Leave them to their arguing.

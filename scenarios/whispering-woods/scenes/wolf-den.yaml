@@ -1,0 +1,29 @@
+id: wolf-den
+title: Eyes in the Ferns
+trigger: on-enter
+text: |
+  Something moves among the ferns. A grey wolf rises from beside the fallen
+  beech, between you and the far side of the hollow.
+choices:
+  - id: fight
+    text: Stand your ground and fight.
+    outcome:
+      start-combat: hollow-wolf
+  - id: sneak
+    text: Edge around it through the ferns.
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          You keep downwind and slip past while the wolf gnaws at a bone.
+        effects:
+          - set-flag: wolf-evaded
+      failure:
+        text: |
+          A twig snaps under your boot. The wolf's head comes up.
+        start-combat: hollow-wolf
+  - id: retreat
+    text: Climb back out of the hollow.
+    outcome:
+      move: forest-edge
