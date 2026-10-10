@@ -118,6 +118,14 @@ _Avoid_: Monster, mob
 A fight between the Character and one Enemy, ending in death or the Character's escape.
 _Avoid_: Battle
 
+**Range**:
+The current distance between the Character and the Enemy during a Combat: either Near or Far.
+_Avoid_: Zone, distance
+
+**Reach**:
+Whether an attack can be made only at Near Range (melee) or at any Range (ranged).
+_Avoid_: Weapon type
+
 **Equipment**:
 Items worn or wielded by the Character, providing passive Attribute bonuses or determining attack Damage.
 _Avoid_: Gear, loadout
