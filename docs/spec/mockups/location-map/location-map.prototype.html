@@ -1,0 +1,493 @@
+<!doctype html>
+<!--
+  PROTOTYPE: throwaway code that lives only on the `prototype/location-map` branch.
+  Question (lbacik/simple-rpg-engine#11): how is the Location map presented? Compare an
+  auto-laid-out graph with optional author-provided coordinates. Decide discovery (fog of
+  unvisited Locations), the current-position marker, and whether travel happens by clicking
+  the map or through choices.
+  Four variants of the same Playthrough, switchable with `?variant=A|B|C|D`, the bottom bar,
+  or the arrow keys. All variants share one Playthrough state, so you can switch mid-walk.
+  The world, engine and layouts are inline. There is no persistence; reload to start over.
+  VERDICT: variant B (optional author coordinates, fallback placement, click an adjacent
+  Location to travel). Discovery stays visited + revealed; "?" stubs remain a switchable
+  option to judge after the first playtests. The canonical decision is the resolution
+  comment on lbacik/simple-rpg-engine#11.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Location Map Prototype</title>
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e2e0da;
+  --accent: #b4441f; --accent-ink: #ffffff; --good: #2f7d4f; --soft: #f3eee8;
+  --parch: #f4ecdc; --parch-line: #e6dcc6; --node: #ffffff; --edge: #8a8580; --ghost: #d6d2ca;
+  --bar: #1d1d1f; --bar-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151517; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343b;
+    --accent: #e0794f; --accent-ink: #151517; --good: #6cc08f; --soft: #29262a;
+    --parch: #2a2620; --parch-line: #3a342b; --node: #1f1f22; --edge: #8d8a86; --ghost: #3b3a3e;
+    --bar: #ececee; --bar-ink: #151517;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 110px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.lede { color: var(--muted); margin: 0 0 12px; max-width: 920px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }
+.controls .lbl { color: var(--muted); margin-right: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 4px 10px; background: var(--panel); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 7px 12px; text-align: left; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+.judge { background: var(--soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 14px; }
+.judge b { color: var(--accent); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.layout-a { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+.layout-b { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.layout-c { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 16px; }
+.layout-d { display: grid; grid-template-columns: 280px minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+@media (max-width: 980px) { .layout-a, .layout-b, .layout-c, .layout-d { grid-template-columns: minmax(0, 1fr); } }
+.loc h3 { font-size: 20px; margin: 0 0 6px; }
+.loc .desc { margin: 0 0 14px; }
+.loc .narr { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; margin: 0 0 14px; }
+.loc .group { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 6px; }
+.loc .acts { display: flex; flex-direction: column; gap: 6px; }
+.loc .acts button.exit::before { content: "→ "; color: var(--accent); }
+.loc .acts button.scene::before { content: "✦ "; color: var(--accent); }
+.loc .acts button.choice::before { content: "▸ "; color: var(--accent); }
+.note { font-size: 12px; color: var(--muted); }
+.map svg { width: 100%; height: auto; display: block; }
+.map text { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: var(--ink); }
+.map .lab-muted { fill: var(--muted); font-style: italic; }
+.map .edge { stroke: var(--edge); stroke-width: 2; fill: none; }
+.map .edge.dashed { stroke-dasharray: 5 5; opacity: .6; }
+.map .edge.metro { stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.map .n circle, .map .n rect { fill: var(--node); stroke: var(--ink); stroke-width: 2; }
+.map .n.revealed circle, .map .n.revealed rect { stroke-dasharray: 4 3; stroke: var(--muted); }
+.map .n.stub circle, .map .n.stub rect { stroke-dasharray: 2 3; stroke: var(--muted); }
+.map .n.ghost circle, .map .n.ghost rect { stroke: var(--ghost); fill: transparent; }
+.map .n.ghost text { fill: var(--ghost); }
+.map .n.current circle, .map .n.current rect { fill: var(--accent); stroke: var(--accent); }
+.map .n.reach { cursor: pointer; }
+.map .n.reach circle, .map .n.reach rect { stroke: var(--accent); stroke-width: 3; }
+.map .n.reach:hover circle, .map .n.reach:hover rect { fill: var(--soft); }
+.map .ring { fill: none; stroke: var(--accent); stroke-width: 2; animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(2.1); } }
+.map .here { fill: var(--accent); font-weight: 600; font-size: 11px; }
+.map .tag { fill: var(--muted); font-size: 10px; }
+.map .q { fill: var(--muted); font-weight: 700; }
+.metric { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.metric b { color: var(--accent); }
+.state dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-size: 13px; }
+.state dt { color: var(--muted); }
+.state dd { margin: 0; }
+.log { margin: 10px 0 0; padding-left: 18px; font-size: 12px; color: var(--muted); max-height: 130px; overflow: auto; }
+pre { background: var(--soft); border-radius: 6px; padding: 8px 10px; font-size: 12px; overflow: auto; margin: 0 0 6px; }
+pre .hl { background: var(--accent); color: var(--accent-ink); border-radius: 3px; padding: 0 2px; }
+.journal h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 12px 0 4px; }
+.journal ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.journal li { margin: 2px 0; }
+.journal .cur { color: var(--accent); font-weight: 600; }
+.switcher { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: var(--bar); color: var(--bar-ink); border-radius: 999px; padding: 6px 8px; box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 10; font-size: 14px; }
+.switcher button { background: transparent; color: inherit; border: 0; padding: 4px 10px; border-radius: 999px; }
+.switcher button:hover { background: rgba(127,127,127,.25); }
+.switcher .cur { padding: 0 8px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Location map prototype</h1>
+  <p class="lede">The same small Scenario ("The Hollow Vale", 10 Locations) shown four ways. All variants share one Playthrough, so you can switch mid-walk. Things to try: talk to the elder (a <code>reveal</code> Effect), take the rope at the mill (a conditional Connection appears at the ford), and step onto the chapel floor (a one-way Connection into the crypt with an on-enter Scene).</p>
+  <div class="controls" id="controls"></div>
+  <div class="judge" id="judge"></div>
+  <div id="app"></div>
+</div>
+<div class="switcher" id="switcher"></div>
+<script>
+// ---------- World: one tiny Scenario, shaped like the agreed content model ----------
+const WORLD = {
+  start: 'village',
+  flags: ['heard-of-chapel', 'has-rope'],
+  locations: [
+    { id: 'village', name: 'Millbrook Village', map: { x: 50, y: 58 },
+      description: 'A handful of thatched houses around a muddy square. Smoke rises from the elder\'s hut.',
+      connections: [{ to: 'well' }, { to: 'forest-edge' }, { to: 'mill' }],
+      scenes: ['elder'] },
+    { id: 'well', name: 'Village Well', map: { x: 50, y: 88 },
+      description: 'An old stone well. The rope was cut long ago.',
+      connections: [{ to: 'village' }], scenes: [] },
+    { id: 'mill', name: 'Old Mill', map: { x: 76, y: 58 },
+      description: 'The wheel creaks in the stream. Sacks and coils of rope lie about.',
+      connections: [{ to: 'village' }, { to: 'ford' }], scenes: ['rope'] },
+    { id: 'ford', name: 'River Ford', map: { x: 90, y: 32 },
+      description: 'The river runs fast and cold. On the far bank, a tower looms.',
+      connections: [{ to: 'mill' }, { to: 'watchtower', label: 'Rope across the river to the tower', when: { flag: 'has-rope' } }],
+      scenes: [] },
+    // No `map` on purpose: shows the fallback placement in variant B.
+    { id: 'watchtower', name: 'Watchtower',
+      description: 'A crumbling tower. From the top you see the whole vale.',
+      connections: [{ to: 'ford' }], scenes: [] },
+    { id: 'forest-edge', name: 'Forest Edge', map: { x: 30, y: 42 },
+      description: 'Pines crowd the path. Birdsong stops abruptly further in.',
+      connections: [{ to: 'village' }, { to: 'forest-path' }], scenes: [] },
+    { id: 'forest-path', name: 'Deep Forest Path', map: { x: 22, y: 18 },
+      description: 'The trail forks between moss-covered boulders.',
+      connections: [{ to: 'forest-edge' }, { to: 'chapel', label: 'Follow the old pilgrim markers', when: { flag: 'heard-of-chapel' } }, { to: 'cave' }],
+      scenes: [] },
+    { id: 'chapel', name: 'Ruined Chapel', map: { x: 48, y: 8 },
+      description: 'Roofless walls, an altar split in two. The floor is cracked and sagging.',
+      connections: [{ to: 'forest-path' }, { to: 'crypt', label: 'Step onto the cracked floor' }], scenes: [] },
+    { id: 'crypt', name: 'Crypt', map: { x: 62, y: 22 },
+      description: 'Dust and bones. A narrow tunnel leads away westward.',
+      connections: [{ to: 'cave', label: 'Crawl through the tunnel' }], scenes: ['fall'] },
+    { id: 'cave', name: 'Bear Cave', map: { x: 6, y: 34 },
+      description: 'It smells of wet fur. Thankfully, nobody is home.',
+      connections: [{ to: 'forest-path' }], scenes: [] },
+  ],
+  scenes: {
+    elder: { trigger: 'on-demand', label: 'Talk to the elder',
+      text: 'The elder squints at you. "Pilgrims used to walk to the chapel deep in the forest. Follow the old markers, if you dare."',
+      choices: [{ text: 'Thank her and leave', effects: [{ 'set-flag': 'heard-of-chapel' }, { reveal: 'chapel' }] }] },
+    rope: { trigger: 'on-demand', label: 'Take a coil of rope',
+      text: 'You sling a coil of sturdy rope over your shoulder.',
+      choices: [{ text: 'Continue', effects: [{ 'set-flag': 'has-rope' }] }] },
+    fall: { trigger: 'on-enter',
+      text: 'The floor gives way! You land hard among the bones. There is no climbing back up.',
+      choices: [{ text: 'Get up', effects: [] }] },
+  },
+};
+const LOC = Object.fromEntries(WORLD.locations.map(l => [l.id, l]));
+const VARIANTS = [
+  { key: 'A', name: 'Auto graph (force layout)',
+    judge: '<b>A: auto graph.</b> The engine lays out the <i>discovered</i> graph with a force simulation, so authors write nothing. The map is a passive sidebar, and travel uses exits in the Location view (map clicks are optional). Watch the "moved" metric under the map when a new Location appears: a naive auto-layout reshuffles everything you already know.' },
+  { key: 'B', name: 'Author coordinates',
+    judge: '<b>B: author coordinates.</b> Each Location may carry an optional <code>map: { x, y }</code> (0–100). The map is the main surface, and you travel by clicking a highlighted adjacent Location. Positions never move and match the author\'s mental geography. Watchtower has no coordinates, so it gets a fallback placement next to its neighbours. Lines may cross (crypt → cave).' },
+  { key: 'C', name: 'Auto schematic (stable layers)',
+    judge: '<b>C: auto schematic.</b> The engine lays out the <i>whole</i> Scenario graph once (columns = steps from the starting Location) and draws only what is discovered, so nothing ever moves and authors write nothing. It reads like a metro map, not geography. Gaps in the columns can hint that undiscovered places exist.' },
+  { key: 'D', name: 'No drawn map (journal)',
+    judge: '<b>D: no drawn map.</b> A journal lists where you are, where you have been, and what you have heard of. Travel only uses exits. This is the cheapest option and tests whether a graphical map earns its keep in a 10-Location Scenario.' },
+];
+
+// ---------- Engine (pure-ish): Playthrough state and transitions ----------
+let S;
+const ui = {
+  variant: (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase(),
+  discovery: 'decided',  // decided | stubs | all
+  clickTravel: true,
+};
+if (!VARIANTS.some(v => v.key === ui.variant)) ui.variant = 'A';
+
+function cond(w) { return !w || (w.flag ? S.flags.has(w.flag) : true); }
+function visibleConns(id) { return LOC[id].connections.filter(c => cond(c.when)); }
+function connLabel(c) { return c.label || LOC[c.to].name; }
+function log(msg) { S.log.unshift(msg); S.log = S.log.slice(0, 30); }
+
+function reset() {
+  S = { current: null, visited: new Set(), revealed: new Set(), flags: new Set(), fired: new Set(), scene: null, log: [] };
+  A.pos = {}; A.key = ''; A.metric = null;
+  enter(WORLD.start, 'start');
+}
+function enter(id, how) {
+  S.current = id; S.visited.add(id);
+  log(`${how}: entered ${LOC[id].name}`);
+  for (const sid of LOC[id].scenes) {
+    const sc = WORLD.scenes[sid];
+    if (sc.trigger === 'on-enter' && !S.fired.has(sid) && cond(sc.when)) { S.scene = sid; S.fired.add(sid); log(`on-enter Scene "${sid}" fired`); break; }
+  }
+}
+function travel(to, via) {
+  if (S.scene) { log(`travel to ${LOC[to].name} blocked: finish the Scene first`); return; }
+  if (!visibleConns(S.current).some(c => c.to === to)) return;
+  enter(to, via);
+}
+function startScene(sid) {
+  if (S.scene || S.fired.has(sid)) return;
+  S.scene = sid; S.fired.add(sid); log(`on-demand Scene "${sid}" started`);
+}
+function choose(i) {
+  const ch = WORLD.scenes[S.scene].choices[i];
+  for (const e of ch.effects) {
+    if (e['set-flag']) { S.flags.add(e['set-flag']); log(`Effect set-flag ${e['set-flag']}`); }
+    if (e.reveal) { S.revealed.add(e.reveal); log(`Effect reveal ${e.reveal}`); }
+  }
+  S.scene = ch.next || null;
+}
+function onDemandScenes() {
+  return LOC[S.current].scenes.map(id => [id, WORLD.scenes[id]])
+    .filter(([id, sc]) => sc.trigger === 'on-demand' && !S.fired.has(id) && cond(sc.when));
+}
+
+// ---------- What the map knows: nodes (with kind) and edges ----------
+function mapGraph() {
+  const nodes = new Map();
+  for (const v of S.visited) nodes.set(v, 'visited');
+  for (const r of S.revealed) if (!nodes.has(r)) nodes.set(r, 'revealed');
+  if (ui.discovery === 'stubs') for (const v of S.visited) for (const c of visibleConns(v)) if (!nodes.has(c.to)) nodes.set(c.to, 'stub');
+  if (ui.discovery === 'all') for (const l of WORLD.locations) if (!nodes.has(l.id)) nodes.set(l.id, 'ghost');
+  nodes.set(S.current, 'current');
+  const directed = [];
+  for (const v of S.visited) for (const c of visibleConns(v)) if (nodes.has(c.to)) directed.push({ from: v, to: c.to, dashed: false });
+  if (ui.discovery === 'all') for (const l of WORLD.locations) for (const c of l.connections)
+    if (!directed.some(d => d.from === l.id && d.to === c.to)) directed.push({ from: l.id, to: c.to, dashed: true });
+  const edges = [], done = new Set();
+  for (const d of directed) {
+    const k = d.from + '>' + d.to; if (done.has(k)) continue; done.add(k);
+    const rev = directed.find(x => x.from === d.to && x.to === d.from);
+    if (rev) { done.add(d.to + '>' + d.from); edges.push({ a: d.from, b: d.to, twoWay: true, dashed: d.dashed && rev.dashed }); }
+    else edges.push({ a: d.from, b: d.to, twoWay: false, dashed: d.dashed });
+  }
+  const reach = new Set(S.scene ? [] : visibleConns(S.current).map(c => c.to));
+  return { nodes, edges, reach };
+}
+
+// ---------- Layouts ----------
+function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+
+// A: force layout over the discovered graph, warm-started from previous positions, fitted to the box.
+const A = { pos: {}, key: '', metric: null, W: 400, H: 340 };
+function layoutA(g) {
+  const ids = [...g.nodes.keys()], key = ids.slice().sort().join(',') + '|' + g.edges.length;
+  if (key === A.key) return { from: A.pos, to: A.pos };
+  const { W, H } = A, old = A.pos, P = {};
+  for (const id of ids) {
+    if (old[id]) { P[id] = { ...old[id] }; continue; }
+    const nb = g.edges.find(e => (e.a === id && old[e.b]) || (e.b === id && old[e.a]));
+    const base = nb ? old[nb.a === id ? nb.b : nb.a] : { x: W / 2, y: H / 2 };
+    P[id] = { x: base.x + (hash(id) - .5) * 60, y: base.y + (hash(id + 'y') - .5) * 60 };
+  }
+  for (let it = 0, t = 12; it < 400; it++, t *= 0.992) {
+    const D = Object.fromEntries(ids.map(id => [id, { x: 0, y: 0 }]));
+    for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+      const p = P[ids[i]], q = P[ids[j]]; let dx = p.x - q.x, dy = p.y - q.y; const d2 = Math.max(dx * dx + dy * dy, 25), d = Math.sqrt(d2), f = 9000 / d2;
+      D[ids[i]].x += dx / d * f; D[ids[i]].y += dy / d * f; D[ids[j]].x -= dx / d * f; D[ids[j]].y -= dy / d * f;
+    }
+    for (const e of g.edges) {
+      const p = P[e.a], q = P[e.b], dx = q.x - p.x, dy = q.y - p.y, d = Math.max(Math.hypot(dx, dy), 1), f = (d - 80) * 0.06;
+      D[e.a].x += dx / d * f; D[e.a].y += dy / d * f; D[e.b].x -= dx / d * f; D[e.b].y -= dy / d * f;
+    }
+    for (const id of ids) {
+      D[id].x += (W / 2 - P[id].x) * 0.01; D[id].y += (H / 2 - P[id].y) * 0.01;
+      const m = Math.hypot(D[id].x, D[id].y), s = m > t ? t / m : 1;
+      P[id].x += D[id].x * s; P[id].y += D[id].y * s;
+    }
+  }
+  // Fit into the box (what a real auto-layout does so the map is always readable).
+  const xs = ids.map(id => P[id].x), ys = ids.map(id => P[id].y), pad = 40;
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const sc = Math.min((W - 2 * pad) / Math.max(maxX - minX, 1), (H - 2 * pad) / Math.max(maxY - minY, 1), 1.3);
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  for (const id of ids) P[id] = { x: W / 2 + (P[id].x - cx) * sc, y: H / 2 + (P[id].y - cy) * sc };
+  const kept = ids.filter(id => old[id]);
+  if (kept.length && ids.length > kept.length) {
+    const avg = kept.reduce((s, id) => s + Math.hypot(P[id].x - old[id].x, P[id].y - old[id].y), 0) / kept.length;
+    A.metric = { avg: Math.round(avg), n: kept.length, added: ids.length - kept.length };
+  }
+  const from = {}; for (const id of ids) from[id] = old[id] || P[id];
+  A.pos = P; A.key = key;
+  return { from, to: P };
+}
+
+// B: author coordinates (0–100) scaled to the box; missing coordinates fall back next to neighbours.
+function layoutB(ids, W, H) {
+  const sc = m => ({ x: 40 + m.x / 100 * (W - 80), y: 30 + m.y / 100 * (H - 60) }), P = {};
+  for (const id of ids) {
+    const l = LOC[id];
+    if (l.map) { P[id] = sc(l.map); continue; }
+    const nbs = WORLD.locations.filter(o => o.map && (o.connections.some(c => c.to === id) || l.connections.some(c => c.to === o.id)));
+    const avg = nbs.reduce((s, o) => ({ x: s.x + o.map.x / nbs.length, y: s.y + o.map.y / nbs.length }), { x: 0, y: 0 });
+    const p = sc(nbs.length ? avg : { x: 50, y: 50 });
+    P[id] = { x: Math.min(p.x + 0, W - 50), y: Math.max(p.y - 70, 30), fallback: true };
+  }
+  return P;
+}
+
+// C: layered layout of the full Scenario graph (BFS depth from start), computed once.
+function layoutC(W, H) {
+  const depth = { [WORLD.start]: 0 }, q = [WORLD.start];
+  while (q.length) { const id = q.shift(); for (const c of LOC[id].connections) if (!(c.to in depth)) { depth[c.to] = depth[id] + 1; q.push(c.to); } }
+  const cols = {}; for (const l of WORLD.locations) (cols[depth[l.id] ?? 0] ||= []).push(l.id);
+  const nCols = Object.keys(cols).length, P = {};
+  for (const [d, list] of Object.entries(cols)) list.forEach((id, i) => {
+    P[id] = { x: 70 + d * (W - 140) / Math.max(nCols - 1, 1), y: H / 2 + (i - (list.length - 1) / 2) * 92 };
+  });
+  return P;
+}
+
+// ---------- Map rendering (shared SVG renderer, styled per variant) ----------
+function renderMap(g, P, o) {
+  const { W, H, style } = o, r = style === 'metro' ? 9 : 11;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Location map"><defs><marker id="arr-${style}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/></marker></defs>`;
+  if (style === 'parchment') {
+    s += `<rect x="0" y="0" width="${W}" height="${H}" rx="8" fill="var(--parch)"/>`;
+    for (let i = 1; i < 10; i++) s += `<line x1="${i * W / 10}" y1="0" x2="${i * W / 10}" y2="${H}" stroke="var(--parch-line)"/><line x1="0" y1="${i * H / 10}" x2="${W}" y2="${i * H / 10}" stroke="var(--parch-line)"/>`;
+  }
+  for (const e of g.edges) {
+    const p = P[e.a], q = P[e.b]; if (!p || !q) continue;
+    const cls = `edge${e.dashed ? ' dashed' : ''}${style === 'metro' ? ' metro' : ''}`;
+    const mk = e.twoWay ? '' : ` marker-end="url(#arr-${style})"`;
+    if (style === 'metro') {
+      const mx = (p.x + q.x) / 2;
+      s += `<path class="${cls}" d="M${p.x},${p.y} H${mx} V${q.y} H${q.x - (e.twoWay ? 0 : Math.sign(q.x - mx || 1) * (r + 3))}"${mk}/>`;
+    } else {
+      const dx = q.x - p.x, dy = q.y - p.y, d = Math.max(Math.hypot(dx, dy), 1), sh = r + 3;
+      s += `<line class="${cls}" x1="${p.x + dx / d * sh}" y1="${p.y + dy / d * sh}" x2="${q.x - dx / d * sh}" y2="${q.y - dy / d * sh}"${mk}/>`;
+    }
+  }
+  for (const [id, kind] of g.nodes) {
+    const p = P[id]; if (!p) continue;
+    const canGo = o.clickable && g.reach.has(id);
+    const cls = `n ${kind}${canGo ? ' reach' : ''}`;
+    const act = canGo ? ` data-action="travel" data-to="${id}" data-via="map click"` : '';
+    const name = LOC[id].name;
+    s += `<g class="${cls}"${act}><title>${name}${canGo ? ' (click to travel)' : ''}</title>`;
+    if (kind === 'current') s += `<circle class="ring" cx="${p.x}" cy="${p.y}" r="${r}"/>`;
+    if (style === 'metro') s += `<rect x="${p.x - r}" y="${p.y - r}" width="${2 * r}" height="${2 * r}" rx="4"/>`;
+    else s += `<circle cx="${p.x}" cy="${p.y}" r="${kind === 'stub' ? r - 3 : r}"/>`;
+    if (kind === 'stub') s += `<text class="q" x="${p.x}" y="${p.y + 4}" text-anchor="middle">?</text>`;
+    const muted = kind === 'revealed' || kind === 'stub';
+    s += `<text x="${p.x}" y="${p.y + r + 15}" text-anchor="middle"${muted ? ' class="lab-muted"' : ''}>${name}${kind === 'revealed' ? ' (heard of)' : ''}</text>`;
+    if (kind === 'current') s += `<text class="here" x="${p.x}" y="${p.y - r - 7}" text-anchor="middle">YOU ARE HERE</text>`;
+    if (p.fallback) s += `<text class="tag" x="${p.x}" y="${p.y + r + 28}" text-anchor="middle">no map coords: auto-placed</text>`;
+    s += `</g>`;
+  }
+  return s + '</svg>';
+}
+
+// ---------- Shared panels ----------
+function locView() {
+  const l = LOC[S.current];
+  let h = `<div class="loc"><h3>${l.name}</h3><p class="desc">${l.description}</p>`;
+  if (S.scene) {
+    const sc = WORLD.scenes[S.scene];
+    h += `<p class="narr">${sc.text}</p><div class="acts">`;
+    sc.choices.forEach((c, i) => { h += `<button class="choice" data-action="choose" data-i="${i}">${c.text}</button>`; });
+    h += `</div><p class="note">A Scene is active: exits and map travel are unavailable until it ends.</p>`;
+  } else {
+    const ods = onDemandScenes();
+    if (ods.length) { h += `<div class="group">Actions</div><div class="acts">`; for (const [id, sc] of ods) h += `<button class="scene" data-action="scene" data-id="${id}">${sc.label}</button>`; h += `</div>`; }
+    h += `<div class="group">Exits</div><div class="acts">`;
+    for (const c of visibleConns(S.current)) h += `<button class="exit" data-action="travel" data-to="${c.to}" data-via="exit">${connLabel(c)}</button>`;
+    h += `</div>`;
+  }
+  return h + '</div>';
+}
+function statePanel() {
+  const names = set => [...set].map(id => LOC[id] ? LOC[id].name : id).join(', ') || '—';
+  return `<div class="card state"><h2>Playthrough state</h2><dl>
+    <dt>Current</dt><dd>${LOC[S.current].name}</dd>
+    <dt>Visited</dt><dd>${names(S.visited)}</dd>
+    <dt>Revealed</dt><dd>${names(S.revealed)}</dd>
+    <dt>Flags</dt><dd>${[...S.flags].join(', ') || '—'}</dd>
+    <dt>Fired Scenes</dt><dd>${[...S.fired].join(', ') || '—'}</dd>
+    <dt>Active Scene</dt><dd>${S.scene || '—'}</dd></dl>
+    <ul class="log">${S.log.map(m => `<li>${m}</li>`).join('')}</ul></div>`;
+}
+function authoringPanel() {
+  const l = LOC[S.current], withMap = ui.variant === 'B';
+  const y = [`id: ${l.id}`, `name: ${l.name}`];
+  if (withMap) y.push(l.map ? `<span class="hl">map: { x: ${l.map.x}, y: ${l.map.y} }</span>   # optional` : `# no map: engine places it next to its neighbours`);
+  y.push(`description: …`, `connections:`);
+  for (const c of l.connections) { y.push(`  - to: ${c.to}`); if (c.label) y.push(`    label: ${c.label}`); if (c.when) y.push(`    when: { flag: ${c.when.flag} }`); }
+  y.push(`scenes: [${l.scenes.join(', ')}]`);
+  const cost = { A: 'No extra authoring. Layout is computed from the discovered graph.', B: 'One optional field per Location. Validation checks the 0–100 range and warns when it is missing.', C: 'No extra authoring. Layout is computed from the whole Scenario graph.', D: 'No extra authoring, and no map renderer.' }[ui.variant];
+  return `<div class="card"><h2>Authoring: this Location's YAML</h2><pre>${y.join('\n')}</pre><p class="note">${cost}</p></div>`;
+}
+function journal(g) {
+  const cur = LOC[S.current];
+  const visited = [...S.visited].filter(id => id !== S.current);
+  const heard = [...S.revealed].filter(id => !S.visited.has(id));
+  const stubs = [...g.nodes].filter(([, k]) => k === 'stub').map(([id]) => id);
+  let h = `<div class="card journal"><h2>Journal</h2><h4>You are here</h4><ul><li class="cur">${cur.name}</li></ul>`;
+  h += `<h4>Visited (${visited.length})</h4><ul>${visited.map(id => `<li>${LOC[id].name} <span class="note">→ ${visibleConns(id).map(c => LOC[c.to].name).join(', ')}</span></li>`).join('') || '<li class="note">nowhere yet</li>'}</ul>`;
+  if (heard.length) h += `<h4>Heard of</h4><ul>${heard.map(id => `<li><i>${LOC[id].name}</i></li>`).join('')}</ul>`;
+  if (stubs.length) h += `<h4>Unexplored exits</h4><ul>${stubs.map(id => `<li class="note">${LOC[id].name}</li>`).join('')}</ul>`;
+  return h + '</div>';
+}
+
+// ---------- Variants ----------
+function VariantA(g) {
+  const { from, to } = layoutA(g);
+  const m = A.metric;
+  const html = `<div class="layout-a"><div class="card">${locView()}</div><div class="stack">
+    <div class="card map"><h2>Map</h2><div id="map-a">${renderMap(g, from, { W: A.W, H: A.H, style: 'graph', clickable: ui.clickTravel })}</div>
+    <p class="metric">${m ? `Last discovery added ${m.added}; the ${m.n} Location(s) already shown moved <b>${m.avg}px</b> on average.` : 'Discover a new Location to see how much the known ones move.'}</p></div>
+    ${statePanel()}${authoringPanel()}</div></div>`;
+  if (from !== to) requestAnimationFrame(() => tween(from, to, P => renderMap(g, P, { W: A.W, H: A.H, style: 'graph', clickable: ui.clickTravel })));
+  return html;
+}
+function VariantB(g) {
+  const W = 760, H = 520, P = layoutB([...g.nodes.keys()], W, H);
+  return `<div class="layout-b"><div class="card map"><h2>Map of the Hollow Vale${ui.clickTravel ? ' (click a highlighted Location to travel)' : ''}</h2>
+    ${renderMap(g, P, { W, H, style: 'parchment', clickable: ui.clickTravel })}</div>
+    <div class="stack"><div class="card">${locView()}</div>${statePanel()}${authoringPanel()}</div></div>`;
+}
+const C_BOX = { W: 900, H: 320 };
+const C_POS = layoutC(C_BOX.W, C_BOX.H);
+function VariantC(g) {
+  return `<div class="card map"><h2>Route schematic</h2>${renderMap(g, C_POS, { ...C_BOX, style: 'metro', clickable: ui.clickTravel })}</div>
+    <div class="layout-c"><div class="card">${locView()}</div><div class="stack">${statePanel()}${authoringPanel()}</div></div>`;
+}
+function VariantD(g) {
+  return `<div class="layout-d">${journal(g)}<div class="card">${locView()}</div><div class="stack">${statePanel()}${authoringPanel()}</div></div>`;
+}
+
+function tween(from, to, draw) {
+  const t0 = performance.now(), ids = Object.keys(to);
+  const step = now => {
+    const t = Math.min(1, (now - t0) / 550), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const P = {}; for (const id of ids) P[id] = { x: from[id].x + (to[id].x - from[id].x) * e, y: from[id].y + (to[id].y - from[id].y) * e };
+    const el = document.getElementById('map-a'); if (!el) return;
+    el.innerHTML = draw(P); if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ---------- Shell ----------
+function render() {
+  const v = VARIANTS.find(x => x.key === ui.variant);
+  const seg = (name, val, label) => `<button class="${ui[name] === val ? 'on' : ''}" data-action="set" data-k="${name}" data-v="${val}">${label}</button>`;
+  document.getElementById('controls').innerHTML = `
+    <span><span class="lbl">Discovery</span><span class="seg">${seg('discovery', 'decided', 'Visited + revealed (decided)')}${seg('discovery', 'stubs', '+ "?" for unvisited exits')}${seg('discovery', 'all', 'Everything (debug)')}</span></span>
+    <span><span class="lbl">Travel by clicking the map</span><span class="seg">${seg('clickTravel', true, 'On')}${seg('clickTravel', false, 'Off')}</span></span>
+    <button data-action="reset">Restart Playthrough</button>`;
+  document.getElementById('judge').innerHTML = v.judge;
+  const g = mapGraph();
+  document.getElementById('app').innerHTML = { A: VariantA, B: VariantB, C: VariantC, D: VariantD }[ui.variant](g);
+  document.getElementById('switcher').innerHTML = `<button data-action="cycle" data-d="-1" aria-label="Previous variant">←</button><span class="cur">${v.key} (${v.name})</span><button data-action="cycle" data-d="1" aria-label="Next variant">→</button>`;
+}
+function cycle(d) {
+  const i = VARIANTS.findIndex(x => x.key === ui.variant);
+  ui.variant = VARIANTS[(i + d + VARIANTS.length) % VARIANTS.length].key;
+  const u = new URL(location.href); u.searchParams.set('variant', ui.variant); history.replaceState(null, '', u);
+  render();
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-action]'); if (!b) return;
+  const d = b.dataset;
+  if (d.action === 'travel') travel(d.to, d.via);
+  else if (d.action === 'scene') startScene(d.id);
+  else if (d.action === 'choose') choose(+d.i);
+  else if (d.action === 'set') ui[d.k] = d.v === 'true' ? true : d.v === 'false' ? false : d.v;
+  else if (d.action === 'reset') reset();
+  else if (d.action === 'cycle') return cycle(+d.d);
+  render();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.target.closest('input, textarea, [contenteditable]')) return;
+  if (ev.key === 'ArrowLeft') cycle(-1);
+  if (ev.key === 'ArrowRight') cycle(1);
+});
+reset();
+render();
+</script>
+</body>
+</html>

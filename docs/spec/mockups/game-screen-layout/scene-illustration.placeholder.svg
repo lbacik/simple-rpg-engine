@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#e7e9df"/>
+  <path d="M0 0L1200 675M1200 0L0 675" stroke="#d5dbcd" stroke-width="2"/>
+  <rect x="420" y="270" width="360" height="135" rx="8" fill="#e7e9df"/>
+  <g fill="#526550" text-anchor="middle" font-family="Georgia, serif">
+    <text x="600" y="328" font-size="31">Scene illustration</text>
+    <text x="600" y="370" font-family="system-ui, sans-serif" font-size="17">Optional image · 16:9 preview</text>
+  </g>
+</svg>

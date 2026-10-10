@@ -1,0 +1,145 @@
+# Architecture
+
+How the prototype is built: hosting, repository shape, the engine contract, turn handling, Sessions, persistence and asset serving. Background research: [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
+
+## Hosting and stack
+
+- **One self-hosted, long-lived Node process** with a persistent disk: Next.js with `output: 'standalone'`, run in Docker with a volume holding the database and the Scenario directory. Local `next start` and `next dev` work the same way.
+- Defaults: **Next.js 16.x**, **Node 24 LTS**, **TypeScript strict**, **Zod 4** (for `z.toJSONSchema`).
+- **A later move to a network database (PostgreSQL or MySQL) is expected.** Persistence is portable from day one: async ports even though `better-sqlite3` is synchronous, no SQLite-specific features, and a concurrency guard that works the same on every dialect.
+- A serverless target would also need the Scenario directory bundled into the build or moved to object storage. This is a recorded consequence, not a plan.
+
+## Repository shape
+
+A single npm package (no workspaces):
+
+| Directory | Contents | May not import |
+|---|---|---|
+| `src/engine` | pure rules: `startPlaythrough`, `applyAction`, `view` | `next/*`, `server-only`, `react`, `src/persistence` |
+| `src/content` | the YAML loader, Zod definitions, validator, content hash | `next/*`, `server-only`, `react`, `src/persistence` |
+| `src/persistence` | the store ports and their Kysely implementation, migrations | |
+| `src/app` | the Next.js App Router application | |
+| `src/cli` | the validation CLI (`npm run validate <dir>`, run with `tsx`) | |
+
+An ESLint `no-restricted-imports` rule enforces the import boundaries, so the CLI can reuse `src/content` and `src/engine` unchanged.
+
+Scenario packages live in `scenarios/` at the repository root (the server-side Scenario directory).
+
+## Engine contract
+
+```ts
+loadScenario(dir: string):                                           // src/content
+  | { ok: true; scenario: Scenario; warnings: Diagnostic[] }
+  | { ok: false; diagnostics: Diagnostic[] }
+startPlaythrough(scenario, templateId, name, rng):
+  | { ok: true; state; journal: JournalEntry[] }
+  | { ok: false; reason }                                              // unknown Template, invalid name
+applyAction(scenario, state, action, rng):
+  | { ok: true; state; journal: JournalEntry[] }
+  | { ok: false; reason }
+view(scenario, state): GameView
+```
+
+- `loadScenario` runs the four validation phases ([validation.md](validation.md)) and returns either an **immutable, compiled model** with references resolved, together with its warnings, or all the diagnostics of the run that rejected it. It also computes the **content hash** and reads each image's dimensions and hash. Shared by the CLI and the app.
+- `applyAction` is synchronous, deterministic for a given `rng`, and does no I/O. It checks `action.expectedStep === state.step` as a domain rule, then legality against the current position ([playthrough-state.md](playthrough-state.md#actions-and-the-step-guard)). It returns only the **new** Journal entries.
+- `view` is the derived projection the UI renders: the current narration, visible Choices, visible Connections, on-demand Scenes on offer, map nodes and lines, effective Attributes, inventory with available item actions, Combat state and available Combat actions (with reasons for unavailable ones), and the latest result entries.
+- `rng` is injected. Production uses `crypto.randomInt(1, 7)` per die and stores no seed. Tests use a deterministic RNG.
+- The `state` document carries a `stateVersion` and is validated with Zod when read.
+
+## Turn transport
+
+- **Server Actions only**, for every player action. Pages are Server Components that read the state and call `view`.
+- Every action re-checks, in this order: the Session, ownership of the Playthrough, `step`, then legality in the engine.
+- The only Route Handler is the Scenario asset route. There is no REST API.
+
+## Session
+
+- Created **lazily** on the first write action (starting a Playthrough). There is no Proxy. Read-only pages without a cookie simply show no Playthroughs.
+- Cookie value: a random 256-bit id, base64url-encoded. Attributes: `HttpOnly`, `SameSite=Lax`, `Secure` in production, `Path=/`, `Max-Age` 400 days, refreshed on every action (sliding).
+- The database stores only a **hash** of the id (`sessions(id_hash, created_at, last_seen_at)`), never the raw value.
+- Losing the cookie loses access to its Playthroughs. This is accepted because accounts are out of scope. No expiry or cleanup.
+
+## Scenario collection
+
+- `instrumentation.ts` `register()` loads and validates every Scenario directory into an **in-memory registry** at startup.
+- Invalid Scenarios are logged with their diagnostics and left out. The app still starts. Warnings are logged.
+- Content changes need a restart. In `next dev`, the registry reloads a Scenario on request when the modification time of its manifest or of any file it lists has changed (a directory's own mtime does not change when a file inside it is edited).
+
+## Content compatibility
+
+Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
+
+- Each Playthrough pins the Scenario id, the content `version` and the **content hash**.
+- The content hash covers every file the manifest lists, the manifest itself, and the bytes of every declared image, so any content change (including an image) changes it.
+- When the hash differs from the loaded Scenario's, a **mechanical reference check** runs. It passes when every content ID in the stored state still exists with the right type (Location, Scene, (Scene, Choice), Encounter, item, slot, Flag, Character Template, Ending), and the stored state still satisfies the invariants that depend on content:
+  - every equipped item is still Equipment of the slot it occupies;
+  - during an active Combat, the Encounter's Enemy still has more maximum Health than the stored Damage taken.
+
+  A changed trigger or Location membership of the active Scene does not fail the check; the Scene simply continues.
+- If the check passes, play continues and the pin is updated. If it fails, the Playthrough is **incompatible** and read-only.
+- A Scenario removed from the collection, or no longer valid, makes all its Playthroughs read-only in the same way.
+- **Read-only views are best effort.** Stored state holds only IDs, so display data comes from content:
+  - while the Scenario is in the collection, the Character sheet, inventory, map and Ending render from its current content, and anything whose ID no longer exists is left out;
+  - when the Scenario is no longer in the collection, only the Journal is shown, and the Ending is read from its Journal entry.
+
+  The Journal always renders completely, because it stores the text as presented.
+- Incompatibility is derived on read. It is not a stored status. The author's `version` is informational.
+
+## Persistence
+
+- **Kysely** behind two async ports, `PlaythroughStore` and `SessionStore`. Now: `SqliteDialect` with `better-sqlite3`. Later: `PostgresDialect` or `MysqlDialect`. (Drizzle was rejected because its schema is defined per dialect.)
+- Table **`playthroughs`**: scalar columns for queries and guards (`id` UUID v4, `session_id`, `scenario_id`, `scenario_version`, `content_hash`, `status`, `ending_id`, `step`, `created_at`, `updated_at`) and a **`state` JSON document** owned by the engine, holding everything in the [Playthrough state model](playthrough-state.md#stored-and-derived-state).
+- Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `payload` JSON, `created_at`): append-only, paginated when read.
+- Table **`sessions`** (`id_hash`, `created_at`, `last_seen_at`).
+- JSON maps to `TEXT` (SQLite), `jsonb` (PostgreSQL) and `JSON` (MySQL).
+- **Migrations** are Kysely migrations run by a separate `npm run migrate` step. The Docker entrypoint runs `migrate`, then `start`; development uses the same script. They are not run in `register()`, so they stay safe with several instances later.
+
+### Turn atomicity
+
+Each action runs in one transaction:
+
+1. Read the row. If its `session_id` is not the current Session, respond 404.
+2. Run `applyAction`.
+3. `UPDATE playthroughs SET state = ?, step = ?, status = ?, ending_id = ?, updated_at = ? WHERE id = ? AND step = <expected>`. If no row changed, roll back and reject the action as stale.
+4. `INSERT` the new Journal entries.
+
+This is optimistic concurrency with no in-process locks, and behaves the same on SQLite, PostgreSQL and MySQL.
+
+### Rejections
+
+- A stale `step` (for example from another tab), an illegal action, or an action on an `ended` or incompatible Playthrough changes nothing.
+- The Server Action always ends by refreshing the current state (`revalidatePath`, or a redirect to the game page without JavaScript) and shows a transient notice, such as "The game was advanced in another tab; this is its current state" or "That action is no longer available". There is no error page.
+- Another Session's Playthrough, or a nonexistent one, is always a 404, so its existence is never revealed.
+
+## Routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Scenario collection |
+| `/scenarios/[scenarioId]` | Scenario description and Character creation (Template and name); the start action creates the Playthrough and, if needed, the Session |
+| `/playthroughs` | the current Session's Playthroughs, active and ended |
+| `/play/[playthroughId]` | game screen; read-only once `ended` or incompatible |
+| `/play/[playthroughId]/journal` | paginated Journal |
+| `/scenarios/[scenarioId]/assets/[hash]/[...path]` | Scenario assets (Illustrations) |
+
+## Scenario assets
+
+- At startup the loader hashes each image file and reads its intrinsic width and height. The registry holds `{ id, path, format, width, height, hash, alt }` per image.
+- The Route Handler at `/scenarios/[scenarioId]/assets/[hash]/[...path]` serves only paths declared by the loaded Scenario, read from the Scenario directory. Anything else, or a hash that does not match the registry, is a 404.
+- Response headers: `Content-Type` from the declared format, `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=31536000, immutable`. No Session is required.
+- Rendering is a plain `<img>` (see [ui.md](ui.md#scene-illustration)); the `next/image` optimizer is not used.
+
+## Testing strategy
+
+- **Engine**: unit tests of the pure functions with a deterministic RNG. The example Scenario is a fixture.
+- **Loader and validator**: valid and invalid fixture packages; the example Scenario must produce no diagnostics.
+- **Persistence**: port tests against in-memory SQLite, including a race test: two actions with the same `step`, exactly one succeeds.
+- **End to end**: one Playwright smoke test: start a Playthrough, take one Choice, reload.
+
+## Sources
+
+- [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575)
+- [Next.js architecture for a server-authoritative game engine](https://github.com/lbacik/simple-rpg-engine/issues/5) (research)
+- [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (asset route, content hash coverage)
+- [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109) (`Diagnostic[]` from `loadScenario`)
+- [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md)
