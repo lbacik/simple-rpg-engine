@@ -64,6 +64,10 @@ _Avoid_: User, account
 One run of a Scenario by a player, with its own Character and state.
 _Avoid_: Game, save, run
 
+**Journal**:
+The append-only, read-only record of what a Playthrough has presented: narration, Choices taken, rolls, and Outcomes; it records play but never drives it.
+_Avoid_: Log, history, transcript
+
 **Character**:
 The player's hero, created at the start of a Playthrough and existing only within it.
 _Avoid_: Hero, avatar, player
