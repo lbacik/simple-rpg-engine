@@ -1,0 +1,664 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Lives on the `prototype/combat-presentation` branch only.
+  Question: does a simple tactical grid board fit the prototype, or does Combat stay
+  abstract (exchange of rolls, maybe Near/Far zones)?
+  Three variants of the same Combat, switchable via `?variant=A|B|C` or the bottom bar / arrow keys.
+  The rules live in the pure `CombatCore` module below (no DOM); the page is a thin shell.
+  VERDICT: variant B (Near/Far Range) chosen; grid and 3+ zones ruled out of scope. The
+  canonical rules are in the resolution comment on lbacik/simple-rpg-engine#9.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Presentation Prototype</title>
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1f; --muted: #6b6b70; --line: #e2e0da;
+  --accent: #b4441f; --accent-ink: #ffffff; --good: #2f7d4f; --bad: #b4291f; --soft: #f3eee8;
+  --cell: #efe9e1; --cell2: #e6dfd4; --reach: #b4441f; --move: #cfe5d6; --changed: #fff1b8;
+  --bar: #1d1d1f; --bar-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151517; --panel: #1f1f22; --ink: #ececee; --muted: #9a9aa2; --line: #34343b;
+    --accent: #e0794f; --accent-ink: #151517; --good: #6cc08f; --bad: #ef7a6e; --soft: #29262a;
+    --cell: #2a2a2e; --cell2: #232327; --reach: #e0794f; --move: #23402e; --changed: #4a3f12;
+    --bar: #ececee; --bar-ink: #151517;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 110px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.lede { color: var(--muted); margin: 0 0 16px; max-width: 900px; }
+.setup { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+.setup label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 3px; }
+select, input, button { font: inherit; color: inherit; }
+select, input { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+input[type=number] { width: 90px; }
+button { cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 7px 12px; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+@media (max-width: 920px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+.side { display: flex; flex-direction: column; gap: 16px; }
+.state dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 10px; font-size: 13px; }
+.state dt { color: var(--muted); }
+.state dd { margin: 0; font-variant-numeric: tabular-nums; }
+.state dd.changed { background: var(--changed); border-radius: 3px; padding: 0 4px; margin-left: -4px; }
+.state h3 { font-size: 12px; margin: 10px 0 4px; }
+.cost ul { margin: 4px 0 10px; padding-left: 18px; font-size: 13px; }
+.cost h3 { font-size: 13px; margin: 10px 0 2px; }
+.cost .verdict { font-size: 13px; background: var(--soft); border-radius: 6px; padding: 8px 10px; }
+.hp { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.hp .track { width: 110px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.hp .fill { height: 100%; background: var(--good); }
+.hp .fill.low { background: var(--bad); }
+.log { font-size: 13px; }
+.log .entry { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.log .entry.enemy { color: var(--muted); }
+.log .entry.system { font-style: italic; }
+.log .entry.rejected { color: var(--bad); }
+.log .entry.latest { font-weight: 600; color: var(--ink); }
+.dice { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+.banner { border: 2px solid var(--accent); border-radius: 10px; padding: 12px; margin-top: 12px; }
+.banner b { font-size: 16px; }
+.banner .row { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Variant A — gamebook */
+.va { max-width: 640px; }
+.va-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.va-story { font-family: Georgia, "Times New Roman", serif; font-size: 16px; line-height: 1.6; max-height: 340px; overflow-y: auto; padding: 12px 0; }
+.va-story p { margin: 0 0 10px; color: var(--muted); }
+.va-story p.latest { color: var(--ink); }
+.va-choices { display: flex; flex-direction: column; gap: 6px; }
+.va-choices button { text-align: left; padding: 10px 14px; font-family: Georgia, serif; font-size: 15px; }
+.va-choices button::before { content: "› "; color: var(--accent); }
+.va-choices .why { font-family: -apple-system, sans-serif; font-size: 12px; color: var(--muted); }
+
+/* Variant B — range track */
+.vb-track { display: flex; align-items: center; gap: 0; padding: 18px 6px; background: var(--soft); border-radius: 10px; }
+.vb-side { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 120px; }
+.tok { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+.tok.char { background: var(--accent); color: var(--accent-ink); }
+.tok.enemy { background: var(--ink); color: var(--bg); }
+.vb-gap { flex: 1; text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.vb-gap .line { height: 0; border-top: 2px dashed var(--muted); margin: 6px 0; }
+.vb-track.near .vb-gap { flex: 0 0 70px; }
+.vb-track.near .vb-gap .line { border-top-style: solid; border-color: var(--accent); }
+.vb-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+@media (max-width: 640px) { .vb-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.vb-actions .group { display: flex; flex-direction: column; gap: 6px; }
+.vb-actions .group h4 { margin: 0; font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .06em; }
+.vb-actions button { font-size: 13px; }
+.vb-actions .why { font-size: 11px; color: var(--muted); }
+.vb-log { margin-top: 14px; max-height: 220px; overflow-y: auto; }
+
+/* Variant C — grid */
+.vc { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 700px) { .vc { grid-template-columns: minmax(0, 1fr); } }
+.board { display: grid; grid-template-columns: 18px repeat(8, 1fr); gap: 2px; width: 100%; max-width: 380px; }
+.board .lab { font-size: 10px; color: var(--muted); display: grid; place-items: center; }
+.cell { aspect-ratio: 1; background: var(--cell); border-radius: 4px; display: grid; place-items: center; font-weight: 700; position: relative; border: 2px solid transparent; padding: 0; }
+.cell.alt { background: var(--cell2); }
+.cell.reach { border-color: var(--reach); }
+.cell.move { background: var(--move); cursor: pointer; }
+.cell.move:hover { outline: 2px solid var(--good); }
+.cell .tok { width: 80%; height: 80%; font-size: 14px; }
+.vc-panel { display: flex; flex-direction: column; gap: 6px; }
+.vc-panel .hint { font-size: 12px; color: var(--muted); }
+.vc-panel button { text-align: left; font-size: 13px; }
+.vc-panel .why { font-size: 11px; color: var(--muted); }
+.vc-log { grid-column: 1 / -1; max-height: 200px; overflow-y: auto; }
+.legend { font-size: 11px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.legend .l-move::before { background: var(--move); }
+.legend .l-reach::before { border: 2px solid var(--reach); width: 6px; height: 6px; }
+
+/* Floating variant switcher — not part of any design being evaluated */
+.switcher { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; background: var(--bar); color: var(--bar-ink); border-radius: 999px; padding: 6px 8px; box-shadow: 0 6px 24px rgba(0,0,0,.25); font-size: 13px; max-width: calc(100vw - 32px); }
+.switcher button { background: transparent; color: inherit; border: none; padding: 4px 10px; font-size: 16px; }
+.switcher .lbl { padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Combat presentation: abstract exchange vs grid board</h1>
+  <p class="lede">Prototype for the question <em>“Does a simple tactical grid board fit the prototype, or does Combat stay abstract?”</em>
+    The same agreed Combat rules (2d6 + Might ≥ 7 + Agility, defend, Consumables, escape) are played in three presentations.
+    Play the same fight (same Template, Enemy and dice seed) in each variant with <kbd>←</kbd>/<kbd>→</kbd> and compare:
+    how many clicks a fight takes, whether any choice feels meaningful, and how much extra spec each variant drags in.</p>
+
+  <div class="setup">
+    <label>Character Template<select id="tpl"></select></label>
+    <label>Enemy<select id="enemy"></select></label>
+    <label>Encounter startRange (B only)<select id="startRange"><option value="far">far (default)</option><option value="near">near (ambush)</option></select></label>
+    <label>Dice seed<input id="seed" type="number" min="1" step="1"></label>
+    <button id="restart">Restart fight</button>
+    <button id="reseed">New seed</button>
+  </div>
+
+  <div class="layout">
+    <div class="card" id="variant"></div>
+    <div class="side">
+      <div class="card state" id="state"></div>
+      <div class="card cost" id="cost"></div>
+    </div>
+  </div>
+</div>
+
+<div class="switcher" role="navigation" aria-label="Prototype variant switcher">
+  <button id="prev" aria-label="Previous variant">←</button>
+  <span class="lbl" id="vlabel"></span>
+  <button id="next" aria-label="Next variant">→</button>
+</div>
+
+<script>
+// ============================================================================
+// CombatCore — pure module. No DOM. Implements the agreed Combat rules from
+// "Core mechanics: attributes, die, tests, combat resolution, character creation"
+// plus the extensions each presentation needs (marked EXTENSION).
+// act(state, action) -> new state. Dice come from a seeded RNG kept in state.
+// ============================================================================
+const CombatCore = (() => {
+  const MAX_HEALTH = 12;
+  const BASE_THRESHOLD = 7;
+  const DEFEND_BONUS = 2;
+  const COUNTER_DAMAGE = 1;
+  const BASIC_DAMAGE = 2;
+  const EQUIPMENT_CAP = 2;
+  // EXTENSIONS (zones / grid only)
+  const FAR_ESCAPE_BONUS = 2;
+  const GRID = 8;
+  const MOVE = 3;
+  const RANGED_REACH = 6;
+  const ATTRS = ['might', 'agility', 'wits', 'presence'];
+
+  function d6(s) {
+    // mulberry32 step; state.rng holds the seed
+    s.rng = (s.rng + 0x6D2B79F5) | 0;
+    let t = s.rng;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return 1 + Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * 6);
+  }
+
+  function effectiveAttrs(template) {
+    const bonus = { might: 0, agility: 0, wits: 0, presence: 0 };
+    for (const slot of ['weapon', 'outfit', 'talisman']) {
+      const item = template.equipment[slot];
+      if (item && item.bonus) bonus[item.bonus] += 1;
+    }
+    const out = {};
+    for (const a of ATTRS) out[a] = template.attrs[a] + Math.min(EQUIPMENT_CAP, bonus[a]);
+    return out;
+  }
+
+  const cheb = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+  const same = (a, b) => a.x === b.x && a.y === b.y;
+  const onEdge = (p) => p.x === 0 || p.y === 0 || p.x === GRID - 1 || p.y === GRID - 1;
+  const coord = (p) => 'abcdefgh'[p.x] + (GRID - p.y);
+
+  function createCombat({ template, enemy, mode, seed, startRange = 'far' }) {
+    const weapon = template.equipment.weapon || { name: 'bare hands', damage: BASIC_DAMAGE, reach: 'melee' };
+    return {
+      mode, seed, rng: seed | 0, round: 1, clicks: 0, over: null,
+      char: {
+        name: template.name, short: template.short, base: { ...template.attrs }, attrs: effectiveAttrs(template),
+        health: MAX_HEALTH, maxHealth: MAX_HEALTH,
+        weapon: { name: weapon.name, damage: weapon.damage, reach: weapon.reach || 'melee' },
+        consumables: template.consumables.map((c, i) => ({ id: 'c' + i, ...c })),
+        defending: false, moved: false, pos: { x: 1, y: 6 },
+      },
+      enemy: {
+        name: enemy.name, short: enemy.short, attrs: { ...enemy.attrs },
+        health: enemy.health, maxHealth: enemy.health, damage: enemy.damage, reach: enemy.reach,
+        pos: { x: 6, y: 1 },
+      },
+      range: mode === 'zones' ? startRange : null,
+      log: [{ side: 'system', text: `${enemy.name} blocks the way. Combat begins.` }],
+    };
+  }
+
+  function charInReach(s) {
+    const { char: c, enemy: e } = s;
+    if (s.mode === 'abstract') return true;
+    if (s.mode === 'zones') return c.weapon.reach === 'ranged' || s.range === 'near';
+    return cheb(c.pos, e.pos) <= (c.weapon.reach === 'ranged' ? RANGED_REACH : 1);
+  }
+  function enemyInReach(s) {
+    const { char: c, enemy: e } = s;
+    if (s.mode === 'abstract') return true;
+    if (s.mode === 'zones') return e.reach === 'ranged' || s.range === 'near';
+    return cheb(c.pos, e.pos) <= (e.reach === 'ranged' ? RANGED_REACH : 1);
+  }
+
+  function reachableCells(s) {
+    if (s.mode !== 'grid' || s.over || s.char.moved) return [];
+    const out = [];
+    for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) {
+      const p = { x, y };
+      const d = cheb(p, s.char.pos);
+      if (d >= 1 && d <= MOVE && !same(p, s.enemy.pos)) out.push(p);
+    }
+    return out;
+  }
+
+  function legalActions(s) {
+    if (s.over) return [];
+    const c = s.char, list = [];
+    const reach = charInReach(s);
+    list.push({ type: 'attack', label: `Attack with ${c.weapon.name} (${c.weapon.damage} Damage)`, enabled: reach,
+      reason: reach ? '' : (s.mode === 'zones' ? 'Melee weapon needs Near range' : 'Enemy out of reach') });
+    list.push({ type: 'defend', label: 'Defend (+2 against the next attack, counter on a miss)', enabled: true });
+    for (const it of c.consumables) {
+      const full = c.health >= c.maxHealth;
+      list.push({ type: 'consume', itemId: it.id, label: `Use ${it.name} (+${it.heal} Health, ${it.count} left)`,
+        enabled: it.count > 0 && !full, reason: it.count === 0 ? 'None left' : (full ? 'Already at full Health' : '') });
+    }
+    if (s.mode === 'zones') {
+      list.push({ type: 'advance', label: 'Advance to Near', enabled: s.range === 'far', reason: s.range === 'far' ? '' : 'Already Near' });
+      list.push({ type: 'fallBack', label: 'Fall back to Far (Agility roll)', enabled: s.range === 'near', reason: s.range === 'near' ? '' : 'Already Far' });
+    }
+    if (s.mode === 'grid') list.push({ type: 'endTurn', label: 'End turn (no action)', enabled: true });
+    const edge = s.mode !== 'grid' || onEdge(c.pos);
+    const bonus = s.mode === 'zones' && s.range === 'far' ? ` (+${FAR_ESCAPE_BONUS} from Far)` : '';
+    list.push({ type: 'escape', label: `Attempt escape${bonus}`, enabled: edge, reason: edge ? '' : 'Stand on the board edge to escape' });
+    return list;
+  }
+
+  function validate(s, a) {
+    if (s.over) return 'The Combat is already over.';
+    if (a.type === 'move') {
+      if (s.mode !== 'grid') return 'Movement exists only on the grid.';
+      if (s.char.moved) return 'Already moved this turn.';
+      if (!reachableCells(s).some((p) => same(p, a))) return 'That square is out of movement range.';
+      return null;
+    }
+    const match = legalActions(s).find((x) => x.type === a.type && (x.itemId || null) === (a.itemId || null));
+    if (!match) return 'Not an available action.';
+    if (!match.enabled) return `Rejected: ${match.reason}.`;
+    return null;
+  }
+
+  function hitRoll(s, attacker, defender, extra) {
+    const d1 = d6(s), d2 = d6(s);
+    const total = d1 + d2 + attacker.attrs.might;
+    const threshold = BASE_THRESHOLD + defender.attrs.agility + extra;
+    return { d1, d2, total, threshold, hit: total >= threshold,
+      dice: `${d1}+${d2} + Might ${attacker.attrs.might} = ${total} vs 7 + Agility ${defender.attrs.agility}${extra ? ' + ' + extra : ''} = ${threshold}` };
+  }
+
+  function stepToward(from, to) {
+    let best = null, bestD = cheb(from, to), bestE = Infinity;
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const p = { x: from.x + dx, y: from.y + dy };
+      if (p.x < 0 || p.y < 0 || p.x >= GRID || p.y >= GRID || same(p, to)) continue;
+      const d = cheb(p, to), eu = (p.x - to.x) ** 2 + (p.y - to.y) ** 2;
+      if (d < bestD || (d === bestD && best && eu < bestE)) { best = p; bestD = d; bestE = eu; }
+    }
+    return best;
+  }
+
+  function enemyTurn(s) {
+    const { char: c, enemy: e } = s;
+    if (s.mode === 'zones' && !enemyInReach(s)) {
+      s.range = 'near';
+      s.log.push({ side: 'enemy', text: `${e.name} closes in to Near range instead of attacking.` });
+      c.defending = false; // EXTENSION: Defend expires at the end of the Enemy's turn even without an attack
+      return;
+    }
+    if (s.mode === 'grid' && !enemyInReach(s)) {
+      let steps = 0;
+      while (steps < MOVE && !enemyInReach(s)) {
+        const p = stepToward(e.pos, c.pos);
+        if (!p) break;
+        e.pos = p; steps++;
+      }
+      if (steps) s.log.push({ side: 'enemy', text: `${e.name} moves ${steps} square${steps > 1 ? 's' : ''} to ${coord(e.pos)}.` });
+      if (!enemyInReach(s)) {
+        c.defending = false;
+        s.log.push({ side: 'enemy', text: `${e.name} cannot reach you this turn.` });
+        return;
+      }
+    }
+    const r = hitRoll(s, e, c, c.defending ? DEFEND_BONUS : 0);
+    if (r.hit) {
+      c.health = Math.max(0, c.health - e.damage);
+      s.log.push({ side: 'enemy', text: `${e.name} attacks and hits: ${e.damage} Damage (you ${c.health}/${c.maxHealth}).`, dice: r.dice });
+    } else if (c.defending) {
+      e.health = Math.max(0, e.health - COUNTER_DAMAGE);
+      s.log.push({ side: 'enemy', text: `${e.name} attacks and misses; your counterattack deals ${COUNTER_DAMAGE} Damage (${e.name} ${e.health}/${e.maxHealth}).`, dice: r.dice });
+    } else {
+      s.log.push({ side: 'enemy', text: `${e.name} attacks and misses.`, dice: r.dice });
+    }
+    c.defending = false;
+    if (e.health <= 0) { s.over = 'victory'; s.log.push({ side: 'system', text: `${e.name} falls. Victory.` }); }
+    else if (c.health <= 0) { s.over = 'death'; s.log.push({ side: 'system', text: `${c.name} dies. The Playthrough ends in the death Ending.` }); }
+  }
+
+  function act(prev, a) {
+    const s = structuredClone(prev);
+    const err = validate(s, a);
+    if (err) { s.log.push({ side: 'rejected', text: err + ' No turn consumed.' }); return s; }
+    const { char: c, enemy: e } = s;
+    s.clicks++;
+
+    if (a.type === 'move') {
+      c.pos = { x: a.x, y: a.y }; c.moved = true;
+      s.log.push({ side: 'char', text: `You move to ${coord(c.pos)}.` });
+      return s;
+    }
+    if (a.type === 'attack') {
+      const r = hitRoll(s, c, e, 0);
+      if (r.hit) {
+        e.health = Math.max(0, e.health - c.weapon.damage);
+        s.log.push({ side: 'char', text: `You attack with ${c.weapon.name} and hit: ${c.weapon.damage} Damage (${e.name} ${e.health}/${e.maxHealth}).`, dice: r.dice });
+        if (e.health <= 0) { s.over = 'victory'; s.log.push({ side: 'system', text: `${e.name} falls. Victory.` }); return s; }
+      } else {
+        s.log.push({ side: 'char', text: `You attack with ${c.weapon.name} and miss.`, dice: r.dice });
+      }
+    } else if (a.type === 'defend') {
+      c.defending = true;
+      s.log.push({ side: 'char', text: 'You raise your guard.' });
+    } else if (a.type === 'consume') {
+      const it = c.consumables.find((x) => x.id === a.itemId);
+      const before = c.health;
+      c.health = Math.min(c.maxHealth, c.health + it.heal);
+      it.count--;
+      s.log.push({ side: 'char', text: `You use ${it.name}: Health ${before} → ${c.health}.` });
+    } else if (a.type === 'escape' || a.type === 'fallBack') {
+      const bonus = s.mode === 'zones' && s.range === 'far' && a.type === 'escape' ? FAR_ESCAPE_BONUS : 0;
+      const d1 = d6(s), d2 = d6(s);
+      const total = d1 + d2 + c.attrs.agility + bonus;
+      const threshold = BASE_THRESHOLD + e.attrs.agility;
+      const dice = `${d1}+${d2} + Agility ${c.attrs.agility}${bonus ? ' + ' + bonus : ''} = ${total} vs 7 + Agility ${e.attrs.agility} = ${threshold}`;
+      if (total >= threshold) {
+        if (a.type === 'escape') {
+          s.over = 'escaped';
+          s.log.push({ side: 'char', text: 'You break away and escape. The Encounter’s escape Outcome applies.', dice });
+          return s;
+        }
+        s.range = 'far';
+        s.log.push({ side: 'char', text: 'You fall back to Far range.', dice });
+      } else {
+        s.log.push({ side: 'char', text: a.type === 'escape' ? 'You try to escape but fail.' : 'You try to fall back but are pinned.', dice });
+      }
+    } else if (a.type === 'advance') {
+      s.range = 'near';
+      s.log.push({ side: 'char', text: 'You advance to Near range.' });
+    } else if (a.type === 'endTurn') {
+      s.log.push({ side: 'char', text: 'You end your turn.' });
+    }
+
+    enemyTurn(s);
+    if (!s.over) { s.round++; c.moved = false; }
+    return s;
+  }
+
+  return { createCombat, act, legalActions, reachableCells, charInReach, enemyInReach, onEdge, coord, GRID, MOVE, RANGED_REACH };
+})();
+
+// ============================================================================
+// Sample content (what a Scenario would supply in YAML)
+// ============================================================================
+const TEMPLATES = {
+  warrior: { name: 'Brann the sellsword', short: 'B', attrs: { might: 3, agility: 1, wits: 1, presence: 1 },
+    equipment: { weapon: { name: 'Longsword', damage: 3, reach: 'melee' }, outfit: { name: 'Leather jerkin', bonus: 'agility' }, talisman: null },
+    consumables: [{ name: 'Healing draught', heal: 4, count: 2 }] },
+  scout: { name: 'Isla the scout', short: 'I', attrs: { might: 1, agility: 3, wits: 2, presence: 0 },
+    equipment: { weapon: { name: 'Hunting bow', damage: 2, reach: 'ranged' }, outfit: null, talisman: { name: 'Owl charm', bonus: 'agility' } },
+    consumables: [{ name: 'Healing draught', heal: 4, count: 1 }] },
+};
+const ENEMIES = {
+  wolf: { name: 'Grey wolf', short: 'W', attrs: { might: 2, agility: 2, wits: 1, presence: 0 }, health: 8, damage: 2, reach: 'melee' },
+  archer: { name: 'Bandit archer', short: 'A', attrs: { might: 2, agility: 2, wits: 1, presence: 1 }, health: 8, damage: 3, reach: 'ranged' },
+  troll: { name: 'Cave troll', short: 'T', attrs: { might: 3, agility: 0, wits: 0, presence: 1 }, health: 16, damage: 4, reach: 'melee' },
+};
+
+// ============================================================================
+// Page shell
+// ============================================================================
+const COSTS = {
+  abstract: `
+    <h3>New rules</h3><ul><li>None. Exactly the agreed Combat rules.</li></ul>
+    <h3>New content fields (YAML)</h3><ul><li>None. Encounter = Enemy + narration + victory/escape Outcomes.</li></ul>
+    <h3>New Playthrough state</h3><ul><li>Enemy Health, Character Health, defending flag, round.</li></ul>
+    <h3>UI</h3><ul><li>Reuses the Scene/Choice list. Phone- and screen-reader-friendly; no pointer precision.</li></ul>
+    <h3>Watch for</h3><ul><li>Fights become “press Attack until done”; the real decisions are when to Defend, heal or escape.</li><li>Bow vs sword differ only in Damage.</li></ul>`,
+  zones: `
+    <h3>New rules</h3><ul>
+      <li>Range: Near / Far; Encounters start Far.</li>
+      <li>Melee attacks need Near; ranged reach anywhere.</li>
+      <li>Advance (free) and Fall back (Agility roll, like escape).</li>
+      <li>A melee Enemy at Far spends its turn closing in.</li>
+      <li>Escape gets +2 from Far.</li>
+      <li>Defend’s “next attack” becomes ambiguous when the Enemy moves instead of attacking (here: expires at end of the Enemy turn).</li></ul>
+    <h3>New content fields (YAML)</h3><ul><li>Weapon <code>reach: melee | ranged</code>.</li><li>Enemy <code>reach</code>.</li><li>Encounter <code>startRange: near | far</code> (default far).</li><li>Ranged weapons limited to 2–3 Damage.</li></ul>
+    <h3>New Playthrough state</h3><ul><li>+ current range.</li></ul>
+    <h3>UI</h3><ul><li>Still a button list plus a two-token strip; phone-friendly.</li></ul>
+    <h3>Watch for</h3><ul><li>Kiting loops with a bow vs a melee Enemy.</li><li>Pressure to make ranged attacks roll Agility (rule change).</li></ul>`,
+  grid: `
+    <h3>New rules</h3><ul>
+      <li>Positions on an 8×8 board; move up to ${CombatCore.MOVE} squares, then act.</li>
+      <li>Melee reach 1 (diagonals count), ranged reach ${CombatCore.RANGED_REACH}.</li>
+      <li>New “End turn” action; escape only from a board edge.</li>
+      <li>Engine-owned Enemy movement AI with deterministic tie-breaks (the server must reproduce it).</li>
+      <li>Same Defend ambiguity as zones.</li>
+      <li>No terrain, so no pathfinding — adding any obstacle later means pathfinding + line of sight.</li></ul>
+    <h3>New content fields (YAML)</h3><ul><li>Weapon and Enemy <code>reach</code>.</li><li>Start positions per Encounter (or engine default).</li><li>Probably movement allowance per Enemy, else every creature moves alike.</li></ul>
+    <h3>New Playthrough state</h3><ul><li>+ both positions, moved-this-turn.</li></ul>
+    <h3>Validation</h3><ul><li>Positions on the board, not overlapping; reach values.</li></ul>
+    <h3>UI</h3><ul><li>A board component, clickable squares, keyboard/screen-reader access is real work; ~44px squares on phones.</li></ul>
+    <h3>Watch for</h3><ul><li>With an empty board most turns are “walk to adjacency”; extra clicks without extra decisions.</li></ul>`,
+};
+
+const VARIANTS = [
+  { key: 'A', name: 'Abstract exchange', mode: 'abstract', render: renderA },
+  { key: 'B', name: 'Near/Far zones', mode: 'zones', render: renderB },
+  { key: 'C', name: '8×8 grid board', mode: 'grid', render: renderC },
+];
+
+const ui = { variant: 0, template: 'warrior', enemy: 'wolf', seed: 7, startRange: 'far' };
+let state = null, prevSummary = null;
+
+const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const actAttr = (a) => `data-act='${esc(JSON.stringify(a))}'`;
+
+function hpBar(x) {
+  const pct = Math.round((x.health / x.maxHealth) * 100);
+  return `<span class="hp"><span class="track"><span class="fill ${pct <= 34 ? 'low' : ''}" style="width:${pct}%"></span></span>${x.health}/${x.maxHealth}</span>`;
+}
+
+function outcomeBanner(s) {
+  if (!s.over) return '';
+  const text = { victory: 'Victory — the Encounter’s victory Outcome applies.', escaped: 'Escaped — the Encounter’s escape Outcome applies.', death: 'Death — the Playthrough ends in the death Ending.' }[s.over];
+  return `<div class="banner"><b>${text}</b><div>${s.round} round(s), ${s.clicks} click(s).</div>
+    <div class="row"><button class="primary" data-ui="restart">Fight again (same seed)</button><button data-ui="reseed">New seed</button></div></div>`;
+}
+
+function actionButton(a, cls = '') {
+  const payload = { type: a.type }; if (a.itemId) payload.itemId = a.itemId;
+  return `<button class="${cls}" ${actAttr(payload)} ${a.enabled ? '' : 'disabled'}>${esc(a.label)}${!a.enabled && a.reason ? `<div class="why">${esc(a.reason)}</div>` : ''}</button>`;
+}
+
+function logHtml(s, n) {
+  const items = s.log.slice(-n);
+  return items.map((l, i) => `<div class="entry ${l.side} ${i === items.length - 1 ? 'latest' : ''}">${esc(l.text)}${l.dice ? ` <span class="dice">[${esc(l.dice)}]</span>` : ''}</div>`).join('');
+}
+
+// Variant A — gamebook: Combat as a Scene with Choices.
+function renderA(s) {
+  const acts = CombatCore.legalActions(s);
+  const story = s.log.slice(-8).map((l, i, arr) => `<p class="${i === arr.length - 1 ? 'latest' : ''}">${esc(l.text)}${l.dice ? ` <span class="dice">${esc(l.dice)}</span>` : ''}</p>`).join('');
+  return `<div class="va">
+    <div class="va-head"><div><b>${esc(s.char.name)}</b><br>${hpBar(s.char)}</div><div style="text-align:right"><b>${esc(s.enemy.name)}</b><br>${hpBar(s.enemy)}</div></div>
+    <div class="va-story" id="scroll">${story}</div>
+    <div class="va-choices">${acts.map((a) => actionButton(a)).join('')}</div>
+    ${outcomeBanner(s)}
+  </div>`;
+}
+
+// Variant B — a range strip with two tokens and grouped actions.
+function renderB(s) {
+  const acts = CombatCore.legalActions(s);
+  const pick = (...types) => acts.filter((a) => types.includes(a.type)).map((a) => actionButton(a)).join('') || '<span class="why">—</span>';
+  return `<div class="vb">
+    <div class="vb-track ${s.range}">
+      <div class="vb-side"><div class="tok char">${esc(s.char.short)}</div><b style="font-size:13px">${esc(s.char.name)}</b>${hpBar(s.char)}<span class="dice">${esc(s.char.weapon.name)} · ${s.char.weapon.reach}</span></div>
+      <div class="vb-gap">${s.range === 'far' ? 'Far' : 'Near'}<div class="line"></div>${s.char.defending ? 'guard up' : '&nbsp;'}</div>
+      <div class="vb-side"><div class="tok enemy">${esc(s.enemy.short)}</div><b style="font-size:13px">${esc(s.enemy.name)}</b>${hpBar(s.enemy)}<span class="dice">${s.enemy.damage} Damage · ${s.enemy.reach}</span></div>
+    </div>
+    ${s.over ? outcomeBanner(s) : `<div class="vb-actions">
+      <div class="group"><h4>Position</h4>${pick('advance', 'fallBack')}</div>
+      <div class="group"><h4>Fight</h4>${pick('attack', 'defend')}</div>
+      <div class="group"><h4>Items</h4>${pick('consume')}</div>
+      <div class="group"><h4>Leave</h4>${pick('escape')}</div>
+    </div>`}
+    <div class="log vb-log" id="scroll">${logHtml(s, 12)}</div>
+  </div>`;
+}
+
+// Variant C — 8×8 board: move by clicking a green square, then pick an action.
+function renderC(s) {
+  const { GRID, coord } = CombatCore;
+  const reachable = CombatCore.reachableCells(s);
+  const charReach = s.char.weapon.reach === 'ranged' ? CombatCore.RANGED_REACH : 1;
+  let cells = '';
+  for (let y = 0; y < GRID; y++) {
+    cells += `<div class="lab">${GRID - y}</div>`;
+    for (let x = 0; x < GRID; x++) {
+      const p = { x, y };
+      const isChar = s.char.pos.x === x && s.char.pos.y === y;
+      const isEnemy = s.enemy.pos.x === x && s.enemy.pos.y === y;
+      const canMove = reachable.some((r) => r.x === x && r.y === y);
+      const inReach = !isChar && Math.max(Math.abs(x - s.char.pos.x), Math.abs(y - s.char.pos.y)) <= charReach;
+      const cls = ['cell', (x + y) % 2 ? 'alt' : '', canMove ? 'move' : '', inReach && !s.over ? 'reach' : ''].join(' ');
+      const token = isChar ? `<div class="tok char">${esc(s.char.short)}</div>` : isEnemy ? `<div class="tok enemy">${esc(s.enemy.short)}</div>` : '';
+      cells += canMove
+        ? `<button class="${cls}" ${actAttr({ type: 'move', x, y })} title="Move to ${coord(p)}">${token}</button>`
+        : `<div class="${cls}" title="${coord(p)}">${token}</div>`;
+    }
+  }
+  cells += '<div></div>' + 'abcdefgh'.split('').map((l) => `<div class="lab">${l}</div>`).join('');
+  const acts = CombatCore.legalActions(s);
+  return `<div class="vc">
+    <div>
+      <div class="board">${cells}</div>
+      <div class="legend"><span class="l-move">can move here</span><span class="l-reach">within your weapon’s reach</span></div>
+    </div>
+    <div class="vc-panel">
+      <div><b>${esc(s.char.name)}</b> ${hpBar(s.char)}</div>
+      <div><b>${esc(s.enemy.name)}</b> ${hpBar(s.enemy)}</div>
+      ${s.over ? outcomeBanner(s) : `
+        <div class="hint">${s.char.moved ? 'Moved. Now choose an action:' : `Optionally click a green square to move (up to ${CombatCore.MOVE}), then choose an action:`}</div>
+        ${acts.map((a) => actionButton(a)).join('')}`}
+    </div>
+    <div class="log vc-log" id="scroll">${logHtml(s, 12)}</div>
+  </div>`;
+}
+
+function summary(s) {
+  const c = s.char, e = s.enemy, rows = [];
+  const add = (group, label, value) => rows.push({ group, label, value: String(value) });
+  add('Combat', 'Round', s.round);
+  add('Combat', 'Clicks so far', s.clicks);
+  add('Combat', 'Outcome', s.over || 'in progress');
+  if (s.mode === 'zones') add('Combat', 'Range', s.range);
+  add('Character', 'Health', `${c.health}/${c.maxHealth}`);
+  add('Character', 'Might / Agility', `${c.attrs.might} / ${c.attrs.agility} (base ${c.base.might} / ${c.base.agility})`);
+  add('Character', 'Weapon', `${c.weapon.name}, ${c.weapon.damage} Damage, ${c.weapon.reach}`);
+  add('Character', 'Defending', c.defending ? 'yes' : 'no');
+  add('Character', 'Consumables', c.consumables.map((x) => `${x.name} ×${x.count}`).join(', ') || '—');
+  if (s.mode === 'grid') { add('Character', 'Square', CombatCore.coord(c.pos)); add('Character', 'Moved this turn', c.moved ? 'yes' : 'no'); }
+  add('Enemy', 'Health', `${e.health}/${e.maxHealth}`);
+  add('Enemy', 'Might / Agility', `${e.attrs.might} / ${e.attrs.agility}`);
+  add('Enemy', 'Attack', `${e.damage} Damage, ${e.reach}`);
+  if (s.mode === 'grid') add('Enemy', 'Square', CombatCore.coord(e.pos));
+  return rows;
+}
+
+function renderState() {
+  const rows = summary(state);
+  const prev = prevSummary ? Object.fromEntries(prevSummary.map((r) => [r.group + r.label, r.value])) : {};
+  let html = '<h2>Current state</h2>', group = null;
+  for (const r of rows) {
+    if (r.group !== group) { html += (group ? '</dl>' : '') + `<h3>${r.group}</h3><dl>`; group = r.group; }
+    const changed = prevSummary && prev[r.group + r.label] !== r.value;
+    html += `<dt>${esc(r.label)}</dt><dd class="${changed ? 'changed' : ''}">${esc(r.value)}</dd>`;
+  }
+  document.getElementById('state').innerHTML = html + '</dl>';
+}
+
+function render() {
+  const v = VARIANTS[ui.variant];
+  document.getElementById('variant').innerHTML = v.render(state);
+  const sc = document.getElementById('scroll'); if (sc) sc.scrollTop = sc.scrollHeight;
+  renderState();
+  document.getElementById('cost').innerHTML = `<h2>What variant ${v.key} costs the spec</h2>${COSTS[v.mode]}`;
+  document.getElementById('vlabel').textContent = `${v.key} (${v.name})`;
+}
+
+function restart() {
+  state = CombatCore.createCombat({ template: TEMPLATES[ui.template], enemy: ENEMIES[ui.enemy], mode: VARIANTS[ui.variant].mode, seed: ui.seed, startRange: ui.startRange });
+  prevSummary = null;
+  render();
+}
+
+function dispatch(action) {
+  prevSummary = summary(state);
+  state = CombatCore.act(state, action);
+  render();
+}
+
+function setVariant(i) {
+  ui.variant = (i + VARIANTS.length) % VARIANTS.length;
+  try { history.replaceState(null, '', '?variant=' + VARIANTS[ui.variant].key); } catch (_) { /* file:// may refuse */ }
+  restart();
+}
+
+// wiring
+const tplSel = document.getElementById('tpl'), enSel = document.getElementById('enemy'), seedIn = document.getElementById('seed');
+tplSel.innerHTML = Object.entries(TEMPLATES).map(([k, t]) => {
+  const a = t.attrs;
+  return `<option value="${k}">${esc(t.name)} — M${a.might} A${a.agility} W${a.wits} P${a.presence}, ${esc(t.equipment.weapon.name)}</option>`;
+}).join('');
+enSel.innerHTML = Object.entries(ENEMIES).map(([k, e]) => `<option value="${k}">${esc(e.name)} — M${e.attrs.might} A${e.attrs.agility}, ${e.health} Health, ${e.damage} Damage, ${e.reach}</option>`).join('');
+seedIn.value = ui.seed;
+tplSel.onchange = () => { ui.template = tplSel.value; restart(); };
+enSel.onchange = () => { ui.enemy = enSel.value; restart(); };
+const rangeSel = document.getElementById('startRange');
+rangeSel.onchange = () => { ui.startRange = rangeSel.value; restart(); };
+seedIn.onchange = () => { ui.seed = parseInt(seedIn.value, 10) || 1; restart(); };
+const reseed = () => { ui.seed = 1 + Math.floor(Math.random() * 99999); seedIn.value = ui.seed; restart(); };
+document.getElementById('restart').onclick = restart;
+document.getElementById('reseed').onclick = reseed;
+document.getElementById('prev').onclick = () => setVariant(ui.variant - 1);
+document.getElementById('next').onclick = () => setVariant(ui.variant + 1);
+document.getElementById('variant').addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-act],[data-ui]');
+  if (!el || el.disabled) return;
+  if (el.dataset.ui === 'restart') return restart();
+  if (el.dataset.ui === 'reseed') return reseed();
+  dispatch(JSON.parse(el.dataset.act));
+});
+document.addEventListener('keydown', (ev) => {
+  const t = ev.target;
+  if (t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
+  if (ev.key === 'ArrowLeft') setVariant(ui.variant - 1);
+  if (ev.key === 'ArrowRight') setVariant(ui.variant + 1);
+});
+
+const fromUrl = new URLSearchParams(location.search).get('variant');
+const startIdx = VARIANTS.findIndex((v) => v.key === (fromUrl || 'A').toUpperCase());
+ui.variant = startIdx < 0 ? 0 : startIdx;
+restart();
+</script>
+</body>
+</html>
