@@ -33,14 +33,20 @@ function manifestFor(id: string, sections: string): string {
 const STANDARD_SECTIONS =
   'locations:\n  - locations/a.yaml\ntemplates:\n  - templates.yaml\nendings:\n  - endings.yaml\n';
 
-/** Minimal valid package whose manifest id equals the directory name. */
+/** Minimal valid package whose manifest id equals the directory name. Valid
+ * across every implemented phase, so Phase 1 tests can assert a clean load. */
 function writeMinimalPackage(dir: string): void {
   const id = path.basename(dir);
   writePackage(dir, {
-    'scenario.yaml': manifestFor(id, STANDARD_SECTIONS),
-    'locations/a.yaml': 'id: a\nname: A\n',
-    'templates.yaml': '- id: t\n',
-    'endings.yaml': '- id: e\n',
+    'scenario.yaml': manifestFor(
+      id,
+      'title: T\ndescription: D\nversion: "1.0.0"\nlanguage: en\nstartLocation: a\ndeathEnding: e\n' +
+        STANDARD_SECTIONS,
+    ),
+    'locations/a.yaml': 'id: a\nname: A\ndescription: A place.\n',
+    'templates.yaml':
+      '- id: t\n  name: T\n  attributes: { might: 2, agility: 1, wits: 2, presence: 1 }\n',
+    'endings.yaml': '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n',
   });
 }
 

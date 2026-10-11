@@ -1,15 +1,18 @@
 // loadScenario: the loader and validator shared by the CLI and the app's
 // startup (see docs/spec/architecture.md).
 //
-// In this ticket only Phase 1 (Package) from docs/spec/validation.md runs.
-// Later tickets add phases 2-4 behind this same function: collect the phase's
-// diagnostics, and skip every later phase once an error was produced.
+// Phases 1 (Package) and 2 (Structure) from docs/spec/validation.md run
+// behind this same function. Later tickets add phases 3-4 the same way:
+// collect the phase's diagnostics, and skip every later phase once an error
+// was produced.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { isMap, isPair, isScalar, isSeq } from 'yaml';
 import type { LineCounter } from 'yaml';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
+import { runStructurePhase } from './structure';
+import type { ManifestSection, ParsedFile } from './structure';
 import { nodeRange, parseYamlText } from './yamlFile';
 
 export type { Diagnostic, DiagnosticRange } from './diagnostic';
@@ -42,7 +45,7 @@ export type LoadScenarioResult = LoadScenarioSuccess | LoadScenarioFailure;
 const MANIFEST_FILE = 'scenario.yaml';
 const SUPPORTED_SCHEMA_VERSION = 1;
 
-const MANIFEST_SECTIONS = [
+const MANIFEST_SECTIONS: readonly ManifestSection[] = [
   'locations',
   'scenes',
   'items',
@@ -51,9 +54,7 @@ const MANIFEST_SECTIONS = [
   'templates',
   'endings',
   'images',
-] as const;
-
-type ManifestSection = (typeof MANIFEST_SECTIONS)[number];
+];
 
 /** Sections the manifest must list (docs/spec/scenario-format.md). */
 const REQUIRED_SECTIONS: readonly ManifestSection[] = ['locations', 'templates', 'endings'];
@@ -133,7 +134,11 @@ export function loadScenario(dir: string): LoadScenarioResult {
   checkSchemaVersion(manifestRoot, manifestValue, manifest.lineCounter, push);
   const listed = checkManifestSections(manifestRoot, manifest.lineCounter, push);
   checkIdMismatch(manifestRoot, manifestValue, dirName, manifest.lineCounter, push);
-  for (const entry of listed) checkListedFile(scenarioDir, entry, push);
+  const parsedFiles: ParsedFile[] = [];
+  for (const entry of listed) {
+    const parsed = checkListedFile(scenarioDir, entry, push);
+    if (parsed) parsedFiles.push(parsed);
+  }
   checkDuplicateFiles(listed, push);
 
   // Deterministic, position-ordered output: by file, then line, then column.
@@ -141,6 +146,25 @@ export function loadScenario(dir: string): LoadScenarioResult {
 
   // Phase gating (docs/spec/validation.md): later phases do not run after an
   // error. Every package/ finding is an error, so any diagnostic rejects.
+  if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
+    return { ok: false, diagnostics };
+  }
+
+  // Phase 2 (Structure): the Zod definitions and the custom schema/ checks.
+  // A Structure error stops phases 3 and 4; warnings never stop the pipeline.
+  runStructurePhase(
+    {
+      section: 'manifest',
+      file: MANIFEST_FILE,
+      value: manifestValue,
+      contents: manifestRoot,
+      lineCounter: manifest.lineCounter,
+    },
+    parsedFiles,
+    push,
+  );
+  diagnostics.sort(compareDiagnostics);
+
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
     return { ok: false, diagnostics };
   }
@@ -258,7 +282,7 @@ function checkListedFile(
   scenarioDir: string,
   entry: ListedFile,
   push: (diagnostic: Diagnostic) => void,
-): void {
+): ParsedFile | undefined {
   const invalidPath = (reason: string): void => {
     push({
       severity: 'error',
@@ -272,15 +296,15 @@ function checkListedFile(
   // without touching the filesystem.
   if (isAbsolutePath(entry.value)) {
     invalidPath('is absolute; paths must be relative to the Scenario directory');
-    return;
+    return undefined;
   }
   if (isUrl(entry.value)) {
     invalidPath('is a URL; paths must be relative to the Scenario directory');
-    return;
+    return undefined;
   }
   if (hasDotDot(entry.value)) {
     invalidPath('contains ".."; paths must stay inside the Scenario directory');
-    return;
+    return undefined;
   }
   if (!entry.value.endsWith('.yaml')) {
     invalidPath('lacks the .yaml extension');
@@ -298,7 +322,7 @@ function checkListedFile(
       file: MANIFEST_FILE,
       range: entry.range,
     });
-    return;
+    return undefined;
   }
   if (stat.isDirectory()) {
     push({
@@ -308,7 +332,7 @@ function checkListedFile(
       file: MANIFEST_FILE,
       range: entry.range,
     });
-    return;
+    return undefined;
   }
   if (stat.isSymbolicLink()) {
     let target: string;
@@ -342,9 +366,23 @@ function checkListedFile(
       file: MANIFEST_FILE,
       range: entry.range,
     });
-    return;
+    return undefined;
   }
-  parseYamlText(source, entry.value, push);
+  const parsed = parseYamlText(source, entry.value, push);
+  const doc = parsed.docs[0];
+  let value: unknown;
+  try {
+    value = doc?.toJS();
+  } catch {
+    value = undefined;
+  }
+  return {
+    section: entry.section,
+    file: entry.value,
+    value,
+    contents: doc?.contents,
+    lineCounter: parsed.lineCounter,
+  };
 }
 
 function checkDuplicateFiles(

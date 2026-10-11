@@ -1,0 +1,726 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "on-enter",
+        "on-demand"
+      ]
+    },
+    "repeatable": {
+      "default": false,
+      "type": "boolean"
+    },
+    "when": {
+      "$ref": "#/$defs/__schema0"
+    },
+    "illustration": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "choices": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "when": {
+            "$ref": "#/$defs/__schema0"
+          },
+          "once": {
+            "default": false,
+            "type": "boolean"
+          },
+          "outcome": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "effects": {
+                "default": [],
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "set-flag": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "set-flag"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "clear-flag": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "clear-flag"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "reveal": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "reveal"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "heal": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
+                        }
+                      },
+                      "required": [
+                        "heal"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "damage": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
+                        }
+                      },
+                      "required": [
+                        "damage"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "give-item": {
+                          "type": "object",
+                          "properties": {
+                            "item": {
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "default": 1,
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "item"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "give-item"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "take-item": {
+                          "type": "object",
+                          "properties": {
+                            "item": {
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "default": 1,
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "item"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "take-item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "next": {
+                "type": "string"
+              },
+              "move": {
+                "type": "string"
+              },
+              "start-combat": {
+                "type": "string"
+              },
+              "end": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "test": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "enum": [
+                  "might",
+                  "agility",
+                  "wits",
+                  "presence"
+                ]
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "ordinary",
+                  "hard",
+                  "very-hard"
+                ]
+              },
+              "success": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "effects": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "set-flag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "set-flag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "clear-flag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "clear-flag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "reveal": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "reveal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "heal": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 12
+                            }
+                          },
+                          "required": [
+                            "heal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "damage": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 12
+                            }
+                          },
+                          "required": [
+                            "damage"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "give-item": {
+                              "type": "object",
+                              "properties": {
+                                "item": {
+                                  "type": "string"
+                                },
+                                "quantity": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "item"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "give-item"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "take-item": {
+                              "type": "object",
+                              "properties": {
+                                "item": {
+                                  "type": "string"
+                                },
+                                "quantity": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "item"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "take-item"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "next": {
+                    "type": "string"
+                  },
+                  "move": {
+                    "type": "string"
+                  },
+                  "start-combat": {
+                    "type": "string"
+                  },
+                  "end": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "failure": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "effects": {
+                    "default": [],
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "set-flag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "set-flag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "clear-flag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "clear-flag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "reveal": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "reveal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "heal": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 12
+                            }
+                          },
+                          "required": [
+                            "heal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "damage": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 12
+                            }
+                          },
+                          "required": [
+                            "damage"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "give-item": {
+                              "type": "object",
+                              "properties": {
+                                "item": {
+                                  "type": "string"
+                                },
+                                "quantity": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "item"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "give-item"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "take-item": {
+                              "type": "object",
+                              "properties": {
+                                "item": {
+                                  "type": "string"
+                                },
+                                "quantity": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "item"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "take-item"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "next": {
+                    "type": "string"
+                  },
+                  "move": {
+                    "type": "string"
+                  },
+                  "start-combat": {
+                    "type": "string"
+                  },
+                  "end": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "attribute",
+              "difficulty",
+              "success",
+              "failure"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "text"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "flag": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flag"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "visited": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "visited"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "fired": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "fired"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "defeated": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "defeated"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "has": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "type": "string"
+                },
+                "atLeast": {
+                  "default": 1,
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "item"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "has"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "enum": [
+                    "might",
+                    "agility",
+                    "wits",
+                    "presence"
+                  ]
+                },
+                "atLeast": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "atMost": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "attribute"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "health": {
+              "type": "object",
+              "properties": {
+                "atLeast": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 12
+                },
+                "atMost": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 11
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "health"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "all": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema0"
+              }
+            }
+          },
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "any": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema0"
+              }
+            }
+          },
+          "required": [
+            "any"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "not": {
+              "$ref": "#/$defs/__schema0"
+            }
+          },
+          "required": [
+            "not"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
