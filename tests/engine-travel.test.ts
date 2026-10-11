@@ -155,6 +155,7 @@ describe('travel view', () => {
       name: 'Glade',
       description: 'Sunlight through leaves.',
       exits: [{ targetLocationId: 'grove', label: 'Walk to the grove' }],
+      onDemandScenes: [],
     });
   });
 
@@ -174,6 +175,7 @@ describe('travel view', () => {
       name: 'Grove',
       description: 'Old oaks crowd close.',
       exits: [{ targetLocationId: 'glade', label: 'Glade' }],
+      onDemandScenes: [{ sceneId: 'path', title: 'Path' }],
     });
   });
 

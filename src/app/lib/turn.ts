@@ -64,11 +64,10 @@ export async function executeTurn(
   }
   await store.appendJournal(
     playthroughId,
-    applied.journal.map((entry) => ({
-      step: applied.state.step,
-      type: entry.type,
-      payload: entry.type === 'travel' ? { text: entry.text, to: entry.to } : { text: entry.text },
-    })),
+    applied.journal.map((entry) => {
+      const { type, ...payload } = entry;
+      return { step: applied.state.step, type, payload };
+    }),
   );
   return { ok: true, step: applied.state.step };
 }
