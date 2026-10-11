@@ -1448,6 +1448,25 @@ export type ChoiceView = {
   testLabel?: string;
 };
 
+/**
+ * The active Scene's Illustration (docs/spec/ui.md, scene illustration): the
+ * hashed asset route URL with the registry width, height and catalog alt.
+ */
+export type IllustrationView = {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+};
+
+/**
+ * The asset URL of a declared image: the Scenario asset route with the
+ * registry image hash, so the immutable cache entry breaks when the bytes do.
+ */
+export function sceneIllustrationUrl(scenarioId: string, image: { hash: string; path: string }): string {
+  return `/scenarios/${scenarioId}/assets/${image.hash}/${image.path}`;
+}
+
 /** Derived projection the UI renders: Location view, Scene, Combat or Ended. */
 export type GameView =
   | {
@@ -1468,6 +1487,8 @@ export type GameView =
       /** Raw narration source; the UI renders it with the Character's name. */
       text: string;
       characterName: string;
+      /** Present only when the Scene declares an Illustration. */
+      illustration?: IllustrationView;
       choices: ChoiceView[];
       map: MapView;
     }
@@ -1583,6 +1604,15 @@ export function view(
         title: scene.title,
         text: scene.text,
         characterName: state.character.name,
+        illustration:
+          scene.illustration === undefined
+            ? undefined
+            : {
+                src: sceneIllustrationUrl(scenario.id, scene.illustration),
+                width: scene.illustration.width,
+                height: scene.illustration.height,
+                alt: scene.illustration.alt,
+              },
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
