@@ -462,6 +462,7 @@ describe('structure phase', () => {
   });
 
   it('schema/empty-combinator for empty all/any', () => {
+    // The diagnostic points at the empty array itself (the offending node).
     const all = expectInvalid(
       'empty-all',
       'locations/home.yaml',
@@ -469,7 +470,9 @@ describe('structure phase', () => {
       'when: { all: [] }',
       'schema/empty-combinator',
     );
-    expect(all.path).toEqual(['connections', 0, 'when']);
+    expect(all.path).toEqual(['connections', 0, 'when', 'all']);
+    expect(all.range).toEqual({ line: 10, column: 18, endLine: 10, endColumn: 20 });
+    expect(all.message).toContain('at least one entry');
     const any = expectInvalid(
       'empty-any',
       'locations/home.yaml',
@@ -477,7 +480,8 @@ describe('structure phase', () => {
       'when: { any: [] }',
       'schema/empty-combinator',
     );
-    expect(any.path).toEqual(['connections', 0, 'when']);
+    expect(any.path).toEqual(['connections', 0, 'when', 'any']);
+    expect(any.range).toEqual({ line: 10, column: 18, endLine: 10, endColumn: 20 });
   });
 
   it('schema/weapon-only-field for reach/damage off-weapon and damage-less weapons', () => {
@@ -500,6 +504,34 @@ describe('structure phase', () => {
     expect(nodamage.path).toEqual([0]);
   });
 
+  it('schema/weapon-only-field for reach/damage on non-equipment kinds', () => {
+    const dir = freshValidDir('weapon-only-consumable');
+    mutate(dir, 'items.yaml', '  name: Bread\n  heal: 2\n', '  name: Bread\n  heal: 2\n  reach: melee\n');
+    const diags = fail(dir);
+    // Zod's strict objects also flag the key as unknown; both findings are correct.
+    expect(diags.map((d) => d.code).sort()).toEqual([
+      'schema/unknown-key',
+      'schema/weapon-only-field',
+    ]);
+    const flagged = only(diags, 'schema/weapon-only-field');
+    expect(flagged.file).toBe('items.yaml');
+    expect(flagged.path).toEqual([3, 'reach']);
+
+    const keyDir = freshValidDir('weapon-only-key');
+    mutate(
+      keyDir,
+      'items.yaml',
+      '- id: seal\n  kind: key\n  name: Seal\n',
+      '- id: seal\n  kind: key\n  name: Seal\n  damage: 2\n',
+    );
+    const keyDiags = fail(keyDir);
+    expect(keyDiags.map((d) => d.code).sort()).toEqual([
+      'schema/unknown-key',
+      'schema/weapon-only-field',
+    ]);
+    expect(only(keyDiags, 'schema/weapon-only-field').path).toEqual([4, 'damage']);
+  });
+
   it('schema/invalid-language for a bad BCP 47 tag', () => {
     const diag = expectInvalid(
       'invalid-language',
@@ -511,6 +543,17 @@ describe('structure phase', () => {
     expect(diag.path).toEqual(['language']);
     expect(diag.range).toEqual({ line: 6, column: 11, endLine: 6, endColumn: 26 });
     expectValid('valid-language-tag', 'scenario.yaml', 'language: en', 'language: en-US');
+  });
+
+  it('schema/invalid-language for an empty language tag', () => {
+    const diag = expectInvalid(
+      'invalid-language-empty',
+      'scenario.yaml',
+      'language: en',
+      'language: ""',
+      'schema/invalid-language',
+    );
+    expect(diag.path).toEqual(['language']);
   });
 
   it('schema/narration-brace for a brace outside {name}', () => {
@@ -527,8 +570,12 @@ describe('structure phase', () => {
   it('schema/markdown-outside-subset warns without blocking', () => {
     const cases: [string, string][] = [
       ['heading', '# A heading'],
+      ['setext', 'A title\n        ==='],
       ['link', 'See [the tale](https://example.com).'],
+      ['reference-link', 'See [the tale][tale-ref].'],
       ['image', 'See ![the gate](gate.png).'],
+      ['reference-image', 'See ![the gate][gate-ref].'],
+      ['autolink', 'See <https://example.com>.'],
       ['list', '- first\n        - second'],
       ['html', 'A <b>bold</b> claim.'],
     ];
@@ -544,6 +591,21 @@ describe('structure phase', () => {
         path: ['choices', 0, 'outcome', 'text'],
       });
     }
+  });
+
+  it('schema/markdown-outside-subset names the offending construct', () => {
+    const dir = freshValidDir('markdown-autolink');
+    mutate(dir, 'scenes/gate.yaml', 'Nothing answers.', 'See <https://example.com>.');
+    const warnings = succeed(dir);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.message).toContain('links');
+    expect(warnings[0]?.message).not.toContain('raw HTML');
+
+    const setextDir = freshValidDir('markdown-setext');
+    mutate(setextDir, 'scenes/gate.yaml', 'Nothing answers.', 'A title\n        ---');
+    const setextWarnings = succeed(setextDir);
+    expect(setextWarnings).toHaveLength(1);
+    expect(setextWarnings[0]?.message).toContain('headings');
   });
 
   it('an unquoted version is an error; a quoted version is fine', () => {
@@ -565,6 +627,64 @@ describe('structure phase', () => {
     const diag = only(diags, 'schema/invalid-value');
     expect(diag.file).toBe('scenario.yaml');
     expect(diag.path).toEqual(['templates']);
+  });
+
+  it('an empty templates list is an error on the manifest', () => {
+    const dir = freshValidDir('no-template-files');
+    mutate(dir, 'scenario.yaml', 'templates:\n  - templates.yaml\n', 'templates: []\n');
+    const diags = fail(dir);
+    const diag = only(diags, 'schema/invalid-value');
+    expect(diag.file).toBe('scenario.yaml');
+    expect(diag.path).toEqual(['templates']);
+  });
+
+  it('schema/missing-field for a map missing one axis', () => {
+    const diag = expectInvalid(
+      'map-missing-y',
+      'locations/home.yaml',
+      'map: { x: 10, y: 20 }',
+      'map: { x: 10 }',
+      'schema/missing-field',
+    );
+    expect(diag.path).toEqual(['map', 'y']);
+  });
+
+  it('schema/invalid-value for tokens outside every vocabulary', () => {
+    expectInvalid(
+      'bad-slot',
+      'items.yaml',
+      'slot: weapon\n  damage: 3\n- id: cloak',
+      'slot: hat\n  damage: 3\n- id: cloak',
+      'schema/invalid-value',
+    );
+    expectInvalid('bad-bonus', 'items.yaml', 'bonus: agility', 'bonus: strength', 'schema/invalid-value');
+    expectInvalid('bad-reach', 'items.yaml', 'reach: ranged', 'reach: far', 'schema/invalid-value');
+    expectInvalid(
+      'bad-start-range',
+      'encounters.yaml',
+      '- id: rats\n  enemy: rat\n',
+      '- id: rats\n  enemy: rat\n  startRange: sideways\n',
+      'schema/invalid-value',
+    );
+    expectInvalid('bad-ending-kind', 'endings.yaml', 'kind: defeat', 'kind: bittersweet', 'schema/invalid-value');
+    expectInvalid(
+      'bad-attribute',
+      'scenes/gate.yaml',
+      'attribute: wits',
+      'attribute: luck',
+      'schema/invalid-value',
+    );
+  });
+
+  it('schema/empty-text for an empty image alt', () => {
+    const diag = expectInvalid(
+      'empty-alt',
+      'images.yaml',
+      'alt: An old gate.',
+      'alt: ""',
+      'schema/empty-text',
+    );
+    expect(diag.path).toEqual([0, 'alt']);
   });
 
   it('an unknown item kind is an error', () => {
@@ -769,5 +889,38 @@ describe('structure range boundaries', () => {
   it('template starting-item quantity of at least 1', () => {
     expectValid('template-qty', 'templates.yaml', 'quantity: 2', 'quantity: 1');
     expectInvalid('template-qty-low', 'templates.yaml', 'quantity: 2', 'quantity: 0', 'schema/invalid-value');
+  });
+
+  it('template attributes are integers 0-3', () => {
+    const file = 'templates.yaml';
+    const from = 'attributes: { might: 2, agility: 2, wits: 1, presence: 1 }';
+    expectValid(
+      'template-attr-min',
+      file,
+      from,
+      'attributes: { might: 0, agility: 3, wits: 2, presence: 1 }',
+    );
+    expectValid(
+      'template-attr-max',
+      file,
+      from,
+      'attributes: { might: 3, agility: 2, wits: 1, presence: 0 }',
+    );
+    const low = expectInvalid(
+      'template-attr-low',
+      file,
+      from,
+      'attributes: { might: -1, agility: 2, wits: 1, presence: 1 }',
+      'schema/invalid-value',
+    );
+    expect(low.path).toEqual([0, 'attributes', 'might']);
+    const high = expectInvalid(
+      'template-attr-high',
+      file,
+      from,
+      'attributes: { might: 4, agility: 2, wits: 1, presence: 1 }',
+      'schema/invalid-value',
+    );
+    expect(high.path).toEqual([0, 'attributes', 'might']);
   });
 });

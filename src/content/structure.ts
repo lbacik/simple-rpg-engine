@@ -23,6 +23,7 @@ import {
   ManifestSchema,
   SceneSchema,
   TemplatesCatalogSchema,
+  transitionKeys,
 } from './schema';
 import { nodeRange } from './yamlFile';
 
@@ -66,7 +67,7 @@ const SECTION_SCHEMAS: Record<ManifestSection, z.ZodTypeAny> = {
   images: ImagesCatalogSchema,
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -170,6 +171,27 @@ function convertIssue(
       message: `missing required key "${field}"`,
       file: ctx.file,
       range: nodeRange(parent, ctx.lineCounter),
+      path: rawPath,
+    });
+    return;
+  }
+  // The only array minimum in the definitions is min(1) on `all`/`any`
+  // (schema.ts): an empty combinator gets its own stable code here, so the
+  // CLI reports one diagnostic for it instead of a generic invalid value.
+  if (
+    issue.code === 'too_small' &&
+    (issue as { origin?: unknown }).origin === 'array' &&
+    (issue as { minimum?: unknown }).minimum === 1 &&
+    rawPath.length > 0 &&
+    (rawPath[rawPath.length - 1] === 'all' || rawPath[rawPath.length - 1] === 'any')
+  ) {
+    const key = String(rawPath[rawPath.length - 1]);
+    ctx.push({
+      severity: 'error',
+      code: 'schema/empty-combinator',
+      message: `"${key}" must have at least one entry`,
+      file: ctx.file,
+      range: nodeRange(nodeAtPath(ctx.contents, rawPath), ctx.lineCounter),
       path: rawPath,
     });
     return;
@@ -323,8 +345,13 @@ function checkText(value: unknown, path: readonly (string | number)[], ctx: Ctx)
 
 const BRACE_PATTERN = /\{(?!name\})/;
 const HEADING_PATTERN = /^ {0,3}#{1,6}(?:\s|$)/m;
+const SETEXT_PATTERN = /^.+\n {0,3}(=+|-+)[ \t]*$/m;
 const IMAGE_PATTERN = /!\[[^\]]*\]\([^)]*\)/;
+const REF_IMAGE_PATTERN = /!\[[^\]]*\]\[[^\]]*\]/;
 const LINK_PATTERN = /(?<!!)\[[^\]]+\]\([^)]*\)/;
+const REF_LINK_PATTERN = /(?<!!)\[[^\]]+\]\[[^\]]*\]/;
+const AUTOLINK_PATTERN = /<[A-Za-z][A-Za-z0-9+.-]*:[^<>\s]*>/;
+const AUTOLINK_PATTERN_G = /<[A-Za-z][A-Za-z0-9+.-]*:[^<>\s]*>/g;
 const LIST_PATTERN = /^ {0,3}(?:[-+*]|\d{1,9}[.)])\s+/m;
 const HTML_PATTERN = /<[A-Za-z/!][^>]*>/;
 
@@ -343,11 +370,15 @@ function checkNarration(value: unknown, path: readonly (string | number)[], ctx:
     });
   }
   const outside: string[] = [];
-  if (HEADING_PATTERN.test(value)) outside.push('headings');
-  if (IMAGE_PATTERN.test(value)) outside.push('images');
-  else if (LINK_PATTERN.test(value)) outside.push('links');
+  if (HEADING_PATTERN.test(value) || SETEXT_PATTERN.test(value)) outside.push('headings');
+  if (REF_IMAGE_PATTERN.test(value) || IMAGE_PATTERN.test(value)) outside.push('images');
+  else if (REF_LINK_PATTERN.test(value) || LINK_PATTERN.test(value) || AUTOLINK_PATTERN.test(value)) {
+    outside.push('links');
+  }
   if (LIST_PATTERN.test(value)) outside.push('lists');
-  if (HTML_PATTERN.test(value)) outside.push('raw HTML');
+  // Autolinks also match the HTML pattern; strip them so `<https://…>`
+  // reports as a link rather than raw HTML.
+  if (HTML_PATTERN.test(value.replace(AUTOLINK_PATTERN_G, ''))) outside.push('raw HTML');
   if (outside.length > 0) {
     ctx.push({
       severity: 'warning',
@@ -388,17 +419,9 @@ function checkCondition(
     return;
   }
   if (key === 'all' || key === 'any') {
+    // Emptiness is rejected by the Zod minimum and mapped to
+    // schema/empty-combinator in convertIssue; only recurse here.
     if (Array.isArray(inner)) {
-      if (inner.length === 0) {
-        ctx.push({
-          severity: 'error',
-          code: 'schema/empty-combinator',
-          message: `"${key}" must have at least one entry`,
-          file: ctx.file,
-          range: rangeOf(ctx, path),
-          path: [...path],
-        });
-      }
       inner.forEach((entry, index) => checkCondition(entry, [...innerPath, index], ctx));
     }
     return;
@@ -411,9 +434,7 @@ function checkCondition(
 function checkOutcome(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
   if (value['text'] !== undefined) checkNarration(value['text'], [...path, 'text'], ctx);
-  const transitions = ['next', 'move', 'start-combat', 'end'].filter(
-    (key) => value[key] !== undefined,
-  );
+  const transitions = transitionKeys.filter((key) => value[key] !== undefined);
   if (transitions.length > 1) {
     ctx.push({
       severity: 'error',
@@ -457,11 +478,16 @@ function checkManifest(value: unknown, ctx: Ctx): void {
   if (value['intro'] !== undefined) checkNarration(value['intro'], ['intro'], ctx);
   const language = value['language'];
   if (typeof language === 'string') {
-    let valid = true;
-    try {
-      Intl.getCanonicalLocales(language);
-    } catch {
-      valid = false;
+    // An empty tag is never valid BCP 47. Runtimes disagree on it (some
+    // throw in Intl.getCanonicalLocales, others return []), so rule it out
+    // explicitly and require a canonical result otherwise.
+    let valid = language.trim() !== '';
+    if (valid) {
+      try {
+        valid = Intl.getCanonicalLocales(language).length > 0;
+      } catch {
+        valid = false;
+      }
     }
     if (!valid) {
       ctx.push({
@@ -519,7 +545,25 @@ function checkItem(value: unknown, path: readonly (string | number)[], ctx: Ctx)
   if (!isRecord(value)) return;
   checkText(value['name'], [...path, 'name'], ctx);
   if (value['description'] !== undefined) checkText(value['description'], [...path, 'description'], ctx);
-  if (value['kind'] !== 'equipment') return;
+  if (value['kind'] !== 'equipment') {
+    // Consumables, keys and anything else that is not a weapon must not
+    // carry weapon fields (docs/spec/validation.md, schema/weapon-only-field).
+    // Zod's strict objects also report these keys as schema/unknown-key;
+    // both findings are correct.
+    for (const field of ['reach', 'damage'] as const) {
+      if (value[field] !== undefined) {
+        ctx.push({
+          severity: 'error',
+          code: 'schema/weapon-only-field',
+          message: `"${field}" is only allowed on weapons (slot "weapon")`,
+          file: ctx.file,
+          range: rangeOf(ctx, [...path, field]),
+          path: [...path, field],
+        });
+      }
+    }
+    return;
+  }
   const slot = value['slot'];
   const reach = value['reach'];
   const damage = value['damage'];
@@ -705,9 +749,10 @@ export function runStructurePhase(
     }
   }
 
-  // At least one Character Template in total across the templates catalogs.
+  // At least one Character Template in total across the templates catalogs
+  // (docs/spec/validation.md, Phase 2): zero catalog files counts as zero.
   const templateFiles = files.filter((file) => file.section === 'templates');
-  if (templateFiles.length > 0 && templateFiles.every((file) => Array.isArray(file.value))) {
+  if (templateFiles.every((file) => Array.isArray(file.value))) {
     const total = templateFiles.reduce(
       (sum, file) => sum + (file.value as unknown[]).length,
       0,

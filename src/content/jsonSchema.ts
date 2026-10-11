@@ -20,6 +20,7 @@ import {
   SceneSchema,
   TemplatesCatalogSchema,
 } from './schema';
+import { isRecord } from './structure';
 
 const FILE_SCHEMAS = {
   manifest: ManifestSchema,
@@ -35,10 +36,6 @@ const FILE_SCHEMAS = {
 
 export type FileKind = keyof typeof FILE_SCHEMAS;
 export const FILE_KINDS = Object.keys(FILE_SCHEMAS) as FileKind[];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
 
 /**
  * Remove defaulted keys from `required` lists, recursing through the whole

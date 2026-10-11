@@ -680,6 +680,7 @@
           "type": "object",
           "properties": {
             "all": {
+              "minItems": 1,
               "type": "array",
               "items": {
                 "$ref": "#/$defs/__schema0"
@@ -695,6 +696,7 @@
           "type": "object",
           "properties": {
             "any": {
+              "minItems": 1,
               "type": "array",
               "items": {
                 "$ref": "#/$defs/__schema0"

@@ -85,8 +85,10 @@ export const ConditionSchema: z.ZodTypeAny = z.union([
   hasCondition,
   attributeCondition,
   healthCondition,
-  z.strictObject({ all: z.array(z.lazy(() => ConditionSchema)) }),
-  z.strictObject({ any: z.array(z.lazy(() => ConditionSchema)) }),
+  // Non-empty: an empty combinator is schema/empty-combinator (mapped from
+  // the minimum in structure.ts), and minItems also reaches the editor.
+  z.strictObject({ all: z.array(z.lazy(() => ConditionSchema)).min(1) }),
+  z.strictObject({ any: z.array(z.lazy(() => ConditionSchema)).min(1) }),
   z.strictObject({ not: z.lazy(() => ConditionSchema) }),
 ]);
 
