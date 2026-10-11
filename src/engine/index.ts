@@ -411,7 +411,7 @@ function outcomeWouldKill(state: PlaythroughState, outcome: CompiledOutcome): bo
   let health = state.character.health;
   for (const effect of outcome.effects) {
     if ('heal' in effect) {
-      health = Math.min(12, health + effect.heal);
+      health = Math.min(MAX_HEALTH, health + effect.heal);
     } else if ('damage' in effect) {
       health -= effect.damage;
       if (health <= 0) return true;
@@ -628,6 +628,10 @@ function applyEffect(
     const name = scenario.itemsById[item]?.name ?? item;
     const held = state.inventory[item] ?? 0;
     const actual = Math.min(quantity, held);
+    if (actual <= 0) {
+      // Nothing held: no state change, so no Journal entry either.
+      return { state, entry: undefined };
+    }
     const left = held - actual;
     const inventory = { ...state.inventory };
     if (left <= 0) {
@@ -656,7 +660,8 @@ function applyEffect(
     };
   }
   if ('heal' in effect) {
-    const restored = Math.min(12, state.character.health + effect.heal) - state.character.health;
+    const restored =
+      Math.min(MAX_HEALTH, state.character.health + effect.heal) - state.character.health;
     if (restored <= 0) {
       return { state, entry: undefined };
     }
@@ -680,6 +685,10 @@ function applyEffect(
   }
   const target = effect.reveal;
   const name = scenario.locationsById[target]?.name ?? target;
+  if (state.visited.includes(target)) {
+    // Revealing a visited Location is a spec no-op: no state change, no entry.
+    return { state, entry: undefined };
+  }
   return {
     state: { ...state, revealed: pushUnique(state.revealed, target) },
     entry: { type: 'state-change', text: `revealed: ${name}` },

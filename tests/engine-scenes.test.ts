@@ -832,6 +832,11 @@ describe('synthetic package: remaining effects and transitions', () => {
         '    outcome:',
         '      effects:',
         '        - take-item: { item: sword, quantity: 2 }',
+        '  - id: survey',
+        '    text: Survey the familiar hall.',
+        '    outcome:',
+        '      effects:',
+        '        - reveal: hall',
         '  - id: gamble',
         '    text: Toss a coin.',
         '    test:',
@@ -1016,6 +1021,20 @@ describe('synthetic package: remaining effects and transitions', () => {
     expect(all.state.inventory).toEqual({});
     expect(all.state.equipment).toEqual({});
     expect(all.journal[1]).toEqual({ type: 'state-change', text: 'lost: Sword ×2' });
+  });
+
+  it('stays silent when take-item holds nothing and reveal targets a visited Location', () => {
+    const { scenario, state } = atCounter();
+    const emptied = choose(scenario, state, 'take-all');
+    expect(emptied.state.inventory).toEqual({});
+    // Nothing left to take: no state change, so only the Choice is recorded.
+    const empty = choose(scenario, openScene(scenario, emptied.state, 'counter').state, 'take-one');
+    expect(empty.state.inventory).toEqual({});
+    expect(empty.journal.map((entry) => entry.type)).toEqual(['choice']);
+    // The hall is visited from the start: revealing it is a spec no-op.
+    const surveyed = choose(scenario, openScene(scenario, empty.state, 'counter').state, 'survey');
+    expect(surveyed.state.revealed).toEqual([]);
+    expect(surveyed.journal.map((entry) => entry.type)).toEqual(['choice']);
   });
 
   it('rejects Test choices and Ending transitions until later tickets', () => {

@@ -547,28 +547,6 @@ export default async function PlayPage({
               />
             ) : tab === 'map' ? (
               <MapSection heading="Map" text={mapText} />
-          {/* merged: scene-aware summary above; branch simplified panel dropped */}
-          <div style={{ display: 'none' }} aria-hidden="true">
-            <section aria-label="Summary">
-            <strong>{playthrough.state.character.name}</strong> · Health{' '}
-            {playthrough.state.character.health}/12 · {positionName}
-          </section>
-          <div className="full">
-            <h2>Character</h2>
-            <p>
-              <strong>{playthrough.state.character.name}</strong>
-              {template ? ` · ${template.name}` : null}
-            </p>
-            <p>Health {playthrough.state.character.health}/12</p>
-            <p>
-              Might {playthrough.state.character.baseAttributes.might} · Agility{' '}
-              {playthrough.state.character.baseAttributes.agility} · Wits{' '}
-              {playthrough.state.character.baseAttributes.wits} · Presence{' '}
-              {playthrough.state.character.baseAttributes.presence}
-            </p>
-            <h2>Inventory</h2>
-            {false ? (
-              <p>Empty.</p>
             ) : (
               <CharacterTab scenario={scenario} state={state} />
             )}
@@ -592,7 +570,6 @@ export default async function PlayPage({
             ) : (
               <CharacterTab scenario={scenario} state={state} />
             )}
-
           </div>
         </aside>
       </div>
