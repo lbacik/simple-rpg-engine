@@ -146,6 +146,7 @@ describe('startPlaythrough', () => {
       locationId: 'glade',
       name: 'Glade',
       description: 'Sunlight through leaves.',
+      exits: [],
     });
   });
 });
