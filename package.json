@@ -10,7 +10,7 @@
     "dev": "next dev",
     "predev": "npm run migrate",
     "build": "next build --webpack",
-    "start": "node .next/standalone/server.js",
+    "start": "node scripts/start-standalone.mjs",
     "prestart": "npm run migrate",
     "validate": "tsx src/cli/validate.ts",
     "migrate": "tsx src/persistence/migrate.ts",

@@ -1,4 +1,8 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
+
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 
@@ -7,7 +11,6 @@ const PORT = Number(process.env.E2E_PORT ?? 3100);
 // `npx next start` (after `npm run migrate`) automatically.
 export default defineConfig({
   testDir: './tests/e2e',
-  globalSetup: './tests/e2e/global-setup.ts',
   timeout: 120_000,
   expect: {
     timeout: 15_000,
@@ -17,16 +20,17 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    // `npm run start` runs the migrations (prestart) and then serves the
+    // Start from a throwaway database (this runs before globalSetup would, so
+    // the cleanup has to live here). `npm run start` runs the migrations (prestart) and then serves the
     // standalone production server; `output: standalone` is not served by
     // `next start`.
-    command: 'npm run start',
+    command: 'rm -f e2e-smoke.sqlite e2e-smoke.sqlite-shm e2e-smoke.sqlite-wal e2e-smoke.sqlite-journal && npm run start',
     port: PORT,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
     env: {
-      DATABASE_PATH: './e2e-smoke.sqlite',
-      SCENARIO_DIR: './scenarios',
+      DATABASE_PATH: path.join(ROOT, 'e2e-smoke.sqlite'),
+      SCENARIO_DIR: path.join(ROOT, 'scenarios'),
       PORT: String(PORT),
       // The standalone server otherwise binds the machine hostname only.
       HOSTNAME: '127.0.0.1',
