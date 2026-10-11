@@ -86,7 +86,7 @@ function valueAtPath(root: unknown, path: readonly (string | number)[]): unknown
 }
 
 /** The YAML value node at a document path, or undefined when unreachable. */
-function nodeAtPath(root: unknown, path: readonly (string | number)[]): unknown {
+export function nodeAtPath(root: unknown, path: readonly (string | number)[]): unknown {
   let node: unknown = root;
   for (const segment of path) {
     if (typeof segment === 'number') {

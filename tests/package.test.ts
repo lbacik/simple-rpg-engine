@@ -65,7 +65,15 @@ describe('package phase', () => {
   it('loads a minimal valid package with no diagnostics', () => {
     const dir = makeScenarioDir('valid-pkg');
     writeMinimalPackage(dir);
-    expect(loadScenario(dir)).toEqual({ ok: true, scenario: { id: 'valid-pkg', dir }, warnings: [] });
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // The compiled model carries far more than the identity; the identity
+      // and the clean run are what this phase owns.
+      expect(result.scenario.id).toBe('valid-pkg');
+      expect(result.scenario.dir).toBe(dir);
+      expect(result.warnings).toEqual([]);
+    }
   });
 
   it('reports no Package-phase diagnostics for scenarios/whispering-woods', () => {
@@ -307,6 +315,28 @@ describe('package phase', () => {
     });
     fs.mkdirSync(path.join(dir, 'locations'), { recursive: true });
     fs.symlinkSync(outside, path.join(dir, 'locations', 'link.yaml'));
+    const diagnostics = errorsOf(dir);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]?.code).toBe('package/invalid-path');
+    expect(diagnostics[0]?.message).toContain('symlink resolving outside');
+    expect(lineOf(diagnostics[0] as Diagnostic)).toEqual([4, 5]);
+  });
+
+  it('package/invalid-path for a file under a directory symlinked outside', () => {
+    const dir = makeScenarioDir('symlink-escape-dir');
+    const id = path.basename(dir);
+    const outside = path.join(path.dirname(dir), 'outside-dir');
+    fs.mkdirSync(outside, { recursive: true });
+    fs.writeFileSync(path.join(outside, 'file.yaml'), 'id: outside\n');
+    writePackage(dir, {
+      'scenario.yaml': manifestFor(
+        id,
+        'locations:\n  - sub/file.yaml\ntemplates:\n  - templates.yaml\nendings:\n  - endings.yaml\n',
+      ),
+      'templates.yaml': '- id: t\n',
+      'endings.yaml': '- id: e\n',
+    });
+    fs.symlinkSync(outside, path.join(dir, 'sub'));
     const diagnostics = errorsOf(dir);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.code).toBe('package/invalid-path');
