@@ -1,7 +1,14 @@
 import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import type { CompiledItem } from '@/content/model';
-import { effectiveAttributes, view } from '@/engine/index';
+import {
+  effectiveAttributes,
+  escapeHtml,
+  renderNarration,
+  renderStoredText,
+  RESULT_PANEL_ENTRY_TYPES,
+  view,
+} from '@/engine/index';
 import { equipmentBonusSources, EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import type { Scenario } from '@/content/index';
@@ -9,19 +16,11 @@ import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { getSessionHash } from '@/app/lib/session';
+import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { travelAction } from '@/app/lib/travel';
+import { ResultPanel } from './result-panel';
 
 export const dynamic = 'force-dynamic';
-
-/** Journal types that make up the result panel (playthrough-state.md). */
-const RESULT_TYPES = new Set([
-  'intro',
-  'test',
-  'outcome',
-  'state-change',
-  'combat-end',
-  'enemy-defeated',
-]);
 
 const NOTICES: Record<string, string> = {
   stale: 'The game was advanced in another tab; this is its current state.',
@@ -373,6 +372,15 @@ function MapSection({ heading, text }: { heading: string; text: string }) {
   );
 }
 
+/** Render one result-panel entry to HTML. Narration entries keep the name literal. */
+function renderResultEntry(type: string, payload: unknown, characterName: string): string {
+  const text = String((payload as { text?: unknown }).text ?? '');
+  if (type === 'intro' || type === 'outcome') {
+    return renderStoredText(text, characterName);
+  }
+  return `<p>${escapeHtml(text)}</p>`;
+}
+
 export default async function PlayPage({
   params,
   searchParams,
@@ -410,14 +418,17 @@ export default async function PlayPage({
 
   const gameView = view(scenario, playthrough.state);
   const journal = await store.listJournal(playthrough.id);
-  const resultPanel = journal.filter(
-    (entry) => entry.step === playthrough.step && RESULT_TYPES.has(entry.type),
-  );
   const state = playthrough.state;
+  const characterName = state.character.name;
+  const resultEntries = journal
+    .filter((entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type))
+    .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
   const mapText =
     gameView.kind === 'location'
       ? `You are in ${gameView.name}.`
-      : 'This Playthrough has ended.';
+      : gameView.kind === 'scene'
+        ? `You are in ${gameView.locationName}.`
+        : 'This Playthrough has ended.';
   // The desktop panel shows the map above the Character/Inventory tabs; the
   // phone panel holds all three tabs behind the compact summary.
   const desktopTab = tab === 'inventory' ? 'inventory' : 'character';
@@ -432,15 +443,28 @@ export default async function PlayPage({
               {noticeText}
             </p>
           ) : null}
+          <ResultPanel entries={resultEntries} />
           {gameView.kind === 'location' ? (
             <>
-              {resultPanel.map((entry) => (
-                <section key={entry.seq} className="result" aria-label="Latest events">
-                  <p>{String((entry.payload as { text?: unknown }).text ?? '')}</p>
-                </section>
-              ))}
               <h1>{gameView.name}</h1>
-              <p>{gameView.description}</p>
+              {/* Location description: rendered narration subset. */}
+              <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }} />
+              {gameView.onDemandScenes.length > 0 ? (
+                <section aria-label="Scenes">
+                  {gameView.onDemandScenes.map((scene) => (
+                    <form key={scene.sceneId} action={openSceneAction}>
+                      <input type="hidden" name="playthroughId" value={playthrough.id} />
+                      <input type="hidden" name="expectedStep" value={playthrough.step} />
+                      <input type="hidden" name="scene" value={scene.sceneId} />
+                      <p>
+                        <button className="button" type="submit">
+                          {scene.title}
+                        </button>
+                      </p>
+                    </form>
+                  ))}
+                </section>
+              ) : null}
               <section aria-label="Exits">
                 {gameView.exits.map((exit) => (
                   <form key={exit.targetLocationId} action={travelAction}>
@@ -456,6 +480,39 @@ export default async function PlayPage({
                 ))}
               </section>
             </>
+          ) : gameView.kind === 'scene' ? (
+            <>
+              <h1>{gameView.title}</h1>
+              <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.text, gameView.characterName) }} />
+              {gameView.choices.length > 0 ? (
+                <section aria-label="Choices">
+                  {gameView.choices.map((choice) => (
+                    <form key={choice.id} action={chooseAction}>
+                      <input type="hidden" name="playthroughId" value={playthrough.id} />
+                      <input type="hidden" name="expectedStep" value={playthrough.step} />
+                      <input type="hidden" name="choice" value={choice.id} />
+                      <p>
+                        <button className="button" type="submit">
+                          {choice.text}
+                        </button>
+                      </p>
+                    </form>
+                  ))}
+                </section>
+              ) : (
+                <section aria-label="Continue">
+                  <form action={continueAction}>
+                    <input type="hidden" name="playthroughId" value={playthrough.id} />
+                    <input type="hidden" name="expectedStep" value={playthrough.step} />
+                    <p>
+                      <button className="button" type="submit">
+                        Continue
+                      </button>
+                    </p>
+                  </form>
+                </section>
+              )}
+            </>
           ) : (
             <>
               <h1>{gameView.title}</h1>
@@ -467,7 +524,12 @@ export default async function PlayPage({
           <details className="compact-summary" open={panelOpen || undefined}>
             <summary>
               <strong>{state.character.name}</strong> · Health {state.character.health}/
-              {MAX_HEALTH} · {gameView.kind === 'location' ? gameView.name : 'Ended'}
+              {MAX_HEALTH} ·{' '}
+              {gameView.kind === 'location'
+                ? gameView.name
+                : gameView.kind === 'scene'
+                  ? gameView.locationName
+                  : 'Ended'}
             </summary>
             <TabNav
               playthroughId={playthrough.id}
@@ -485,6 +547,28 @@ export default async function PlayPage({
               />
             ) : tab === 'map' ? (
               <MapSection heading="Map" text={mapText} />
+          {/* merged: scene-aware summary above; branch simplified panel dropped */}
+          <div style={{ display: 'none' }} aria-hidden="true">
+            <section aria-label="Summary">
+            <strong>{playthrough.state.character.name}</strong> · Health{' '}
+            {playthrough.state.character.health}/12 · {positionName}
+          </section>
+          <div className="full">
+            <h2>Character</h2>
+            <p>
+              <strong>{playthrough.state.character.name}</strong>
+              {template ? ` · ${template.name}` : null}
+            </p>
+            <p>Health {playthrough.state.character.health}/12</p>
+            <p>
+              Might {playthrough.state.character.baseAttributes.might} · Agility{' '}
+              {playthrough.state.character.baseAttributes.agility} · Wits{' '}
+              {playthrough.state.character.baseAttributes.wits} · Presence{' '}
+              {playthrough.state.character.baseAttributes.presence}
+            </p>
+            <h2>Inventory</h2>
+            {false ? (
+              <p>Empty.</p>
             ) : (
               <CharacterTab scenario={scenario} state={state} />
             )}
@@ -508,6 +592,7 @@ export default async function PlayPage({
             ) : (
               <CharacterTab scenario={scenario} state={state} />
             )}
+
           </div>
         </aside>
       </div>

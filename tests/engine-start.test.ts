@@ -17,8 +17,8 @@ function writeFiles(dir: string, files: Record<string, string>): void {
   }
 }
 
-/** Small playable fixture Scenario. Its on-enter Scene, which reaches the
- * victory ending, is not activated yet (on-enter activation lands later). */
+/** Small playable fixture Scenario. Starting it activates the glade's
+ * on-enter Scene, whose first Choice reaches the victory ending. */
 function loadFixture(): Scenario {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-start-'));
   const name = 'meadow';
@@ -112,7 +112,13 @@ describe('startPlaythrough', () => {
     expect(result.state.flags).toEqual([]);
     expect(result.state.scenarioId).toBe(scenario.id);
     expect(result.state.contentHash).toBe(scenario.contentHash);
-    expect(result.journal).toEqual([{ type: 'intro', text: scenario.intro }]);
+    expect(result.journal).toEqual([
+      { type: 'intro', text: scenario.intro },
+      { type: 'scene', sceneId: 'path', text: 'A path leads home.' },
+    ]);
+    // The opening on-enter Scene fired at activation: a reload cannot fire it twice.
+    expect(result.state.activeSceneId).toBe('path');
+    expect(result.state.firedScenes).toEqual(['path']);
     // The stored document validates.
     expect(parsePlaythroughState(JSON.parse(JSON.stringify(result.state)))).toEqual(result.state);
   });
@@ -136,17 +142,23 @@ describe('startPlaythrough', () => {
     expect(edge.ok).toBe(true);
   });
 
-  it('views the current Location', () => {
+  it('views the opening on-enter Scene after starting', () => {
     const scenario = loadFixture();
     const result = startPlaythrough(scenario, 'hunter', 'Robin', rng);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(view(scenario, result.state)).toEqual({
-      kind: 'location',
+      kind: 'scene',
       locationId: 'glade',
-      name: 'Glade',
-      description: 'Sunlight through leaves.',
-      exits: [],
+      locationName: 'Glade',
+      sceneId: 'path',
+      title: 'Path',
+      text: 'A path leads home.',
+      characterName: 'Robin',
+      choices: [
+        { id: 'go', text: 'Go home.' },
+        { id: 'open', text: 'Open the gate.' },
+      ],
     });
   });
 });

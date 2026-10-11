@@ -48,11 +48,10 @@ export async function startPlaythroughAction(
       step: engineResult.state.step,
       state: engineResult.state,
     },
-    engineResult.journal.map((entry) => ({
-      step: engineResult.state.step,
-      type: entry.type,
-      payload: { text: entry.text },
-    })),
+    engineResult.journal.map((entry) => {
+      const { type, ...payload } = entry;
+      return { step: engineResult.state.step, type, payload };
+    }),
   );
   redirect(`/play/${playthroughId}`);
 }
