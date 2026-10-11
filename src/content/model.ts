@@ -49,7 +49,8 @@ export type CompiledTemplate = Omit<z.infer<typeof TemplateSchema>, 'items'> & {
 
 export type CompiledConnection = {
   to: CompiledLocation;
-  label?: string;
+  /** The author's label, defaulting to the target Location's name. */
+  label: string;
   when?: CompiledCondition;
 };
 
@@ -261,6 +262,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   );
 
   const itemById = new Map(items.map((item) => [item.id, item]));
+  const enemyById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
   const endingById = new Map(endings.map((ending) => [ending.id, ending]));
   const imageById = new Map(inputs.images.map((image) => [image.id, image]));
 
@@ -292,10 +294,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
 
   const encounters: CompiledEncounter[] = parsedEncounters.map((parsed) => ({
     id: parsed.id,
-    enemy: required(
-      enemies.find((enemy) => enemy.id === parsed.enemy),
-      `enemy "${parsed.enemy}"`,
-    ),
+    enemy: required(enemyById.get(parsed.enemy), `enemy "${parsed.enemy}"`),
     startRange: parsed.startRange,
     text: parsed.text,
     victory: undefined,
@@ -318,11 +317,14 @@ export function buildScenario(inputs: ModelInputs): Scenario {
       if (scene.location === undefined) scene.location = location;
     }
     location.connections.push(
-      ...parsed.connections.map((connection) => ({
-        to: required(locationById.get(connection.to), `location "${connection.to}"`),
-        label: connection.label,
-        when: connection.when,
-      })),
+      ...parsed.connections.map((connection) => {
+        const to = required(locationById.get(connection.to), `location "${connection.to}"`);
+        return {
+          to,
+          label: connection.label ?? to.name,
+          when: connection.when,
+        };
+      }),
     );
   });
 

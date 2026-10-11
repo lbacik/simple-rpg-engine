@@ -487,6 +487,37 @@ describe('integrity phase: membership and slots', () => {
     expect(diag.message).toContain('gate');
   });
 
+  it('ref/scene-membership for a duplicate scene id whose later declaration is a listed follow-on', () => {
+    const dir = freshValidDir('dup-scene-trigger');
+    writePackage(dir, {
+      'scenario.yaml': fs
+        .readFileSync(path.join(dir, 'scenario.yaml'), 'utf8')
+        .replace('  - scenes/after.yaml', '  - scenes/after.yaml\n  - scenes/gate-again.yaml'),
+      'scenes/gate-again.yaml': 'id: gate\ntitle: Gate Again\ntext: |\n  Again.\n',
+    });
+    const diags = fail(dir);
+    const diag = only(diags, 'ref/scene-membership');
+    expect(diag.file).toBe('scenes/gate-again.yaml');
+    expect(diag.path).toEqual(['id']);
+    expect(diag.message).toContain('follow-on');
+  });
+
+  it('ref/next-to-triggered-scene when a later duplicate declaration has the trigger', () => {
+    const dir = freshValidDir('dup-scene-next');
+    writePackage(dir, {
+      'scenario.yaml': fs
+        .readFileSync(path.join(dir, 'scenario.yaml'), 'utf8')
+        .replace('  - scenes/after.yaml', '  - scenes/after.yaml\n  - scenes/after-again.yaml'),
+      'scenes/after-again.yaml':
+        'id: after\ntitle: After Again\ntrigger: on-enter\ntext: |\n  Again.\n',
+    });
+    const diags = fail(dir);
+    const diag = only(diags, 'ref/next-to-triggered-scene');
+    expect(diag.file).toBe('scenes/gate.yaml');
+    expect(diag.path).toEqual(['choices', 0, 'outcome', 'next']);
+    expect(diag.message).toContain('after');
+  });
+
   it('ref/template-slot-conflict for two starting weapons', () => {
     const dir = freshValidDir('slot-conflict');
     mutate(dir, 'templates.yaml', '- { item: bread, quantity: 2 }', '- { item: sword }');
@@ -542,6 +573,30 @@ describe('integrity phase: images', () => {
     const diag = only(diags, 'ref/image-format-mismatch');
     expect(diag.file).toBe('images.yaml');
     expect(diag.path).toEqual([0, 'path']);
+  });
+
+  it('ref/image-format-mismatch for a truncated file with unreadable dimensions', () => {
+    const dir = freshValidDir('truncated-image');
+    writePackage(dir, { 'images/gate.png': makePng().subarray(0, 16) });
+    const diags = fail(dir);
+    const diag = only(diags, 'ref/image-format-mismatch');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'path']);
+    expect(diag.message).toContain('images/gate.png');
+  });
+
+  it('ref/invalid-image-path for an image under a directory symlinked outside', () => {
+    const dir = freshValidDir('image-symlinked-dir');
+    const outside = path.join(path.dirname(dir), 'outside-images');
+    fs.mkdirSync(outside, { recursive: true });
+    fs.writeFileSync(path.join(outside, 'gate.png'), makePng());
+    fs.rmSync(path.join(dir, 'images'), { recursive: true, force: true });
+    fs.symlinkSync(outside, path.join(dir, 'images'));
+    const diags = fail(dir);
+    const diag = only(diags, 'ref/invalid-image-path');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'path']);
+    expect(diag.message).toContain('symlink');
   });
 
   it('ref/image-too-large for a side over 4096 px', () => {
@@ -619,6 +674,15 @@ describe('compiled scenario model', () => {
     ]);
     expect(scenario.encounters.find((encounter) => encounter.id === 'rats')?.enemy.id).toBe('rat');
     expect(scenario.locationsById['home']?.scenes.map((scene) => scene.id)).toEqual(['gate']);
+  });
+
+  it('defaults a labelless connection label to the target location name', () => {
+    const dir = freshValidDir('label-default');
+    mutate(dir, 'locations/home.yaml', 'scenes: [gate]', 'scenes: [gate]\nconnections:\n  - to: home');
+    const scenario = loadValid(dir);
+    expect(scenario.locationsById['home']?.connections.map((connection) => connection.label)).toEqual(
+      ['Home'],
+    );
   });
 
   it('computes a content hash stable across runs', () => {

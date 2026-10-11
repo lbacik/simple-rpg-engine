@@ -18,7 +18,7 @@ import {
   inspectImage,
 } from './images';
 import type { ImageFormat } from './images';
-import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath } from './loadScenario';
+import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath, symlinkEscapesDir } from './paths';
 import { isRecord, nodeAtPath } from './structure';
 import type { ManifestSection, ParsedFile } from './structure';
 import { nodeRange } from './yamlFile';
@@ -70,10 +70,7 @@ function checkDuplicates(declarations: Declaration[], kind: string, ctx: Ctx): v
       file: declaration.file,
       range: rangeOf(declaration),
       path: declaration.path,
-      related:
-        first.range === undefined
-          ? undefined
-          : [{ file: first.file, range: first.range, message: 'first declared here' }],
+      related: [{ file: first.file, range: first.range, message: 'first declared here' }],
     });
   }
 }
@@ -193,10 +190,7 @@ function checkChoiceDuplicates(choices: Declaration[], ctx: Ctx): void {
       file: declaration.file,
       range: rangeOf(declaration),
       path: declaration.path,
-      related:
-        first.range === undefined
-          ? undefined
-          : [{ file: first.file, range: first.range, message: 'first declared here' }],
+      related: [{ file: first.file, range: first.range, message: 'first declared here' }],
     });
   }
 }
@@ -631,7 +625,8 @@ function checkReferences(
 // Scene membership and Template slots.
 // ---------------------------------------------------------------------------
 
-type SceneFile = {
+type SceneDeclaration = {
+  id: string;
   file: ParsedFile;
   /** The `trigger` value (`on-enter` | `on-demand`), or undefined for follow-on. */
   trigger: string | undefined;
@@ -644,20 +639,19 @@ type Listing = {
 };
 
 function collectSceneData(files: ParsedFile[]): {
-  scenes: Map<string, SceneFile>;
+  declarations: SceneDeclaration[];
   listings: Listing[];
 } {
-  const scenes = new Map<string, SceneFile>();
+  const declarations: SceneDeclaration[] = [];
   const listings: Listing[] = [];
   for (const file of files) {
     if (file.section === 'scenes' && isRecord(file.value) && typeof file.value['id'] === 'string') {
-      if (!scenes.has(file.value['id'])) {
-        const trigger = file.value['trigger'];
-        scenes.set(file.value['id'], {
-          file,
-          trigger: typeof trigger === 'string' ? trigger : undefined,
-        });
-      }
+      const trigger = file.value['trigger'];
+      declarations.push({
+        id: file.value['id'],
+        file,
+        trigger: typeof trigger === 'string' ? trigger : undefined,
+      });
     }
     if (file.section === 'locations' && isRecord(file.value) && Array.isArray(file.value['scenes'])) {
       file.value['scenes'].forEach((scene, sceneIndex) => {
@@ -667,11 +661,11 @@ function collectSceneData(files: ParsedFile[]): {
       });
     }
   }
-  return { scenes, listings };
+  return { declarations, listings };
 }
 
 function checkSceneMembership(
-  scenes: Map<string, SceneFile>,
+  declarations: SceneDeclaration[],
   listings: Listing[],
   ctx: Ctx,
 ): void {
@@ -686,16 +680,21 @@ function checkSceneMembership(
     range: nodeRangeOf(listing.file, listing.path),
     message: 'listed here',
   });
-  for (const [sceneId, scene] of scenes) {
+  // Every declaration is evaluated on its own trigger, so a later duplicate
+  // declaration's trigger is not hidden by the first. Cardinality (exactly one
+  // listing) is about the id and reported once, at the first declaration.
+  const cardinalityReported = new Set<string>();
+  for (const declaration of declarations) {
+    const sceneId = declaration.id;
     const sceneListings = byScene.get(sceneId) ?? [];
-    const idRange = nodeRangeOf(scene.file, ['id']);
-    if (scene.trigger === undefined) {
+    const idRange = nodeRangeOf(declaration.file, ['id']);
+    if (declaration.trigger === undefined) {
       if (sceneListings.length > 0) {
         ctx.push({
           severity: 'error',
           code: 'ref/scene-membership',
           message: `follow-on scene "${sceneId}" must not be listed by any location`,
-          file: scene.file.file,
+          file: declaration.file.file,
           range: idRange,
           path: ['id'],
           related: sceneListings.map(listedHere),
@@ -704,20 +703,24 @@ function checkSceneMembership(
       continue;
     }
     if (sceneListings.length === 0) {
+      if (cardinalityReported.has(sceneId)) continue;
+      cardinalityReported.add(sceneId);
       ctx.push({
         severity: 'error',
         code: 'ref/scene-membership',
-        message: `"${scene.trigger}" scene "${sceneId}" is listed by no location; it must be listed by exactly one location`,
-        file: scene.file.file,
+        message: `"${declaration.trigger}" scene "${sceneId}" is listed by no location; it must be listed by exactly one location`,
+        file: declaration.file.file,
         range: idRange,
         path: ['id'],
       });
     } else if (sceneListings.length > 1) {
+      if (cardinalityReported.has(sceneId)) continue;
+      cardinalityReported.add(sceneId);
       ctx.push({
         severity: 'error',
         code: 'ref/scene-membership',
-        message: `"${scene.trigger}" scene "${sceneId}" is listed by more than one location; it must be listed by exactly one location`,
-        file: scene.file.file,
+        message: `"${declaration.trigger}" scene "${sceneId}" is listed by more than one location; it must be listed by exactly one location`,
+        file: declaration.file.file,
         range: idRange,
         path: ['id'],
         related: sceneListings.map(listedHere),
@@ -828,26 +831,6 @@ function collectImageEntries(files: ParsedFile[]): ImageEntry[] {
   return entries;
 }
 
-/** True when the image path escapes the Scenario directory via symlink. */
-function imageSymlinkEscapes(scenarioDir: string, imagePath: string): boolean {
-  const full = path.join(scenarioDir, imagePath);
-  let stat: fs.Stats;
-  try {
-    stat = fs.lstatSync(full);
-  } catch {
-    return false;
-  }
-  if (!stat.isSymbolicLink()) return false;
-  let target: string;
-  try {
-    target = path.resolve(path.dirname(full), fs.readlinkSync(full));
-  } catch {
-    return false;
-  }
-  const relative = path.relative(scenarioDir, target);
-  return relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
-}
-
 function checkImages(
   files: ParsedFile[],
   scenarioDir: string,
@@ -944,7 +927,19 @@ function checkImages(
       continue;
     }
 
-    if (inspected.width === undefined || inspected.height === undefined) continue;
+    if (inspected.width === undefined || inspected.height === undefined) {
+      ctx.push({
+        severity: 'error',
+        code: 'ref/image-format-mismatch',
+        message:
+          `image file "${entry.imagePath}" could not be read as ".${expected}"; ` +
+          `the file may be truncated or corrupt`,
+        file: entry.file.file,
+        range: nodeRangeOf(entry.file, entry.path),
+        path: entry.path,
+      });
+      continue;
+    }
     images.push({
       id: entry.id,
       path: entry.imagePath,
@@ -964,7 +959,7 @@ function imagePathViolation(scenarioDir: string, imagePath: string): string | un
   if (isAbsolutePath(imagePath)) return 'is absolute; paths must be relative to the Scenario directory';
   if (isUrl(imagePath)) return 'is a URL; paths must be relative to the Scenario directory';
   if (hasDotDot(imagePath)) return 'contains ".."; paths must stay inside the Scenario directory';
-  if (imageSymlinkEscapes(scenarioDir, imagePath)) {
+  if (symlinkEscapesDir(scenarioDir, imagePath)) {
     return 'is a symlink resolving outside the Scenario directory';
   }
   if (IMAGE_FORMAT_BY_EXTENSION[path.extname(imagePath)] === undefined) {
@@ -1013,12 +1008,17 @@ export function runIntegrityPhase(
   }
 
   const index = buildIndex(namespaces, files);
-  const { scenes, listings } = collectSceneData(files);
-  const sceneTriggers = new Map<string, string | undefined>(
-    [...scenes].map(([sceneId, scene]) => [sceneId, scene.trigger]),
-  );
+  const { declarations, listings } = collectSceneData(files);
+  // Any declaration's trigger counts: a `next` edge to an id with a triggered
+  // declaration anywhere is broken, whichever declaration came first.
+  const sceneTriggers = new Map<string, string | undefined>();
+  for (const declaration of declarations) {
+    if (sceneTriggers.get(declaration.id) === undefined) {
+      sceneTriggers.set(declaration.id, declaration.trigger);
+    }
+  }
   checkReferences(manifest, files, index, sceneTriggers, ctx);
-  checkSceneMembership(scenes, listings, ctx);
+  checkSceneMembership(declarations, listings, ctx);
   checkTemplateSlots(files, collectItemSlots(files), ctx);
   return checkImages(files, scenarioDir, ctx);
 }

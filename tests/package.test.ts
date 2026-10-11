@@ -322,6 +322,28 @@ describe('package phase', () => {
     expect(lineOf(diagnostics[0] as Diagnostic)).toEqual([4, 5]);
   });
 
+  it('package/invalid-path for a file under a directory symlinked outside', () => {
+    const dir = makeScenarioDir('symlink-escape-dir');
+    const id = path.basename(dir);
+    const outside = path.join(path.dirname(dir), 'outside-dir');
+    fs.mkdirSync(outside, { recursive: true });
+    fs.writeFileSync(path.join(outside, 'file.yaml'), 'id: outside\n');
+    writePackage(dir, {
+      'scenario.yaml': manifestFor(
+        id,
+        'locations:\n  - sub/file.yaml\ntemplates:\n  - templates.yaml\nendings:\n  - endings.yaml\n',
+      ),
+      'templates.yaml': '- id: t\n',
+      'endings.yaml': '- id: e\n',
+    });
+    fs.symlinkSync(outside, path.join(dir, 'sub'));
+    const diagnostics = errorsOf(dir);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]?.code).toBe('package/invalid-path');
+    expect(diagnostics[0]?.message).toContain('symlink resolving outside');
+    expect(lineOf(diagnostics[0] as Diagnostic)).toEqual([4, 5]);
+  });
+
   it('package/missing-file for a listed file that does not exist', () => {
     const dir = makeScenarioDir('missing-file');
     const id = path.basename(dir);

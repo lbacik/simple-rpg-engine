@@ -13,6 +13,7 @@ import type { LineCounter } from 'yaml';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
 import { runIntegrityPhase } from './integrity';
 import { buildScenario } from './model';
+import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath, symlinkEscapesDir } from './paths';
 import type { Scenario } from './model';
 import { runStructurePhase } from './structure';
 import type { ManifestSection, ParsedFile } from './structure';
@@ -90,23 +91,6 @@ function findPair(root: unknown, key: string) {
     if (isPair(item) && isScalar(item.key) && item.key.value === key) return item;
   }
   return undefined;
-}
-
-export function isAbsolutePath(value: string): boolean {
-  return path.posix.isAbsolute(value) || path.win32.isAbsolute(value) || /^[A-Za-z]:/.test(value);
-}
-
-export function isUrl(value: string): boolean {
-  return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value);
-}
-
-export function hasDotDot(value: string): boolean {
-  return value.split(/[\\/]/).includes('..');
-}
-
-/** Normalize a listed path for duplicate-file comparison. */
-export function normalizeListedPath(value: string): string {
-  return path.posix.normalize(value.replace(/^(?:\.\/)+/, ''));
 }
 
 export function loadScenario(dir: string): LoadScenarioResult {
@@ -375,25 +359,9 @@ function checkListedFile(
     });
     return undefined;
   }
-  if (stat.isSymbolicLink()) {
-    let target: string;
-    try {
-      target = path.resolve(path.dirname(full), fs.readlinkSync(full));
-    } catch {
-      push({
-        severity: 'error',
-        code: 'package/missing-file',
-        message: `listed file "${entry.value}" is missing or unreadable`,
-        file: MANIFEST_FILE,
-        range: entry.range,
-      });
-      return;
-    }
-    const relative = path.relative(scenarioDir, target);
-    if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-      invalidPath('is a symlink resolving outside the Scenario directory');
-      return;
-    }
+  if (symlinkEscapesDir(scenarioDir, entry.value)) {
+    invalidPath('is a symlink resolving outside the Scenario directory');
+    return;
   }
 
   let bytes: Buffer;

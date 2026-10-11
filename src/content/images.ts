@@ -100,8 +100,10 @@ function webpDimensions(bytes: Buffer): { width: number; height: number } | unde
  * Returns undefined when the bytes carry no supported image signature; when
  * the signature is known but the dimensions are unreachable, the format is
  * still reported with undefined sides.
+ *
+ * Every present byte must match the signature (a truncated file still names
+ * its format).
  */
-/** True when every present byte matches the signature (a truncated file still names its format). */
 function matchesSignaturePrefix(bytes: Buffer, signature: Buffer): boolean {
   if (bytes.length === 0) return false;
   const length = Math.min(bytes.length, signature.length);
