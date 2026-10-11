@@ -492,7 +492,7 @@ describe('outcomes, effects and transitions', () => {
     expect(repeated.state.firedScenes).toEqual(accepted.firedScenes);
   });
 
-  it('rejects Tests, Combat and Endings and hidden or taken Choices until later tickets', () => {
+  it('rejects Combat and Endings and hidden or taken Choices until later tickets', () => {
     const { scenario, state: started } = startWoods();
     // Refusing Brenna ends the Playthrough: rejected for now.
     const refused = applyAction(
@@ -507,22 +507,25 @@ describe('outcomes, effects and transitions', () => {
     );
     expect(refused).toEqual({ ok: false, reason: 'illegal-action' });
     expect(started.step).toBe(0);
-    // The whispers test is rejected; pressing on works.
+    // The whispers Test resolves: hunter Wits 2 with 1 + 1 fails easy 7.
     const listened = choose(scenario, started, 'listen').state;
     const accepted = choose(scenario, listened, 'accept').state;
     const atEdge = travel(scenario, accepted, 'forest-edge').state;
-    expect(
-      applyAction(
-        scenario,
-        atEdge,
-        {
-          kind: 'choose',
-          choiceId: 'listen',
-          expectedStep: atEdge.step,
-        },
-        rng,
-      ),
-    ).toEqual({ ok: false, reason: 'illegal-action' });
+    const heard = applyAction(
+      scenario,
+      atEdge,
+      {
+        kind: 'choose',
+        choiceId: 'listen',
+        expectedStep: atEdge.step,
+      },
+      rng,
+    );
+    expect(heard.ok).toBe(true);
+    if (!heard.ok) throw new Error(`whispers listen failed: ${heard.reason}`);
+    expect(heard.journal.map((entry) => entry.type)).toEqual(['choice', 'test', 'outcome']);
+    expect(heard.journal[1]).toMatchObject({ type: 'test', total: 4, success: false });
+    expect(heard.state.flags).not.toContain('knows-wight-name');
     const pressed = choose(scenario, atEdge, 'press-on').state;
     const hollow = travel(scenario, pressed, 'wolf-hollow').state;
     expect(hollow.activeSceneId).toBe('wolf-den');
@@ -1037,21 +1040,34 @@ describe('synthetic package: remaining effects and transitions', () => {
     expect(surveyed.journal.map((entry) => entry.type)).toEqual(['choice']);
   });
 
-  it('rejects Test choices and Ending transitions until later tickets', () => {
+  it('resolves Test choices and rejects Ending transitions until later tickets', () => {
     const { scenario, state } = atCounter();
-    for (const choiceId of ['gamble', 'finish']) {
-      expect(
-        applyAction(
-          scenario,
-          state,
-          {
-            kind: 'choose',
-            choiceId,
-            expectedStep: state.step,
-          },
-          rng,
-        ),
-      ).toEqual({ ok: false, reason: 'illegal-action' });
-    }
+    // Hero Wits 1 with 1 + 1 fails ordinary 9: the failure Outcome applies.
+    const gambled = applyAction(
+      scenario,
+      state,
+      {
+        kind: 'choose',
+        choiceId: 'gamble',
+        expectedStep: state.step,
+      },
+      rng,
+    );
+    expect(gambled.ok).toBe(true);
+    if (!gambled.ok) throw new Error(`gamble failed: ${gambled.reason}`);
+    expect(gambled.journal.map((entry) => entry.type)).toEqual(['choice', 'test', 'outcome']);
+    expect(gambled.journal[1]).toMatchObject({ type: 'test', total: 3, success: false });
+    expect(
+      applyAction(
+        scenario,
+        state,
+        {
+          kind: 'choose',
+          choiceId: 'finish',
+          expectedStep: state.step,
+        },
+        rng,
+      ),
+    ).toEqual({ ok: false, reason: 'illegal-action' });
   });
 });

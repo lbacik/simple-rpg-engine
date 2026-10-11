@@ -4,8 +4,14 @@
 // (enforced by the no-restricted-imports rule in eslint.config.mjs).
 
 import type { Scenario } from '../content/index';
-import type { CompiledChoice, CompiledEffect, CompiledOutcome, CompiledScene } from '../content/model';
-import { evaluateCondition } from './conditions';
+import type {
+  AttributeName,
+  CompiledChoice,
+  CompiledEffect,
+  CompiledOutcome,
+  CompiledScene,
+} from '../content/model';
+import { effectiveAttributes, evaluateCondition } from './conditions';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
@@ -39,6 +45,39 @@ export {
  */
 export type Rng = (min: number, max: number) => number;
 
+/** Test Difficulty targets (docs/spec/mechanics.md, Tests). */
+export const DIFFICULTY_TARGETS = {
+  easy: 7,
+  ordinary: 9,
+  hard: 11,
+  'very-hard': 13,
+} as const;
+
+export type Difficulty = keyof typeof DIFFICULTY_TARGETS;
+
+const DIFFICULTY_NAMES: Record<Difficulty, string> = {
+  easy: 'Easy',
+  ordinary: 'Ordinary',
+  hard: 'Hard',
+  'very-hard': 'Very hard',
+};
+
+const ATTRIBUTE_NAMES: Record<AttributeName, string> = {
+  might: 'Might',
+  agility: 'Agility',
+  wits: 'Wits',
+  presence: 'Presence',
+};
+
+/**
+ * The Choice label shown before a Test is taken (docs/spec/ui.md, tests and
+ * results): the Attribute and the Difficulty by name and number, for example
+ * "Might, Very hard 13".
+ */
+export function testLabel(attribute: AttributeName, difficulty: Difficulty): string {
+  return `${ATTRIBUTE_NAMES[attribute]}, ${DIFFICULTY_NAMES[difficulty]} ${DIFFICULTY_TARGETS[difficulty]}`;
+}
+
 /** New Journal entries produced by one engine step. Stored text as presented. */
 export type NewJournalEntry =
   | {
@@ -64,6 +103,19 @@ export type NewJournalEntry =
       sceneId: string;
       choiceId: string;
       text: string;
+    }
+  | {
+      type: 'test';
+      /** The text as presented: both dice, the modifier, the total and the result. */
+      text: string;
+      attribute: AttributeName;
+      difficulty: Difficulty;
+      die1: number;
+      die2: number;
+      /** The effective Attribute the roll added. */
+      modifier: number;
+      total: number;
+      success: boolean;
     }
   | {
       type: 'outcome';
@@ -261,10 +313,9 @@ export function applyAction(
   state: PlaythroughState,
   action: Action,
   // Kept for the engine contract: Travel, Scene and Location actions roll no
-  // dice; Tests and Combat do (later tickets).
-  _rng: Rng,
+  // dice; Tests and Combat do.
+  rng: Rng,
 ): ApplyActionResult {
-  void _rng;
   if (action.expectedStep !== state.step) {
     return { ok: false, reason: 'stale-step' };
   }
@@ -275,7 +326,7 @@ export function applyAction(
     case 'travel':
       return applyTravel(scenario, state, action.targetLocationId);
     case 'choose':
-      return applyChoose(scenario, state, action.choiceId);
+      return applyChoose(scenario, state, action.choiceId, rng);
     case 'continue':
       return applyContinue(scenario, state);
     case 'open-scene':
@@ -432,10 +483,56 @@ function outcomeWouldKill(state: PlaythroughState, outcome: CompiledOutcome): bo
   return false;
 }
 
+/**
+ * Rolling a Test (docs/spec/mechanics.md, Tests): 2d6 plus the effective
+ * Attribute against the Difficulty target. No automatic success or failure,
+ * no criticals. Production rolls each die with `crypto.randomInt(1, 7)`;
+ * the `rng` here is that function in production, deterministic in tests.
+ * Nothing from the client reaches this roll: the Action carries no seed and
+ * no die value.
+ */
+function resolveTest(
+  scenario: Scenario,
+  state: PlaythroughState,
+  test: NonNullable<CompiledChoice['test']>,
+  rng: Rng,
+): { entry: Extract<NewJournalEntry, { type: 'test' }>; outcome: CompiledOutcome } {
+  const die1 = rng(1, 7);
+  const die2 = rng(1, 7);
+  const modifier = effectiveAttributes(scenario, state)[test.attribute];
+  const total = die1 + die2 + modifier;
+  const success = total >= DIFFICULTY_TARGETS[test.difficulty];
+  const signed = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+  return {
+    entry: {
+      type: 'test',
+      text: `${testLabel(test.attribute, test.difficulty)}: rolled ${die1} and ${die2}, modifier ${signed}, total ${total} — ${success ? 'success' : 'failure'}.`,
+      attribute: test.attribute,
+      difficulty: test.difficulty,
+      die1,
+      die2,
+      modifier,
+      total,
+      success,
+    },
+    outcome: success ? test.success : test.failure,
+  };
+}
+
+/**
+ * An Outcome the engine cannot apply yet (later tickets): `start-combat`
+ * (docs/spec/mechanics.md, Combat) and `end`
+ * (docs/spec/playthrough-state.md, transitions).
+ */
+function outcomeNeedsLaterTicket(outcome: CompiledOutcome): boolean {
+  return outcome.startCombat !== undefined || outcome.end !== undefined;
+}
+
 function applyChoose(
   scenario: Scenario,
   state: PlaythroughState,
   choiceId: string,
+  rng: Rng,
 ): ApplyActionResult {
   // Choosing is legal only with a Scene active (and no Combat).
   if (state.activeSceneId == null || state.activeCombat != null) {
@@ -456,17 +553,14 @@ function applyChoose(
   if (choice.once && isTakenOnce(state, scene.id, choice.id)) {
     return { ok: false, reason: 'illegal-action' };
   }
-  // Later tickets: a Choice with a Test, an Outcome leading to Combat or an
-  // Ending, and a damage that kills are rejected until then.
-  if (choice.test !== undefined) {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  const outcome = choice.outcome;
+  // Resolve the Test first: the roll picks the Outcome, and an Outcome
+  // leading to Combat or an Ending, or a damage that kills, is rejected until
+  // those tickets (nothing changes, including the `once` record).
+  const test = choice.test === undefined ? undefined : resolveTest(scenario, state, choice.test, rng);
+  const outcome = test?.outcome ?? choice.outcome;
   if (
     outcome !== undefined &&
-    (outcome.startCombat !== undefined ||
-      outcome.end !== undefined ||
-      outcomeWouldKill(state, outcome))
+    (outcomeNeedsLaterTicket(outcome) || outcomeWouldKill(state, outcome))
   ) {
     return { ok: false, reason: 'illegal-action' };
   }
@@ -481,6 +575,9 @@ function applyChoose(
   const journal: NewJournalEntry[] = [
     { type: 'choice', sceneId: scene.id, choiceId: choice.id, text: choice.text },
   ];
+  if (test !== undefined) {
+    journal.push(test.entry);
+  }
   if (outcome === undefined) {
     // Neither outcome nor Test: the empty Outcome, back to the Location view.
     next = { ...next, activeSceneId: null };
@@ -827,6 +924,8 @@ export function visibleExits(scenario: Scenario, state: PlaythroughState): ExitV
 export type ChoiceView = {
   id: string;
   text: string;
+  /** The Test label shown before the Choice is taken, if the Choice has a Test. */
+  testLabel?: string;
 };
 
 /** Derived projection the UI renders. Later tickets add Combat and the map. */
@@ -898,6 +997,10 @@ export function view(
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
+          testLabel:
+            choice.test === undefined
+              ? undefined
+              : testLabel(choice.test.attribute, choice.test.difficulty),
         })),
         map: deriveMap(scenario, state, options),
       };
