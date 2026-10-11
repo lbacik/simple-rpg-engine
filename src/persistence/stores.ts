@@ -185,6 +185,29 @@ export class PlaythroughStore {
   }
 
   /**
+   * Refresh the content pin after a passed reference check: the row columns
+   * and the state document's own pin move to the loaded Scenario together.
+   */
+  async updatePin(
+    id: string,
+    pin: { scenarioVersion: string; contentHash: string; state: PlaythroughState },
+  ): Promise<void> {
+    await this.db
+      .updateTable('playthroughs')
+      .set({
+        scenario_version: pin.scenarioVersion,
+        content_hash: pin.contentHash,
+        state: JSON.stringify(pin.state),
+        step: pin.state.step,
+        status: pin.state.status,
+        ending_id: pin.state.endingId ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .where('id', '=', id)
+      .execute();
+  }
+
+  /**
    * Optimistic-concurrency state swap: updates only when the stored `step`
    * still equals `expectedStep`. Resolves true on success, false when stale.
    */
