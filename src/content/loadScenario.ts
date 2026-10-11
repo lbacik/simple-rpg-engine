@@ -1,10 +1,9 @@
 // loadScenario: the loader and validator shared by the CLI and the app's
 // startup (see docs/spec/architecture.md).
 //
-// Phases 1 (Package), 2 (Structure) and 3 (Integrity) from
-// docs/spec/validation.md run behind this same function. A later ticket adds
-// phase 4 the same way: collect the phase's diagnostics, and skip every later
-// phase once an error was produced.
+// Phases 1 (Package), 2 (Structure), 3 (Integrity) and 4 (Playability) from
+// docs/spec/validation.md run behind this same function: collect each
+// phase's diagnostics, and skip every later phase once an error was produced.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,6 +12,7 @@ import type { LineCounter } from 'yaml';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
 import { runIntegrityPhase } from './integrity';
 import { buildScenario } from './model';
+import { runPlayabilityPhase } from './playability';
 import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath, symlinkEscapesDir } from './paths';
 import type { Scenario } from './model';
 import { runStructurePhase } from './structure';
@@ -183,19 +183,30 @@ export function loadScenario(dir: string): LoadScenarioResult {
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
     return { ok: false, diagnostics };
   }
+
+  // Phase 4 (Playability): reachability, way-out and authoring-quality
+  // warnings over the compiled model. An error (no-victory, no-way-out)
+  // rejects the Scenario like any earlier error.
+  const scenario = buildScenario({
+    id: dirName,
+    dir: scenarioDir,
+    manifest: manifestParsed,
+    files: parsedFiles,
+    images: integrity.images,
+    imageBytes: integrity.imageBytes,
+    manifestBytes,
+    listedPaths: listed.map((entry) => entry.value),
+    fileBytes,
+  });
+  runPlayabilityPhase(scenario, manifestParsed, parsedFiles, push);
+  diagnostics.sort(compareDiagnostics);
+
+  if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
+    return { ok: false, diagnostics };
+  }
   return {
     ok: true,
-    scenario: buildScenario({
-      id: dirName,
-      dir: scenarioDir,
-      manifest: manifestParsed,
-      files: parsedFiles,
-      images: integrity.images,
-      imageBytes: integrity.imageBytes,
-      manifestBytes,
-      listedPaths: listed.map((entry) => entry.value),
-      fileBytes,
-    }),
+    scenario,
     warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
   };
 }

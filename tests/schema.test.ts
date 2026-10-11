@@ -85,6 +85,7 @@ choices:
       effects:
         - set-flag: met-elder
         - heal: 2
+        - give-item: { item: seal }
       move: home
   - id: test-luck
     text: Try the handle.
@@ -96,6 +97,8 @@ choices:
           It opens.
         effects:
           - give-item: { item: bread, quantity: 2 }
+          - give-item: { item: bow }
+        end: dawn
       failure:
         text: |
           It holds.
@@ -104,6 +107,12 @@ choices:
   - id: remember
     text: Remember the seal.
     when: { has: { item: seal, atLeast: 2 } }
+  - id: fight-rats
+    text: Drive off the rats.
+    when: { flag: met-elder }
+    outcome:
+      start-combat: rats
+illustration: gate
 `;
 
 const ITEMS = `- id: sword
@@ -157,6 +166,7 @@ const TEMPLATES = `- id: drifter
   items:
     - { item: sword }
     - { item: bread, quantity: 2 }
+    - { item: cloak }
 `;
 
 const ENDINGS = `- id: death
@@ -360,7 +370,7 @@ describe('structure phase', () => {
       'schema/invalid-value',
     );
     expect(diag.path).toEqual(['choices', 1, 'test', 'difficulty']);
-    expect(diag.range).toEqual({ line: 22, column: 19, endLine: 22, endColumn: 28 });
+    expect(diag.range).toEqual({ line: 23, column: 19, endLine: 23, endColumn: 28 });
   });
 
   it('schema/empty-text for an empty required text field', () => {
