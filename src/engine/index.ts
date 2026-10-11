@@ -5,10 +5,16 @@
 
 import type { Scenario } from '../content/index';
 import { evaluateCondition } from './conditions';
-import { STATE_VERSION, type PlaythroughState } from './state';
+import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
+import { MAX_HEALTH, STATE_VERSION, type PlaythroughState } from './state';
 
 export type { PlaythroughState } from './state';
-export { PlaythroughStateSchema, STATE_VERSION, parsePlaythroughState } from './state';
+export {
+  MAX_HEALTH,
+  PlaythroughStateSchema,
+  STATE_VERSION,
+  parsePlaythroughState,
+} from './state';
 export { effectiveAttributes, evaluateCondition } from './conditions';
 
 /**
@@ -28,6 +34,10 @@ export type NewJournalEntry =
       type: 'travel';
       text: string;
       to: string;
+    }
+  | {
+      type: 'inventory';
+      text: string;
     };
 
 export type StartPlaythroughSuccess = {
@@ -118,14 +128,32 @@ export function startPlaythrough(
 
 /**
  * Player actions. Travel identifies the Connection by its target: every
- * visible Connection to the same target has the same effect. Later tickets
- * add Choose, Continue, Open Scene, inventory and Combat actions.
+ * visible Connection to the same target has the same effect. Equip names a
+ * held Equipment item, Unequip names a slot, Use item names a held
+ * Consumable. Later tickets add Choose, Continue, Open Scene and Combat
+ * actions.
  */
-export type Action = {
-  kind: 'travel';
-  targetLocationId: string;
-  expectedStep: number;
-};
+export type Action =
+  | {
+      kind: 'travel';
+      targetLocationId: string;
+      expectedStep: number;
+    }
+  | {
+      kind: 'equip';
+      itemId: string;
+      expectedStep: number;
+    }
+  | {
+      kind: 'unequip';
+      slot: EquipmentSlot;
+      expectedStep: number;
+    }
+  | {
+      kind: 'use-item';
+      itemId: string;
+      expectedStep: number;
+    };
 
 export type ApplyActionSuccess = {
   ok: true;
@@ -175,6 +203,15 @@ export function applyAction(
   if (action.kind === 'travel') {
     return applyTravel(scenario, state, action.targetLocationId);
   }
+  if (action.kind === 'equip') {
+    return applyEquip(scenario, state, action.itemId);
+  }
+  if (action.kind === 'unequip') {
+    return applyUnequip(scenario, state, action.slot);
+  }
+  if (action.kind === 'use-item') {
+    return applyUseItem(scenario, state, action.itemId);
+  }
   return { ok: false, reason: 'illegal-action' };
 }
 
@@ -211,6 +248,109 @@ function applyTravel(
       visited,
     },
     journal: [{ type: 'travel', text: `Travelled to ${target.name}.`, to: target.id }],
+  };
+}
+
+/**
+ * Equip (docs/spec/playthrough-state.md): legal in the Location view and
+ * while a Scene is active, never in Combat. The held Equipment moves into
+ * its slot, replacing the occupant. Advances `step` with an inventory entry.
+ */
+function applyEquip(
+  scenario: Scenario,
+  state: PlaythroughState,
+  itemId: string,
+): ApplyActionResult {
+  if (state.activeCombat != null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const item = scenario.itemsById[itemId];
+  if (item === undefined || item.kind !== 'equipment') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if ((state.inventory[itemId] ?? 0) < 1) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (state.equipment[item.slot] === itemId) {
+    // Re-equipping what is already there changes nothing.
+    return { ok: false, reason: 'illegal-action' };
+  }
+  return {
+    ok: true,
+    state: {
+      ...state,
+      step: state.step + 1,
+      equipment: { ...state.equipment, [item.slot]: itemId },
+    },
+    journal: [{ type: 'inventory', text: `Equipped ${item.name}.` }],
+  };
+}
+
+/**
+ * Unequip: legal in the Location view and while a Scene is active, never in
+ * Combat. Empties an occupied slot. Advances `step` with an inventory entry.
+ */
+function applyUnequip(
+  scenario: Scenario,
+  state: PlaythroughState,
+  slot: string,
+): ApplyActionResult {
+  if (state.activeCombat != null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (!isEquipmentSlot(slot)) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const equippedId = state.equipment[slot];
+  if (equippedId === undefined) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const equipment = { ...state.equipment };
+  delete equipment[slot];
+  const name = scenario.itemsById[equippedId]?.name ?? equippedId;
+  return {
+    ok: true,
+    state: { ...state, step: state.step + 1, equipment },
+    journal: [{ type: 'inventory', text: `Unequipped ${name}.` }],
+  };
+}
+
+/**
+ * Use item outside Combat: a held Consumable below full Health heals (capped
+ * at 12) and consumes one copy; the position is unchanged. At full Health
+ * the use is rejected: nothing is consumed and `step` does not advance.
+ */
+function applyUseItem(
+  scenario: Scenario,
+  state: PlaythroughState,
+  itemId: string,
+): ApplyActionResult {
+  if (state.activeCombat != null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const item = scenario.itemsById[itemId];
+  if (item === undefined || item.kind !== 'consumable') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if ((state.inventory[itemId] ?? 0) < 1) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (state.character.health >= MAX_HEALTH) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const restored =
+    Math.min(MAX_HEALTH, state.character.health + item.heal) - state.character.health;
+  const { inventory, equipment } = removeFromInventory(state, itemId, 1);
+  return {
+    ok: true,
+    state: {
+      ...state,
+      step: state.step + 1,
+      character: { ...state.character, health: state.character.health + restored },
+      inventory,
+      equipment,
+    },
+    journal: [{ type: 'inventory', text: `Used ${item.name}, restored ${restored} Health.` }],
   };
 }
 
