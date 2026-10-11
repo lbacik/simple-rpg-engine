@@ -23,6 +23,7 @@ import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { renderJournalEntry } from '@/app/lib/journal';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { LocationMap } from './map';
+import { SceneIllustration } from './scene-illustration';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
@@ -753,6 +754,14 @@ export default async function PlayPage({
           ) : gameView.kind === 'scene' ? (
             <>
               <h1>{gameView.title}</h1>
+              {gameView.illustration ? (
+                <SceneIllustration
+                  src={gameView.illustration.src}
+                  width={gameView.illustration.width}
+                  height={gameView.illustration.height}
+                  alt={gameView.illustration.alt}
+                />
+              ) : null}
               <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.text, gameView.characterName) }} />
               {gameView.choices.length > 0 ? (
                 <section aria-label="Choices">
