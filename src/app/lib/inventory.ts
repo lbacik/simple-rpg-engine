@@ -1,0 +1,107 @@
+// The inventory server actions: Equip, Unequip and Use item post here as
+// plain forms, so inventory management works without JavaScript
+// (docs/spec/architecture.md, turn transport).
+//
+// Each submission re-checks, in order: the Session, ownership of the
+// Playthrough, `step`, then legality in the engine (via executeTurn). The
+// Session cookie's Max-Age slides on every action. Rejections change nothing
+// and redirect back with a transient notice; there is no error page. Another
+// Session's Playthrough, or a nonexistent one, is a 404. The selected panel
+// tab is preserved across the redirect.
+
+'use server';
+
+import { randomInt } from 'node:crypto';
+import { revalidatePath } from 'next/cache';
+import { notFound, redirect } from 'next/navigation';
+import { getScenario } from '@/content/registry';
+import type { Action } from '@/engine/index';
+import { isEquipmentSlot } from '@/engine/inventory';
+import { getDatabase } from '@/persistence/index';
+import { playHref } from './panel';
+import { ensureSessionId, getSessionHash } from './session';
+import { executeTurn } from './turn';
+
+type InventoryForm = {
+  playthroughId: string;
+  expectedStep: number;
+  value: string;
+  tab: string;
+};
+
+function readForm(formData: FormData, field: string): InventoryForm | null {
+  const playthroughId = String(formData.get('playthroughId') ?? '');
+  const expectedStep = Number(String(formData.get('expectedStep') ?? ''));
+  const value = String(formData.get(field) ?? '');
+  if (playthroughId === '' || !Number.isInteger(expectedStep) || value === '') {
+    return null;
+  }
+  return { playthroughId, expectedStep, value, tab: String(formData.get('tab') ?? '') };
+}
+
+async function runInventoryTurn(form: InventoryForm, action: Action): Promise<never> {
+  const sessionHash = await getSessionHash();
+  // Sliding refresh: re-set the same id with a fresh Max-Age.
+  await ensureSessionId();
+
+  const result = await executeTurn(
+    getDatabase(),
+    (scenarioId) => getScenario(scenarioId),
+    form.playthroughId,
+    sessionHash,
+    action,
+    randomInt,
+  );
+  const path = `/play/${form.playthroughId}`;
+  if (result.ok) {
+    revalidatePath(path);
+    redirect(playHref(form.playthroughId, form.tab));
+  }
+  if (result.reason === 'not-found') {
+    notFound();
+  }
+  revalidatePath(path);
+  redirect(
+    playHref(form.playthroughId, form.tab, result.reason === 'stale' ? 'stale' : 'unavailable'),
+  );
+}
+
+export async function equipAction(formData: FormData): Promise<never> {
+  const form = readForm(formData, 'itemId');
+  if (form === null) {
+    notFound();
+  }
+  return runInventoryTurn(
+    form,
+    { kind: 'equip', itemId: form.value, expectedStep: form.expectedStep },
+  );
+}
+
+export async function unequipAction(formData: FormData): Promise<never> {
+  const form = readForm(formData, 'slot');
+  if (form === null) {
+    notFound();
+  }
+  if (!isEquipmentSlot(form.value)) {
+    // A forged slot value fails fast with the unavailable notice; the engine
+    // re-validates real slots independently.
+    await ensureSessionId();
+    revalidatePath(`/play/${form.playthroughId}`);
+    redirect(playHref(form.playthroughId, form.tab, 'unavailable'));
+  }
+  return runInventoryTurn(
+    form,
+    { kind: 'unequip', slot: form.value, expectedStep: form.expectedStep },
+  );
+}
+
+export async function useItemAction(formData: FormData): Promise<never> {
+  const form = readForm(formData, 'itemId');
+  if (form === null) {
+    notFound();
+  }
+  return runInventoryTurn(
+    form,
+    { kind: 'use-item', itemId: form.value, expectedStep: form.expectedStep },
+  );
+}

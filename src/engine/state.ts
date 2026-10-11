@@ -9,6 +9,9 @@ import { z } from 'zod';
 
 export const STATE_VERSION = 1 as const;
 
+/** Every Character has 12 maximum Health (docs/spec/mechanics.md). */
+export const MAX_HEALTH = 12 as const;
+
 const attributesSchema = z.strictObject({
   might: z.number().int().min(0).max(3),
   agility: z.number().int().min(0).max(3),

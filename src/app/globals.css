@@ -192,3 +192,80 @@ fieldset {
     display: block;
   }
 }
+
+/* Transient rejection notices (stale step, unavailable action). */
+.notice {
+  border-left: 3px solid #8c1d1d;
+  background: var(--card);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+/* Character and inventory panel tabs. */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.75rem 0 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.tab.active {
+  color: var(--ink);
+  font-weight: bold;
+  border-color: var(--rule);
+  background: var(--card);
+}
+
+/* Inventory items. */
+.items {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.item {
+  border-top: 1px solid var(--rule);
+  padding: 0.5rem 0;
+}
+
+.item p {
+  margin: 0.25rem 0;
+}
+
+.magic {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  border-radius: 1rem;
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.reason {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+form.inline {
+  display: inline;
+}
+
+button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.compact-summary summary {
+  cursor: pointer;
+}
