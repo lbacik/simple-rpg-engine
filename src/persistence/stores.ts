@@ -62,6 +62,17 @@ function toStored(row: Database['playthroughs']): StoredPlaythrough {
   };
 }
 
+function toJournalEntry(row: Database['journal_entries']): StoredJournalEntry {
+  return {
+    playthroughId: row.playthrough_id,
+    seq: row.seq,
+    step: row.step,
+    type: row.type,
+    payload: JSON.parse(row.payload),
+    createdAt: row.created_at,
+  };
+}
+
 export class PlaythroughStore {
   constructor(private readonly db: Kysely<Database>) {}
 
@@ -143,14 +154,34 @@ export class PlaythroughStore {
       .where('playthrough_id', '=', playthroughId)
       .orderBy('seq', 'asc')
       .execute();
-    return rows.map((row) => ({
-      playthroughId: row.playthrough_id,
-      seq: row.seq,
-      step: row.step,
-      type: row.type,
-      payload: JSON.parse(row.payload),
-      createdAt: row.created_at,
-    }));
+    return rows.map(toJournalEntry);
+  }
+
+  /** Total journal entries of a Playthrough, for pagination. */
+  async countJournal(playthroughId: string): Promise<number> {
+    const row = await this.db
+      .selectFrom('journal_entries')
+      .select((eb) => eb.fn.countAll().as('count'))
+      .where('playthrough_id', '=', playthroughId)
+      .executeTakeFirst();
+    const count = row?.count;
+    return typeof count === 'string' ? Number.parseInt(count, 10) : Number(count ?? 0);
+  }
+
+  /** One journal page in order, for the paginated journal route. */
+  async listJournalPage(
+    playthroughId: string,
+    options: { limit: number; offset: number },
+  ): Promise<StoredJournalEntry[]> {
+    const rows = await this.db
+      .selectFrom('journal_entries')
+      .selectAll()
+      .where('playthrough_id', '=', playthroughId)
+      .orderBy('seq', 'asc')
+      .limit(options.limit)
+      .offset(options.offset)
+      .execute();
+    return rows.map(toJournalEntry);
   }
 
   /**

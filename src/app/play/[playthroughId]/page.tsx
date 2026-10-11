@@ -14,6 +14,7 @@ import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
+import { renderJournalEntry } from '@/app/lib/journal';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { LocationMap } from './map';
 import { getSessionHash } from '@/app/lib/session';
@@ -396,16 +397,31 @@ export default async function PlayPage({
 
   const scenario = getScenario(playthrough.scenarioId);
   if (!scenario) {
-    // The Scenario left the collection: Journal only, read-only.
+    // The Scenario left the collection: Journal only, read-only. The Journal
+    // always renders completely because it stores the text as presented.
     const journal = await store.listJournal(playthrough.id);
+    const goneName = playthrough.state.character.name;
     return (
       <main>
-        <h1>{playthrough.state.character.name}</h1>
+        <h1>{goneName}</h1>
         <p>This Scenario has changed since it was played (or is no longer available).</p>
+        <p>
+          <a href={`/play/${playthrough.id}/journal`}>View journal</a>
+        </p>
         <section aria-label="Journal">
-          {journal.map((entry) => (
-            <p key={entry.seq}>{JSON.stringify(entry.payload)}</p>
-          ))}
+          <ol>
+            {journal.map((entry) => {
+              const rendered = renderJournalEntry(entry.type, entry.payload, goneName);
+              return (
+                <li key={entry.seq}>
+                  <p className="meta">
+                    {rendered.label} · step {entry.step}
+                  </p>
+                  <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
+                </li>
+              );
+            })}
+          </ol>
         </section>
       </main>
     );
@@ -456,6 +472,9 @@ export default async function PlayPage({
             </p>
           ) : null}
           <ResultPanel entries={resultEntries} />
+          <p>
+            <a href={`/play/${playthrough.id}/journal`}>View journal</a>
+          </p>
           {gameView.kind === 'location' ? (
             <>
               <h1>{gameView.name}</h1>
@@ -538,6 +557,11 @@ export default async function PlayPage({
                 }}
               />
               <section aria-label="After the ending">
+                <p>
+                  <a className="button secondary" href={`/play/${playthrough.id}/journal`}>
+                    View journal
+                  </a>
+                </p>
                 <p>
                   <a className="button" href={`/scenarios/${scenario.id}`}>
                     Start a new Playthrough of {scenario.title}
