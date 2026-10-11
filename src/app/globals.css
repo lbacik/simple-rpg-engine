@@ -1,0 +1,194 @@
+/* Neutral, lightly book-inspired style shared by every Scenario. */
+
+:root {
+  --paper: #faf7f0;
+  --ink: #2a251d;
+  --muted: #6f6455;
+  --rule: #ddd2bd;
+  --accent: #5a4a2f;
+  --card: #fffdf8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+header.topnav {
+  border-bottom: 1px solid var(--rule);
+  background: var(--card);
+}
+
+header.topnav nav {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.6rem 1rem;
+  display: flex;
+  gap: 1.25rem;
+  font-size: 1rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  padding: 1rem 1.1rem;
+}
+
+.card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.button,
+button.primary {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.button.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+form label {
+  display: block;
+  margin: 0.75rem 0 0.25rem;
+  font-weight: bold;
+}
+
+input[type='text'] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--rule);
+  border-radius: 0.35rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+fieldset {
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  background: var(--card);
+}
+
+.error {
+  color: #8c1d1d;
+  font-weight: bold;
+}
+
+/* Game screen layout A: desktop reading column beside a side panel. */
+.game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.reading h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.result {
+  border-left: 3px solid var(--accent);
+  background: var(--card);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+.side {
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: var(--card);
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.side h2 {
+  font-size: 1.05rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.side h2:first-child {
+  margin-top: 0;
+}
+
+.compact-summary {
+  display: none;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: var(--card);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Phone: a single reading column with a compact summary. */
+@media (max-width: 46rem) {
+  .game {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    position: static;
+  }
+
+  .side .full {
+    display: none;
+  }
+
+  .compact-summary {
+    display: block;
+  }
+}
+
+@media (min-width: 46.01rem) {
+  .side .full {
+    display: block;
+  }
+}
