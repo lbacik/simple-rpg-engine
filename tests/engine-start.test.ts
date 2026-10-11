@@ -17,7 +17,8 @@ function writeFiles(dir: string, files: Record<string, string>): void {
   }
 }
 
-/** Small fixture Scenario without Scenes (on-enter activation lands later). */
+/** Small playable fixture Scenario. Its on-enter Scene, which reaches the
+ * victory ending, is not activated yet (on-enter activation lands later). */
 function loadFixture(): Scenario {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-start-'));
   const name = 'meadow';
@@ -37,6 +38,8 @@ function loadFixture(): Scenario {
       'deathEnding: death',
       'locations:',
       '  - locations/glade.yaml',
+      'scenes:',
+      '  - scenes/path.yaml',
       'templates:',
       '  - templates.yaml',
       'endings:',
@@ -45,7 +48,10 @@ function loadFixture(): Scenario {
       '  - items.yaml',
       '',
     ].join('\n'),
-    'locations/glade.yaml': 'id: glade\nname: Glade\ndescription: Sunlight through leaves.\n',
+    'locations/glade.yaml':
+      'id: glade\nname: Glade\ndescription: Sunlight through leaves.\nmap: { x: 10, y: 20 }\nscenes: [path]\n',
+    'scenes/path.yaml':
+      'id: path\ntitle: Path\ntrigger: on-enter\ntext: A path leads home.\nchoices:\n  - id: go\n    text: Go home.\n    outcome:\n      end: home\n',
     'items.yaml': [
       '- id: sword',
       '  kind: equipment',
@@ -74,7 +80,8 @@ function loadFixture(): Scenario {
       '    - { item: herbs, quantity: 2 }',
       '',
     ].join('\n'),
-    'endings.yaml': '- id: death\n  kind: defeat\n  title: Gone\n  text: The end.\n',
+    'endings.yaml':
+      '- id: death\n  kind: defeat\n  title: Gone\n  text: The end.\n- id: home\n  kind: victory\n  title: Home\n  text: You made it.\n',
   });
   const result = loadScenario(scenarioDir);
   if (!result.ok) throw new Error(`fixture failed to load: ${JSON.stringify(result.diagnostics)}`);

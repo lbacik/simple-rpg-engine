@@ -29,16 +29,21 @@ describe('scenario registry', () => {
         'deathEnding: e',
         'locations:',
         '  - locations/a.yaml',
+        'scenes:',
+        '  - scenes/s.yaml',
         'templates:',
         '  - templates.yaml',
         'endings:',
         '  - endings.yaml',
         '',
       ].join('\n'),
-      'locations/a.yaml': 'id: a\nname: A\ndescription: A place.\n',
+      'locations/a.yaml': 'id: a\nname: A\ndescription: A place.\nmap: { x: 10, y: 20 }\nscenes: [s]\n',
+      'scenes/s.yaml':
+        'id: s\ntitle: S\ntrigger: on-enter\ntext: A room.\nchoices:\n  - id: go\n    text: Go on.\n    outcome:\n      end: w\n',
       'templates.yaml':
         '- id: t\n  name: T\n  attributes: { might: 2, agility: 1, wits: 2, presence: 1 }\n',
-      'endings.yaml': '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n',
+      'endings.yaml':
+        '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n- id: w\n  kind: victory\n  title: W\n  text: You win.\n',
     });
     writeFiles(path.join(root, 'bad'), {
       'scenario.yaml': 'schemaVersion: 1\nid: wrong-id\ntitle: Bad\ndescription: Broken.\n',
