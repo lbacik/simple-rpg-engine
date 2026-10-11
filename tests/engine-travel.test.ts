@@ -156,6 +156,23 @@ describe('travel view', () => {
       description: 'Sunlight through leaves.',
       exits: [{ targetLocationId: 'grove', label: 'Walk to the grove' }],
       onDemandScenes: [],
+      map: {
+        nodes: [
+          {
+            id: 'glade',
+            name: 'Glade',
+            x: 10,
+            y: 20,
+            status: 'visited',
+            isCurrent: true,
+            isTravelTarget: false,
+            hasAuthorCoordinates: true,
+          },
+        ],
+        edges: [],
+        currentLocationId: 'glade',
+        travelTargetIds: ['grove'],
+      },
     });
   });
 
@@ -176,6 +193,33 @@ describe('travel view', () => {
       description: 'Old oaks crowd close.',
       exits: [{ targetLocationId: 'glade', label: 'Glade' }],
       onDemandScenes: [{ sceneId: 'path', title: 'Path' }],
+      map: {
+        nodes: [
+          {
+            id: 'glade',
+            name: 'Glade',
+            x: 10,
+            y: 20,
+            status: 'visited',
+            isCurrent: false,
+            isTravelTarget: true,
+            hasAuthorCoordinates: true,
+          },
+          {
+            id: 'grove',
+            name: 'Grove',
+            x: 30,
+            y: 40,
+            status: 'visited',
+            isCurrent: true,
+            isTravelTarget: false,
+            hasAuthorCoordinates: true,
+          },
+        ],
+        edges: [{ from: 'glade', to: 'grove', twoWay: true }],
+        currentLocationId: 'grove',
+        travelTargetIds: ['glade'],
+      },
     });
   });
 

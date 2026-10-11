@@ -15,6 +15,7 @@ import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
+import { LocationMap } from './map';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { travelAction } from '@/app/lib/travel';
@@ -363,15 +364,6 @@ function ItemActions({
   return null;
 }
 
-function MapSection({ heading, text }: { heading: string; text: string }) {
-  return (
-    <section aria-label="Map">
-      <h2>{heading}</h2>
-      <p>{text}</p>
-    </section>
-  );
-}
-
 /** Render one result-panel entry to HTML. Narration entries keep the name literal. */
 function renderResultEntry(type: string, payload: unknown, characterName: string): string {
   const text = String((payload as { text?: unknown }).text ?? '');
@@ -386,11 +378,14 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ playthroughId: string }>;
-  searchParams: Promise<{ notice?: string; tab?: string }>;
+  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string }>;
 }) {
   const { playthroughId } = await params;
-  const { notice, tab: tabParam } = await searchParams;
+  const { notice, tab: tabParam, unknown } = await searchParams;
   const tab = parsePanelTab(tabParam);
+  // App-level display setting, off by default: draw unvisited targets of
+  // visible exits as "?" nodes. It is not a Scenario field.
+  const showUnknownExits = unknown === '1';
   const noticeText = notice ? NOTICES[notice] : undefined;
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
@@ -416,19 +411,29 @@ export default async function PlayPage({
     );
   }
 
-  const gameView = view(scenario, playthrough.state);
+  const gameView = view(scenario, playthrough.state, {
+    includeUnknownExits: showUnknownExits,
+  });
   const journal = await store.listJournal(playthrough.id);
   const state = playthrough.state;
   const characterName = state.character.name;
   const resultEntries = journal
     .filter((entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type))
     .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
-  const mapText =
-    gameView.kind === 'location'
-      ? `You are in ${gameView.name}.`
-      : gameView.kind === 'scene'
-        ? `You are in ${gameView.locationName}.`
-        : 'This Playthrough has ended.';
+  // Map travel is available only in the Location view of an active Playthrough
+  // with no Scene or Combat running: the same legality as the Travel action.
+  const canTravel =
+    gameView.kind === 'location' &&
+    state.status === 'active' &&
+    state.activeSceneId == null &&
+    state.activeCombat == null;
+  const toggleParams = new URLSearchParams();
+  if (tab === 'inventory' || tab === 'map') toggleParams.set('tab', tab);
+  if (notice === 'stale' || notice === 'unavailable') toggleParams.set('notice', notice);
+  if (!showUnknownExits) toggleParams.set('unknown', '1');
+  const toggleQuery = toggleParams.toString();
+  const mapToggleHref =
+    toggleQuery === '' ? `/play/${playthrough.id}` : `/play/${playthrough.id}?${toggleQuery}`;
   // The desktop panel shows the map above the Character/Inventory tabs; the
   // phone panel holds all three tabs behind the compact summary.
   const desktopTab = tab === 'inventory' ? 'inventory' : 'character';
@@ -546,13 +551,29 @@ export default async function PlayPage({
                 tab={tab}
               />
             ) : tab === 'map' ? (
-              <MapSection heading="Map" text={mapText} />
+              <LocationMap
+                map={gameView.map}
+                playthroughId={playthrough.id}
+                step={playthrough.step}
+                canTravel={canTravel}
+                showUnknownExits={showUnknownExits}
+                toggleHref={mapToggleHref}
+                markerId="map-arrow-phone"
+              />
             ) : (
               <CharacterTab scenario={scenario} state={state} />
             )}
           </details>
           <div className="full">
-            <MapSection heading="Map" text={mapText} />
+            <LocationMap
+              map={gameView.map}
+              playthroughId={playthrough.id}
+              step={playthrough.step}
+              canTravel={canTravel}
+              showUnknownExits={showUnknownExits}
+              toggleHref={mapToggleHref}
+              markerId="map-arrow-desktop"
+            />
             <TabNav
               playthroughId={playthrough.id}
               tab={desktopTab}

@@ -159,6 +159,23 @@ describe('startPlaythrough', () => {
         { id: 'go', text: 'Go home.' },
         { id: 'open', text: 'Open the gate.' },
       ],
+      map: {
+        nodes: [
+          {
+            id: 'glade',
+            name: 'Glade',
+            x: 10,
+            y: 20,
+            status: 'visited',
+            isCurrent: true,
+            isTravelTarget: false,
+            hasAuthorCoordinates: true,
+          },
+        ],
+        edges: [],
+        currentLocationId: 'glade',
+        travelTargetIds: [],
+      },
     });
   });
 });
