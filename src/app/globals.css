@@ -269,3 +269,144 @@ button[disabled] {
 .compact-summary summary {
   cursor: pointer;
 }
+
+/* Location map: a plain surface with a fixed aspect ratio (set by the engine),
+ * lines for the visible Connections, and positioned nodes. */
+.map-area {
+  position: relative;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+.map-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: #8a8580;
+}
+
+.map-lines .edge {
+  stroke: currentColor;
+  stroke-width: 1.1;
+}
+
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  max-width: 5.5rem;
+}
+
+.map-node .dot {
+  position: relative;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  line-height: 1;
+  flex: none;
+}
+
+.map-node .label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  margin-top: 0.15rem;
+  overflow-wrap: break-word;
+}
+
+.map-node.is-revealed .dot,
+.map-node.is-unknown .dot {
+  border-style: dashed;
+  border-color: var(--muted);
+}
+
+.map-node.is-revealed .label,
+.map-node.is-unknown .label {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.map-node.is-current .dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.map-node .here {
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  order: -1;
+}
+
+.map-node .ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: map-pulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes map-pulse {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-node .ring {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+button.map-travel {
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+form.map-node button.map-travel .dot {
+  border-color: var(--accent);
+  border-width: 3px;
+  border-style: solid;
+}
+
+form.map-node button.map-travel:hover .dot,
+form.map-node button.map-travel:focus-visible .dot {
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--rule);
+}
+
+.map-toggle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0.4rem 0 0;
+}

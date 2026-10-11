@@ -8,6 +8,7 @@ import type { CompiledChoice, CompiledEffect, CompiledOutcome, CompiledScene } f
 import { evaluateCondition } from './conditions';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
+import { deriveMap, type MapOptions, type MapView } from './map';
 import { MAX_HEALTH, STATE_VERSION, type PlaythroughState } from './state';
 
 export type { PlaythroughState } from './state';
@@ -19,6 +20,17 @@ export {
 } from './state';
 export { effectiveAttributes, evaluateCondition } from './conditions';
 export { escapeHtml, renderNarration, renderStoredText, substituteName } from './narration';
+export {
+  MAP_ASPECT_RATIO,
+  MAP_CENTRE,
+  deriveMap,
+  resolveMapPositions,
+  type MapEdge,
+  type MapNode,
+  type MapNodeStatus,
+  type MapOptions,
+  type MapView,
+} from './map';
 
 /**
  * Injected random source. Mirrors `crypto.randomInt(min, max)`: `min`
@@ -826,6 +838,7 @@ export type GameView =
       description: string;
       exits: ExitView[];
       onDemandScenes: OnDemandSceneView[];
+      map: MapView;
     }
   | {
       kind: 'scene';
@@ -837,24 +850,37 @@ export type GameView =
       text: string;
       characterName: string;
       choices: ChoiceView[];
+      map: MapView;
     }
   | {
       kind: 'ended';
       endingId: string;
       title: string;
       text: string;
+      map: MapView;
     };
 
 /**
  * The current position: the Ending once ended, the active Scene with its
  * visible Choices (while a Scene is active there are no exits), otherwise
- * the Location view with its exits and on-demand Scenes on offer.
+ * the Location view with its exits and on-demand Scenes on offer. Every
+ * view carries the Location map derived from the stored `visited`/`revealed` sets.
  */
-export function view(scenario: Scenario, state: PlaythroughState): GameView {
+export function view(
+  scenario: Scenario,
+  state: PlaythroughState,
+  options: MapOptions = {},
+): GameView {
   if (state.status === 'ended') {
     const endingId = state.endingId ?? scenario.deathEnding.id;
     const ending = scenario.endingsById[endingId] ?? scenario.deathEnding;
-    return { kind: 'ended', endingId: ending.id, title: ending.title, text: ending.text };
+    return {
+      kind: 'ended',
+      endingId: ending.id,
+      title: ending.title,
+      text: ending.text,
+      map: deriveMap(scenario, state, options),
+    };
   }
   if (state.activeSceneId != null) {
     const scene = scenario.scenesById[state.activeSceneId];
@@ -873,6 +899,7 @@ export function view(scenario: Scenario, state: PlaythroughState): GameView {
           id: choice.id,
           text: choice.text,
         })),
+        map: deriveMap(scenario, state, options),
       };
     }
   }
@@ -885,5 +912,6 @@ export function view(scenario: Scenario, state: PlaythroughState): GameView {
     description: location.description,
     exits: visibleExits(scenario, state),
     onDemandScenes: onDemandScenes(scenario, state),
+    map: deriveMap(scenario, state, options),
   };
 }
