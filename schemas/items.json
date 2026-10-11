@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "equipment"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "weapon",
+              "outfit",
+              "talisman"
+            ]
+          },
+          "bonus": {
+            "type": "string",
+            "enum": [
+              "might",
+              "agility",
+              "wits",
+              "presence"
+            ]
+          },
+          "magic": {
+            "default": false,
+            "type": "boolean"
+          },
+          "reach": {
+            "default": "melee",
+            "type": "string",
+            "enum": [
+              "melee",
+              "ranged"
+            ]
+          },
+          "damage": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 4
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "consumable"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "heal": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "magic": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "heal"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "key"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "magic": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  }
+}

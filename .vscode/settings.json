@@ -1,0 +1,20 @@
+{
+  // Example `yaml.schemas` configuration: associates the generated editor
+  // schemas (schemas/, from `npm run schemas`) with the recommended Scenario
+  // layout (docs/spec/scenario-format.md). With the Red Hat YAML extension
+  // this gives completion and structural checks while editing Scenarios.
+  // Catalog files keep their conventional names; a catalog split across
+  // several files matches the same prefix pattern. There is intentionally
+  // no per-Scenario schema enumerating IDs.
+  "yaml.schemas": {
+    "./schemas/manifest.json": "scenarios/*/scenario.yaml",
+    "./schemas/location.json": "scenarios/*/locations/*.yaml",
+    "./schemas/scene.json": "scenarios/*/scenes/*.yaml",
+    "./schemas/items.json": "scenarios/*/items*.yaml",
+    "./schemas/enemies.json": "scenarios/*/enemies*.yaml",
+    "./schemas/encounters.json": "scenarios/*/encounters*.yaml",
+    "./schemas/templates.json": "scenarios/*/templates*.yaml",
+    "./schemas/endings.json": "scenarios/*/endings*.yaml",
+    "./schemas/images.json": "scenarios/*/images*.yaml"
+  }
+}

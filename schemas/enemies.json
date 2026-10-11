@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "attributes": {
+        "type": "object",
+        "properties": {
+          "might": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "agility": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "wits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "presence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          }
+        },
+        "required": [
+          "might",
+          "agility",
+          "wits",
+          "presence"
+        ],
+        "additionalProperties": false
+      },
+      "health": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 30
+      },
+      "damage": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 6
+      },
+      "reach": {
+        "default": "melee",
+        "type": "string",
+        "enum": [
+          "melee",
+          "ranged"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "attributes",
+      "health",
+      "damage"
+    ],
+    "additionalProperties": false
+  }
+}

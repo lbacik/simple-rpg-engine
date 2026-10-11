@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "enemy": {
+        "type": "string"
+      },
+      "startRange": {
+        "default": "far",
+        "type": "string",
+        "enum": [
+          "near",
+          "far"
+        ]
+      },
+      "text": {
+        "type": "string"
+      },
+      "victory": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "effects": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "set-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "clear-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "clear-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "reveal": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reveal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "heal": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    }
+                  },
+                  "required": [
+                    "heal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "damage": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    }
+                  },
+                  "required": [
+                    "damage"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "give-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "give-item"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "take-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "take-item"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "next": {
+            "type": "string"
+          },
+          "move": {
+            "type": "string"
+          },
+          "start-combat": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "escape": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "effects": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "set-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "clear-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "clear-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "reveal": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reveal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "heal": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    }
+                  },
+                  "required": [
+                    "heal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "damage": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    }
+                  },
+                  "required": [
+                    "damage"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "give-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "give-item"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "take-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "take-item"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "next": {
+            "type": "string"
+          },
+          "move": {
+            "type": "string"
+          },
+          "start-combat": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "id",
+      "enemy",
+      "text",
+      "escape"
+    ],
+    "additionalProperties": false
+  }
+}
