@@ -8,12 +8,15 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "predev": "npm run migrate",
+    "build": "next build --webpack",
+    "start": "node .next/standalone/server.js",
+    "prestart": "npm run migrate",
     "validate": "tsx src/cli/validate.ts",
     "migrate": "tsx src/persistence/migrate.ts",
     "schemas": "tsx scripts/generate-schemas.ts",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.64.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
