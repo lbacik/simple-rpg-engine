@@ -380,9 +380,17 @@ function combatActionById(
 ): CombatAvailability {
   const found = actions.find((action) => action.id === id);
   if (found !== undefined) return found;
-  // The engine always returns every action of this ticket; this fallback only
-  // keeps the panel rendering if that ever changes.
-  return { id, group: id === 'advance' ? 'Position' : 'Fight', label: id, enabled: false };
+  // The engine always returns every action; this fallback only keeps the
+  // panel rendering if that ever changes.
+  const group =
+    id === 'advance' || id === 'fall-back'
+      ? 'Position'
+      : id === 'attack' || id === 'defend'
+        ? 'Fight'
+        : id === 'use-item'
+          ? 'Items'
+          : 'Leave';
+  return { id, group, label: id, enabled: false };
 }
 
 function CombatActionButton({
@@ -409,6 +417,9 @@ function CombatActionButton({
       <input type="hidden" name="playthroughId" value={playthroughId} />
       <input type="hidden" name="expectedStep" value={step} />
       <input type="hidden" name="combat" value={availability.id} />
+      {availability.itemId !== undefined ? (
+        <input type="hidden" name="item" value={availability.itemId} />
+      ) : null}
       <p>
         <button className="button" type="submit">
           {availability.label}
@@ -423,8 +434,7 @@ function CombatActionButton({
  * narration, the Range strip with both tokens (Health, weapon, Reach, the
  * Enemy's name) and the "guard up" marker, actions grouped as Position,
  * Fight, Items and Leave with unavailable ones disabled and the reason, and a
- * log of the current Combat's rolls. Items and Leave actions arrive in the
- * next ticket and are shown disabled until then.
+ * log of the current Combat's rolls.
  */
 function CombatPanel({
   combat,
@@ -499,12 +509,11 @@ function CombatPanel({
           playthroughId={playthroughId}
           step={step}
         />
-        <p>
-          <button className="button" type="button" disabled>
-            Fall back
-          </button>{' '}
-          <span className="reason">Fall back arrives in the next ticket.</span>
-        </p>
+        <CombatActionButton
+          availability={combatActionById(combat.actions, 'fall-back')}
+          playthroughId={playthroughId}
+          step={step}
+        />
       </section>
       <section aria-label="Fight">
         <h2>Fight</h2>
@@ -524,24 +533,34 @@ function CombatPanel({
         {consumables.length === 0 ? (
           <p className="meta">No Consumables held.</p>
         ) : (
-          consumables.map((consumable) => (
-            <p key={consumable.itemId}>
-              <button className="button secondary" type="button" disabled>
-                Use {consumable.name}
-              </button>{' '}
-              <span className="reason">Using items in Combat arrives in the next ticket.</span>
-            </p>
-          ))
+          consumables.map((consumable) => {
+            const availability = combat.actions.find(
+              (action) => action.id === 'use-item' && action.itemId === consumable.itemId,
+            ) ?? {
+              id: 'use-item' as const,
+              group: 'Items' as const,
+              label: `Use ${consumable.name}`,
+              enabled: false,
+              itemId: consumable.itemId,
+            };
+            return (
+              <CombatActionButton
+                key={consumable.itemId}
+                availability={availability}
+                playthroughId={playthroughId}
+                step={step}
+              />
+            );
+          })
         )}
       </section>
       <section aria-label="Leave">
         <h2>Leave</h2>
-        <p>
-          <button className="button" type="button" disabled>
-            Escape
-          </button>{' '}
-          <span className="reason">Escape arrives in the next ticket.</span>
-        </p>
+        <CombatActionButton
+          availability={combatActionById(combat.actions, 'escape')}
+          playthroughId={playthroughId}
+          step={step}
+        />
       </section>
       <section aria-label="Combat log">
         <h2>Log</h2>

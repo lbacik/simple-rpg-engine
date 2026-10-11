@@ -1,14 +1,13 @@
-// The Combat server action: Advance, Attack and Defend buttons post here as
-// plain forms, so Combat works without JavaScript
+// The Combat server action: Position, Fight, Items and Leave buttons post
+// here as plain forms, so Combat works without JavaScript
 // (docs/spec/architecture.md, turn transport).
 //
 // Every submission re-checks, in order: the Session, ownership of the
 // Playthrough, `step`, then legality in the engine (via executeTurn).
 // Rejections change nothing and redirect back with a transient notice; there
 // is no error page. Another Session's Playthrough, or a nonexistent one, is
-// a 404. Items and Leave actions arrive in the next ticket; the panel shows
-// them disabled, and anything but the three actions of this ticket fails fast
-// here before reaching the engine.
+// a 404. A forged action value fails fast here before reaching the engine,
+// which re-validates real actions independently.
 
 'use server';
 
@@ -21,7 +20,14 @@ import { getDatabase } from '@/persistence/index';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
-const COMBAT_ACTIONS: ReadonlySet<string> = new Set(['advance', 'attack', 'defend']);
+const COMBAT_ACTIONS: ReadonlySet<string> = new Set([
+  'advance',
+  'fall-back',
+  'attack',
+  'defend',
+  'use-item',
+  'escape',
+]);
 
 function isCombatAction(value: string): value is CombatAction {
   return COMBAT_ACTIONS.has(value);
@@ -36,8 +42,8 @@ export async function combatAction(formData: FormData): Promise<never> {
   }
   const path = `/play/${playthroughId}`;
   if (!isCombatAction(actionId)) {
-    // A forged action value (fall back, escape, use item) fails fast with the
-    // unavailable notice; the engine re-validates real actions independently.
+    // A forged action value fails fast with the unavailable notice; the
+    // engine re-validates real actions independently.
     await ensureSessionId();
     revalidatePath(path);
     redirect(`${path}?notice=unavailable`);
@@ -46,7 +52,9 @@ export async function combatAction(formData: FormData): Promise<never> {
   // Sliding refresh: re-set the same id with a fresh Max-Age.
   await ensureSessionId();
 
-  const action: Action = { kind: 'combat', combatAction: actionId, expectedStep };
+  // A Combat use-item also names its Consumable; other actions ignore it.
+  const itemId = actionId === 'use-item' ? String(formData.get('item') ?? '') : undefined;
+  const action: Action = { kind: 'combat', combatAction: actionId, itemId, expectedStep };
   const result = await executeTurn(
     getDatabase(),
     (scenarioId) => getScenario(scenarioId),
