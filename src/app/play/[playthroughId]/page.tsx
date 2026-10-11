@@ -2,12 +2,18 @@ import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import type { CompiledItem } from '@/content/model';
 import {
+  combatGuardUp,
+  combatRounds,
   effectiveAttributes,
   escapeHtml,
   renderNarration,
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
   view,
+  type CombatAction,
+  type CombatAvailability,
+  type CombatRoundView,
+  type GameView,
 } from '@/engine/index';
 import { equipmentBonusSources, EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
@@ -18,6 +24,7 @@ import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { LocationMap } from './map';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
+import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { ResultPanel } from './result-panel';
 
@@ -364,6 +371,202 @@ function ItemActions({
   return null;
 }
 
+type CombatView = Extract<GameView, { kind: 'combat' }>;
+
+function combatActionById(
+  actions: CombatAvailability[],
+  id: CombatAction,
+): CombatAvailability {
+  const found = actions.find((action) => action.id === id);
+  if (found !== undefined) return found;
+  // The engine always returns every action of this ticket; this fallback only
+  // keeps the panel rendering if that ever changes.
+  return { id, group: id === 'advance' ? 'Position' : 'Fight', label: id, enabled: false };
+}
+
+function CombatActionButton({
+  availability,
+  playthroughId,
+  step,
+}: {
+  availability: CombatAvailability;
+  playthroughId: string;
+  step: number;
+}) {
+  if (!availability.enabled) {
+    return (
+      <p>
+        <button className="button" type="button" disabled>
+          {availability.label}
+        </button>{' '}
+        {availability.reason ? <span className="reason">{availability.reason}</span> : null}
+      </p>
+    );
+  }
+  return (
+    <form action={combatAction} className="inline">
+      <input type="hidden" name="playthroughId" value={playthroughId} />
+      <input type="hidden" name="expectedStep" value={step} />
+      <input type="hidden" name="combat" value={availability.id} />
+      <p>
+        <button className="button" type="submit">
+          {availability.label}
+        </button>
+      </p>
+    </form>
+  );
+}
+
+/**
+ * The Combat panel (docs/spec/ui.md, Combat panel): the Encounter's opening
+ * narration, the Range strip with both tokens (Health, weapon, Reach, the
+ * Enemy's name) and the "guard up" marker, actions grouped as Position,
+ * Fight, Items and Leave with unavailable ones disabled and the reason, and a
+ * log of the current Combat's rolls. Items and Leave actions arrive in the
+ * next ticket and are shown disabled until then.
+ */
+function CombatPanel({
+  combat,
+  playthroughId,
+  step,
+  guardUp,
+  rounds,
+  consumables,
+}: {
+  combat: CombatView;
+  playthroughId: string;
+  step: number;
+  /** Derived from the latest round's Journal entry; never stored. */
+  guardUp: boolean;
+  /** The rolls of the current Combat, since its opening narration. */
+  rounds: CombatRoundView[];
+  consumables: { itemId: string; name: string }[];
+}) {
+  return (
+    <>
+      <h1>{combat.encounterName}</h1>
+      <div
+        dangerouslySetInnerHTML={{
+          __html: renderNarration(combat.text, combat.characterName),
+        }}
+      />
+      <section aria-label="Range">
+        <h2>Range: {combat.range === 'near' ? 'Near' : 'Far'}</h2>
+        <p className="meta">Round {combat.round}</p>
+        <div className="range-strip">
+          {(['near', 'far'] as const).map((zone) => (
+            <div
+              key={zone}
+              className={zone === combat.range ? 'zone current' : 'zone'}
+              aria-label={zone === 'near' ? 'Near' : 'Far'}
+            >
+              <h3>{zone === 'near' ? 'Near' : 'Far'}</h3>
+              {zone === combat.range ? (
+                <>
+                  <div className="token" aria-label={combat.characterName}>
+                    <p>
+                      <strong>{combat.characterName}</strong> · Health {combat.character.health}/
+                      {combat.character.maxHealth}
+                    </p>
+                    <p className="meta">
+                      {combat.character.weaponName} · {combat.character.reach} · Damage{' '}
+                      {combat.character.damage}
+                    </p>
+                    {guardUp ? <p className="guard">Guard up</p> : null}
+                  </div>
+                  <div className="token" aria-label={combat.enemy.name}>
+                    <p>
+                      <strong>{combat.enemy.name}</strong> · Health {combat.enemy.health}/
+                      {combat.enemy.maxHealth}
+                    </p>
+                    <p className="meta">
+                      {combat.enemy.reach} · Damage {combat.enemy.damage}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="meta">—</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+      <section aria-label="Position">
+        <h2>Position</h2>
+        <CombatActionButton
+          availability={combatActionById(combat.actions, 'advance')}
+          playthroughId={playthroughId}
+          step={step}
+        />
+        <p>
+          <button className="button" type="button" disabled>
+            Fall back
+          </button>{' '}
+          <span className="reason">Fall back arrives in the next ticket.</span>
+        </p>
+      </section>
+      <section aria-label="Fight">
+        <h2>Fight</h2>
+        <CombatActionButton
+          availability={combatActionById(combat.actions, 'attack')}
+          playthroughId={playthroughId}
+          step={step}
+        />
+        <CombatActionButton
+          availability={combatActionById(combat.actions, 'defend')}
+          playthroughId={playthroughId}
+          step={step}
+        />
+      </section>
+      <section aria-label="Items">
+        <h2>Items</h2>
+        {consumables.length === 0 ? (
+          <p className="meta">No Consumables held.</p>
+        ) : (
+          consumables.map((consumable) => (
+            <p key={consumable.itemId}>
+              <button className="button secondary" type="button" disabled>
+                Use {consumable.name}
+              </button>{' '}
+              <span className="reason">Using items in Combat arrives in the next ticket.</span>
+            </p>
+          ))
+        )}
+      </section>
+      <section aria-label="Leave">
+        <h2>Leave</h2>
+        <p>
+          <button className="button" type="button" disabled>
+            Escape
+          </button>{' '}
+          <span className="reason">Escape arrives in the next ticket.</span>
+        </p>
+      </section>
+      <section aria-label="Combat log">
+        <h2>Log</h2>
+        {rounds.length === 0 ? (
+          <p className="meta">No rolls yet.</p>
+        ) : (
+          rounds.map((round) => (
+            <div key={round.round}>
+              <p>
+                Round {round.round}: {round.text}
+              </p>
+              {round.rolls.map((roll, index) => (
+                <p key={index} className="meta">
+                  {roll.side === 'character' ? combat.characterName : combat.enemy.name}:{' '}
+                  {roll.die1}+{roll.die2}+{roll.modifier}={roll.total} vs {roll.target} —{' '}
+                  {roll.hit ? `hit, ${roll.damage} Damage` : 'miss'}
+                </p>
+              ))}
+            </div>
+          ))
+        )}
+      </section>
+    </>
+  );
+}
+
 /** Render one result-panel entry to HTML. Narration entries keep the name literal. */
 function renderResultEntry(type: string, payload: unknown, characterName: string): string {
   const text = String((payload as { text?: unknown }).text ?? '');
@@ -427,6 +630,23 @@ export default async function PlayPage({
             (entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type),
           )
           .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
+  // The Combat panel reads the guard marker and the roll log from the
+  // Journal, never from stored state (the Defend bonus expires within its
+  // turn), so the marker survives a reload.
+  const combatRows = journal.map((entry) => ({
+    type: entry.type,
+    payload: entry.payload as { encounterId?: unknown; guard?: unknown },
+  }));
+  const guardUp =
+    gameView.kind === 'combat' ? combatGuardUp(combatRows, gameView.encounterId) : false;
+  const combatLog =
+    gameView.kind === 'combat' ? combatRounds(combatRows, gameView.encounterId) : [];
+  const combatConsumables =
+    gameView.kind === 'combat'
+      ? Object.keys(state.inventory)
+          .filter((itemId) => scenario.itemsById[itemId]?.kind === 'consumable')
+          .map((itemId) => ({ itemId, name: itemName(scenario, itemId) }))
+      : [];
   // Map travel is available only in the Location view of an active Playthrough
   // with no Scene or Combat running: the same legality as the Travel action.
   const canTravel =
@@ -528,6 +748,15 @@ export default async function PlayPage({
                 </section>
               )}
             </>
+          ) : gameView.kind === 'combat' ? (
+            <CombatPanel
+              combat={gameView}
+              playthroughId={playthrough.id}
+              step={playthrough.step}
+              guardUp={guardUp}
+              rounds={combatLog}
+              consumables={combatConsumables}
+            />
           ) : (
             <>
               <p className="meta">{gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}</p>
@@ -559,7 +788,7 @@ export default async function PlayPage({
               {MAX_HEALTH} ·{' '}
               {gameView.kind === 'location'
                 ? gameView.name
-                : gameView.kind === 'scene'
+                : gameView.kind === 'scene' || gameView.kind === 'combat'
                   ? gameView.locationName
                   : 'Ended'}
             </summary>
