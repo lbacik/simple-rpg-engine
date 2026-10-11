@@ -65,7 +65,15 @@ describe('package phase', () => {
   it('loads a minimal valid package with no diagnostics', () => {
     const dir = makeScenarioDir('valid-pkg');
     writeMinimalPackage(dir);
-    expect(loadScenario(dir)).toEqual({ ok: true, scenario: { id: 'valid-pkg', dir }, warnings: [] });
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // The compiled model carries far more than the identity; the identity
+      // and the clean run are what this phase owns.
+      expect(result.scenario.id).toBe('valid-pkg');
+      expect(result.scenario.dir).toBe(dir);
+      expect(result.warnings).toEqual([]);
+    }
   });
 
   it('reports no Package-phase diagnostics for scenarios/whispering-woods', () => {

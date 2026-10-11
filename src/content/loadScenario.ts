@@ -1,33 +1,42 @@
 // loadScenario: the loader and validator shared by the CLI and the app's
 // startup (see docs/spec/architecture.md).
 //
-// Phases 1 (Package) and 2 (Structure) from docs/spec/validation.md run
-// behind this same function. Later tickets add phases 3-4 the same way:
-// collect the phase's diagnostics, and skip every later phase once an error
-// was produced.
+// Phases 1 (Package), 2 (Structure) and 3 (Integrity) from
+// docs/spec/validation.md run behind this same function. A later ticket adds
+// phase 4 the same way: collect the phase's diagnostics, and skip every later
+// phase once an error was produced.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { isMap, isPair, isScalar, isSeq } from 'yaml';
 import type { LineCounter } from 'yaml';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
+import { runIntegrityPhase } from './integrity';
+import { buildScenario } from './model';
+import type { Scenario } from './model';
 import { runStructurePhase } from './structure';
 import type { ManifestSection, ParsedFile } from './structure';
 import { nodeRange, parseYamlText } from './yamlFile';
 
 export type { Diagnostic, DiagnosticRange } from './diagnostic';
-
-/**
- * The loaded Scenario. In this ticket only the identity is established by
- * Phase 1; later tickets expand this to the immutable, compiled model with
- * references resolved, the content hash and the image dimensions/hashes.
- */
-export type Scenario = {
-  /** Scenario id, equal to the directory name. */
-  id: string;
-  /** Absolute path of the Scenario directory. */
-  dir: string;
-};
+export type {
+  AttributeName,
+  CompiledChoice,
+  CompiledCondition,
+  CompiledConnection,
+  CompiledEffect,
+  CompiledEncounter,
+  CompiledEnding,
+  CompiledEnemy,
+  CompiledImageEntry,
+  CompiledItem,
+  CompiledLocation,
+  CompiledOutcome,
+  CompiledScene,
+  CompiledTemplate,
+  CompiledTemplateItem,
+  Scenario,
+} from './model';
 
 export type LoadScenarioSuccess = {
   ok: true;
@@ -83,20 +92,20 @@ function findPair(root: unknown, key: string) {
   return undefined;
 }
 
-function isAbsolutePath(value: string): boolean {
+export function isAbsolutePath(value: string): boolean {
   return path.posix.isAbsolute(value) || path.win32.isAbsolute(value) || /^[A-Za-z]:/.test(value);
 }
 
-function isUrl(value: string): boolean {
+export function isUrl(value: string): boolean {
   return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value);
 }
 
-function hasDotDot(value: string): boolean {
+export function hasDotDot(value: string): boolean {
   return value.split(/[\\/]/).includes('..');
 }
 
 /** Normalize a listed path for duplicate-file comparison. */
-function normalizeListedPath(value: string): string {
+export function normalizeListedPath(value: string): string {
   return path.posix.normalize(value.replace(/^(?:\.\/)+/, ''));
 }
 
@@ -108,9 +117,9 @@ export function loadScenario(dir: string): LoadScenarioResult {
     diagnostics.push(diagnostic);
   };
 
-  let manifestSource: string;
+  let manifestBytes: Buffer;
   try {
-    manifestSource = fs.readFileSync(path.join(scenarioDir, MANIFEST_FILE), 'utf8');
+    manifestBytes = fs.readFileSync(path.join(scenarioDir, MANIFEST_FILE));
   } catch {
     push({
       severity: 'error',
@@ -120,6 +129,7 @@ export function loadScenario(dir: string): LoadScenarioResult {
     });
     return { ok: false, diagnostics };
   }
+  const manifestSource = manifestBytes.toString('utf8');
 
   const manifest = parseYamlText(manifestSource, MANIFEST_FILE, push);
   const manifestDoc = manifest.docs[0];
@@ -135,9 +145,13 @@ export function loadScenario(dir: string): LoadScenarioResult {
   const listed = checkManifestSections(manifestRoot, manifest.lineCounter, push);
   checkIdMismatch(manifestRoot, manifestValue, dirName, manifest.lineCounter, push);
   const parsedFiles: ParsedFile[] = [];
+  const fileBytes = new Map<string, Buffer>();
   for (const entry of listed) {
     const parsed = checkListedFile(scenarioDir, entry, push);
-    if (parsed) parsedFiles.push(parsed);
+    if (parsed) {
+      parsedFiles.push(parsed.file);
+      fileBytes.set(entry.value, parsed.bytes);
+    }
   }
   checkDuplicateFiles(listed, push);
 
@@ -168,9 +182,36 @@ export function loadScenario(dir: string): LoadScenarioResult {
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
     return { ok: false, diagnostics };
   }
+
+  // Phase 3 (Integrity): IDs, typed references, declared Flags, Scene
+  // membership, Template slots and images. An Integrity error stops phase 4;
+  // warnings never stop the pipeline.
+  const manifestParsed: ParsedFile = {
+    section: 'manifest',
+    file: MANIFEST_FILE,
+    value: manifestValue,
+    contents: manifestRoot,
+    lineCounter: manifest.lineCounter,
+  };
+  const integrity = runIntegrityPhase(manifestParsed, parsedFiles, scenarioDir, push);
+  diagnostics.sort(compareDiagnostics);
+
+  if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
+    return { ok: false, diagnostics };
+  }
   return {
     ok: true,
-    scenario: { id: dirName, dir: scenarioDir },
+    scenario: buildScenario({
+      id: dirName,
+      dir: scenarioDir,
+      manifest: manifestParsed,
+      files: parsedFiles,
+      images: integrity.images,
+      imageBytes: integrity.imageBytes,
+      manifestBytes,
+      listedPaths: listed.map((entry) => entry.value),
+      fileBytes,
+    }),
     warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
   };
 }
@@ -282,7 +323,7 @@ function checkListedFile(
   scenarioDir: string,
   entry: ListedFile,
   push: (diagnostic: Diagnostic) => void,
-): ParsedFile | undefined {
+): { file: ParsedFile; bytes: Buffer } | undefined {
   const invalidPath = (reason: string): void => {
     push({
       severity: 'error',
@@ -355,9 +396,9 @@ function checkListedFile(
     }
   }
 
-  let source: string;
+  let bytes: Buffer;
   try {
-    source = fs.readFileSync(full, 'utf8');
+    bytes = fs.readFileSync(full);
   } catch {
     push({
       severity: 'error',
@@ -368,7 +409,7 @@ function checkListedFile(
     });
     return undefined;
   }
-  const parsed = parseYamlText(source, entry.value, push);
+  const parsed = parseYamlText(bytes.toString('utf8'), entry.value, push);
   const doc = parsed.docs[0];
   let value: unknown;
   try {
@@ -377,11 +418,14 @@ function checkListedFile(
     value = undefined;
   }
   return {
-    section: entry.section,
-    file: entry.value,
-    value,
-    contents: doc?.contents,
-    lineCounter: parsed.lineCounter,
+    file: {
+      section: entry.section,
+      file: entry.value,
+      value,
+      contents: doc?.contents,
+      lineCounter: parsed.lineCounter,
+    },
+    bytes,
   };
 }
 

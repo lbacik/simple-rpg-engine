@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { loadScenario } from '../src/content/index';
 import type { Diagnostic } from '../src/content/index';
+import { makePng } from './pngFixture';
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testsDir, '..');
@@ -20,7 +21,7 @@ function makeScenarioDir(name: string): string {
   return dir;
 }
 
-function writePackage(dir: string, files: Record<string, string>): void {
+function writePackage(dir: string, files: Record<string, string | Buffer>): void {
   for (const [relative, content] of Object.entries(files)) {
     const full = path.join(dir, relative);
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -188,6 +189,9 @@ function writeValidPackage(dir: string): void {
     'templates.yaml': TEMPLATES,
     'endings.yaml': ENDINGS,
     'images.yaml': IMAGES,
+    // The images catalog declares images/gate.png, so the Integrity phase
+    // needs the real file on disk.
+    'images/gate.png': makePng(),
   });
 }
 
