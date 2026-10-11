@@ -492,7 +492,7 @@ describe('outcomes, effects and transitions', () => {
     expect(repeated.state.firedScenes).toEqual(accepted.firedScenes);
   });
 
-  it('rejects Combat and hidden or taken Choices until later tickets', () => {
+  it('starts Combat, and rejects hidden or taken Choices', () => {
     const { scenario, state: started } = startWoods();
     // Refusing Brenna ends the Playthrough on the walked-away Ending.
     const refused = choose(scenario, started, 'refuse');
@@ -521,18 +521,22 @@ describe('outcomes, effects and transitions', () => {
     const pressed = choose(scenario, atEdge, 'press-on').state;
     const hollow = travel(scenario, pressed, 'wolf-hollow').state;
     expect(hollow.activeSceneId).toBe('wolf-den');
-    expect(
-      applyAction(
-        scenario,
-        hollow,
-        {
-          kind: 'choose',
-          choiceId: 'fight',
-          expectedStep: hollow.step,
-        },
-        rng,
-      ),
-    ).toEqual({ ok: false, reason: 'illegal-action' });
+    // Choosing the fight starts a Combat with the hollow-wolf Encounter.
+    const fought = applyAction(
+      scenario,
+      hollow,
+      {
+        kind: 'choose',
+        choiceId: 'fight',
+        expectedStep: hollow.step,
+      },
+      rng,
+    );
+    expect(fought.ok).toBe(true);
+    if (!fought.ok) throw new Error(`wolf-den fight failed: ${fought.reason}`);
+    expect(fought.state.activeCombat).toMatchObject({ encounterId: 'hollow-wolf', range: 'far', round: 1 });
+    expect(fought.state.encounterDamage['hollow-wolf']).toBe(0);
+    expect(fought.journal.map((entry) => entry.type)).toEqual(['choice', 'combat-start']);
     // A hidden Choice cannot be taken, even by id.
     const keyed: PlaythroughState = { ...hollow };
     expect(

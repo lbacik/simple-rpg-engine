@@ -8,6 +8,7 @@ import type {
   AttributeName,
   CompiledChoice,
   CompiledEffect,
+  CompiledEncounter,
   CompiledOutcome,
   CompiledScene,
 } from '../content/model';
@@ -78,6 +79,28 @@ export function testLabel(attribute: AttributeName, difficulty: Difficulty): str
   return `${ATTRIBUTE_NAMES[attribute]}, ${DIFFICULTY_NAMES[difficulty]} ${DIFFICULTY_TARGETS[difficulty]}`;
 }
 
+/**
+ * One side's roll inside a Combat round: both dice, the attacker's Might, the
+ * total, the target and the Damage dealt (docs/spec/mechanics.md, hitting).
+ */
+export type CombatRoll = {
+  side: 'character' | 'enemy';
+  die1: number;
+  die2: number;
+  /** The attacker's Might (the effective value for the Character). */
+  modifier: number;
+  total: number;
+  target: number;
+  hit: boolean;
+  /** Damage dealt by this roll: the attacker's Damage on a hit, else 0. */
+  damage: number;
+};
+
+/** Character actions of this ticket (docs/spec/mechanics.md, character actions). */
+export type CombatAction = 'advance' | 'attack' | 'defend';
+
+export type CombatRange = 'near' | 'far';
+
 /** New Journal entries produced by one engine step. Stored text as presented. */
 export type NewJournalEntry =
   | {
@@ -130,6 +153,38 @@ export type NewJournalEntry =
       endingId: string;
       kind: 'victory' | 'defeat';
       title: string;
+      text: string;
+    }
+  | {
+      type: 'combat-start';
+      encounterId: string;
+      text: string;
+    }
+  | {
+      type: 'combat-round';
+      encounterId: string;
+      /** The round this turn resolved: the Combat's round before it incremented. */
+      round: number;
+      action: CombatAction;
+      rangeBefore: CombatRange;
+      rangeAfter: CombatRange;
+      /**
+       * Whether the Character defended this turn. The "guard up" marker reads
+       * this entry; the Defend bonus itself is never stored.
+       */
+      guard: boolean;
+      /** The text as presented: actions, rolls, Damage and Range change. */
+      text: string;
+      rolls: CombatRoll[];
+    }
+  | {
+      type: 'combat-end';
+      encounterId: string;
+      text: string;
+    }
+  | {
+      type: 'enemy-defeated';
+      encounterId: string;
       text: string;
     };
 
@@ -242,7 +297,8 @@ export function startPlaythrough(
  * held Equipment item, Unequip names a slot, Use item names a held
  * Consumable. Choose names a Choice of the active Scene. Continue applies
  * the empty Outcome when no Choice is visible. Open Scene activates an
- * on-demand Scene of the current Location. Later tickets add Combat actions.
+ * on-demand Scene of the current Location. A Combat action names one of the
+ * Character actions of this ticket; Items and Leave arrive in a later ticket.
  */
 export type Action =
   | {
@@ -277,6 +333,11 @@ export type Action =
   | {
       kind: 'open-scene';
       sceneId: string;
+      expectedStep: number;
+    }
+  | {
+      kind: 'combat';
+      combatAction: CombatAction;
       expectedStep: number;
     };
 
@@ -344,6 +405,8 @@ export function applyAction(
       return applyUnequip(scenario, state, action.slot);
     case 'use-item':
       return applyUseItem(scenario, state, action.itemId);
+    case 'combat':
+      return applyCombat(scenario, state, action.combatAction, rng);
     default:
       return { ok: false, reason: 'illegal-action' };
   }
@@ -556,14 +619,10 @@ function applyChoose(
   if (choice.once && isTakenOnce(state, scene.id, choice.id)) {
     return { ok: false, reason: 'illegal-action' };
   }
-  // Resolve the Test first: the roll picks the Outcome. An Outcome leading to
-  // Combat is rejected until that ticket (nothing changes, including the
-  // `once` record). Endings and lethal damage are handled by applyOutcome.
+  // Resolve the Test first: the roll picks the Outcome. Endings, lethal
+  // damage and `start-combat` are handled by applyOutcome.
   const test = choice.test === undefined ? undefined : resolveTest(scenario, state, choice.test, rng);
   const outcome = test?.outcome ?? choice.outcome;
-  if (outcome !== undefined && outcome.startCombat !== undefined) {
-    return { ok: false, reason: 'illegal-action' };
-  }
 
   let next: PlaythroughState = state;
   if (choice.once) {
@@ -714,7 +773,11 @@ function applyOutcome(
     journal.push(endingEntry(scenario, next, outcome.end));
     return { state: next, journal };
   }
-  if (outcome.next !== undefined) {
+  if (outcome.startCombat !== undefined) {
+    const started = startCombat(scenario, next, outcome.startCombat.id);
+    next = started.state;
+    journal.push(...started.journal);
+  } else if (outcome.next !== undefined) {
     const activated = activateScene(scenario, next, outcome.next.id);
     next = activated.state;
     journal.push(...activated.journal);
@@ -941,6 +1004,429 @@ function applyUseItem(
   };
 }
 
+/**
+ * `start-combat: E` (docs/spec/playthrough-state.md, Combat): on an already
+ * defeated Encounter a no-op back to the Location view (no fight, no victory
+ * Outcome). Otherwise create E's record (Damage taken) if absent, set the
+ * position to Combat {E, `startRange`, round 1} and append the opening
+ * narration. Re-entry after an escape starts again at `startRange` and shows
+ * the opening narration again, keeping the Damage taken.
+ */
+function startCombat(
+  scenario: Scenario,
+  state: PlaythroughState,
+  encounterId: string,
+): { state: PlaythroughState; journal: NewJournalEntry[] } {
+  const encounter = scenario.encountersById[encounterId];
+  if (encounter === undefined) {
+    return { state: { ...state, activeSceneId: null }, journal: [] };
+  }
+  if ((state.encounterDamage[encounterId] ?? 0) >= encounter.enemy.health) {
+    return { state: { ...state, activeSceneId: null, activeCombat: null }, journal: [] };
+  }
+  const encounterDamage =
+    encounterId in state.encounterDamage
+      ? state.encounterDamage
+      : { ...state.encounterDamage, [encounterId]: 0 };
+  return {
+    state: {
+      ...state,
+      activeSceneId: null,
+      activeCombat: {
+        encounterId: encounter.id,
+        range: encounter.startRange,
+        round: 1,
+      },
+      encounterDamage,
+    },
+    journal: [
+      {
+        type: 'combat-start',
+        encounterId: encounter.id,
+        text: substituteName(encounter.text, state.character.name),
+      },
+    ],
+  };
+}
+
+/**
+ * The Character's attack Damage and Reach: the equipped weapon's, or 2 /
+ * `melee` unarmed (docs/spec/mechanics.md, Items).
+ */
+function characterAttack(
+  scenario: Scenario,
+  state: PlaythroughState,
+): { damage: number; reach: 'melee' | 'ranged'; weaponName: string | undefined } {
+  const weaponId = state.equipment.weapon;
+  const item = weaponId === undefined ? undefined : scenario.itemsById[weaponId];
+  if (item !== undefined && item.kind === 'equipment' && item.slot === 'weapon') {
+    return { damage: item.damage ?? 2, reach: item.reach, weaponName: item.name };
+  }
+  return { damage: 2, reach: 'melee', weaponName: undefined };
+}
+
+export type CombatAvailability = {
+  id: CombatAction;
+  group: 'Position' | 'Fight';
+  label: string;
+  enabled: boolean;
+  reason?: string;
+};
+
+/** Why an Attack is unavailable at the current Range. */
+function attackReason(weaponName: string | undefined): string {
+  if (weaponName === undefined) {
+    return 'Unarmed attacks need Near Range.';
+  }
+  return `Your ${weaponName.toLowerCase()} needs Near Range.`;
+}
+
+/**
+ * Whether each Character action of this ticket is available in the current
+ * Combat (docs/spec/mechanics.md, character actions): Advance at Far, Attack
+ * when the Character's Reach allows it at the current Range, Defend always.
+ * The UI disables unavailable actions with the reason; the engine rejects
+ * them independently.
+ */
+export function combatActions(
+  scenario: Scenario,
+  state: PlaythroughState,
+): CombatAvailability[] {
+  const combat = state.activeCombat;
+  if (combat == null) {
+    return [];
+  }
+  const attack = characterAttack(scenario, state);
+  const inReach = attack.reach === 'ranged' || combat.range === 'near';
+  return [
+    {
+      id: 'advance',
+      group: 'Position',
+      label: 'Advance',
+      enabled: combat.range === 'far',
+      reason: combat.range === 'far' ? undefined : 'Already at Near Range.',
+    },
+    {
+      id: 'attack',
+      group: 'Fight',
+      label:
+        attack.weaponName === undefined ? 'Attack' : `Attack with ${attack.weaponName}`,
+      enabled: inReach,
+      reason: inReach ? undefined : attackReason(attack.weaponName),
+    },
+    { id: 'defend', group: 'Fight', label: 'Defend', enabled: true },
+  ];
+}
+
+/** One roll as presented: dice, modifier, total and target. */
+function combatRollText(roll: CombatRoll): string {
+  return `${roll.die1}+${roll.die2}+${roll.modifier}=${roll.total} vs ${roll.target}`;
+}
+
+/**
+ * Victory (Damage taken ≥ the Enemy's maximum Health, including from a
+ * counterattack): the Combat ends, a Combat end entry is appended, then the
+ * `victory` Outcome is applied — or, without one, the Enemy-defeated notice,
+ * back in the Location view of the fight.
+ */
+function finishVictory(
+  scenario: Scenario,
+  state: PlaythroughState,
+  encounter: CompiledEncounter,
+  round: Extract<NewJournalEntry, { type: 'combat-round' }>,
+  health: number,
+  encounterDamage: PlaythroughState['encounterDamage'],
+): ApplyActionResult {
+  const end: NewJournalEntry = {
+    type: 'combat-end',
+    encounterId: encounter.id,
+    text: `${encounter.enemy.name} is defeated.`,
+  };
+  let next: PlaythroughState = {
+    ...state,
+    step: state.step + 1,
+    character: { ...state.character, health },
+    encounterDamage,
+    activeSceneId: null,
+    activeCombat: null,
+  };
+  const journal: NewJournalEntry[] = [round, end];
+  if (encounter.victory !== undefined) {
+    const applied = applyOutcome(scenario, next, encounter.victory);
+    next = applied.state;
+    journal.push(...applied.journal);
+  } else {
+    journal.push({
+      type: 'enemy-defeated',
+      encounterId: encounter.id,
+      text: `The ${encounter.enemy.name} is defeated.`,
+    });
+  }
+  return { ok: true, state: next, journal };
+}
+
+/**
+ * One Combat turn (docs/spec/mechanics.md, Combat;
+ * docs/spec/playthrough-state.md, Combat): the Character acts first, then —
+ * if the Combat is still running — the Enemy responds. One turn is one action
+ * and one `step`, increments the round and appends one Combat round entry
+ * (actions, rolls, Damage, Range change). Death ends the Playthrough on the
+ * death Ending.
+ */
+function applyCombat(
+  scenario: Scenario,
+  state: PlaythroughState,
+  combatAction: CombatAction,
+  rng: Rng,
+): ApplyActionResult {
+  const combat = state.activeCombat;
+  if (combat == null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const encounter = scenario.encountersById[combat.encounterId];
+  if (encounter === undefined) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const enemy = encounter.enemy;
+  if (combatAction !== 'advance' && combatAction !== 'attack' && combatAction !== 'defend') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const attack = characterAttack(scenario, state);
+  // The action must be available (see combatActions): Advance only at Far,
+  // Attack only when the Character's Reach allows the current Range.
+  if (combatAction === 'advance' && combat.range !== 'far') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (combatAction === 'attack' && attack.reach === 'melee' && combat.range === 'far') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+
+  const effective = effectiveAttributes(scenario, state);
+  const rangeBefore = combat.range;
+  const defending = combatAction === 'defend';
+  let range = combat.range;
+  let health = state.character.health;
+  let encounterDamage = state.encounterDamage;
+  const damageSoFar = (): number => encounterDamage[combat.encounterId] ?? 0;
+  const rolls: CombatRoll[] = [];
+  const parts: string[] = [];
+
+  const strike = (
+    side: 'character' | 'enemy',
+    might: number,
+    agility: number,
+    extra: number,
+    damage: number,
+  ): CombatRoll => {
+    const die1 = rng(1, 7);
+    const die2 = rng(1, 7);
+    const total = die1 + die2 + might;
+    const target = 7 + agility + extra;
+    const hit = total >= target;
+    return { side, die1, die2, modifier: might, total, target, hit, damage: hit ? damage : 0 };
+  };
+
+  if (combatAction === 'advance') {
+    range = 'near';
+    parts.push('You advance to Near Range.');
+  } else if (combatAction === 'attack') {
+    const roll = strike(
+      'character',
+      effective.might,
+      enemy.attributes.agility,
+      0,
+      attack.damage,
+    );
+    rolls.push(roll);
+    const weapon =
+      attack.weaponName === undefined
+        ? 'unarmed'
+        : `your ${attack.weaponName.toLowerCase()}`;
+    parts.push(
+      roll.hit
+        ? `You attack ${weapon} (${combatRollText(roll)}): hit, ${roll.damage} Damage.`
+        : `You attack ${weapon} (${combatRollText(roll)}): miss.`,
+    );
+    if (roll.hit) {
+      encounterDamage = { ...encounterDamage, [combat.encounterId]: damageSoFar() + roll.damage };
+    }
+  } else {
+    parts.push('You raise your guard.');
+  }
+
+  const roundEntry = (
+    rangeAfter: CombatRange,
+  ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
+    type: 'combat-round',
+    encounterId: encounter.id,
+    round: combat.round,
+    action: combatAction,
+    rangeBefore,
+    rangeAfter,
+    guard: defending,
+    text: parts.join(' '),
+    rolls,
+  });
+
+  // Victory from the Character's action: the Enemy does not respond.
+  if (damageSoFar() >= enemy.health) {
+    return finishVictory(scenario, state, encounter, roundEntry(range), health, encounterDamage);
+  }
+
+  // The Enemy's response: a melee Enemy at Far closes to Near without
+  // attacking; otherwise it attacks (a ranged Enemy never moves).
+  if (enemy.reach === 'melee' && range === 'far') {
+    range = 'near';
+    parts.push(`${enemy.name} closes in to Near Range instead of attacking.`);
+    // The Defend bonus expires at the end of this Enemy turn, even though it
+    // only moved; the round entry still records the guard that was up.
+  } else {
+    const roll = strike(
+      'enemy',
+      enemy.attributes.might,
+      effective.agility,
+      defending ? 2 : 0,
+      enemy.damage,
+    );
+    rolls.push(roll);
+    if (roll.hit) {
+      health -= roll.damage;
+      parts.push(
+        `${enemy.name} attacks (${combatRollText(roll)}): hit, ${roll.damage} Damage.`,
+      );
+    } else {
+      parts.push(
+        defending
+          ? `${enemy.name} attacks (${combatRollText(roll)}): miss; your counterattack deals 1 Damage.`
+          : `${enemy.name} attacks (${combatRollText(roll)}): miss.`,
+      );
+      if (defending) {
+        encounterDamage = { ...encounterDamage, [combat.encounterId]: damageSoFar() + 1 };
+      }
+    }
+  }
+
+  // Victory from a counterattack: no further Enemy response.
+  if (damageSoFar() >= enemy.health) {
+    return finishVictory(scenario, state, encounter, roundEntry(range), health, encounterDamage);
+  }
+
+  // Death: the Character's Health reaches 0.
+  if (health <= 0) {
+    const ended: PlaythroughState = {
+      ...state,
+      step: state.step + 1,
+      character: { ...state.character, health: 0 },
+      encounterDamage,
+      status: 'ended',
+      endingId: scenario.deathEnding.id,
+      activeSceneId: null,
+      activeCombat: null,
+    };
+    return {
+      ok: true,
+      state: ended,
+      journal: [roundEntry(range), endingEntry(scenario, ended, scenario.deathEnding)],
+    };
+  }
+
+  const next: PlaythroughState = {
+    ...state,
+    step: state.step + 1,
+    character: { ...state.character, health },
+    encounterDamage,
+    activeCombat: { encounterId: combat.encounterId, range, round: combat.round + 1 },
+  };
+  return { ok: true, state: next, journal: [roundEntry(range)] };
+}
+
+/**
+ * Journal rows the Combat panel reads (stored rows or new entries mapped to
+ * `{ type, payload }`). The guard marker and the roll log derive from the
+ * Journal, never from stored state: the Defend bonus expires within its turn.
+ */
+export type CombatJournalRow = {
+  type: string;
+  payload: {
+    encounterId?: unknown;
+    guard?: unknown;
+  };
+};
+
+/**
+ * Guard up when the latest round of this Encounter was a Defend. Walking back
+ * stops at the Encounter's latest opening narration, so an earlier Combat
+ * cannot leak its guard in. The marker survives a reload because the Journal
+ * is the store.
+ */
+export function combatGuardUp(
+  entries: ReadonlyArray<CombatJournalRow>,
+  encounterId: string,
+): boolean {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    if (entry === undefined || entry.payload.encounterId !== encounterId) {
+      continue;
+    }
+    if (entry.type === 'combat-round') {
+      return entry.payload.guard === true;
+    }
+    if (entry.type === 'combat-start') {
+      return false;
+    }
+  }
+  return false;
+}
+
+export type CombatRoundView = {
+  round: number;
+  action: CombatAction;
+  rangeBefore: CombatRange;
+  rangeAfter: CombatRange;
+  guard: boolean;
+  text: string;
+  rolls: CombatRoll[];
+};
+
+/**
+ * The rounds of the current Combat: the Combat round entries since the latest
+ * opening narration of the Encounter.
+ */
+export function combatRounds(
+  entries: ReadonlyArray<CombatJournalRow>,
+  encounterId: string,
+): CombatRoundView[] {
+  const rounds: CombatRoundView[] = [];
+  for (const entry of entries) {
+    if (entry.payload.encounterId !== encounterId) {
+      continue;
+    }
+    if (entry.type === 'combat-start') {
+      rounds.length = 0;
+    } else if (entry.type === 'combat-round') {
+      const payload = entry.payload as {
+        round?: unknown;
+        action?: unknown;
+        rangeBefore?: unknown;
+        rangeAfter?: unknown;
+        guard?: unknown;
+        text?: unknown;
+        rolls?: unknown;
+      };
+      rounds.push({
+        round: typeof payload.round === 'number' ? payload.round : rounds.length + 1,
+        action: payload.action === 'advance' || payload.action === 'defend' ? payload.action : 'attack',
+        rangeBefore: payload.rangeBefore === 'near' ? 'near' : 'far',
+        rangeAfter: payload.rangeAfter === 'near' ? 'near' : 'far',
+        guard: payload.guard === true,
+        text: typeof payload.text === 'string' ? payload.text : '',
+        rolls: Array.isArray(payload.rolls) ? (payload.rolls as CombatRoll[]) : [],
+      });
+    }
+  }
+  return rounds;
+}
+
 /** One exit button per visible Connection, in authored order. */
 export type ExitView = {
   targetLocationId: string;
@@ -962,7 +1448,7 @@ export type ChoiceView = {
   testLabel?: string;
 };
 
-/** Derived projection the UI renders. Later tickets add Combat and the map. */
+/** Derived projection the UI renders: Location view, Scene, Combat or Ended. */
 export type GameView =
   | {
       kind: 'location';
@@ -992,6 +1478,34 @@ export type GameView =
       title: string;
       text: string;
       map: MapView;
+    }
+  | {
+      kind: 'combat';
+      locationId: string;
+      locationName: string;
+      encounterId: string;
+      encounterName: string;
+      /** Raw opening narration; the UI renders it with the Character's name. */
+      text: string;
+      characterName: string;
+      range: CombatRange;
+      round: number;
+      character: {
+        health: number;
+        maxHealth: number;
+        weaponName: string;
+        reach: 'melee' | 'ranged';
+        damage: number;
+      };
+      enemy: {
+        name: string;
+        health: number;
+        maxHealth: number;
+        damage: number;
+        reach: 'melee' | 'ranged';
+      };
+      actions: CombatAvailability[];
+      map: MapView;
     };
 
 /**
@@ -1018,6 +1532,43 @@ export function view(
       text: ending.text,
       map: deriveMap(scenario, state, options),
     };
+  }
+  if (state.activeCombat != null) {
+    const combat = state.activeCombat;
+    const encounter = scenario.encountersById[combat.encounterId];
+    if (encounter !== undefined) {
+      const location =
+        scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
+      const attack = characterAttack(scenario, state);
+      const taken = state.encounterDamage[combat.encounterId] ?? 0;
+      return {
+        kind: 'combat',
+        locationId: location.id,
+        locationName: location.name,
+        encounterId: encounter.id,
+        encounterName: encounter.enemy.name,
+        text: encounter.text,
+        characterName: state.character.name,
+        range: combat.range,
+        round: combat.round,
+        character: {
+          health: state.character.health,
+          maxHealth: MAX_HEALTH,
+          weaponName: attack.weaponName ?? 'Bare hands',
+          reach: attack.reach,
+          damage: attack.damage,
+        },
+        enemy: {
+          name: encounter.enemy.name,
+          health: Math.max(0, encounter.enemy.health - taken),
+          maxHealth: encounter.enemy.health,
+          damage: encounter.enemy.damage,
+          reach: encounter.enemy.reach,
+        },
+        actions: combatActions(scenario, state),
+        map: deriveMap(scenario, state, options),
+      };
+    }
   }
   if (state.activeSceneId != null) {
     const scene = scenario.scenesById[state.activeSceneId];
