@@ -492,20 +492,12 @@ describe('outcomes, effects and transitions', () => {
     expect(repeated.state.firedScenes).toEqual(accepted.firedScenes);
   });
 
-  it('rejects Combat and Endings and hidden or taken Choices until later tickets', () => {
+  it('rejects Combat and hidden or taken Choices until later tickets', () => {
     const { scenario, state: started } = startWoods();
-    // Refusing Brenna ends the Playthrough: rejected for now.
-    const refused = applyAction(
-      scenario,
-      started,
-      {
-        kind: 'choose',
-        choiceId: 'refuse',
-        expectedStep: started.step,
-      },
-      rng,
-    );
-    expect(refused).toEqual({ ok: false, reason: 'illegal-action' });
+    // Refusing Brenna ends the Playthrough on the walked-away Ending.
+    const refused = choose(scenario, started, 'refuse');
+    expect(refused.state.status).toBe('ended');
+    expect(refused.state.endingId).toBe('walked-away');
     expect(started.step).toBe(0);
     // The whispers Test resolves: hunter Wits 2 with 1 + 1 fails easy 7.
     const listened = choose(scenario, started, 'listen').state;
@@ -972,28 +964,22 @@ describe('synthetic package: remaining effects and transitions', () => {
     expect(lowered.journal[1]).toEqual({ type: 'state-change', text: 'flag cleared: f' });
   });
 
-  it('damages without killing and rejects lethal damage', () => {
+  it('damages without killing, and lethal damage ends on the death Ending', () => {
     const { scenario, state } = atCounter();
     const hurt = choose(scenario, state, 'hurt');
     expect(hurt.state.character.health).toBe(10);
     expect(hurt.journal[1]).toEqual({ type: 'state-change', text: '\u22122 Health' });
-    const step = hurt.state.step;
-    expect(
-      applyAction(
-        scenario,
-        hurt.state,
-        {
-          kind: 'choose',
-          choiceId: 'kill',
-          expectedStep: step,
-        },
-        rng,
-      ),
-    ).toEqual({ ok: false, reason: 'illegal-action' });
-    // Full Health against 12 damage is lethal too: nothing changes.
-    expect(
-      applyAction(scenario, state, { kind: 'choose', choiceId: 'kill', expectedStep: state.step }, rng),
-    ).toEqual({ ok: false, reason: 'illegal-action' });
+    // Taking hurt closed the Scene (no transition), so reopen the repeatable
+    // counter before the lethal choice.
+    const slain = choose(scenario, openScene(scenario, hurt.state, 'counter').state, 'kill');
+    expect(slain.state.character.health).toBe(0);
+    expect(slain.state.status).toBe('ended');
+    expect(slain.state.endingId).toBe('death');
+    // Full Health against 12 damage is lethal too.
+    const sudden = choose(scenario, state, 'kill');
+    expect(sudden.state.character.health).toBe(0);
+    expect(sudden.state.status).toBe('ended');
+    expect(sudden.state.endingId).toBe('death');
   });
 
   it('heals capped at 12 and stays silent at full Health', () => {
@@ -1040,7 +1026,7 @@ describe('synthetic package: remaining effects and transitions', () => {
     expect(surveyed.journal.map((entry) => entry.type)).toEqual(['choice']);
   });
 
-  it('resolves Test choices and rejects Ending transitions until later tickets', () => {
+  it('resolves Test choices and ends on Ending transitions', () => {
     const { scenario, state } = atCounter();
     // Hero Wits 1 with 1 + 1 fails ordinary 9: the failure Outcome applies.
     const gambled = applyAction(
@@ -1057,17 +1043,8 @@ describe('synthetic package: remaining effects and transitions', () => {
     if (!gambled.ok) throw new Error(`gamble failed: ${gambled.reason}`);
     expect(gambled.journal.map((entry) => entry.type)).toEqual(['choice', 'test', 'outcome']);
     expect(gambled.journal[1]).toMatchObject({ type: 'test', total: 3, success: false });
-    expect(
-      applyAction(
-        scenario,
-        state,
-        {
-          kind: 'choose',
-          choiceId: 'finish',
-          expectedStep: state.step,
-        },
-        rng,
-      ),
-    ).toEqual({ ok: false, reason: 'illegal-action' });
+    const finished = choose(scenario, state, 'finish');
+    expect(finished.state.status).toBe('ended');
+    expect(finished.state.endingId).toBe('home');
   });
 });

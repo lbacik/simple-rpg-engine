@@ -417,9 +417,16 @@ export default async function PlayPage({
   const journal = await store.listJournal(playthrough.id);
   const state = playthrough.state;
   const characterName = state.character.name;
-  const resultEntries = journal
-    .filter((entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type))
-    .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
+  // A step that ended the Playthrough shows the Ending screen instead of the
+  // result panel (docs/spec/playthrough-state.md, result panel).
+  const resultEntries =
+    gameView.kind === 'ended'
+      ? []
+      : journal
+          .filter(
+            (entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type),
+          )
+          .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
   // Map travel is available only in the Location view of an active Playthrough
   // with no Scene or Combat running: the same legality as the Travel action.
   const canTravel =
@@ -523,8 +530,25 @@ export default async function PlayPage({
             </>
           ) : (
             <>
+              <p className="meta">{gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}</p>
               <h1>{gameView.title}</h1>
-              <p>{gameView.text}</p>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: renderNarration(gameView.text, characterName),
+                }}
+              />
+              <section aria-label="After the ending">
+                <p>
+                  <a className="button" href={`/scenarios/${scenario.id}`}>
+                    Start a new Playthrough of {scenario.title}
+                  </a>
+                </p>
+                <p>
+                  <a className="button secondary" href="/">
+                    Return to the collection
+                  </a>
+                </p>
+              </section>
             </>
           )}
         </article>
