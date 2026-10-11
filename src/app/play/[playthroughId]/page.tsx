@@ -20,10 +20,12 @@ import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
-import { renderJournalEntry } from '@/app/lib/journal';
+import { latestJournalEnding, renderJournalEntry } from '@/app/lib/journal';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
+import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { LocationMap } from './map';
 import { SceneIllustration } from './scene-illustration';
+import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
@@ -176,23 +178,30 @@ function InventoryTab({
   playthroughId,
   step,
   tab,
+  forceReadOnly,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
   playthroughId: string;
   step: number;
   tab: PanelTab;
+  /** Set for incompatible Playthroughs: no actions, whatever the status. */
+  forceReadOnly?: boolean;
 }) {
-  const readOnly = state.status !== 'active';
+  const readOnly = forceReadOnly === true || state.status !== 'active';
   const inCombat = state.activeCombat != null;
-  const heldItems = Object.entries(state.inventory);
+  // Best effort: anything whose id is gone from the content is left out.
+  const heldItems = Object.entries(state.inventory).filter(
+    ([itemId]) => scenario.itemsById[itemId] !== undefined,
+  );
   return (
     <section aria-label="Inventory">
       <h2>Inventory</h2>
       {inCombat ? <p className="meta">Inventory actions are unavailable during Combat.</p> : null}
       {EQUIPMENT_SLOTS.map((slot) => {
         const equippedId = state.equipment[slot];
-        if (equippedId === undefined) {
+        // Best effort: an equipped id that is gone from the content reads as empty.
+        if (equippedId === undefined || scenario.itemsById[equippedId] === undefined) {
           return (
             <p key={slot}>
               The {slot} slot is empty.{' '}
@@ -588,6 +597,125 @@ function CombatPanel({
   );
 }
 
+/** Query helpers shared by the compatible and incompatible game screens. */
+function mapToggleHrefFor(
+  playthroughId: string,
+  tab: PanelTab,
+  notice: string | undefined,
+  showUnknownExits: boolean,
+): string {
+  const toggleParams = new URLSearchParams();
+  if (tab === 'inventory' || tab === 'map') toggleParams.set('tab', tab);
+  if (notice === 'stale' || notice === 'unavailable') toggleParams.set('notice', notice);
+  if (!showUnknownExits) toggleParams.set('unknown', '1');
+  const toggleQuery = toggleParams.toString();
+  return toggleQuery === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${toggleQuery}`;
+}
+
+function desktopTabFor(tab: PanelTab): 'character' | 'inventory' {
+  return tab === 'inventory' ? 'inventory' : 'character';
+}
+
+/**
+ * The Character and inventory side panel, shared by the compatible and
+ * incompatible game screens. Incompatible Playthroughs render it without any
+ * actions (`forceReadOnly`) and without map travel (`canTravel` false).
+ */
+function SidePanel({
+  scenario,
+  state,
+  playthroughId,
+  step,
+  tab,
+  notice,
+  gameView,
+  showUnknownExits,
+  toggleHref,
+  desktopTab,
+  canTravel,
+  forceReadOnly,
+  detailsOpen,
+  summarySuffix,
+}: {
+  scenario: Scenario;
+  state: PlaythroughState;
+  playthroughId: string;
+  step: number;
+  tab: PanelTab;
+  notice: string | undefined;
+  gameView: GameView;
+  showUnknownExits: boolean;
+  toggleHref: string;
+  desktopTab: 'character' | 'inventory';
+  canTravel: boolean;
+  forceReadOnly?: boolean;
+  detailsOpen?: boolean;
+  summarySuffix?: string;
+}) {
+  return (
+    <aside className="side" aria-label="Character and inventory">
+      <details className="compact-summary" open={detailsOpen || undefined}>
+        <summary>
+          <strong>{state.character.name}</strong> · Health {state.character.health}/{MAX_HEALTH}
+          {summarySuffix ? ` · ${summarySuffix}` : null}
+        </summary>
+        <TabNav
+          playthroughId={playthroughId}
+          tab={tab}
+          notice={notice}
+          tabs={['character', 'inventory', 'map']}
+        />
+        {tab === 'inventory' ? (
+          <InventoryTab
+            scenario={scenario}
+            state={state}
+            playthroughId={playthroughId}
+            step={step}
+            tab={tab}
+            forceReadOnly={forceReadOnly}
+          />
+        ) : tab === 'map' ? (
+          <LocationMap
+            map={gameView.map}
+            playthroughId={playthroughId}
+            step={step}
+            canTravel={canTravel}
+            showUnknownExits={showUnknownExits}
+            toggleHref={toggleHref}
+            markerId="map-arrow-phone"
+          />
+        ) : (
+          <CharacterTab scenario={scenario} state={state} />
+        )}
+      </details>
+      <div className="full">
+        <LocationMap
+          map={gameView.map}
+          playthroughId={playthroughId}
+          step={step}
+          canTravel={canTravel}
+          showUnknownExits={showUnknownExits}
+          toggleHref={toggleHref}
+          markerId="map-arrow-desktop"
+        />
+        <TabNav playthroughId={playthroughId} tab={desktopTab} notice={notice} tabs={['character', 'inventory']} />
+        {desktopTab === 'inventory' ? (
+          <InventoryTab
+            scenario={scenario}
+            state={state}
+            playthroughId={playthroughId}
+            step={step}
+            tab={tab}
+            forceReadOnly={forceReadOnly}
+          />
+        ) : (
+          <CharacterTab scenario={scenario} state={state} />
+        )}
+      </div>
+    </aside>
+  );
+}
+
 /** Render one result-panel entry to HTML. Narration entries keep the name literal. */
 function renderResultEntry(type: string, payload: unknown, characterName: string): string {
   const text = String((payload as { text?: unknown }).text ?? '');
@@ -613,42 +741,109 @@ export default async function PlayPage({
   const noticeText = notice ? NOTICES[notice] : undefined;
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
-  const playthrough = await store.findById(playthroughId);
-  if (!playthrough || !sessionHash || playthrough.sessionId !== sessionHash) {
+  const resolved = await resolvePlaythrough(getDatabase(), getScenario, playthroughId, sessionHash);
+  if (!resolved) {
     notFound();
   }
 
-  const scenario = getScenario(playthrough.scenarioId);
-  if (!scenario) {
-    // The Scenario left the collection: Journal only, read-only. The Journal
-    // always renders completely because it stores the text as presented.
-    const journal = await store.listJournal(playthrough.id);
-    const goneName = playthrough.state.character.name;
+  if (!resolved.compatible) {
+    // Incompatible Playthroughs are read-only: derived on read, never stored.
+    // Every action is rejected by executeTurn, so no forms are rendered here.
+    const journal = await store.listJournal(resolved.playthrough.id);
+    const incompatibleName = resolved.playthrough.state.character.name;
+    const recordedEnding = latestJournalEnding(journal);
+    if (resolved.scenario === undefined) {
+      // The Scenario left the collection (or is no longer valid): only the
+      // Journal remains, and the Ending is read from its Journal entry. The
+      // Journal always renders completely because it stores the text as presented.
+      return (
+        <main>
+          <h1>{incompatibleName}</h1>
+          <p>This Scenario is no longer available, so this Playthrough is read-only.</p>
+          {recordedEnding ? (
+            <section aria-label="Ending">
+              <p className="meta">{recordedEnding.kind === 'victory' ? 'Victory' : 'Defeat'}</p>
+              <h2>{recordedEnding.title}</h2>
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: renderStoredText(recordedEnding.text, incompatibleName),
+                }}
+              />
+            </section>
+          ) : null}
+          <p>
+            <a href={`/play/${resolved.playthrough.id}/journal`}>View journal</a>
+          </p>
+          <section aria-label="Journal">
+            <ol>
+              {journal.map((entry) => {
+                const rendered = renderJournalEntry(entry.type, entry.payload, incompatibleName);
+                return (
+                  <li key={entry.seq}>
+                    <p className="meta">
+                      {rendered.label} · step {entry.step}
+                    </p>
+                    <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        </main>
+      );
+    }
+    // The Scenario is still in the collection but its content changed: the
+    // Character sheet, inventory and map render best effort from the current
+    // content, and a new Playthrough is on offer.
+    const incompatibleScenario = resolved.scenario;
+    const incompatibleState = resolved.playthrough.state;
+    const incompatibleView = view(incompatibleScenario, incompatibleState, {
+      includeUnknownExits: showUnknownExits,
+    });
     return (
       <main>
-        <h1>{goneName}</h1>
-        <p>This Scenario has changed since it was played (or is no longer available).</p>
-        <p>
-          <a href={`/play/${playthrough.id}/journal`}>View journal</a>
-        </p>
-        <section aria-label="Journal">
-          <ol>
-            {journal.map((entry) => {
-              const rendered = renderJournalEntry(entry.type, entry.payload, goneName);
-              return (
-                <li key={entry.seq}>
-                  <p className="meta">
-                    {rendered.label} · step {entry.step}
-                  </p>
-                  <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+        <div className="game">
+          <article className="reading" lang={incompatibleScenario.language}>
+            <p className="notice" role="status">
+              This Scenario has changed since it was played, so this Playthrough is read-only.
+            </p>
+            <p>
+              <a className="button" href={`/scenarios/${incompatibleScenario.id}`}>
+                Start a new Playthrough of {incompatibleScenario.title}
+              </a>
+            </p>
+            <p>
+              <a href={`/play/${resolved.playthrough.id}/journal`}>View journal</a>
+            </p>
+            <ReadOnlyPosition
+              scenario={incompatibleScenario}
+              state={incompatibleState}
+              gameView={incompatibleView}
+              characterName={incompatibleName}
+              recordedEnding={recordedEnding}
+            />
+          </article>
+          <SidePanel
+            scenario={incompatibleScenario}
+            state={incompatibleState}
+            playthroughId={resolved.playthrough.id}
+            step={resolved.playthrough.step}
+            tab={tab}
+            notice={notice}
+            gameView={incompatibleView}
+            showUnknownExits={showUnknownExits}
+            toggleHref={mapToggleHrefFor(resolved.playthrough.id, tab, notice, showUnknownExits)}
+            desktopTab={desktopTabFor(tab)}
+            canTravel={false}
+            forceReadOnly
+          />
+        </div>
       </main>
     );
   }
+
+  const scenario = resolved.scenario;
+  const playthrough = resolved.playthrough;
 
   const gameView = view(scenario, playthrough.state, {
     includeUnknownExits: showUnknownExits,
@@ -690,16 +885,10 @@ export default async function PlayPage({
     state.status === 'active' &&
     state.activeSceneId == null &&
     state.activeCombat == null;
-  const toggleParams = new URLSearchParams();
-  if (tab === 'inventory' || tab === 'map') toggleParams.set('tab', tab);
-  if (notice === 'stale' || notice === 'unavailable') toggleParams.set('notice', notice);
-  if (!showUnknownExits) toggleParams.set('unknown', '1');
-  const toggleQuery = toggleParams.toString();
-  const mapToggleHref =
-    toggleQuery === '' ? `/play/${playthrough.id}` : `/play/${playthrough.id}?${toggleQuery}`;
   // The desktop panel shows the map above the Character/Inventory tabs; the
   // phone panel holds all three tabs behind the compact summary.
-  const desktopTab = tab === 'inventory' ? 'inventory' : 'character';
+  const mapToggleHref = mapToggleHrefFor(playthrough.id, tab, notice, showUnknownExits);
+  const desktopTab = desktopTabFor(tab);
   const panelOpen = tab !== 'character' || noticeText !== undefined;
 
   return (
@@ -806,12 +995,10 @@ export default async function PlayPage({
             />
           ) : (
             <>
-              <p className="meta">{gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}</p>
-              <h1>{gameView.title}</h1>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: renderNarration(gameView.text, characterName),
-                }}
+              <EndingBlock
+                kindLabel={gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}
+                title={gameView.title}
+                html={renderNarration(gameView.text, characterName)}
               />
               <section aria-label="After the ending">
                 <p>
@@ -833,74 +1020,27 @@ export default async function PlayPage({
             </>
           )}
         </article>
-        <aside className="side" aria-label="Character and inventory">
-          <details className="compact-summary" open={panelOpen || undefined}>
-            <summary>
-              <strong>{state.character.name}</strong> · Health {state.character.health}/
-              {MAX_HEALTH} ·{' '}
-              {gameView.kind === 'location'
-                ? gameView.name
-                : gameView.kind === 'scene' || gameView.kind === 'combat'
-                  ? gameView.locationName
-                  : 'Ended'}
-            </summary>
-            <TabNav
-              playthroughId={playthrough.id}
-              tab={tab}
-              notice={notice}
-              tabs={['character', 'inventory', 'map']}
-            />
-            {tab === 'inventory' ? (
-              <InventoryTab
-                scenario={scenario}
-                state={state}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                tab={tab}
-              />
-            ) : tab === 'map' ? (
-              <LocationMap
-                map={gameView.map}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                canTravel={canTravel}
-                showUnknownExits={showUnknownExits}
-                toggleHref={mapToggleHref}
-                markerId="map-arrow-phone"
-              />
-            ) : (
-              <CharacterTab scenario={scenario} state={state} />
-            )}
-          </details>
-          <div className="full">
-            <LocationMap
-              map={gameView.map}
-              playthroughId={playthrough.id}
-              step={playthrough.step}
-              canTravel={canTravel}
-              showUnknownExits={showUnknownExits}
-              toggleHref={mapToggleHref}
-              markerId="map-arrow-desktop"
-            />
-            <TabNav
-              playthroughId={playthrough.id}
-              tab={desktopTab}
-              notice={notice}
-              tabs={['character', 'inventory']}
-            />
-            {desktopTab === 'inventory' ? (
-              <InventoryTab
-                scenario={scenario}
-                state={state}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                tab={tab}
-              />
-            ) : (
-              <CharacterTab scenario={scenario} state={state} />
-            )}
-          </div>
-        </aside>
+        <SidePanel
+          scenario={scenario}
+          state={state}
+          playthroughId={playthrough.id}
+          step={playthrough.step}
+          tab={tab}
+          notice={notice}
+          gameView={gameView}
+          showUnknownExits={showUnknownExits}
+          toggleHref={mapToggleHref}
+          desktopTab={desktopTab}
+          canTravel={canTravel}
+          detailsOpen={panelOpen}
+          summarySuffix={
+            gameView.kind === 'location'
+              ? gameView.name
+              : gameView.kind === 'scene' || gameView.kind === 'combat'
+                ? gameView.locationName
+                : 'Ended'
+          }
+        />
       </div>
     </main>
   );

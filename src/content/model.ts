@@ -140,6 +140,11 @@ export type Scenario = {
   imagesById: Record<string, CompiledImageEntry>;
   /** Deterministic SHA-256 over the manifest, every listed file and every image. */
   contentHash: string;
+  /**
+   * Manifest-relative paths of every listed content file, in manifest order.
+   * The dev registry watches these (plus the manifest) for reloads.
+   */
+  listedPaths: string[];
 };
 
 function required<T>(value: T | undefined, message: string): T {
@@ -380,6 +385,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     endingsById: Object.fromEntries(endingById),
     imagesById: Object.fromEntries(imageById),
     contentHash: computeContentHash(inputs),
+    listedPaths: [...inputs.listedPaths],
   };
   return deepFreeze(scenario);
 }

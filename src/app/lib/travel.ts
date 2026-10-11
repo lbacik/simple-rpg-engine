@@ -27,7 +27,7 @@ export async function travelAction(formData: FormData): Promise<never> {
 
   const result = await executeTurn(
     getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
+    getScenario,
     playthroughId,
     sessionHash,
     { kind: 'travel', targetLocationId: target, expectedStep },

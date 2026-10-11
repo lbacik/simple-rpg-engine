@@ -46,7 +46,7 @@ async function runInventoryTurn(form: InventoryForm, action: Action): Promise<ne
 
   const result = await executeTurn(
     getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
+    getScenario,
     form.playthroughId,
     sessionHash,
     action,

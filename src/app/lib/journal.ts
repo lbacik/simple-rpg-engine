@@ -87,6 +87,35 @@ export function renderJournalEntry(
   return { label, html: `<p>${escapeHtml(text)}</p>` };
 }
 
+export type JournalEnding = {
+  endingId: string;
+  kind: 'victory' | 'defeat';
+  title: string;
+  text: string;
+};
+
+/**
+ * The Ending as recorded when the Playthrough ended: kind, title and closing
+ * narration, stored as presented. Used when the Scenario is gone (or its
+ * Ending with it) and only the Journal remains.
+ */
+export function latestJournalEnding(
+  entries: ReadonlyArray<{ type: string; payload: unknown }>,
+): JournalEnding | undefined {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    if (entry?.type !== 'ending') continue;
+    const record = (entry.payload ?? {}) as Record<string, unknown>;
+    return {
+      endingId: String(record.endingId ?? ''),
+      kind: record.kind === 'victory' ? 'victory' : 'defeat',
+      title: String(record.title ?? ''),
+      text: String(record.text ?? ''),
+    };
+  }
+  return undefined;
+}
+
 function testText(record: Record<string, unknown>, fallback: string): string {
   if (fallback !== '') return fallback;
   const attribute = String(record.attribute ?? '');

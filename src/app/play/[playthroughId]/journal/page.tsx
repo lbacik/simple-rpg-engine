@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import { getScenario } from '@/content/registry';
+import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { getSessionHash } from '@/app/lib/session';
 import {
@@ -21,10 +23,19 @@ export default async function JournalPage({
   const { page: pageParam } = await searchParams;
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
-  const playthrough = await store.findById(playthroughId);
-  if (!playthrough || !sessionHash || playthrough.sessionId !== sessionHash) {
+  // The Journal always renders completely, during play, after the end and
+  // when the Playthrough is incompatible: it stores the text as presented.
+  // The read updates the content pin when a reference check passes.
+  const resolved = await resolvePlaythrough(
+    getDatabase(),
+    getScenario,
+    playthroughId,
+    sessionHash,
+  );
+  if (!resolved) {
     notFound();
   }
+  const playthrough = resolved.playthrough;
 
   const total = await store.countJournal(playthrough.id);
   const totalPages = Math.max(1, Math.ceil(total / JOURNAL_PAGE_SIZE));

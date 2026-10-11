@@ -7,10 +7,12 @@
 //
 // Order per turn: read the row (another Session, or none, is `not-found`),
 // resolve the Scenario (gone means the Playthrough is read-only,
-// `incompatible`), run `applyAction` (`step`, then legality), then the
-// optimistic-concurrency swap `UPDATE … WHERE step = <expected>`: no row
-// changed means a concurrent turn won, so roll back and report `stale`.
-// Only the winner inserts its Journal entries.
+// `incompatible`), run the reference check when the pinned hash differs (a
+// pass updates the pin, a fail means `incompatible`), run `applyAction`
+// (`step`, then legality), then the optimistic-concurrency swap
+// `UPDATE … WHERE step = <expected>`: no row changed means a concurrent turn
+// won, so roll back and report `stale`. Only the winner inserts its Journal
+// entries.
 //
 // The swap plus the insert are adjacent synchronous statements rather than a
 // Kysely transaction object: better-sqlite3 serves every statement on one
@@ -21,6 +23,7 @@
 import type { Kysely } from 'kysely';
 // Relative imports: vitest has no `@/` alias, and tests drive this module
 // directly against in-memory SQLite.
+import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
 import { applyAction, type Action, type Rng } from '../../engine/index';
 import { PlaythroughStore } from '../../persistence/index';
@@ -47,8 +50,26 @@ export async function executeTurn(
   if (scenario === undefined) {
     return { ok: false, reason: 'incompatible' };
   }
-  const applied = applyAction(scenario, row.state, action, rng);
+  let state = row.state;
+  let pinMoved = false;
+  if (row.contentHash !== scenario.contentHash) {
+    const check = checkPlaythroughCompatibility(scenario, state);
+    if (!check.ok) {
+      return { ok: false, reason: 'incompatible' };
+    }
+    // Fold the pin into the step-guarded swap below instead of a separate
+    // update: a turn that commits meanwhile wins and this one reports stale,
+    // so the pin never rolls a newer state back.
+    state = { ...state, scenarioVersion: scenario.version, contentHash: scenario.contentHash };
+    pinMoved = true;
+  }
+  const applied = applyAction(scenario, state, action, rng);
   if (!applied.ok) {
+    if (pinMoved) {
+      // Best effort: leave the pin moved even though the action was rejected,
+      // unless a concurrent turn won meanwhile.
+      await store.updatePin(playthroughId, state, row.step);
+    }
     if (applied.reason === 'stale-step') return { ok: false, reason: 'stale' };
     if (applied.reason === 'ended') return { ok: false, reason: 'ended' };
     return { ok: false, reason: 'illegal' };
