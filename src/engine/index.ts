@@ -124,6 +124,13 @@ export type NewJournalEntry =
   | {
       type: 'state-change';
       text: string;
+    }
+  | {
+      type: 'ending';
+      endingId: string;
+      kind: 'victory' | 'defeat';
+      title: string;
+      text: string;
     };
 
 /**
@@ -469,18 +476,23 @@ export function visibleChoices(
   );
 }
 
-/** Would this Outcome's damage drop the Character to 0 Health (later ticket)? */
-function outcomeWouldKill(state: PlaythroughState, outcome: CompiledOutcome): boolean {
-  let health = state.character.health;
-  for (const effect of outcome.effects) {
-    if ('heal' in effect) {
-      health = Math.min(MAX_HEALTH, health + effect.heal);
-    } else if ('damage' in effect) {
-      health -= effect.damage;
-      if (health <= 0) return true;
-    }
-  }
-  return false;
+/**
+ * The Ending Journal entry appended whenever the Playthrough ends, by `end`
+ * or by death (docs/spec/playthrough-state.md, journal): kind, title and
+ * closing narration, stored as presented.
+ */
+function endingEntry(
+  scenario: Scenario,
+  state: PlaythroughState,
+  ending: { id: string; kind: 'victory' | 'defeat'; title: string; text: string },
+): NewJournalEntry {
+  return {
+    type: 'ending',
+    endingId: ending.id,
+    kind: ending.kind,
+    title: ending.title,
+    text: substituteName(ending.text, state.character.name),
+  };
 }
 
 /**
@@ -519,15 +531,6 @@ function resolveTest(
   };
 }
 
-/**
- * An Outcome the engine cannot apply yet (later tickets): `start-combat`
- * (docs/spec/mechanics.md, Combat) and `end`
- * (docs/spec/playthrough-state.md, transitions).
- */
-function outcomeNeedsLaterTicket(outcome: CompiledOutcome): boolean {
-  return outcome.startCombat !== undefined || outcome.end !== undefined;
-}
-
 function applyChoose(
   scenario: Scenario,
   state: PlaythroughState,
@@ -553,15 +556,12 @@ function applyChoose(
   if (choice.once && isTakenOnce(state, scene.id, choice.id)) {
     return { ok: false, reason: 'illegal-action' };
   }
-  // Resolve the Test first: the roll picks the Outcome, and an Outcome
-  // leading to Combat or an Ending, or a damage that kills, is rejected until
-  // those tickets (nothing changes, including the `once` record).
+  // Resolve the Test first: the roll picks the Outcome. An Outcome leading to
+  // Combat is rejected until that ticket (nothing changes, including the
+  // `once` record). Endings and lethal damage are handled by applyOutcome.
   const test = choice.test === undefined ? undefined : resolveTest(scenario, state, choice.test, rng);
   const outcome = test?.outcome ?? choice.outcome;
-  if (
-    outcome !== undefined &&
-    (outcomeNeedsLaterTicket(outcome) || outcomeWouldKill(state, outcome))
-  ) {
+  if (outcome !== undefined && outcome.startCombat !== undefined) {
     return { ok: false, reason: 'illegal-action' };
   }
 
@@ -661,8 +661,14 @@ function applyOpenScene(
 
 /**
  * Applying an Outcome: narration, then Effects in authored order, then the
- * transition (`next`, `move`, or none: back to the Location view without
- * re-evaluating on-enter Scenes).
+ * transition (`next`, `move`, `end`, or none: back to the Location view
+ * without re-evaluating on-enter Scenes).
+ *
+ * A `damage` Effect that brings Health to 0 or below sets Health to 0,
+ * skips the remaining Effects and the transition, and ends the Playthrough
+ * on the Scenario's death Ending. An `end` transition sets the status to
+ * `ended(endingId)` and appends the Ending entry. Either way the position
+ * becomes Ended: no active Scene or Combat.
  */
 function applyOutcome(
   scenario: Scenario,
@@ -675,11 +681,38 @@ function applyOutcome(
     journal.push({ type: 'outcome', text: substituteName(outcome.text, state.character.name) });
   }
   for (const effect of outcome.effects) {
+    if ('damage' in effect && next.character.health - effect.damage <= 0) {
+      next = {
+        ...next,
+        character: { ...next.character, health: 0 },
+      };
+      journal.push({ type: 'state-change', text: `−${effect.damage} Health` });
+      next = {
+        ...next,
+        status: 'ended',
+        endingId: scenario.deathEnding.id,
+        activeSceneId: null,
+        activeCombat: null,
+      };
+      journal.push(endingEntry(scenario, next, scenario.deathEnding));
+      return { state: next, journal };
+    }
     const applied = applyEffect(scenario, next, effect);
     next = applied.state;
     if (applied.entry !== undefined) {
       journal.push(applied.entry);
     }
+  }
+  if (outcome.end !== undefined) {
+    next = {
+      ...next,
+      status: 'ended',
+      endingId: outcome.end.id,
+      activeSceneId: null,
+      activeCombat: null,
+    };
+    journal.push(endingEntry(scenario, next, outcome.end));
+    return { state: next, journal };
   }
   if (outcome.next !== undefined) {
     const activated = activateScene(scenario, next, outcome.next.id);
@@ -783,7 +816,8 @@ function applyEffect(
     };
   }
   if ('damage' in effect) {
-    // Non-lethal here: lethal damage is rejected before the Outcome applies.
+    // Non-lethal here: lethal damage ends on the death Ending in
+    // applyOutcome before reaching this branch.
     return {
       state: {
         ...state,
@@ -954,6 +988,7 @@ export type GameView =
   | {
       kind: 'ended';
       endingId: string;
+      endingKind: 'victory' | 'defeat';
       title: string;
       text: string;
       map: MapView;
@@ -976,7 +1011,10 @@ export function view(
     return {
       kind: 'ended',
       endingId: ending.id,
+      endingKind: ending.kind,
       title: ending.title,
+      // Raw narration source; the UI renders it with the Character's name,
+      // like Scene text. The Journal holds the substituted presentation text.
       text: ending.text,
       map: deriveMap(scenario, state, options),
     };
