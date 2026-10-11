@@ -59,11 +59,51 @@ export async function resolvePlaythrough(
     scenarioVersion: scenario.version,
     contentHash: scenario.contentHash,
   };
-  await store.updatePin(row.id, {
-    scenarioVersion: scenario.version,
-    contentHash: scenario.contentHash,
-    state,
-  });
-  const updated = await store.findById(row.id);
-  return { compatible: true, scenario, playthrough: updated ?? { ...row, state } };
+  if (await store.updatePin(row.id, state, row.step)) {
+    const updated = await store.findById(row.id);
+    return { compatible: true, scenario, playthrough: updated ?? { ...row, state } };
+  }
+  // A turn committed between the read and the pin update: report its fresh
+  // row instead of overwriting it with the older state.
+  const fresh = await store.findById(row.id);
+  if (fresh === null || fresh.sessionId !== sessionHash) {
+    return null;
+  }
+  if (fresh.contentHash === scenario.contentHash) {
+    return { compatible: true, scenario, playthrough: fresh };
+  }
+  if (!checkPlaythroughCompatibility(scenario, fresh.state).ok) {
+    return { compatible: false, scenario, playthrough: fresh };
+  }
+  return { compatible: true, scenario, playthrough: fresh };
+}
+
+/**
+ * Content the incompatible read-only screen must leave out (docs/spec/ui.md,
+ * read-only Playthroughs): `view()` falls back to the start Location (or the
+ * death Ending) when an id is gone, which would show the wrong position for a
+ * Playthrough whose current Location (or Ending) was renamed away. Scene and
+ * Combat views never name the Location, so only the Location view and the
+ * Ending need the gap detected; the caller renders a short notice instead.
+ */
+export function readOnlyGap(
+  scenario: Scenario,
+  state: StoredPlaythrough['state'],
+  viewKind: 'location' | 'scene' | 'combat' | 'ended',
+  hasRecordedEnding: boolean,
+): 'location' | 'ending' | undefined {
+  if (viewKind === 'ended') {
+    if (
+      state.endingId !== undefined &&
+      scenario.endingsById[state.endingId] === undefined &&
+      !hasRecordedEnding
+    ) {
+      return 'ending';
+    }
+    return undefined;
+  }
+  if (viewKind === 'location' && scenario.locationsById[state.currentLocationId] === undefined) {
+    return 'location';
+  }
+  return undefined;
 }

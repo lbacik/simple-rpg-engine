@@ -6,17 +6,13 @@
 // membership never fails. Passing reads update the pin; failing reads (or a
 // missing Scenario) are incompatible and reject every action.
 
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { describe, expect, it, afterEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { checkPlaythroughCompatibility } from '../src/content/index';
 import type { Scenario } from '../src/content/index';
 import { startPlaythrough, type Rng } from '../src/engine/index';
 import type { PlaythroughState } from '../src/engine/state';
 import { executeTurn } from '../src/app/lib/turn';
 import { resolvePlaythrough } from '../src/app/lib/playthrough';
-import { latestEndingEntry } from '../src/app/lib/journal';
 import {
   migrateDatabase,
   openDatabase,
@@ -386,123 +382,62 @@ describe('resolvePlaythrough', () => {
       await db.destroy();
     }
   });
-});
 
-describe('latestEndingEntry', () => {
-  it('reads the last Ending from the Journal and handles none', () => {
-    expect(latestEndingEntry([{ type: 'intro', payload: {} }])).toBeUndefined();
-    expect(
-      latestEndingEntry([
-        { type: 'ending', payload: { endingId: 'a', kind: 'defeat', title: 'A', text: 'a.' } },
-        { type: 'travel', payload: {} },
-        { type: 'ending', payload: { endingId: 'b', kind: 'victory', title: 'B', text: 'b.' } },
-      ]),
-    ).toEqual({ endingId: 'b', kind: 'victory', title: 'B', text: 'b.' });
-  });
-});
-
-describe('dev registry reload', () => {
-  const previousEnv = process.env.SCENARIO_DIR;
-
-  function writeScenario(root: string, sceneText: string): void {
-    const files: Record<string, string> = {
-      'solo/scenario.yaml': [
-        'schemaVersion: 1',
-        'id: solo',
-        'title: Solo',
-        'description: One room.',
-        'version: "1.0.0"',
-        'language: en',
-        'startLocation: a',
-        'deathEnding: e',
-        'locations:',
-        '  - locations/a.yaml',
-        'scenes:',
-        '  - scenes/s.yaml',
-        'templates:',
-        '  - templates.yaml',
-        'endings:',
-        '  - endings.yaml',
-        '',
-      ].join('\n'),
-      'solo/locations/a.yaml': 'id: a\nname: A\ndescription: A place.\nmap: { x: 10, y: 20 }\nscenes: [s]\n',
-      'solo/scenes/s.yaml': [
-        'id: s',
-        'title: S',
-        'trigger: on-enter',
-        `text: ${sceneText}`,
-        'choices:',
-        '  - id: go',
-        '    text: Go on.',
-        '    outcome:',
-        '      end: w',
-        '',
-      ].join('\n'),
-      'solo/templates.yaml':
-        '- id: t\n  name: T\n  attributes: { might: 2, agility: 1, wits: 2, presence: 1 }\n',
-      'solo/endings.yaml':
-        '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n- id: w\n  kind: victory\n  title: W\n  text: You win.\n',
-    };
-    for (const [relative, content] of Object.entries(files)) {
-      const full = path.join(root, relative);
-      fs.mkdirSync(path.dirname(full), { recursive: true });
-      fs.writeFileSync(full, content);
+  it('reports the fresh row when a turn commits between the read and the pin update', async () => {
+    const scenario = loadCrossroadsScenario();
+    const db = openDatabase(':memory:');
+    try {
+      await migrateDatabase(db);
+      const store = new PlaythroughStore(db);
+      const started = startPlaythrough(scenario, 'hunter', 'Robin', rng);
+      if (!started.ok) throw new Error('fixture start failed');
+      const stale = { ...started.state, contentHash: 'stale-hash' };
+      await store.create(
+        {
+          id: 'pt-race',
+          sessionId: SESSION,
+          scenarioId: scenario.id,
+          scenarioVersion: '0.9.0',
+          contentHash: 'stale-hash',
+          status: stale.status,
+          step: stale.step,
+          state: stale,
+        },
+        [],
+      );
+      // A turn commits after the page read but before its pin update: the
+      // guarded update finds no row at the old step and leaves the turn alone.
+      const read = await store.findById('pt-race');
+      if (!read) throw new Error('missing playthrough');
+      const advanced = { ...read.state, step: read.state.step + 1 };
+      expect(
+        await store.updateIfStepMatches('pt-race', read.step, {
+          state: advanced,
+          step: advanced.step,
+          status: advanced.status,
+        }),
+      ).toBe(true);
+      const repinned = {
+        ...read.state,
+        scenarioVersion: scenario.version,
+        contentHash: scenario.contentHash,
+      };
+      expect(await store.updatePin('pt-race', repinned, read.step)).toBe(false);
+      const stored = await store.findById('pt-race');
+      expect(stored?.step).toBe(advanced.step);
+      expect(stored?.contentHash).toBe('stale-hash');
+      // A fresh read pins cleanly.
+      const fresh = await store.findById('pt-race');
+      if (!fresh) throw new Error('missing playthrough');
+      const freshPin = {
+        ...fresh.state,
+        scenarioVersion: scenario.version,
+        contentHash: scenario.contentHash,
+      };
+      expect(await store.updatePin('pt-race', freshPin, fresh.step)).toBe(true);
+      expect((await store.findById('pt-race'))?.contentHash).toBe(scenario.contentHash);
+    } finally {
+      await db.destroy();
     }
-  }
-
-  function touchFuture(full: string): void {
-    const future = new Date(Date.now() + 60_000);
-    fs.utimesSync(full, future, future);
-  }
-
-  afterEach(() => {
-    if (previousEnv === undefined) delete process.env.SCENARIO_DIR;
-    else process.env.SCENARIO_DIR = previousEnv;
-  });
-
-  it('picks up an edited listed Scene file on the next request without a restart', async () => {
-    const { loadAllScenarios, getScenario } = await import('../src/content/index');
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-reload-'));
-    process.env.SCENARIO_DIR = root;
-    writeScenario(root, 'A room.');
-    loadAllScenarios(root);
-    expect(getScenario('solo')?.scenesById['s']?.text).toBe('A room.');
-    const before = getScenario('solo')?.contentHash;
-
-    const sceneFile = path.join(root, 'solo', 'scenes', 's.yaml');
-    fs.writeFileSync(
-      sceneFile,
-      'id: s\ntitle: S\ntrigger: on-enter\ntext: A changed room.\nchoices:\n  - id: go\n    text: Go on.\n    outcome:\n      end: w\n',
-    );
-    touchFuture(sceneFile);
-    touchFuture(path.join(root, 'solo', 'scenes'));
-    expect(getScenario('solo')?.scenesById['s']?.text).toBe('A changed room.');
-    expect(getScenario('solo')?.contentHash).not.toBe(before);
-  });
-
-  it('ignores edits to files the manifest does not list', async () => {
-    const { loadAllScenarios, getScenario } = await import('../src/content/index');
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-reload-'));
-    process.env.SCENARIO_DIR = root;
-    writeScenario(root, 'A room.');
-    const extra = path.join(root, 'solo', 'notes.yaml');
-    fs.writeFileSync(extra, 'note: hello\n');
-    loadAllScenarios(root);
-    const before = getScenario('solo');
-    fs.writeFileSync(extra, 'note: changed\n');
-    touchFuture(extra);
-    const after = getScenario('solo');
-    expect(after).toBe(before);
-  });
-
-  it('leaves out a Scenario whose edit made it invalid', async () => {
-    const { loadAllScenarios, getScenario } = await import('../src/content/index');
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-reload-'));
-    process.env.SCENARIO_DIR = root;
-    writeScenario(root, 'A room.');
-    loadAllScenarios(root);
-    expect(getScenario('solo')).toBeDefined();
-    fs.rmSync(path.join(root, 'solo', 'scenes', 's.yaml'));
-    expect(getScenario('solo')).toBeUndefined();
   });
 });

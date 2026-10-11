@@ -20,11 +20,12 @@ import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
-import { latestEndingEntry, renderJournalEntry } from '@/app/lib/journal';
+import { latestJournalEnding, renderJournalEntry } from '@/app/lib/journal';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { LocationMap } from './map';
 import { SceneIllustration } from './scene-illustration';
+import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
@@ -616,92 +617,102 @@ function desktopTabFor(tab: PanelTab): 'character' | 'inventory' {
 }
 
 /**
- * The current position of an incompatible Playthrough, without any actions:
- * the same derived projection, rendered read-only from the current content.
+ * The Character and inventory side panel, shared by the compatible and
+ * incompatible game screens. Incompatible Playthroughs render it without any
+ * actions (`forceReadOnly`) and without map travel (`canTravel` false).
  */
-function ReadOnlyPosition({
+function SidePanel({
   scenario,
   state,
+  playthroughId,
+  step,
+  tab,
+  notice,
   gameView,
-  characterName,
-  recordedEnding,
+  showUnknownExits,
+  toggleHref,
+  desktopTab,
+  canTravel,
+  forceReadOnly,
+  detailsOpen,
+  summarySuffix,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
+  playthroughId: string;
+  step: number;
+  tab: PanelTab;
+  notice: string | undefined;
   gameView: GameView;
-  characterName: string;
-  recordedEnding: { kind: 'victory' | 'defeat'; title: string; text: string } | undefined;
+  showUnknownExits: boolean;
+  toggleHref: string;
+  desktopTab: 'character' | 'inventory';
+  canTravel: boolean;
+  forceReadOnly?: boolean;
+  detailsOpen?: boolean;
+  summarySuffix?: string;
 }) {
-  if (gameView.kind === 'location') {
-    return (
-      <>
-        <h1>{gameView.name}</h1>
-        {/* Location description: rendered narration subset. */}
-        <div
-          dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }}
-        />
-      </>
-    );
-  }
-  if (gameView.kind === 'scene') {
-    return (
-      <>
-        <h1>{gameView.title}</h1>
-        <div
-          dangerouslySetInnerHTML={{
-            __html: renderNarration(gameView.text, gameView.characterName),
-          }}
-        />
-      </>
-    );
-  }
-  if (gameView.kind === 'combat') {
-    return (
-      <>
-        <h1>{gameView.encounterName}</h1>
-        <div
-          dangerouslySetInnerHTML={{
-            __html: renderNarration(gameView.text, gameView.characterName),
-          }}
-        />
-        <section aria-label="Combat">
-          <p className="meta">
-            Round {gameView.round} · Range: {gameView.range === 'near' ? 'Near' : 'Far'}
-          </p>
-          <p className="meta">
-            {characterName}: Health {gameView.character.health}/{gameView.character.maxHealth} ·{' '}
-            {gameView.enemy.name}: Health {gameView.enemy.health}/{gameView.enemy.maxHealth}
-          </p>
-        </section>
-      </>
-    );
-  }
-  // Ended: when the content Ending is gone, read it from its Journal entry.
-  const contentEndingGone =
-    state.endingId !== undefined && scenario.endingsById[state.endingId] === undefined;
-  if (contentEndingGone && recordedEnding) {
-    return (
-      <>
-        <p className="meta">{recordedEnding.kind === 'victory' ? 'Victory' : 'Defeat'}</p>
-        <h1>{recordedEnding.title}</h1>
-        <div
-          dangerouslySetInnerHTML={{
-            __html: renderStoredText(recordedEnding.text, characterName),
-          }}
-        />
-      </>
-    );
-  }
   return (
-    <>
-      <p className="meta">{gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}</p>
-      <h1>{gameView.title}</h1>
-      <div
-        dangerouslySetInnerHTML={{
-          __html: renderNarration(gameView.text, characterName),
-        }}
-      />
-    </>
+    <aside className="side" aria-label="Character and inventory">
+      <details className="compact-summary" open={detailsOpen || undefined}>
+        <summary>
+          <strong>{state.character.name}</strong> · Health {state.character.health}/{MAX_HEALTH}
+          {summarySuffix ? ` · ${summarySuffix}` : null}
+        </summary>
+        <TabNav
+          playthroughId={playthroughId}
+          tab={tab}
+          notice={notice}
+          tabs={['character', 'inventory', 'map']}
+        />
+        {tab === 'inventory' ? (
+          <InventoryTab
+            scenario={scenario}
+            state={state}
+            playthroughId={playthroughId}
+            step={step}
+            tab={tab}
+            forceReadOnly={forceReadOnly}
+          />
+        ) : tab === 'map' ? (
+          <LocationMap
+            map={gameView.map}
+            playthroughId={playthroughId}
+            step={step}
+            canTravel={canTravel}
+            showUnknownExits={showUnknownExits}
+            toggleHref={toggleHref}
+            markerId="map-arrow-phone"
+          />
+        ) : (
+          <CharacterTab scenario={scenario} state={state} />
+        )}
+      </details>
+      <div className="full">
+        <LocationMap
+          map={gameView.map}
+          playthroughId={playthroughId}
+          step={step}
+          canTravel={canTravel}
+          showUnknownExits={showUnknownExits}
+          toggleHref={toggleHref}
+          markerId="map-arrow-desktop"
+        />
+        <TabNav playthroughId={playthroughId} tab={desktopTab} notice={notice} tabs={['character', 'inventory']} />
+        {desktopTab === 'inventory' ? (
+          <InventoryTab
+            scenario={scenario}
+            state={state}
+            playthroughId={playthroughId}
+            step={step}
+            tab={tab}
+            forceReadOnly={forceReadOnly}
+          />
+        ) : (
+          <CharacterTab scenario={scenario} state={state} />
+        )}
+      </div>
+    </aside>
   );
 }
 
@@ -730,12 +741,7 @@ export default async function PlayPage({
   const noticeText = notice ? NOTICES[notice] : undefined;
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
-  const resolved = await resolvePlaythrough(
-    getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
-    playthroughId,
-    sessionHash,
-  );
+  const resolved = await resolvePlaythrough(getDatabase(), getScenario, playthroughId, sessionHash);
   if (!resolved) {
     notFound();
   }
@@ -745,7 +751,7 @@ export default async function PlayPage({
     // Every action is rejected by executeTurn, so no forms are rendered here.
     const journal = await store.listJournal(resolved.playthrough.id);
     const incompatibleName = resolved.playthrough.state.character.name;
-    const recordedEnding = latestEndingEntry(journal);
+    const recordedEnding = latestJournalEnding(journal);
     if (resolved.scenario === undefined) {
       // The Scenario left the collection (or is no longer valid): only the
       // Journal remains, and the Ending is read from its Journal entry. The
@@ -817,71 +823,20 @@ export default async function PlayPage({
               recordedEnding={recordedEnding}
             />
           </article>
-          <aside className="side" aria-label="Character and inventory">
-            <details className="compact-summary">
-              <summary>
-                <strong>{incompatibleName}</strong> · Health {incompatibleState.character.health}/
-                {MAX_HEALTH}
-              </summary>
-              <TabNav
-                playthroughId={resolved.playthrough.id}
-                tab={tab}
-                notice={notice}
-                tabs={['character', 'inventory', 'map']}
-              />
-              {tab === 'inventory' ? (
-                <InventoryTab
-                  scenario={incompatibleScenario}
-                  state={incompatibleState}
-                  playthroughId={resolved.playthrough.id}
-                  step={resolved.playthrough.step}
-                  tab={tab}
-                  forceReadOnly
-                />
-              ) : tab === 'map' ? (
-                <LocationMap
-                  map={incompatibleView.map}
-                  playthroughId={resolved.playthrough.id}
-                  step={resolved.playthrough.step}
-                  canTravel={false}
-                  showUnknownExits={showUnknownExits}
-                  toggleHref={mapToggleHrefFor(resolved.playthrough.id, tab, notice, showUnknownExits)}
-                  markerId="map-arrow-phone"
-                />
-              ) : (
-                <CharacterTab scenario={incompatibleScenario} state={incompatibleState} />
-              )}
-            </details>
-            <div className="full">
-              <LocationMap
-                map={incompatibleView.map}
-                playthroughId={resolved.playthrough.id}
-                step={resolved.playthrough.step}
-                canTravel={false}
-                showUnknownExits={showUnknownExits}
-                toggleHref={mapToggleHrefFor(resolved.playthrough.id, tab, notice, showUnknownExits)}
-                markerId="map-arrow-desktop"
-              />
-              <TabNav
-                playthroughId={resolved.playthrough.id}
-                tab={desktopTabFor(tab)}
-                notice={notice}
-                tabs={['character', 'inventory']}
-              />
-              {desktopTabFor(tab) === 'inventory' ? (
-                <InventoryTab
-                  scenario={incompatibleScenario}
-                  state={incompatibleState}
-                  playthroughId={resolved.playthrough.id}
-                  step={resolved.playthrough.step}
-                  tab={tab}
-                  forceReadOnly
-                />
-              ) : (
-                <CharacterTab scenario={incompatibleScenario} state={incompatibleState} />
-              )}
-            </div>
-          </aside>
+          <SidePanel
+            scenario={incompatibleScenario}
+            state={incompatibleState}
+            playthroughId={resolved.playthrough.id}
+            step={resolved.playthrough.step}
+            tab={tab}
+            notice={notice}
+            gameView={incompatibleView}
+            showUnknownExits={showUnknownExits}
+            toggleHref={mapToggleHrefFor(resolved.playthrough.id, tab, notice, showUnknownExits)}
+            desktopTab={desktopTabFor(tab)}
+            canTravel={false}
+            forceReadOnly
+          />
         </div>
       </main>
     );
@@ -930,16 +885,10 @@ export default async function PlayPage({
     state.status === 'active' &&
     state.activeSceneId == null &&
     state.activeCombat == null;
-  const toggleParams = new URLSearchParams();
-  if (tab === 'inventory' || tab === 'map') toggleParams.set('tab', tab);
-  if (notice === 'stale' || notice === 'unavailable') toggleParams.set('notice', notice);
-  if (!showUnknownExits) toggleParams.set('unknown', '1');
-  const toggleQuery = toggleParams.toString();
-  const mapToggleHref =
-    toggleQuery === '' ? `/play/${playthrough.id}` : `/play/${playthrough.id}?${toggleQuery}`;
   // The desktop panel shows the map above the Character/Inventory tabs; the
   // phone panel holds all three tabs behind the compact summary.
-  const desktopTab = tab === 'inventory' ? 'inventory' : 'character';
+  const mapToggleHref = mapToggleHrefFor(playthrough.id, tab, notice, showUnknownExits);
+  const desktopTab = desktopTabFor(tab);
   const panelOpen = tab !== 'character' || noticeText !== undefined;
 
   return (
@@ -1046,12 +995,10 @@ export default async function PlayPage({
             />
           ) : (
             <>
-              <p className="meta">{gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}</p>
-              <h1>{gameView.title}</h1>
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: renderNarration(gameView.text, characterName),
-                }}
+              <EndingBlock
+                kindLabel={gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}
+                title={gameView.title}
+                html={renderNarration(gameView.text, characterName)}
               />
               <section aria-label="After the ending">
                 <p>
@@ -1073,74 +1020,27 @@ export default async function PlayPage({
             </>
           )}
         </article>
-        <aside className="side" aria-label="Character and inventory">
-          <details className="compact-summary" open={panelOpen || undefined}>
-            <summary>
-              <strong>{state.character.name}</strong> · Health {state.character.health}/
-              {MAX_HEALTH} ·{' '}
-              {gameView.kind === 'location'
-                ? gameView.name
-                : gameView.kind === 'scene' || gameView.kind === 'combat'
-                  ? gameView.locationName
-                  : 'Ended'}
-            </summary>
-            <TabNav
-              playthroughId={playthrough.id}
-              tab={tab}
-              notice={notice}
-              tabs={['character', 'inventory', 'map']}
-            />
-            {tab === 'inventory' ? (
-              <InventoryTab
-                scenario={scenario}
-                state={state}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                tab={tab}
-              />
-            ) : tab === 'map' ? (
-              <LocationMap
-                map={gameView.map}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                canTravel={canTravel}
-                showUnknownExits={showUnknownExits}
-                toggleHref={mapToggleHref}
-                markerId="map-arrow-phone"
-              />
-            ) : (
-              <CharacterTab scenario={scenario} state={state} />
-            )}
-          </details>
-          <div className="full">
-            <LocationMap
-              map={gameView.map}
-              playthroughId={playthrough.id}
-              step={playthrough.step}
-              canTravel={canTravel}
-              showUnknownExits={showUnknownExits}
-              toggleHref={mapToggleHref}
-              markerId="map-arrow-desktop"
-            />
-            <TabNav
-              playthroughId={playthrough.id}
-              tab={desktopTab}
-              notice={notice}
-              tabs={['character', 'inventory']}
-            />
-            {desktopTab === 'inventory' ? (
-              <InventoryTab
-                scenario={scenario}
-                state={state}
-                playthroughId={playthrough.id}
-                step={playthrough.step}
-                tab={tab}
-              />
-            ) : (
-              <CharacterTab scenario={scenario} state={state} />
-            )}
-          </div>
-        </aside>
+        <SidePanel
+          scenario={scenario}
+          state={state}
+          playthroughId={playthrough.id}
+          step={playthrough.step}
+          tab={tab}
+          notice={notice}
+          gameView={gameView}
+          showUnknownExits={showUnknownExits}
+          toggleHref={mapToggleHref}
+          desktopTab={desktopTab}
+          canTravel={canTravel}
+          detailsOpen={panelOpen}
+          summarySuffix={
+            gameView.kind === 'location'
+              ? gameView.name
+              : gameView.kind === 'scene' || gameView.kind === 'combat'
+                ? gameView.locationName
+                : 'Ended'
+          }
+        />
       </div>
     </main>
   );

@@ -26,7 +26,7 @@ async function runSceneAction(playthroughId: string, expectedStep: number, actio
 
   const result = await executeTurn(
     getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
+    getScenario,
     playthroughId,
     sessionHash,
     action,

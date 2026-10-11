@@ -8,11 +8,9 @@
 // Pure and synchronous: the caller compares the hashes, derives
 // incompatibility on read (never stored), and updates the pin on a pass.
 
+import { isEquipmentSlot } from '../engine/inventory';
 import type { PlaythroughState } from '../engine/state';
 import type { Scenario } from './model';
-
-/** Equipment slots are fixed vocabulary, not content ids, but a stored slot still has to be one of them. */
-const EQUIPMENT_SLOTS: ReadonlySet<string> = new Set(['weapon', 'outfit', 'talisman']);
 
 export type CompatibilityResult = { ok: true } | { ok: false; reasons: string[] };
 
@@ -29,29 +27,30 @@ export function checkPlaythroughCompatibility(
   const fail = (reason: string): void => {
     reasons.push(reason);
   };
+  const missing = (table: Record<string, unknown>, id: string, label: string): void => {
+    if (table[id] === undefined) fail(`unknown ${label} "${id}"`);
+  };
 
   if (state.scenarioId !== scenario.id) {
     fail(`scenario "${state.scenarioId}" is not the loaded scenario "${scenario.id}"`);
   }
 
   // Locations: the current Location and the exploration sets.
-  if (scenario.locationsById[state.currentLocationId] === undefined) {
-    fail(`unknown location "${state.currentLocationId}"`);
-  }
+  missing(scenario.locationsById, state.currentLocationId, 'location');
   for (const id of state.visited) {
-    if (scenario.locationsById[id] === undefined) fail(`unknown location "${id}"`);
+    missing(scenario.locationsById, id, 'location');
   }
   for (const id of state.revealed) {
-    if (scenario.locationsById[id] === undefined) fail(`unknown location "${id}"`);
+    missing(scenario.locationsById, id, 'location');
   }
 
   // Scenes: the active Scene and the fired set. The active Scene's trigger
   // and Location membership are deliberately not checked.
-  if (state.activeSceneId != null && scenario.scenesById[state.activeSceneId] === undefined) {
-    fail(`unknown scene "${state.activeSceneId}"`);
+  if (state.activeSceneId != null) {
+    missing(scenario.scenesById, state.activeSceneId, 'scene');
   }
   for (const id of state.firedScenes) {
-    if (scenario.scenesById[id] === undefined) fail(`unknown scene "${id}"`);
+    missing(scenario.scenesById, id, 'scene');
   }
 
   // Taken `once` Choices are (Scene id, Choice id) pairs.
@@ -66,7 +65,7 @@ export function checkPlaythroughCompatibility(
 
   // Encounters: every record key, plus the active Combat and its invariant.
   for (const id of Object.keys(state.encounterDamage)) {
-    if (scenario.encountersById[id] === undefined) fail(`unknown encounter "${id}"`);
+    missing(scenario.encountersById, id, 'encounter');
   }
   if (state.activeCombat != null) {
     const encounter = scenario.encountersById[state.activeCombat.encounterId];
@@ -82,13 +81,15 @@ export function checkPlaythroughCompatibility(
     }
   }
 
-  // Items: the held quantities and the equipped pointers.
+  // Items: the held quantities and the equipped pointers. Equipment slots
+  // are fixed vocabulary, not content ids, but a stored slot still has to be
+  // one of them.
   for (const id of Object.keys(state.inventory)) {
-    if (scenario.itemsById[id] === undefined) fail(`unknown item "${id}"`);
+    missing(scenario.itemsById, id, 'item');
   }
   for (const [slot, itemId] of Object.entries(state.equipment)) {
     if (itemId === undefined) continue;
-    if (!EQUIPMENT_SLOTS.has(slot)) {
+    if (!isEquipmentSlot(slot)) {
       fail(`unknown slot "${slot}"`);
       continue;
     }
@@ -107,11 +108,9 @@ export function checkPlaythroughCompatibility(
   }
 
   // Character Template and Ending.
-  if (scenario.templatesById[state.character.templateId] === undefined) {
-    fail(`unknown character template "${state.character.templateId}"`);
-  }
-  if (state.endingId !== undefined && scenario.endingsById[state.endingId] === undefined) {
-    fail(`unknown ending "${state.endingId}"`);
+  missing(scenario.templatesById, state.character.templateId, 'character template');
+  if (state.endingId !== undefined) {
+    missing(scenario.endingsById, state.endingId, 'ending');
   }
 
   return reasons.length === 0 ? { ok: true } : { ok: false, reasons };

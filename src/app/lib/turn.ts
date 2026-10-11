@@ -51,20 +51,25 @@ export async function executeTurn(
     return { ok: false, reason: 'incompatible' };
   }
   let state = row.state;
+  let pinMoved = false;
   if (row.contentHash !== scenario.contentHash) {
     const check = checkPlaythroughCompatibility(scenario, state);
     if (!check.ok) {
       return { ok: false, reason: 'incompatible' };
     }
+    // Fold the pin into the step-guarded swap below instead of a separate
+    // update: a turn that commits meanwhile wins and this one reports stale,
+    // so the pin never rolls a newer state back.
     state = { ...state, scenarioVersion: scenario.version, contentHash: scenario.contentHash };
-    await store.updatePin(playthroughId, {
-      scenarioVersion: scenario.version,
-      contentHash: scenario.contentHash,
-      state,
-    });
+    pinMoved = true;
   }
   const applied = applyAction(scenario, state, action, rng);
   if (!applied.ok) {
+    if (pinMoved) {
+      // Best effort: leave the pin moved even though the action was rejected,
+      // unless a concurrent turn won meanwhile.
+      await store.updatePin(playthroughId, state, row.step);
+    }
     if (applied.reason === 'stale-step') return { ok: false, reason: 'stale' };
     if (applied.reason === 'ended') return { ok: false, reason: 'ended' };
     return { ok: false, reason: 'illegal' };

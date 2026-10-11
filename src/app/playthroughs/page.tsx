@@ -17,7 +17,7 @@ export default async function PlaythroughsPage() {
   const entries = (
     await Promise.all(
       stored.map((playthrough) =>
-        resolvePlaythrough(db, (scenarioId) => getScenario(scenarioId), playthrough.id, sessionHash),
+        resolvePlaythrough(db, getScenario, playthrough.id, sessionHash),
       ),
     )
   ).filter((entry) => entry !== null);

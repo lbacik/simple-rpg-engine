@@ -12,17 +12,21 @@ export function scenarioDirectory(): string {
   return path.resolve(process.cwd(), 'scenarios');
 }
 
+/** One watched file with its `mtimeMs` at load (null when it was missing). */
+export type WatchedFile = {
+  file: string;
+  mtimeMs: number | null;
+};
+
 export type RegistryEntry = {
   scenario: Scenario;
   warnings: Diagnostic[];
   /**
-   * Absolute paths watched for dev reloads: the manifest plus every file it
-   * lists. A directory's own mtime does not change when a file inside it is
-   * edited, so the files themselves are watched.
+   * The manifest plus every file it lists, as absolute paths. A directory's
+   * own mtime does not change when a file inside it is edited, so the files
+   * themselves are watched.
    */
-  watchedFiles: string[];
-  /** `mtimeMs` per watched file at load, or null when it was missing. */
-  watchedMtimes: (number | null)[];
+  watched: WatchedFile[];
 };
 
 declare global {
@@ -42,29 +46,23 @@ function statMtimeOrNull(full: string): number | null {
   }
 }
 
-/** Manifest plus every listed file, as absolute paths. */
-function watchedFilesFor(dir: string, scenario: Scenario): string[] {
-  return [
+/** Manifest plus every listed file, with the mtime each had at load. */
+function watchedFor(dir: string, scenario: Scenario): WatchedFile[] {
+  const files = [
     path.join(dir, 'scenario.yaml'),
     ...scenario.listedPaths.map((listed) => path.join(dir, listed)),
   ];
+  return files.map((file) => ({ file, mtimeMs: statMtimeOrNull(file) }));
 }
 
 function snapshotEntry(dir: string, scenario: Scenario, warnings: Diagnostic[]): RegistryEntry {
-  const watchedFiles = watchedFilesFor(dir, scenario);
-  return {
-    scenario,
-    warnings,
-    watchedFiles,
-    watchedMtimes: watchedFiles.map(statMtimeOrNull),
-  };
+  return { scenario, warnings, watched: watchedFor(dir, scenario) };
 }
 
 /** True when the manifest or any listed file changed since the entry was loaded. */
 function isStale(entry: RegistryEntry): boolean {
-  for (let index = 0; index < entry.watchedFiles.length; index += 1) {
-    const file = entry.watchedFiles[index] as string;
-    if (statMtimeOrNull(file) !== entry.watchedMtimes[index]) return true;
+  for (const watched of entry.watched) {
+    if (statMtimeOrNull(watched.file) !== watched.mtimeMs) return true;
   }
   return false;
 }

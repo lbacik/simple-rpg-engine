@@ -57,7 +57,7 @@ export async function combatAction(formData: FormData): Promise<never> {
   const action: Action = { kind: 'combat', combatAction: actionId, itemId, expectedStep };
   const result = await executeTurn(
     getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
+    getScenario,
     playthroughId,
     sessionHash,
     action,

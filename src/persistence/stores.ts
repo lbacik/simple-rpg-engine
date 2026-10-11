@@ -187,24 +187,29 @@ export class PlaythroughStore {
   /**
    * Refresh the content pin after a passed reference check: the row columns
    * and the state document's own pin move to the loaded Scenario together.
+   * The pin travels in `state` itself, so it is passed once.
+   *
+   * Guarded by the `step` that was read: when a turn commits between the read
+   * and this update, no row matches and the newer state is left alone.
+   * Resolves true when the pin moved, false when someone else moved on (the
+   * caller re-reads or reports stale instead of overwriting the newer state).
    */
-  async updatePin(
-    id: string,
-    pin: { scenarioVersion: string; contentHash: string; state: PlaythroughState },
-  ): Promise<void> {
-    await this.db
+  async updatePin(id: string, state: PlaythroughState, expectedStep: number): Promise<boolean> {
+    const result = await this.db
       .updateTable('playthroughs')
       .set({
-        scenario_version: pin.scenarioVersion,
-        content_hash: pin.contentHash,
-        state: JSON.stringify(pin.state),
-        step: pin.state.step,
-        status: pin.state.status,
-        ending_id: pin.state.endingId ?? null,
+        scenario_version: state.scenarioVersion,
+        content_hash: state.contentHash,
+        state: JSON.stringify(state),
+        step: state.step,
+        status: state.status,
+        ending_id: state.endingId ?? null,
         updated_at: new Date().toISOString(),
       })
       .where('id', '=', id)
-      .execute();
+      .where('step', '=', expectedStep)
+      .executeTakeFirst();
+    return (result.numUpdatedRows ?? 0n) > 0n;
   }
 
   /**
@@ -219,6 +224,8 @@ export class PlaythroughStore {
     const result = await this.db
       .updateTable('playthroughs')
       .set({
+        scenario_version: next.state.scenarioVersion,
+        content_hash: next.state.contentHash,
         state: JSON.stringify(next.state),
         step: next.step,
         status: next.status,

@@ -99,7 +99,7 @@ export type JournalEnding = {
  * narration, stored as presented. Used when the Scenario is gone (or its
  * Ending with it) and only the Journal remains.
  */
-export function latestEndingEntry(
+export function latestJournalEnding(
   entries: ReadonlyArray<{ type: string; payload: unknown }>,
 ): JournalEnding | undefined {
   for (let index = entries.length - 1; index >= 0; index -= 1) {

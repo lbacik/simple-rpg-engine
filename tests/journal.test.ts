@@ -8,6 +8,7 @@ import {
   JOURNAL_PAGE_SIZE,
   journalEntryLabel,
   journalHref,
+  latestJournalEnding,
   parseJournalPage,
   renderJournalEntry,
 } from '../src/app/lib/journal';
@@ -258,5 +259,18 @@ describe('journal pagination in the store', () => {
     } finally {
       await db.destroy();
     }
+  });
+});
+
+describe('latestJournalEnding', () => {
+  it('reads the last Ending from the Journal and handles none', () => {
+    expect(latestJournalEnding([{ type: 'intro', payload: {} }])).toBeUndefined();
+    expect(
+      latestJournalEnding([
+        { type: 'ending', payload: { endingId: 'a', kind: 'defeat', title: 'A', text: 'a.' } },
+        { type: 'travel', payload: {} },
+        { type: 'ending', payload: { endingId: 'b', kind: 'victory', title: 'B', text: 'b.' } },
+      ]),
+    ).toEqual({ endingId: 'b', kind: 'victory', title: 'B', text: 'b.' });
   });
 });

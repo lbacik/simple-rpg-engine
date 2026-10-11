@@ -28,7 +28,7 @@ export default async function JournalPage({
   // The read updates the content pin when a reference check passes.
   const resolved = await resolvePlaythrough(
     getDatabase(),
-    (scenarioId) => getScenario(scenarioId),
+    getScenario,
     playthroughId,
     sessionHash,
   );
