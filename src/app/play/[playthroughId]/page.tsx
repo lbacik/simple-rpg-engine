@@ -494,6 +494,9 @@ export default async function PlayPage({
                       <p>
                         <button className="button" type="submit">
                           {choice.text}
+                          {choice.testLabel ? (
+                            <span className="meta"> ({choice.testLabel})</span>
+                          ) : null}
                         </button>
                       </p>
                     </form>
