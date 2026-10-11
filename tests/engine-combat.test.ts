@@ -180,6 +180,10 @@ function loadArenaScenario(): Scenario {
       '  slot: weapon',
       '  reach: ranged',
       '  damage: 3',
+      '- id: herbs',
+      '  kind: consumable',
+      '  name: Healing Herbs',
+      '  heal: 3',
       '',
     ].join('\n'),
   );
@@ -192,6 +196,7 @@ function loadArenaScenario(): Scenario {
       '  attributes: { might: 1, agility: 1, wits: 2, presence: 2 }',
       '  items:',
       '    - { item: sword }',
+      '    - { item: herbs }',
       '',
     ].join('\n'),
   );
@@ -584,6 +589,216 @@ describe('the Combat panel data', () => {
   });
 });
 
+describe('Fall back', () => {
+  it('success at Near moves to Far; a melee Enemy closes back without attacking', () => {
+    // Fighter Agility 1 against Agility 1: target 8. Dice 3+4: 3+4+1 = 8.
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const result = combat(scenario, started.state, 'fall-back', diceRng([3, 4]));
+    const [round] = roundsOf(result.journal);
+    expect(round?.rolls).toHaveLength(1);
+    expect(round?.rolls[0]).toMatchObject({
+      side: 'character',
+      die1: 3,
+      die2: 4,
+      modifier: 1,
+      total: 8,
+      target: 8,
+      hit: true,
+      damage: 0,
+    });
+    expect(round?.rangeBefore).toBe('near');
+    // The fall back reached Far, then the melee dummy closed back to Near.
+    expect(round?.rangeAfter).toBe('near');
+    expect(round?.text).toContain('success, now at Far Range');
+    expect(round?.text).toContain('closes in to Near Range instead of attacking');
+    expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
+    expect(result.state.character.health).toBe(12);
+  });
+
+  it('failure stays Near and the Enemy responds', () => {
+    // Dice 1+1: 1+1+1 = 3 against 8, a failure. The dummy then hits on
+    // 6+6+1 = 13 against 8 for 1 Damage.
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const result = combat(scenario, started.state, 'fall-back', diceRng([1, 1, 6, 6]));
+    const [round] = roundsOf(result.journal);
+    expect(round?.rolls).toHaveLength(2);
+    expect(round?.rolls[0]).toMatchObject({ total: 3, target: 8, hit: false });
+    expect(round?.rolls[1]).toMatchObject({ side: 'enemy', hit: true, damage: 1 });
+    expect(round?.rangeBefore).toBe('near');
+    expect(round?.rangeAfter).toBe('near');
+    expect(round?.text).toContain('failure, staying at Near Range');
+    expect(result.state.character.health).toBe(11);
+    expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
+  });
+
+  it('is disabled at Far with a reason, and rejected if submitted', () => {
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-melee', diceRng([1]));
+    const actions = combatActions(scenario, started.state);
+    const fallBack = actions.find((action) => action.id === 'fall-back');
+    expect(fallBack?.enabled).toBe(false);
+    expect(fallBack?.reason).toBe('Already at Far Range.');
+    const step = started.state.step;
+    const result = applyAction(
+      scenario,
+      started.state,
+      { kind: 'combat', combatAction: 'fall-back', expectedStep: step },
+      diceRng([6]),
+    );
+    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
+  });
+});
+
+describe('Escape', () => {
+  it('adds +2 at Far: dice that fail at Near succeed at Far', () => {
+    // Fighter Agility 1 against Agility 1: target 8. Dice 2+3: 2+3+1 = 6, a
+    // failure — but at Far the +2 makes 8, a success.
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-melee', diceRng([1]));
+    const result = combat(scenario, started.state, 'escape', diceRng([2, 3]));
+    const [round] = roundsOf(result.journal);
+    expect(round?.rolls[0]).toMatchObject({
+      die1: 2,
+      die2: 3,
+      modifier: 3,
+      total: 8,
+      target: 8,
+      hit: true,
+    });
+    expect(result.state.activeCombat).toBeNull();
+    expect(result.state.activeSceneId).toBeNull();
+  });
+
+  it('the same dice fail at Near, and the Enemy responds', () => {
+    // Dice 2+3: 2+3+1 = 6 against 8, a failure with no Far bonus. The dummy
+    // then misses on 1+1+1 = 3 against 8.
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const result = combat(scenario, started.state, 'escape', diceRng([2, 3, 1, 1]));
+    const [round] = roundsOf(result.journal);
+    expect(round?.rolls).toHaveLength(2);
+    expect(round?.rolls[0]).toMatchObject({ total: 6, target: 8, hit: false });
+    expect(round?.rolls[1]).toMatchObject({ side: 'enemy', hit: false });
+    expect(round?.text).toContain('try to escape');
+    expect(round?.text).toContain('failure');
+    expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
+    expect(result.state.character.health).toBe(12);
+  });
+
+  it('a failed Escape lets the Enemy hit', () => {
+    // Dice 2+3 fail the escape; the dummy hits on 6+6+1 = 13 against 8.
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const result = combat(scenario, started.state, 'escape', diceRng([2, 3, 6, 6]));
+    expect(result.state.character.health).toBe(11);
+    expect(result.state.activeCombat).toMatchObject({ round: 2 });
+  });
+
+  it('success ends the Combat with no Enemy response and applies the escape Outcome', () => {
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const result = combat(scenario, started.state, 'escape', diceRng([6, 6]));
+    expect(result.state.activeCombat).toBeNull();
+    expect(result.state.activeSceneId).toBeNull();
+    expect(result.state.encounterDamage['arena-near']).toBe(0);
+    const types = result.journal.map((entry) => entry.type);
+    expect(types).toEqual(['combat-round', 'combat-end', 'outcome']);
+    expect(result.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
+      encounterId: 'arena-near',
+    });
+    expect(result.journal.find((entry) => entry.type === 'outcome')).toMatchObject({
+      text: 'You step out of the yard.',
+    });
+  });
+});
+
+describe('Consumables in Combat', () => {
+  function useItem(
+    scenario: Scenario,
+    state: PlaythroughState,
+    itemId: string,
+    rng: Rng,
+  ): Success {
+    return succeed(
+      scenario,
+      state,
+      { kind: 'combat', combatAction: 'use-item', itemId, expectedStep: state.step },
+      rng,
+    );
+  }
+
+  it('at full Health the Use is disabled with a reason, and rejected with no state or step change', () => {
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    const actions = combatActions(scenario, started.state);
+    const use = actions.find((action) => action.id === 'use-item' && action.itemId === 'herbs');
+    expect(use).toMatchObject({
+      group: 'Items',
+      label: 'Use Healing Herbs',
+      enabled: false,
+      reason: 'Already at full Health.',
+    });
+    const step = started.state.step;
+    const before = started.state;
+    const result = applyAction(
+      scenario,
+      started.state,
+      { kind: 'combat', combatAction: 'use-item', itemId: 'herbs', expectedStep: step },
+      diceRng([6]),
+    );
+    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
+    expect(started.state).toEqual(before);
+    expect(started.state.step).toBe(step);
+  });
+
+  it('heals, consumes one copy, and the Enemy responds', () => {
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    // The Character misses (1+1+1 = 3) and the dummy hits (6+6+1 = 13): 11 Health.
+    const wounded = combat(scenario, started.state, 'attack', diceRng([1, 1, 6, 6]));
+    expect(wounded.state.character.health).toBe(11);
+    // Herbs heal 3, capped: 11 + 1 = 12. The dummy misses on 1+1+1 = 3.
+    const result = useItem(scenario, wounded.state, 'herbs', diceRng([1, 1]));
+    expect(result.state.character.health).toBe(12);
+    expect(result.state.inventory['herbs']).toBeUndefined();
+    expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 3 });
+    const [round] = roundsOf(result.journal);
+    expect(round?.action).toBe('use-item');
+    expect(round?.text).toContain('You use Healing Herbs, restored 1 Health.');
+  });
+
+  it('two Encounters with the same Enemy track Damage independently', () => {
+    const { scenario, state } = startArena();
+    const started = startFight(scenario, state, 'fight-near', diceRng([1]));
+    // Sword 3 Damage on dice 6+6; the dummy replies and misses on 1+1.
+    const struck = combat(scenario, started.state, 'attack', diceRng([6, 6, 1, 1]));
+    expect(struck.state.encounterDamage['arena-near']).toBe(3);
+    expect(struck.state.encounterDamage['arena-melee'] ?? 0).toBe(0);
+    // Leave this fight, then start the other placement of the same Enemy.
+    const escaped = combat(scenario, struck.state, 'escape', diceRng([6, 6]));
+    expect(escaped.state.activeCombat).toBeNull();
+    const reopened = succeed(
+      scenario,
+      escaped.state,
+      { kind: 'open-scene', sceneId: 'arena-call', expectedStep: escaped.state.step },
+      diceRng([1]),
+    );
+    const other = succeed(
+      scenario,
+      reopened.state,
+      { kind: 'choose', choiceId: 'fight-melee', expectedStep: reopened.state.step },
+      diceRng([1]),
+    );
+    expect(other.state.activeCombat).toMatchObject({ encounterId: 'arena-melee' });
+    const gameView = view(scenario, other.state);
+    if (gameView.kind !== 'combat') throw new Error('expected combat view');
+    expect(gameView.enemy.health).toBe(4);
+    expect(other.state.encounterDamage['arena-near']).toBe(3);
+  });
+});
+
 describe('whispering-woods: the wolf fight', () => {
   function loadWoods(): Scenario {
     const result = loadScenario(path.join(repoRoot, 'scenarios', 'whispering-woods'));
@@ -671,5 +886,77 @@ describe('whispering-woods: the wolf fight', () => {
     expect(result.journal.some((entry) => entry.type === 'combat-start')).toBe(false);
     expect(result.journal.some((entry) => entry.type === 'combat-end')).toBe(false);
     expect(result.journal.some((entry) => entry.type === 'outcome')).toBe(false);
+  });
+
+  it('escaping and returning through wolf-again restarts at startRange with wounds kept', () => {
+    const { scenario, state } = atWolfDen();
+    // Hunter Agility 3 + cloak = 4; the bow hits on 6+6+1 = 13 ≥ 9.
+    const rng = diceRng([6]);
+    const started = succeed(
+      scenario,
+      state,
+      { kind: 'choose', choiceId: 'fight', expectedStep: state.step },
+      rng,
+    );
+    expect(started.state.activeCombat).toMatchObject({ range: 'far', round: 1 });
+
+    const first = combat(scenario, started.state, 'attack', rng);
+    expect(first.state.encounterDamage['hollow-wolf']).toBe(3);
+    expect(first.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
+
+    // Escape at Near: 6+6+4 = 16 ≥ 7 + Agility 2 = 9. No Enemy response.
+    const escaped = combat(scenario, first.state, 'escape', rng);
+    expect(escaped.state.activeCombat).toBeNull();
+    expect(escaped.state.encounterDamage['hollow-wolf']).toBe(3);
+    const types = escaped.journal.map((entry) => entry.type);
+    // The escape Outcome moves to the forest edge, whose on-enter Scene fires.
+    expect(types).toEqual(['combat-round', 'combat-end', 'outcome', 'scene']);
+    expect(escaped.journal.find((entry) => entry.type === 'outcome')).toMatchObject({
+      text: expect.stringContaining('scramble up the bank'),
+    });
+    // The escape Outcome moves back to the forest edge.
+    expect(escaped.state.currentLocationId).toBe('forest-edge');
+
+    // Return through play: leave the forest-edge Scene, travel to the hollow,
+    // open the re-offering Scene, and take the fight again.
+    const onward = succeed(
+      scenario,
+      escaped.state,
+      { kind: 'choose', choiceId: 'press-on', expectedStep: escaped.state.step },
+      rng,
+    );
+    const back = succeed(
+      scenario,
+      onward.state,
+      { kind: 'travel', targetLocationId: 'wolf-hollow', expectedStep: onward.state.step },
+      rng,
+    );
+    expect(back.state.activeSceneId).toBeNull();
+    const offered = succeed(
+      scenario,
+      back.state,
+      { kind: 'open-scene', sceneId: 'wolf-again', expectedStep: back.state.step },
+      rng,
+    );
+    const reentered = succeed(
+      scenario,
+      offered.state,
+      { kind: 'choose', choiceId: 'fight', expectedStep: offered.state.step },
+      rng,
+    );
+    expect(reentered.state.activeCombat).toEqual({
+      encounterId: 'hollow-wolf',
+      range: 'far',
+      round: 1,
+    });
+    expect(reentered.state.encounterDamage['hollow-wolf']).toBe(3);
+    const start = reentered.journal.find((entry) => entry.type === 'combat-start');
+    expect(start).toMatchObject({ encounterId: 'hollow-wolf' });
+    expect((start as Extract<NewJournalEntry, { type: 'combat-start' }>).text).toContain(
+      'lowers its head',
+    );
+    const gameView = view(scenario, reentered.state);
+    if (gameView.kind !== 'combat') throw new Error('expected combat view');
+    expect(gameView.enemy.health).toBe(5);
   });
 });

@@ -96,8 +96,8 @@ export type CombatRoll = {
   damage: number;
 };
 
-/** Character actions of this ticket (docs/spec/mechanics.md, character actions). */
-export type CombatAction = 'advance' | 'attack' | 'defend';
+/** Character actions (docs/spec/mechanics.md, character actions). */
+export type CombatAction = 'advance' | 'attack' | 'defend' | 'fall-back' | 'escape' | 'use-item';
 
 export type CombatRange = 'near' | 'far';
 
@@ -298,7 +298,7 @@ export function startPlaythrough(
  * Consumable. Choose names a Choice of the active Scene. Continue applies
  * the empty Outcome when no Choice is visible. Open Scene activates an
  * on-demand Scene of the current Location. A Combat action names one of the
- * Character actions of this ticket; Items and Leave arrive in a later ticket.
+ * Character actions; a Combat `use-item` also names the Consumable.
  */
 export type Action =
   | {
@@ -338,6 +338,8 @@ export type Action =
   | {
       kind: 'combat';
       combatAction: CombatAction;
+      /** The Consumable for a Combat `use-item`; ignored by other actions. */
+      itemId?: string;
       expectedStep: number;
     };
 
@@ -406,7 +408,7 @@ export function applyAction(
     case 'use-item':
       return applyUseItem(scenario, state, action.itemId);
     case 'combat':
-      return applyCombat(scenario, state, action.combatAction, rng);
+      return applyCombat(scenario, state, action.combatAction, rng, action.itemId);
     default:
       return { ok: false, reason: 'illegal-action' };
   }
@@ -1067,10 +1069,12 @@ function characterAttack(
 
 export type CombatAvailability = {
   id: CombatAction;
-  group: 'Position' | 'Fight';
+  group: 'Position' | 'Fight' | 'Items' | 'Leave';
   label: string;
   enabled: boolean;
   reason?: string;
+  /** The Consumable a `use-item` entry uses; absent on every other action. */
+  itemId?: string;
 };
 
 /** Why an Attack is unavailable at the current Range. */
@@ -1082,11 +1086,12 @@ function attackReason(weaponName: string | undefined): string {
 }
 
 /**
- * Whether each Character action of this ticket is available in the current
- * Combat (docs/spec/mechanics.md, character actions): Advance at Far, Attack
- * when the Character's Reach allows it at the current Range, Defend always.
- * The UI disables unavailable actions with the reason; the engine rejects
- * them independently.
+ * Whether each Character action is available in the current Combat
+ * (docs/spec/mechanics.md, character actions): Advance at Far, Fall back at
+ * Near, Attack when the Character's Reach allows it at the current Range,
+ * Defend and Escape always, and one Use entry per held Consumable while below
+ * full Health. The UI disables unavailable actions with the reason; the engine
+ * rejects them independently.
  */
 export function combatActions(
   scenario: Scenario,
@@ -1098,6 +1103,10 @@ export function combatActions(
   }
   const attack = characterAttack(scenario, state);
   const inReach = attack.reach === 'ranged' || combat.range === 'near';
+  const belowFull = state.character.health < MAX_HEALTH;
+  const consumables = Object.keys(state.inventory).filter(
+    (itemId) => scenario.itemsById[itemId]?.kind === 'consumable',
+  );
   return [
     {
       id: 'advance',
@@ -1105,6 +1114,13 @@ export function combatActions(
       label: 'Advance',
       enabled: combat.range === 'far',
       reason: combat.range === 'far' ? undefined : 'Already at Near Range.',
+    },
+    {
+      id: 'fall-back',
+      group: 'Position',
+      label: 'Fall back',
+      enabled: combat.range === 'near',
+      reason: combat.range === 'near' ? undefined : 'Already at Far Range.',
     },
     {
       id: 'attack',
@@ -1115,6 +1131,18 @@ export function combatActions(
       reason: inReach ? undefined : attackReason(attack.weaponName),
     },
     { id: 'defend', group: 'Fight', label: 'Defend', enabled: true },
+    ...consumables.map((itemId): CombatAvailability => {
+      const name = scenario.itemsById[itemId]?.name ?? itemId;
+      return {
+        id: 'use-item',
+        group: 'Items',
+        label: `Use ${name}`,
+        enabled: belowFull,
+        reason: belowFull ? undefined : 'Already at full Health.',
+        itemId,
+      };
+    }),
+    { id: 'escape', group: 'Leave', label: 'Escape', enabled: true },
   ];
 }
 
@@ -1136,6 +1164,8 @@ function finishVictory(
   round: Extract<NewJournalEntry, { type: 'combat-round' }>,
   health: number,
   encounterDamage: PlaythroughState['encounterDamage'],
+  inventory: PlaythroughState['inventory'] = state.inventory,
+  equipment: PlaythroughState['equipment'] = state.equipment,
 ): ApplyActionResult {
   const end: NewJournalEntry = {
     type: 'combat-end',
@@ -1147,6 +1177,8 @@ function finishVictory(
     step: state.step + 1,
     character: { ...state.character, health },
     encounterDamage,
+    inventory,
+    equipment,
     activeSceneId: null,
     activeCombat: null,
   };
@@ -1166,6 +1198,45 @@ function finishVictory(
 }
 
 /**
+ * Escape (Damage taken < the Enemy's maximum Health, so the Combat was still
+ * running): the Combat ends with no Enemy response, the Range is discarded,
+ * the Encounter record keeps its Damage taken, and the `escape` Outcome is
+ * applied. The Combat end entry joins the result panel with the Outcome.
+ */
+function finishEscape(
+  scenario: Scenario,
+  state: PlaythroughState,
+  encounter: CompiledEncounter,
+  round: Extract<NewJournalEntry, { type: 'combat-round' }>,
+  health: number,
+  encounterDamage: PlaythroughState['encounterDamage'],
+  inventory: PlaythroughState['inventory'],
+  equipment: PlaythroughState['equipment'],
+): ApplyActionResult {
+  const end: NewJournalEntry = {
+    type: 'combat-end',
+    encounterId: encounter.id,
+    text: `You escape from ${encounter.enemy.name}.`,
+  };
+  // The Range is discarded by clearing the active Combat before the Outcome:
+  // `move` and `end` clear it again, and `next` keeps the cleared position.
+  // (An escape Outcome that starts another Combat replaces it deliberately.)
+  const next: PlaythroughState = {
+    ...state,
+    step: state.step + 1,
+    character: { ...state.character, health },
+    encounterDamage,
+    inventory,
+    equipment,
+    activeSceneId: null,
+    activeCombat: null,
+  };
+  const journal: NewJournalEntry[] = [round, end];
+  const applied = applyOutcome(scenario, next, encounter.escape);
+  return { ok: true, state: applied.state, journal: [...journal, ...applied.journal] };
+}
+
+/**
  * One Combat turn (docs/spec/mechanics.md, Combat;
  * docs/spec/playthrough-state.md, Combat): the Character acts first, then —
  * if the Combat is still running — the Enemy responds. One turn is one action
@@ -1178,6 +1249,7 @@ function applyCombat(
   state: PlaythroughState,
   combatAction: CombatAction,
   rng: Rng,
+  itemId?: string,
 ): ApplyActionResult {
   const combat = state.activeCombat;
   if (combat == null) {
@@ -1188,17 +1260,31 @@ function applyCombat(
     return { ok: false, reason: 'illegal-action' };
   }
   const enemy = encounter.enemy;
-  if (combatAction !== 'advance' && combatAction !== 'attack' && combatAction !== 'defend') {
-    return { ok: false, reason: 'illegal-action' };
-  }
   const attack = characterAttack(scenario, state);
   // The action must be available (see combatActions): Advance only at Far,
-  // Attack only when the Character's Reach allows the current Range.
+  // Fall back only at Near, Attack only when the Character's Reach allows the
+  // current Range, a Combat use-item only for a held Consumable below full
+  // Health. Escape is always available.
   if (combatAction === 'advance' && combat.range !== 'far') {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (combatAction === 'fall-back' && combat.range !== 'near') {
     return { ok: false, reason: 'illegal-action' };
   }
   if (combatAction === 'attack' && attack.reach === 'melee' && combat.range === 'far') {
     return { ok: false, reason: 'illegal-action' };
+  }
+  if (combatAction === 'use-item') {
+    const item = itemId === undefined ? undefined : scenario.itemsById[itemId];
+    if (item === undefined || item.kind !== 'consumable') {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    if ((state.inventory[itemId as string] ?? 0) < 1) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    if (state.character.health >= MAX_HEALTH) {
+      return { ok: false, reason: 'illegal-action' };
+    }
   }
 
   const effective = effectiveAttributes(scenario, state);
@@ -1207,6 +1293,8 @@ function applyCombat(
   let range = combat.range;
   let health = state.character.health;
   let encounterDamage = state.encounterDamage;
+  let inventory = state.inventory;
+  let equipment = state.equipment;
   const damageSoFar = (): number => encounterDamage[combat.encounterId] ?? 0;
   const rolls: CombatRoll[] = [];
   const parts: string[] = [];
@@ -1226,9 +1314,73 @@ function applyCombat(
     return { side, die1, die2, modifier: might, total, target, hit, damage: hit ? damage : 0 };
   };
 
+  /** An Agility manoeuvre roll: Fall back, or Escape with +2 at Far. */
+  const manoeuvre = (bonus: number): CombatRoll => {
+    const die1 = rng(1, 7);
+    const die2 = rng(1, 7);
+    const modifier = effective.agility + bonus;
+    const total = die1 + die2 + modifier;
+    const target = 7 + enemy.attributes.agility;
+    const hit = total >= target;
+    return { side: 'character', die1, die2, modifier, total, target, hit, damage: 0 };
+  };
+
   if (combatAction === 'advance') {
     range = 'near';
     parts.push('You advance to Near Range.');
+  } else if (combatAction === 'fall-back') {
+    const roll = manoeuvre(0);
+    rolls.push(roll);
+    if (roll.hit) {
+      range = 'far';
+      parts.push(`You fall back (${combatRollText(roll)}): success, now at Far Range.`);
+    } else {
+      parts.push(
+        `You try to fall back (${combatRollText(roll)}): failure, staying at Near Range.`,
+      );
+    }
+  } else if (combatAction === 'escape') {
+    const bonus = combat.range === 'far' ? 2 : 0;
+    const roll = manoeuvre(bonus);
+    rolls.push(roll);
+    if (roll.hit) {
+      parts.push(`You escape (${combatRollText(roll)}): success.`);
+      const round = (
+        rangeAfter: CombatRange,
+      ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
+        type: 'combat-round',
+        encounterId: encounter.id,
+        round: combat.round,
+        action: combatAction,
+        rangeBefore,
+        rangeAfter,
+        guard: defending,
+        text: parts.join(' '),
+        rolls,
+      });
+      return finishEscape(
+        scenario,
+        state,
+        encounter,
+        round(range),
+        health,
+        encounterDamage,
+        inventory,
+        equipment,
+      );
+    }
+    parts.push(`You try to escape (${combatRollText(roll)}): failure.`);
+  } else if (combatAction === 'use-item') {
+    const heldId = itemId as string;
+    const item = scenario.itemsById[heldId];
+    const heal = item !== undefined && item.kind === 'consumable' ? item.heal : 0;
+    const restored = Math.min(MAX_HEALTH, health + heal) - health;
+    const taken = removeFromInventory(state, heldId, 1);
+    inventory = taken.inventory;
+    equipment = taken.equipment;
+    health += restored;
+    const name = item?.name ?? heldId;
+    parts.push(`You use ${name}, restored ${restored} Health.`);
   } else if (combatAction === 'attack') {
     const roll = strike(
       'character',
@@ -1270,7 +1422,16 @@ function applyCombat(
 
   // Victory from the Character's action: the Enemy does not respond.
   if (damageSoFar() >= enemy.health) {
-    return finishVictory(scenario, state, encounter, roundEntry(range), health, encounterDamage);
+    return finishVictory(
+      scenario,
+      state,
+      encounter,
+      roundEntry(range),
+      health,
+      encounterDamage,
+      inventory,
+      equipment,
+    );
   }
 
   // The Enemy's response: a melee Enemy at Far closes to Near without
@@ -1308,7 +1469,16 @@ function applyCombat(
 
   // Victory from a counterattack: no further Enemy response.
   if (damageSoFar() >= enemy.health) {
-    return finishVictory(scenario, state, encounter, roundEntry(range), health, encounterDamage);
+    return finishVictory(
+      scenario,
+      state,
+      encounter,
+      roundEntry(range),
+      health,
+      encounterDamage,
+      inventory,
+      equipment,
+    );
   }
 
   // Death: the Character's Health reaches 0.
@@ -1318,6 +1488,8 @@ function applyCombat(
       step: state.step + 1,
       character: { ...state.character, health: 0 },
       encounterDamage,
+      inventory,
+      equipment,
       status: 'ended',
       endingId: scenario.deathEnding.id,
       activeSceneId: null,
@@ -1335,6 +1507,8 @@ function applyCombat(
     step: state.step + 1,
     character: { ...state.character, health },
     encounterDamage,
+    inventory,
+    equipment,
     activeCombat: { encounterId: combat.encounterId, range, round: combat.round + 1 },
   };
   return { ok: true, state: next, journal: [roundEntry(range)] };
@@ -1415,7 +1589,14 @@ export function combatRounds(
       };
       rounds.push({
         round: typeof payload.round === 'number' ? payload.round : rounds.length + 1,
-        action: payload.action === 'advance' || payload.action === 'defend' ? payload.action : 'attack',
+        action:
+          payload.action === 'advance' ||
+          payload.action === 'defend' ||
+          payload.action === 'fall-back' ||
+          payload.action === 'escape' ||
+          payload.action === 'use-item'
+            ? payload.action
+            : 'attack',
         rangeBefore: payload.rangeBefore === 'near' ? 'near' : 'far',
         rangeAfter: payload.rangeAfter === 'near' ? 'near' : 'far',
         guard: payload.guard === true,
