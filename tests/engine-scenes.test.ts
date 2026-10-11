@@ -165,11 +165,16 @@ describe('scene activation', () => {
     // The empty Outcome appends only the Choice taken, then the Location view.
     expect(left.journal.map((entry) => entry.type)).toEqual(['choice']);
     expect(
-      applyAction(scenario, left.state, {
-        kind: 'open-scene',
-        sceneId: 'well-rumours',
-        expectedStep: left.state.step,
-      }),
+      applyAction(
+        scenario,
+        left.state,
+        {
+          kind: 'open-scene',
+          sceneId: 'well-rumours',
+          expectedStep: left.state.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
   });
 
@@ -290,40 +295,60 @@ describe('choices', () => {
     const { scenario, state: started } = startWoods();
     // Arrival shows Choices: no implicit Continue.
     expect(
-      applyAction(scenario, started, { kind: 'continue', expectedStep: started.step }),
+      applyAction(scenario, started, { kind: 'continue', expectedStep: started.step }, rng),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     // Choosing and opening belong to the Scene position and Location view.
     expect(
-      applyAction(scenario, started, {
-        kind: 'open-scene',
-        sceneId: 'well-rumours',
-        expectedStep: started.step,
-      }),
+      applyAction(
+        scenario,
+        started,
+        {
+          kind: 'open-scene',
+          sceneId: 'well-rumours',
+          expectedStep: started.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     expect(
-      applyAction(scenario, started, {
-        kind: 'travel',
-        targetLocationId: 'forest-edge',
-        expectedStep: started.step,
-      }),
+      applyAction(
+        scenario,
+        started,
+        {
+          kind: 'travel',
+          targetLocationId: 'forest-edge',
+          expectedStep: started.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     const accepted = choose(scenario, choose(scenario, started, 'listen').state, 'accept').state;
     expect(
-      applyAction(scenario, accepted, {
-        kind: 'choose',
-        choiceId: 'listen',
-        expectedStep: accepted.step,
-      }),
+      applyAction(
+        scenario,
+        accepted,
+        {
+          kind: 'choose',
+          choiceId: 'listen',
+          expectedStep: accepted.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     expect(
-      applyAction(scenario, accepted, {
-        kind: 'continue',
-        expectedStep: accepted.step,
-      }),
+      applyAction(
+        scenario,
+        accepted,
+        {
+          kind: 'continue',
+          expectedStep: accepted.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     // Stale steps are rejected for the new actions too.
     expect(
-      applyAction(scenario, started, { kind: 'continue', expectedStep: 99 }),
+      applyAction(scenario, started, { kind: 'continue', expectedStep: 99 }, rng),
     ).toEqual({ ok: false, reason: 'stale-step' });
   });
 
@@ -470,11 +495,16 @@ describe('outcomes, effects and transitions', () => {
   it('rejects Tests, Combat and Endings and hidden or taken Choices until later tickets', () => {
     const { scenario, state: started } = startWoods();
     // Refusing Brenna ends the Playthrough: rejected for now.
-    const refused = applyAction(scenario, started, {
-      kind: 'choose',
-      choiceId: 'refuse',
-      expectedStep: started.step,
-    });
+    const refused = applyAction(
+      scenario,
+      started,
+      {
+        kind: 'choose',
+        choiceId: 'refuse',
+        expectedStep: started.step,
+      },
+      rng,
+    );
     expect(refused).toEqual({ ok: false, reason: 'illegal-action' });
     expect(started.step).toBe(0);
     // The whispers test is rejected; pressing on works.
@@ -482,30 +512,45 @@ describe('outcomes, effects and transitions', () => {
     const accepted = choose(scenario, listened, 'accept').state;
     const atEdge = travel(scenario, accepted, 'forest-edge').state;
     expect(
-      applyAction(scenario, atEdge, {
-        kind: 'choose',
-        choiceId: 'listen',
-        expectedStep: atEdge.step,
-      }),
+      applyAction(
+        scenario,
+        atEdge,
+        {
+          kind: 'choose',
+          choiceId: 'listen',
+          expectedStep: atEdge.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     const pressed = choose(scenario, atEdge, 'press-on').state;
     const hollow = travel(scenario, pressed, 'wolf-hollow').state;
     expect(hollow.activeSceneId).toBe('wolf-den');
     expect(
-      applyAction(scenario, hollow, {
-        kind: 'choose',
-        choiceId: 'fight',
-        expectedStep: hollow.step,
-      }),
+      applyAction(
+        scenario,
+        hollow,
+        {
+          kind: 'choose',
+          choiceId: 'fight',
+          expectedStep: hollow.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     // A hidden Choice cannot be taken, even by id.
     const keyed: PlaythroughState = { ...hollow };
     expect(
-      applyAction(scenario, keyed, {
-        kind: 'choose',
-        choiceId: 'no-such-choice',
-        expectedStep: hollow.step,
-      }),
+      applyAction(
+        scenario,
+        keyed,
+        {
+          kind: 'choose',
+          choiceId: 'no-such-choice',
+          expectedStep: hollow.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     // Retreating moves back to the forest edge without re-firing whispers.
     const retreated = choose(scenario, hollow, 'retreat');
@@ -651,7 +696,9 @@ describe('result panel derivation and narration', () => {
     expect(gameView.text).toContain('{name}');
     const html = renderNarration(gameView.text, '<b>*Ann*</b>');
     expect(html).toContain('&lt;b&gt;*Ann*&lt;/b&gt;');
-    expect(html).not.toContain('<em>');
+    // The name itself contributes no tags or emphasis even though it holds
+    // markup characters (the text around it has authored *whispering*
+    // emphasis, which correctly renders as <em>).
     expect(html).not.toContain('<b>');
   });
 });
@@ -878,11 +925,16 @@ describe('synthetic package: remaining effects and transitions', () => {
     ]);
     expect(marked.state.flags).toEqual(['m']);
     expect(
-      applyAction(scenario, marked.state, {
-        kind: 'choose',
-        choiceId: 'mark',
-        expectedStep: marked.state.step,
-      }),
+      applyAction(
+        scenario,
+        marked.state,
+        {
+          kind: 'choose',
+          choiceId: 'mark',
+          expectedStep: marked.state.step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     const counter = scenario.scenesById['counter'];
     if (counter === undefined) throw new Error('missing counter');
@@ -890,7 +942,10 @@ describe('synthetic package: remaining effects and transitions', () => {
       visibleChoices(scenario, marked.state, counter).map((choice) => choice.id),
     ).not.toContain('mark');
     // Leaving and reopening the repeatable Scene keeps it hidden.
-    const out = choose(scenario, marked.state, 'out').state;
+    // Taking mark closed the Scene (no transition goes back to the Location
+    // view), so reopen the repeatable counter before stepping back out.
+    const backInside = openScene(scenario, marked.state, 'counter').state;
+    const out = choose(scenario, backInside, 'out').state;
     const reopened = openScene(scenario, out, 'counter').state;
     expect(
       visibleChoices(scenario, reopened, counter).map((choice) => choice.id),
@@ -902,7 +957,9 @@ describe('synthetic package: remaining effects and transitions', () => {
     const raised = choose(scenario, state, 'setf');
     expect(raised.state.flags).toEqual(['f']);
     expect(raised.journal[1]).toEqual({ type: 'state-change', text: 'flag set: f' });
-    const lowered = choose(scenario, raised.state, 'clearf');
+    // Raising the flag closed the Scene (no transition), so reopen the
+    // repeatable counter before lowering the flag again.
+    const lowered = choose(scenario, openScene(scenario, raised.state, 'counter').state, 'clearf');
     expect(lowered.state.flags).toEqual([]);
     expect(lowered.journal[1]).toEqual({ type: 'state-change', text: 'flag cleared: f' });
   });
@@ -914,15 +971,20 @@ describe('synthetic package: remaining effects and transitions', () => {
     expect(hurt.journal[1]).toEqual({ type: 'state-change', text: '\u22122 Health' });
     const step = hurt.state.step;
     expect(
-      applyAction(scenario, hurt.state, {
-        kind: 'choose',
-        choiceId: 'kill',
-        expectedStep: step,
-      }),
+      applyAction(
+        scenario,
+        hurt.state,
+        {
+          kind: 'choose',
+          choiceId: 'kill',
+          expectedStep: step,
+        },
+        rng,
+      ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
     // Full Health against 12 damage is lethal too: nothing changes.
     expect(
-      applyAction(scenario, state, { kind: 'choose', choiceId: 'kill', expectedStep: state.step }),
+      applyAction(scenario, state, { kind: 'choose', choiceId: 'kill', expectedStep: state.step }, rng),
     ).toEqual({ ok: false, reason: 'illegal-action' });
   });
 
@@ -960,11 +1022,16 @@ describe('synthetic package: remaining effects and transitions', () => {
     const { scenario, state } = atCounter();
     for (const choiceId of ['gamble', 'finish']) {
       expect(
-        applyAction(scenario, state, {
-          kind: 'choose',
-          choiceId,
-          expectedStep: state.step,
-        }),
+        applyAction(
+          scenario,
+          state,
+          {
+            kind: 'choose',
+            choiceId,
+            expectedStep: state.step,
+          },
+          rng,
+        ),
       ).toEqual({ ok: false, reason: 'illegal-action' });
     }
   });

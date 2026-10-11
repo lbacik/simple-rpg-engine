@@ -51,7 +51,7 @@ function loadFixture(): Scenario {
     'locations/glade.yaml':
       'id: glade\nname: Glade\ndescription: Sunlight through leaves.\nmap: { x: 10, y: 20 }\nscenes: [path]\n',
     'scenes/path.yaml':
-      'id: path\ntitle: Path\ntrigger: on-enter\ntext: A path leads home.\nchoices:\n  - id: go\n    text: Go home.\n    outcome:\n      end: home\n',
+      'id: path\ntitle: Path\ntrigger: on-enter\ntext: A path leads home.\nchoices:\n  - id: go\n    text: Go home.\n    outcome:\n      end: home\n  - id: open\n    text: Open the gate.\n',
     'items.yaml': [
       '- id: sword',
       '  kind: equipment',
