@@ -4,10 +4,12 @@
 // (enforced by the no-restricted-imports rule in eslint.config.mjs).
 
 import type { Scenario } from '../content/index';
+import { evaluateCondition } from './conditions';
 import { STATE_VERSION, type PlaythroughState } from './state';
 
 export type { PlaythroughState } from './state';
 export { PlaythroughStateSchema, STATE_VERSION, parsePlaythroughState } from './state';
+export { effectiveAttributes, evaluateCondition } from './conditions';
 
 /**
  * Injected random source. Mirrors `crypto.randomInt(min, max)`: `min`
@@ -17,10 +19,16 @@ export { PlaythroughStateSchema, STATE_VERSION, parsePlaythroughState } from './
 export type Rng = (min: number, max: number) => number;
 
 /** New Journal entries produced by one engine step. Stored text as presented. */
-export type NewJournalEntry = {
-  type: 'intro';
-  text: string;
-};
+export type NewJournalEntry =
+  | {
+      type: 'intro';
+      text: string;
+    }
+  | {
+      type: 'travel';
+      text: string;
+      to: string;
+    };
 
 export type StartPlaythroughSuccess = {
   ok: true;
@@ -108,6 +116,120 @@ export function startPlaythrough(
   return { ok: true, state, journal };
 }
 
+/**
+ * Player actions. Travel identifies the Connection by its target: every
+ * visible Connection to the same target has the same effect. Later tickets
+ * add Choose, Continue, Open Scene, inventory and Combat actions.
+ */
+export type Action = {
+  kind: 'travel';
+  targetLocationId: string;
+  expectedStep: number;
+};
+
+export type ApplyActionSuccess = {
+  ok: true;
+  state: PlaythroughState;
+  journal: NewJournalEntry[];
+};
+
+export type ApplyActionFailure = {
+  ok: false;
+  reason: 'stale-step' | 'illegal-action' | 'ended';
+};
+
+export type ApplyActionResult = ApplyActionSuccess | ApplyActionFailure;
+
+/** Visible Connections from the current Location, in authored order. */
+function visibleConnections(
+  scenario: Scenario,
+  state: PlaythroughState,
+): import('../content/model').CompiledConnection[] {
+  const current =
+    scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
+  return current.connections.filter(
+    (connection) =>
+      connection.when === undefined || evaluateCondition(scenario, state, connection.when),
+  );
+}
+
+/**
+ * One synchronous, deterministic turn without I/O
+ * (docs/spec/architecture.md, engine contract): the `step` guard first, then
+ * legality in the current position. Returns only the new Journal entries.
+ */
+export function applyAction(
+  scenario: Scenario,
+  state: PlaythroughState,
+  action: Action,
+  // Kept for the engine contract: Travel rolls no dice, later actions do.
+  _rng: Rng,
+): ApplyActionResult {
+  void _rng;
+  if (action.expectedStep !== state.step) {
+    return { ok: false, reason: 'stale-step' };
+  }
+  if (state.status === 'ended') {
+    return { ok: false, reason: 'ended' };
+  }
+  if (action.kind === 'travel') {
+    return applyTravel(scenario, state, action.targetLocationId);
+  }
+  return { ok: false, reason: 'illegal-action' };
+}
+
+function applyTravel(
+  scenario: Scenario,
+  state: PlaythroughState,
+  targetLocationId: string,
+): ApplyActionResult {
+  // Travel is legal only in the Location view: no active Scene, no Combat.
+  if (state.activeSceneId != null || state.activeCombat != null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const leadsThere = visibleConnections(scenario, state).some(
+    (connection) => connection.to.id === targetLocationId,
+  );
+  const target = scenario.locationsById[targetLocationId];
+  if (!leadsThere || target === undefined) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  // Entering the target: set the Location, mark visited, append travel.
+  // On-enter Scene activation arrives with the Scenes ticket; until then the
+  // position is the Location view of the target.
+  const visited = state.visited.includes(target.id)
+    ? state.visited
+    : [...state.visited, target.id];
+  return {
+    ok: true,
+    state: {
+      ...state,
+      step: state.step + 1,
+      currentLocationId: target.id,
+      activeSceneId: null,
+      activeCombat: null,
+      visited,
+    },
+    journal: [{ type: 'travel', text: `Travelled to ${target.name}.`, to: target.id }],
+  };
+}
+
+/** One exit button per visible Connection, in authored order. */
+export type ExitView = {
+  targetLocationId: string;
+  label: string;
+};
+
+export function visibleExits(
+  scenario: Scenario,
+  state: PlaythroughState,
+): ExitView[] {
+  return visibleConnections(scenario, state).map((connection) => ({
+    targetLocationId: connection.to.id,
+    label: connection.label,
+  }));
+}
+
 /** Derived projection the UI renders. Later tickets add Scene, Combat, map. */
 export type GameView =
   | {
@@ -115,6 +237,7 @@ export type GameView =
       locationId: string;
       name: string;
       description: string;
+      exits: ExitView[];
     }
   | {
       kind: 'ended';
@@ -137,5 +260,6 @@ export function view(scenario: Scenario, state: PlaythroughState): GameView {
     locationId: location.id,
     name: location.name,
     description: location.description,
+    exits: visibleExits(scenario, state),
   };
 }

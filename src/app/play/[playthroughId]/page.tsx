@@ -3,6 +3,7 @@ import { getScenario } from '@/content/registry';
 import { view } from '@/engine/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { getSessionHash } from '@/app/lib/session';
+import { travelAction } from '@/app/lib/travel';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +17,21 @@ const RESULT_TYPES = new Set([
   'enemy-defeated',
 ]);
 
+const NOTICES: Record<string, string> = {
+  stale: 'The game was advanced in another tab; this is its current state.',
+  unavailable: 'That action is no longer available.',
+};
+
 export default async function PlayPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ playthroughId: string }>;
+  searchParams: Promise<{ notice?: string }>;
 }) {
   const { playthroughId } = await params;
+  const { notice } = await searchParams;
+  const noticeText = notice ? NOTICES[notice] : undefined;
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
   const playthrough = await store.findById(playthroughId);
@@ -58,6 +68,11 @@ export default async function PlayPage({
     <main>
       <div className="game">
         <article className="reading" lang={scenario.language}>
+          {noticeText ? (
+            <p className="notice" role="status">
+              {noticeText}
+            </p>
+          ) : null}
           {gameView.kind === 'location' ? (
             <>
               {resultPanel.map((entry) => (
@@ -67,6 +82,20 @@ export default async function PlayPage({
               ))}
               <h1>{gameView.name}</h1>
               <p>{gameView.description}</p>
+              <section aria-label="Exits">
+                {gameView.exits.map((exit) => (
+                  <form key={exit.targetLocationId} action={travelAction}>
+                    <input type="hidden" name="playthroughId" value={playthrough.id} />
+                    <input type="hidden" name="expectedStep" value={playthrough.step} />
+                    <input type="hidden" name="target" value={exit.targetLocationId} />
+                    <p>
+                      <button className="button" type="submit">
+                        {exit.label}
+                      </button>
+                    </p>
+                  </form>
+                ))}
+              </section>
             </>
           ) : (
             <>
