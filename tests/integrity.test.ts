@@ -85,6 +85,7 @@ choices:
       effects:
         - set-flag: met-elder
         - give-item: { item: bread, quantity: 2 }
+        - give-item: { item: seal }
       next: after
   - id: peek
     text: Peek through the bars.
@@ -93,6 +94,12 @@ choices:
       text: |
         Nothing answers.
       move: home
+  - id: greet
+    text: Call out a greeting.
+    outcome:
+      effects:
+        - set-flag: met-elder
+      start-combat: rats
 `;
 
 const AFTER_SCENE = `id: after
@@ -297,7 +304,7 @@ describe('integrity phase: ids', () => {
     const diag = only(diags, 'ref/duplicate-choice-id');
     expect(diag.file).toBe('scenes/gate.yaml');
     expect(diag.path).toEqual(['choices', 1, 'id']);
-    expect(diag.range).toEqual({ line: 16, column: 9, endLine: 16, endColumn: 14 });
+    expect(diag.range).toEqual({ line: 17, column: 9, endLine: 17, endColumn: 14 });
     expect(diag.related).toHaveLength(1);
     expect(diag.related?.[0]?.file).toBe('scenes/gate.yaml');
   });

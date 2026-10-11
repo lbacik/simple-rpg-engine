@@ -34,19 +34,25 @@ const STANDARD_SECTIONS =
   'locations:\n  - locations/a.yaml\ntemplates:\n  - templates.yaml\nendings:\n  - endings.yaml\n';
 
 /** Minimal valid package whose manifest id equals the directory name. Valid
- * across every implemented phase, so Phase 1 tests can assert a clean load. */
+ * across every implemented phase, so Phase 1 tests can assert a clean load:
+ * the start location reaches a victory ending, so play/no-victory and
+ * play/no-way-out stay silent. */
 function writeMinimalPackage(dir: string): void {
   const id = path.basename(dir);
   writePackage(dir, {
     'scenario.yaml': manifestFor(
       id,
       'title: T\ndescription: D\nversion: "1.0.0"\nlanguage: en\nstartLocation: a\ndeathEnding: e\n' +
-        STANDARD_SECTIONS,
+        STANDARD_SECTIONS +
+        'scenes:\n  - scenes/s.yaml\n',
     ),
-    'locations/a.yaml': 'id: a\nname: A\ndescription: A place.\n',
+    'locations/a.yaml': 'id: a\nname: A\ndescription: A place.\nmap: { x: 10, y: 20 }\nscenes: [s]\n',
+    'scenes/s.yaml':
+      'id: s\ntitle: S\ntrigger: on-enter\ntext: A room.\nchoices:\n  - id: go\n    text: Go on.\n    outcome:\n      end: w\n',
     'templates.yaml':
       '- id: t\n  name: T\n  attributes: { might: 2, agility: 1, wits: 2, presence: 1 }\n',
-    'endings.yaml': '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n',
+    'endings.yaml':
+      '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n- id: w\n  kind: victory\n  title: W\n  text: You win.\n',
   });
 }
 
