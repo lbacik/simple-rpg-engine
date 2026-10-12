@@ -1,0 +1,52 @@
+id: cistern-diver
+illustration: cistern-diver
+title: Release the Diving Cradle
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: diver-rescued
+text: |
+  The drain lever is stiff but moves a little with every turn. Its label warns that
+  opening it too quickly can slam the cradle against the duct. Tamsin has lashed her
+  trapped leg to keep it from twisting.
+
+  You can drain the duct in stages, following her instructions. A stronger pull might
+  work faster, but she asks you to watch the pressure gauge rather than her face.
+choices:
+  - id: drain-carefully
+    text: Drain the duct in stages and lift the cradle with Tamsin.
+    outcome:
+      text: |
+        It takes longer than either of you wants. When the cradle finally rises, Tamsin pulls
+        herself free with a gasp that becomes laughter. You help her into the dry service
+        passage towards the refuge.
+      effects:
+        - set-flag: diver-rescued
+        - give-item:
+            item: field-dressings
+  - id: lift-cradle
+    text: Brace the lever and lift the cradle in one steady motion.
+    test:
+      attribute: might
+      difficulty: ordinary
+      success:
+        text: |
+          The cradle rises without a jolt. Tamsin frees her leg and directs the last of her air
+          through the emergency warmer. You both leave the duct steadier than you entered it.
+        effects:
+          - set-flag: diver-rescued
+          - heal: 2
+          - give-item:
+              item: field-dressings
+      failure:
+        text: |
+          The lever slips and knocks your shoulder. You stop, reset it and finish the slow drain
+          together. Tamsin reaches the passage alive, leaning hard on your arm.
+        effects:
+          - damage: 1
+          - set-flag: diver-rescued
+          - give-item:
+              item: field-dressings
+  - id: wait
+    text: Keep the air hose clear and return shortly.

@@ -1,0 +1,22 @@
+id: archive
+illustration: loc-archive
+name: The Municipal Archive
+description: |
+  The archive steps are sprinkled with salt, but the building itself stands inside the
+  same impossible dryness as the square. A bronze lattice covers the reading-room
+  entrance.
+
+  Someone has threaded white ribbon through the lattice. Small paper boats are folded
+  along it, each carrying a handwritten name.
+map:
+  x: 48
+  y: 25
+scenes:
+  - archive-door
+connections:
+  - to: sunken-square
+    label: Return to Lowwater Square
+  - to: archive-vault
+    label: Enter the protected reading room
+    when:
+      flag: archive-open

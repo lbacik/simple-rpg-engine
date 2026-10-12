@@ -1,0 +1,18 @@
+id: foundry
+illustration: loc-foundry
+name: The Salt Foundry
+description: |
+  Tram rails disappear into a workshop whose furnaces burn with a cold orange light. The
+  moulds on the floor are shaped like bells, hinges and human hands.
+
+  At the nearest anvil, a woman made of soot and memory keeps striking the same
+  unfinished casting. Each blow throws sparks upwards into the sea.
+map:
+  x: 72
+  y: 55
+scenes:
+  - foundry-sentinel
+  - foundry-workbench
+connections:
+  - to: sunken-square
+    label: Return along the tram rails

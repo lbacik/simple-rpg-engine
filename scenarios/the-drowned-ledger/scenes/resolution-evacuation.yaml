@@ -1,0 +1,26 @@
+id: resolution-evacuation
+illustration: resolution-evacuation
+title: The South Channel Opens
+repeatable: true
+text: |
+  The signal linkage is ready. Three long flashes will call Mercy into the south channel
+  and send the harbour watch from door to door. Opening the spillway by stages will
+  lower the held water before the outer wall fails.
+
+  Hester checks Bram's ferry report and the lit beacon. "We can get the people out.
+  Lowwater will become water again. Greyhaven will have time to leave, but no city to
+  return to."
+
+  The ledger can travel with the evacuees. The names will remain remembered even if the
+  place that held them is gone.
+choices:
+  - id: open-spillway
+    text: Signal the evacuation and open the spillway in stages.
+    outcome:
+      text: |
+        You send the three flashes, wait for Mercy's answering lamp, then move the pressure
+        lever one notch at a time. Hester releases her chain only when the water has somewhere
+        safe to go.
+      end: city-evacuated
+  - id: reconsider
+    text: Keep the spillway closed and return to the desk.

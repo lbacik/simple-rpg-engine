@@ -1,0 +1,42 @@
+id: causeway-crossing
+illustration: causeway-crossing
+title: The Weight Above the Door
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - all:
+        - flag: pumps-set
+        - flag: counterweight-forged
+        - flag: ledger-read
+    - not:
+        flag: causeway-open
+text: |
+  The causeway is exposed to the whole held sea. Every step makes you aware of the
+  weight in your pack and the greater weight overhead.
+
+  At the door, a linked brake hangs open. Fitting Nera's casting will restore the brake
+  and carry its pull into the foundations. The pumps must already be steady; otherwise
+  the linkage would tear itself apart. Your ledger must remain with you for the account
+  desk beyond.
+choices:
+  - id: install-weight
+    text: Fit the replacement weight and engage the brake.
+    when:
+      has:
+        item: counterweight
+    outcome:
+      text: |
+        The casting drops into its socket with a reassuring click. The linkage takes the
+        strain, and the bronze door swings inward. Above it, the signal tower can be reached
+        by a separate stair.
+      effects:
+        - take-item:
+            item: counterweight
+        - set-flag: causeway-open
+        - reveal: signal-tower
+        - reveal: bell-chamber
+  - id: back
+    text: Leave the weight wrapped and return to the square.
+    outcome:
+      move: sunken-square

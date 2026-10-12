@@ -1,0 +1,21 @@
+id: lockhouse-arrival
+illustration: lockhouse-arrival
+title: Three Needles in the Red
+trigger: on-enter
+text: |
+  A maintenance apprentice has wedged a stool beneath the alarm lever. "It kept
+  ringing," she explains, ashamed. "Nobody came any faster."
+
+  She points out the manual stair release beneath the pressure gauges. The inspection
+  door can be opened with the survey seal or by following the release procedure
+  scratched onto its cover.
+
+  "There is air below," she says. "I tested it. What I cannot explain is who answered
+  when I knocked."
+choices:
+  - id: read-gauges
+    text: Study the gauges and the release instructions.
+    outcome:
+      text: |
+        The pressure fault will not mend itself, but the stair mechanism is intact. You leave
+        the apprentice with instructions to keep the gallery clear.

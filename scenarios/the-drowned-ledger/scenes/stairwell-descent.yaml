@@ -1,0 +1,32 @@
+id: stairwell-descent
+illustration: stairwell-descent
+title: The Missing Tread
+trigger: on-enter
+text: |
+  Halfway down the shaft, a stair tread has corroded to a thin shell. Your lamp catches
+  the gap just before your weight reaches it. Far below, someone clears a throat with
+  great formality.
+
+  The rail is sound. You can lower yourself past the gap slowly, or trust a quick step
+  across it.
+choices:
+  - id: use-rail
+    text: Lower yourself past the gap using the rail.
+    outcome:
+      text: |
+        You reach the landing with cold hands and an unbroken ankle. The climb back will be
+        easier now that you know where the gap lies.
+  - id: jump
+    text: Step across before the stair shifts.
+    test:
+      attribute: agility
+      difficulty: easy
+      success:
+        text: |
+          You land cleanly beyond the broken tread.
+      failure:
+        text: |
+          Your boot catches the edge. The rail saves you from a fall, but your shin takes the
+          blow.
+        effects:
+          - damage: 1

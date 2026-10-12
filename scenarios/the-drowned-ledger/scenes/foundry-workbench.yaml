@@ -1,0 +1,48 @@
+id: foundry-workbench
+illustration: foundry-workbench
+title: Cast the Replacement Weight
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - flag: foundry-safe
+    - not:
+        flag: counterweight-forged
+text: |
+  The woman at the anvil looks up when you enter. "Nera Vale," she says. "I used to make
+  hinges. Then the council needed a device that could hold a city's worth of weight.
+  They asked whether I could cast it. They did not ask whether they should."
+
+  The replacement mould is ready. Nera can guide you through a slow, sound casting. If
+  you help steady the frame, the last scrap of good alloy can also become a tool for
+  your own journey.
+choices:
+  - id: follow-smith
+    text: Follow Nera's instructions and cast the weight.
+    outcome:
+      text: |
+        You skim the salt from the metal and fill the mould without haste. Nera waits until
+        the surface cools before touching the casting.
+      next: smith-memory
+  - id: brace-frame
+    text: Brace the casting frame while Nera pours.
+    test:
+      attribute: might
+      difficulty: ordinary
+      success:
+        text: |
+          The frame holds absolutely still. Enough alloy remains for Nera to cast a short,
+          finely balanced pryblade alongside the weight.
+        effects:
+          - give-item:
+              item: foundry-pryblade
+        next: smith-memory
+      failure:
+        text: |
+          The frame judders, splashing hot metal against the apron you borrowed. The weight
+          survives intact, though your forearm will remember the pour.
+        effects:
+          - damage: 1
+        next: smith-memory
+  - id: leave
+    text: Leave the mould ready for another visit.

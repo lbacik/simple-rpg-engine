@@ -1,0 +1,31 @@
+id: captain-confession
+illustration: captain-confession
+title: The Order in the Drawer
+repeatable: true
+text: |
+  Venn unlocks a drawer rather than the cupboard. Inside is an evacuation order with a
+  blank space where the list of passengers should be.
+
+  "My father was captain when the gates opened. The council said the district had been
+  cleared. He signed the report without counting the boats. Later, he kept this copy. He
+  never told me why."
+
+  She places it beside your ledger. "I inherited the report, the chair and the habit of
+  not asking. I can change one of those today."
+choices:
+  - id: publish
+    text: Ask her to publish the order at the refuge.
+    outcome:
+      text: |
+        "I will bring it myself," Venn says. "Nobody should have to trust another unsigned
+        story."
+      effects:
+        - set-flag: watch-cooperates
+  - id: keep-copy
+    text: Tell her the survivors need to hear her account.
+    outcome:
+      text: |
+        She folds the order into her coat. "Then I will speak to them." Her voice is steadier
+        now that she has stopped defending the drawer.
+      effects:
+        - set-flag: watch-cooperates

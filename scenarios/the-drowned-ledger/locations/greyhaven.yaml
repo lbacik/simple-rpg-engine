@@ -1,0 +1,31 @@
+id: greyhaven
+illustration: loc-greyhaven
+name: Greyhaven Market
+description: |
+  Greyhaven is built on a wall of pale stone above a tidal basin. Fishmongers have
+  abandoned their stalls to stack sandbags around the market well. A brass tide gauge
+  stands between them, its pointer trembling in the red.
+
+  Across the basin, rooftops emerge from the water like the backs of sleeping animals.
+  The old district has been submerged for sixty years. This morning, smoke is rising
+  from one of its chimneys.
+map:
+  x: 8
+  y: 48
+scenes:
+  - market-arrival
+  - relief-table
+  - progress-report
+connections:
+  - to: quay
+    label: Descend to the working quay
+    when:
+      flag: commissioned
+  - to: watch-house
+    label: Visit the harbour watch
+    when:
+      flag: commissioned
+  - to: lockhouse
+    label: Follow the sea wall to the lockhouse
+    when:
+      flag: commissioned

@@ -1,0 +1,48 @@
+id: witness-council
+illustration: witness-council
+title: Hear the People Left Off the Account
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - has:
+        item: original-ledger
+    - not:
+        flag: witnesses-heard
+text: |
+  You lay the original ledger on the long table. Sella reads the first page, then asks
+  the room to keep quiet while the people from Lowwater speak.
+
+  A cooper remembers the warning being given after the gangplanks were raised. A
+  laundress remembers refusing to leave a neighbour who could not walk. Sella remembers
+  waiting on the last boat for a mother who never arrived.
+
+  Their stories disagree in small details. They agree that nobody consented to become
+  part of a machine. The living at the table offer to take turns maintaining the wall,
+  if the stolen names can be released.
+choices:
+  - id: record-witnesses
+    text: Record their testimony and the living's offer of shared work.
+    outcome:
+      text: |
+        Each witness marks the margin in a different way: signature, thumbprint, a faint trace
+        of salt. You close the ledger only when the last person has finished.
+      effects:
+        - set-flag: witnesses-heard
+        - give-item:
+            item: witness-ribbon
+  - id: ask-diver
+    text: Ask Tamsin to explain how the old maintenance crews worked.
+    when:
+      flag: diver-rescued
+    outcome:
+      text: |
+        Tamsin, her bandaged leg propped on a stool, describes rosters, spare parts and
+        workers who could refuse an unsafe shift. Sella writes those protections beside the
+        new promises. An agreement that cannot be refused is only another debt.
+      effects:
+        - set-flag: witnesses-heard
+        - give-item:
+            item: witness-ribbon
+  - id: wait
+    text: Let the gathering continue before making a record.

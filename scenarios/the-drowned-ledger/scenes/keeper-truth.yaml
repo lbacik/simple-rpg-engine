@@ -1,0 +1,29 @@
+id: keeper-truth
+illustration: keeper-truth
+title: The Engineer Who Could Not Stop the Gate
+repeatable: true
+text: |
+  "I designed a wall that needed maintenance," Hester says. "The council wanted one that
+  needed obedience. When the storm came, they opened the gates before the last boat
+  returned. Then they gave the engine the names of the people they had killed."
+
+  "I stayed to keep the pressure from crushing them. I told myself I could repair the
+  account next week. Then next year. I have held it long enough for my daughter to
+  become an old woman."
+
+  She touches the restrained clapper. "I was useful. Being useful made it easy to
+  postpone being right. Do not inherit that excuse with my office."
+choices:
+  - id: ask-daughter
+    text: Tell her Sella is waiting at Lantern Island.
+    when:
+      visited: refuge
+    outcome:
+      text: |
+        Hester grips the chain with both hands. "Then there is still somewhere to go." She
+        takes a breath she no longer needs.
+      next: keeper-answer
+  - id: ask-release
+    text: Ask how to release her and the drowned.
+    outcome:
+      next: keeper-answer

@@ -1,0 +1,22 @@
+id: bell-chamber
+illustration: loc-bell-chamber
+name: The Tidal Bell Chamber
+description: |
+  The tidal bell hangs horizontally over a well, its mouth facing down into blackness. A
+  woman in a water-stained engineer's coat sits beside the chain that restrains its
+  clapper.
+
+  Behind her, a narrow hatch leads into the foundations. It bears no lock, only a plate
+  engraved with the words: AUTHORITY MUST BE ACCEPTED.
+map:
+  x: 88
+  y: 38
+scenes:
+  - keeper-audience
+connections:
+  - to: causeway
+    label: Return to the causeway
+  - to: heart-vault
+    label: Enter the foundations
+    when:
+      flag: keeper-heard

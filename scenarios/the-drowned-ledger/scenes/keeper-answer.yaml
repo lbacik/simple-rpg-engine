@@ -1,0 +1,44 @@
+id: keeper-answer
+illustration: keeper-answer
+title: Four Ways to End a Watch
+repeatable: true
+text: |
+  "You can correct the account," Hester says. "Bring the names from the memorial and a
+  witnessed promise from the people above. The engine can sustain shared work. It will
+  release those entered without consent."
+
+  "You can take my place voluntarily. The wall will stand, but you will remain here. You
+  can also evacuate through the controlled spillway, if Mercy is ready and the beacon is
+  lit. The city will be lost gradually enough for its people to leave."
+
+  "Or you can break the engine. With the ferry and signal prepared, people can escape
+  the surge, though their homes cannot. Without them, the flood will take the crowded
+  quay. I will not call that an accident."
+
+  She gives you her authority plate. "The auditor in the heart vault will recognise
+  this. You may still return to the square before committing yourself."
+choices:
+  - id: accept-authority
+    text: Take the plate and inspect the heart vault.
+    outcome:
+      text: |
+        Hester unhooks the plate from her coat. "Authority to inspect, {name}. Not a command
+        to inherit."
+      effects:
+        - set-flag: keeper-heard
+        - give-item:
+            item: keeper-plate
+        - reveal: heart-vault
+      move: heart-vault
+  - id: prepare-more
+    text: Take the plate, then return to finish your preparations.
+    outcome:
+      text: |
+        "A decision made with time to think is still a decision," Hester says. She keeps the
+        clapper restrained while you go.
+      effects:
+        - set-flag: keeper-heard
+        - give-item:
+            item: keeper-plate
+        - reveal: heart-vault
+      move: causeway

@@ -1,0 +1,19 @@
+id: signal-tower
+illustration: loc-signal-tower
+name: The Signal Tower
+description: |
+  A spiral stair rises above the suspended sea to a lantern with six shutters. Ships
+  once used its light to find the harbour; now it can guide the living out of it.
+
+  A speaking pipe connects the platform to the harbour watch. On the lantern's base, a
+  faded instruction reads: THREE LONG FLASHES. KEEP THE SOUTH CHANNEL CLEAR.
+map:
+  x: 82
+  y: 12
+scenes:
+  - tower-arrival
+  - beacon-lighting
+  - tower-watch
+connections:
+  - to: causeway
+    label: Descend to the causeway

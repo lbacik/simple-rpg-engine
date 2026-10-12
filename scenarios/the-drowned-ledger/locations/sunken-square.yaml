@@ -1,0 +1,35 @@
+id: sunken-square
+illustration: loc-sunken-square
+name: Lowwater Square
+description: |
+  Under a vault of suspended seawater, Lowwater Square is dry. Fish turn overhead among
+  the reflected stars of lamps that have not been lit for decades. Around the square,
+  the doors of drowned houses stand ajar.
+
+  A memorial stone has been laid face down beside a fountain. Three streets lead towards
+  an archive, a pump hall and a foundry. A raised causeway runs towards the old tidal
+  bell.
+map:
+  x: 52
+  y: 51
+scenes:
+  - square-arrival
+  - street-memorial
+connections:
+  - to: stairwell
+    label: Return to the dry stair
+  - to: archive
+    label: Follow the bookbinders' street
+  - to: pump-hall
+    label: Follow the vibration of the pumps
+  - to: foundry
+    label: Follow the iron tram rails
+  - to: refuge
+    label: Take the dry service passage to the refuge
+  - to: causeway
+    label: Carry the ledger and counterweight to the causeway
+    when:
+      all:
+        - flag: pumps-set
+        - flag: counterweight-forged
+        - flag: ledger-read

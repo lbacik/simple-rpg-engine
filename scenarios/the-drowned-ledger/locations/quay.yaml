@@ -1,0 +1,23 @@
+id: quay
+illustration: loc-quay
+name: The Working Quay
+description: |
+  The harbour smells of wet rope, spilled lamp oil and the muddy underside of the sea.
+  An empty ferry berth lies beside a warehouse with a roof bright with stranded people.
+
+  Between the quay and the warehouse, a ferry is caught beneath a fallen loading crane.
+  Her name, Mercy, is painted on the stern in letters someone has repaired every year.
+map:
+  x: 10
+  y: 75
+scenes:
+  - quay-arrival
+  - ferry-rescue
+  - ferry-crossing
+connections:
+  - to: greyhaven
+    label: Climb to the market
+  - to: refuge
+    label: Ride the repaired ferry to the island refuge
+    when:
+      flag: ferry-rescued

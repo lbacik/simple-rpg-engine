@@ -1,0 +1,35 @@
+id: progress-report
+illustration: progress-report
+title: Compare Notes with Ivo
+trigger: on-demand
+repeatable: true
+when:
+  flag: commissioned
+text: |
+  Ivo has pinned the survey chart to the well shelter. He asks for observations rather
+  than reassurances. Every time you name a fault, he draws a little square beside it.
+
+  "The route is still open. The pumps need a locking pin from the cistern. The foundry
+  can cast the weight. The archive has the ledger. Once those are ready, take the
+  causeway to the keeper. If we need to evacuate, Mercy and the signal tower must both
+  be working."
+choices:
+  - id: report-ledger
+    text: Show him the original ledger.
+    when:
+      flag: ledger-read
+    outcome:
+      text: |
+        Ivo reads the names twice. "My grandmother called Lowwater her home. I thought she
+        meant the street, not the people we left under it." He turns his chart over and begins
+        a public list of the drowned.
+  - id: report-diver
+    text: Tell him the missing diver is alive.
+    when:
+      flag: diver-rescued
+    outcome:
+      text: |
+        For a moment, Ivo closes his eyes. "Tamsin taught me to read a pressure gauge. I sent
+        her down there. I will find her at the refuge when this is done."
+  - id: continue-work
+    text: Return to the investigation.

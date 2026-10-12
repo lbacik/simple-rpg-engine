@@ -1,0 +1,23 @@
+id: stairwell
+illustration: loc-stairwell
+name: The Dry Stair
+description: |
+  An iron stair coils down a shaft lined with porcelain depth markers. The air is damp
+  but breathable. Beyond the final landing, a maintenance tunnel leads beneath the
+  basin.
+
+  Wet footprints cross the landing. They end at a pair of boots whose owner has
+  forgotten that his feet no longer touch the floor.
+map:
+  x: 38
+  y: 56
+scenes:
+  - stairwell-descent
+  - drowned-porter
+connections:
+  - to: lockhouse
+    label: Climb to the lockhouse
+  - to: sunken-square
+    label: Pass the porter and enter the old district
+    when:
+      flag: porter-passed

@@ -1,0 +1,63 @@
+id: ferry-rescue
+illustration: ferry-rescue
+title: Free Mercy and Rescue the Roof
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: ferry-rescued
+text: |
+  Bram holds the brake while you examine the winch. The crane has trapped Mercy without
+  breaking her hull. Above you, a woman lifts a small boy so that he can see the rescue
+  lines.
+
+  The slow method is certain: turn the winch one tooth at a time and secure every gain.
+  A quicker approach might preserve more supplies in the warehouse, but a slipped line
+  will cost you bruises.
+choices:
+  - id: work-winch
+    text: Work the winch slowly and bring everyone aboard.
+    outcome:
+      text: |
+        The crane rises by inches. Bram brings Mercy beneath the roof, and you pass each
+        passenger down before retrieving the last bag of dry clothes. The boy asks your name,
+        then solemnly promises to remember it.
+      effects:
+        - set-flag: ferry-rescued
+        - give-item:
+            item: lamp-oil
+        - give-item:
+            item: field-dressings
+        - reveal: refuge
+  - id: balance-beam
+    text: Cross the crane beam and release the snagged line.
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          You free the snag without disturbing the crane. Bram saves the passengers and a crate
+          of medicines. "Fast feet," he says. "Good heart."
+        effects:
+          - set-flag: ferry-rescued
+          - give-item:
+              item: lamp-oil
+          - give-item:
+              item: field-dressings
+              quantity: 2
+          - reveal: refuge
+      failure:
+        text: |
+          The beam rolls under you. You scrape an arm getting back to the quay, then finish the
+          rescue with the slow winch. Everyone reaches Mercy, though the medicine crate washes
+          away.
+        effects:
+          - damage: 1
+          - set-flag: ferry-rescued
+          - give-item:
+              item: lamp-oil
+          - give-item:
+              item: field-dressings
+          - reveal: refuge
+  - id: later
+    text: Leave the ropes ready and return later.

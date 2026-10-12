@@ -1,0 +1,27 @@
+id: street-memorial
+illustration: street-memorial
+title: Turn the Memorial Face Up
+trigger: on-demand
+text: |
+  The stone is heavier than it looks. You lever it with a fallen tram rail, taking your
+  time. Beneath the dried mud are names, occupations and ages. Nobody has been described
+  as an unavoidable loss.
+
+  Elias Rook. Nera Vale. Hester Marr. The list continues around every edge. At the
+  bottom, a line reads: THE WATER WAS OPENED BEFORE THE LAST BOAT RETURNED.
+
+  A small brass nameplate has survived beside the stone. It belonged to a house rather
+  than a grave.
+choices:
+  - id: read-names
+    text: Read the names aloud and keep the nameplate.
+    outcome:
+      text: |
+        Faces gather at the windows. Some names receive an answer; others receive a silence
+        that is no longer the same as being forgotten. You copy the inscription for anyone
+        above who still believes Lowwater was empty.
+      effects:
+        - set-flag: knows-names
+        - set-flag: knows-coverup
+        - give-item:
+            item: house-nameplate

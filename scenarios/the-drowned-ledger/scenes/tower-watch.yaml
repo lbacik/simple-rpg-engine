@@ -1,0 +1,46 @@
+id: tower-watch
+illustration: tower-watch
+title: The Watchman at the Lantern
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - not:
+        flag: tower-safe
+    - not:
+        defeated: tower-fight
+text: |
+  The dead watchman keeps his bow lowered but ready. His orders require a recognised
+  survey or an emergency on the south channel.
+
+  Below you, the tide is visibly pressing against the outer wall. You can show your
+  chart or ask him to inspect the danger himself. He wants to protect the harbour; he
+  only needs permission to stop protecting an old instruction.
+choices:
+  - id: show-survey
+    text: Show him the survey chart.
+    when:
+      has:
+        item: survey-chart
+    outcome:
+      text: |
+        He reads Ivo's name and moves aside. "Inspection authorised. The south channel will be
+        kept clear."
+      effects:
+        - set-flag: tower-safe
+  - id: show-danger
+    text: Point out the failing sea wall and request an emergency signal.
+    outcome:
+      text: |
+        The watchman looks down at the crowded wall. Something in his posture changes. "An
+        emergency," he says. "Yes. That is what it is."
+      effects:
+        - set-flag: tower-safe
+  - id: fight
+    text: Fight the watchman for control of the lantern.
+    outcome:
+      start-combat: tower-fight
+  - id: leave
+    text: Descend without disturbing the lantern.
+    outcome:
+      move: causeway

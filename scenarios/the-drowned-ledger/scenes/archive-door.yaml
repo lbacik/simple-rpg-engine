@@ -1,0 +1,47 @@
+id: archive-door
+illustration: archive-door
+title: The Clerk Behind the Lattice
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: archive-open
+text: |
+  A voice comes from an empty chair beyond the bronze lattice. "State the account you
+  wish to inspect." The paper boats tremble as though the clerk has breathed on them.
+
+  A survey seal opens municipal records. Without it, the clerk accepts the name of
+  anyone whose house appears in those records. The memorial in the square can supply
+  one; so can the name you read on the porter's badge.
+choices:
+  - id: show-seal
+    text: Present the survey seal.
+    when:
+      has:
+        item: survey-seal
+    outcome:
+      text: |
+        The lattice retracts. "Inspection granted. No page may be corrected by erasure."
+      effects:
+        - set-flag: archive-open
+  - id: show-nameplate
+    text: Request the household record named on the brass plate.
+    when:
+      has:
+        item: house-nameplate
+    outcome:
+      text: |
+        "A household account remains open," the clerk says. The latch releases, and the paper
+        boats cease trembling.
+      effects:
+        - set-flag: archive-open
+  - id: name-porter
+    text: Ask to inspect Elias Rook's evacuation record.
+    outcome:
+      text: |
+        The invisible clerk takes a long time to answer. "No completed evacuation record
+        exists. You may inspect the account that replaced it." The lattice opens.
+      effects:
+        - set-flag: archive-open
+  - id: leave
+    text: Return when you are ready to read.

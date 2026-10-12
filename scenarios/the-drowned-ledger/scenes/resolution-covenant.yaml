@@ -1,0 +1,26 @@
+id: resolution-covenant
+illustration: resolution-covenant
+title: Names Restored to People
+repeatable: true
+text: |
+  You set the witness ribbon across the ledger, then read the memorial names. The
+  cylinder slows whenever a name is spoken. One by one, the entries separate from the
+  brass and become voices.
+
+  The correction replaces compulsory debt with shared maintenance: hours freely offered,
+  safe working conditions, stores kept in common, the right to refuse. Hester reads
+  every clause before allowing you to sign.
+
+  "The wall will need work tomorrow," she says. "That is a better promise than never
+  needing anyone again." Once you sign, the dead will be free to leave the engine.
+choices:
+  - id: sign
+    text: Sign the correction and release the drowned.
+    outcome:
+      text: |
+        You write {name} beside the witnesses, as the person who delivered the account. Hester
+        lifts the stylus. For the first time in sixty years, the tidal bell is allowed to
+        ring.
+      end: covenant-renewed
+  - id: reconsider
+    text: Leave the correction unsigned and return to the desk.

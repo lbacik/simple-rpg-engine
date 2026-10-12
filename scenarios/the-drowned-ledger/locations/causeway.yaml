@@ -1,0 +1,26 @@
+id: causeway
+illustration: loc-causeway
+name: The Accountants' Causeway
+description: |
+  A narrow stone causeway crosses the deepest part of the basin. Its parapets are carved
+  with measurements of grain, rope and timber. Beyond them, water hangs in a vertical
+  wall.
+
+  At the far end stand a signal tower and a bronze door. The mechanism above that door
+  has a conspicuously empty socket for a counterweight.
+map:
+  x: 71
+  y: 33
+scenes:
+  - causeway-crossing
+connections:
+  - to: sunken-square
+    label: Return to the square
+  - to: signal-tower
+    label: Climb to the signal tower
+    when:
+      flag: causeway-open
+  - to: bell-chamber
+    label: Enter the tidal bell chamber
+    when:
+      flag: causeway-open

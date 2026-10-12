@@ -1,0 +1,25 @@
+id: refuge
+illustration: loc-refuge
+name: Lantern Island Refuge
+description: |
+  A stone service passage emerges inside the old lighthouse keeper's cottage on Lantern
+  Island. Above it, the island is crowded with blankets, drying clothes and people
+  trying to count who is missing.
+
+  Through a window, both cities are visible: Greyhaven on its wall and Lowwater beneath
+  its dome of held water. A long table has been laid with places for people from either
+  side.
+map:
+  x: 32
+  y: 89
+scenes:
+  - refuge-arrival
+  - witness-council
+  - refuge-rest
+connections:
+  - to: sunken-square
+    label: Return through the dry service passage
+  - to: quay
+    label: Take Mercy back to the quay
+    when:
+      flag: ferry-rescued

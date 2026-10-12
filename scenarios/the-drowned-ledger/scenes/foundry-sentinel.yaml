@@ -1,0 +1,46 @@
+id: foundry-sentinel
+illustration: foundry-sentinel
+title: The Foreman of Unfinished Work
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - not:
+        flag: foundry-safe
+    - not:
+        defeated: foundry-fight
+text: |
+  A figure in a leather apron steps away from the furnace. An iron mask covers its face.
+  "No scavengers," it says. "Every casting belongs to a job. Name your job."
+
+  Behind the mask is the anxiety of a foreman left responsible for a workshop after
+  everyone else went home. It will accept a survey chart, or simply a careful
+  explanation of the broken causeway weight.
+choices:
+  - id: show-chart
+    text: Show the survey chart and the counterweight diagram.
+    when:
+      has:
+        item: survey-chart
+    outcome:
+      text: |
+        The foreman measures the diagram against a mould. "A repair. Good." It sets its hammer
+        down beside the furnace.
+      effects:
+        - set-flag: foundry-safe
+  - id: explain-repair
+    text: Explain that the causeway needs a new counterweight.
+    outcome:
+      text: |
+        You describe the empty socket and the failing account. The foreman points to the
+        correct mould. "Work first. Blame afterwards."
+      effects:
+        - set-flag: foundry-safe
+  - id: fight
+    text: Fight the foreman for access to the furnace.
+    outcome:
+      start-combat: foundry-fight
+  - id: withdraw
+    text: Leave the workshop.
+    outcome:
+      move: sunken-square

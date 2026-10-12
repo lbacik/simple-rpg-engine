@@ -1,0 +1,62 @@
+id: pump-calibration
+illustration: pump-calibration
+title: Reset the Bypass Circuit
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: pumps-set
+text: |
+  The valve order is intake, return, equaliser. A locking pin will keep the handwheel
+  from springing back while you move between them. Without one, any repair would last
+  only until you let go.
+
+  You can perform the sequence slowly, or use your understanding of the diagram to
+  improve the flow. Either method will stabilise the pumps once the pin is fitted.
+choices:
+  - id: fit-pin
+    text: Fit the pin and follow the written valve order.
+    when:
+      has:
+        item: locking-pin
+    outcome:
+      text: |
+        The second piston catches, then the third. Their rhythm settles into an even stride.
+        For the first time, the pressure needle leaves the red.
+      effects:
+        - take-item:
+            item: locking-pin
+        - set-flag: pumps-set
+        - give-item:
+            item: salt-tonic
+  - id: fine-tune
+    text: Fit the pin and tune the circuit for a smoother flow.
+    when:
+      has:
+        item: locking-pin
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          You compensate for the worn return valve. The pistons settle so gently that the
+          worker's shadow lowers its wrench and rests. Warmth returns to your hands.
+        effects:
+          - take-item:
+              item: locking-pin
+          - set-flag: pumps-set
+          - heal: 2
+          - give-item:
+              item: salt-tonic
+      failure:
+        text: |
+          Your first adjustment sends a shudder through the housing. You fall back on the
+          written order, which works exactly as its author promised.
+        effects:
+          - take-item:
+              item: locking-pin
+          - set-flag: pumps-set
+          - give-item:
+              item: salt-tonic
+  - id: fetch-pin
+    text: Leave the controls and search the cistern for a locking pin.

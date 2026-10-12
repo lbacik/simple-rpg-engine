@@ -1,0 +1,103 @@
+- id: harbour-blade
+  kind: equipment
+  name: Harbour Blade
+  description: A broad working knife from the harbour watch stores.
+  slot: weapon
+  bonus: might
+  damage: 3
+- id: boat-hook
+  kind: equipment
+  name: Boat Hook
+  description: A long hook worn smooth by work among mooring ropes.
+  slot: weapon
+  damage: 3
+- id: survey-staff
+  kind: equipment
+  name: Survey Staff
+  description: A measuring staff reinforced for journeys over uncertain ground.
+  slot: weapon
+  damage: 2
+- id: signal-crossbow
+  kind: equipment
+  name: Signal Crossbow
+  description: A compact crossbow carried by channel watchkeepers.
+  slot: weapon
+  reach: ranged
+  damage: 3
+- id: foundry-pryblade
+  kind: equipment
+  name: Nera's Pryblade
+  description: A perfectly balanced repair tool with a keen edge.
+  slot: weapon
+  bonus: might
+  damage: 4
+- id: watch-coat
+  kind: equipment
+  name: Padded Watch Coat
+  description: Waxed canvas over felt, suited to cold spray and rough work.
+  slot: outfit
+  bonus: might
+- id: deck-coat
+  kind: equipment
+  name: Deckhand's Coat
+  description: A short coat that leaves the hands and shoulders free.
+  slot: outfit
+  bonus: agility
+- id: engineers-lens
+  kind: equipment
+  name: Engineer's Lens
+  description: A folding glass for reading fine marks on moving machinery.
+  slot: talisman
+  bonus: wits
+- id: union-badge
+  kind: equipment
+  name: Workers' Union Badge
+  description: A badge reminding its wearer to speak for more than one person.
+  slot: talisman
+  bonus: presence
+- id: salt-tonic
+  kind: consumable
+  name: Salt Tonic
+  description: A sealed emergency draught prepared for harbour crews.
+  heal: 4
+- id: field-dressings
+  kind: consumable
+  name: Field Dressings
+  description: Clean bandages and a tin of cooling salve.
+  heal: 6
+- id: survey-chart
+  kind: key
+  name: Ivo's Survey Chart
+  description: A signed map marking the pressure faults and service passages.
+- id: survey-seal
+  kind: key
+  name: Municipal Survey Seal
+  description: The watch's brass authority for inspections and public records.
+- id: lamp-oil
+  kind: key
+  name: Mercy's Lamp Oil
+  description: A sealed flask recovered with the ferry's emergency supplies.
+- id: house-nameplate
+  kind: key
+  name: Lowwater House Nameplate
+  description: A brass plate preserving a household name from the overturned memorial.
+- id: original-ledger
+  kind: key
+  name: The Original Maintenance Ledger
+  description: The city's account of the sea wall, with Hester Marr's uncensored notes.
+- id: locking-pin
+  kind: key
+  name: Bronze Locking Pin
+  description: A maintenance pin made to hold the pump bypass handwheel.
+- id: counterweight
+  kind: key
+  name: Replacement Counterweight
+  description: Nera Vale's casting for the causeway brake and foundation linkage.
+- id: witness-ribbon
+  kind: key
+  name: The Witness Ribbon
+  description: A ribbon marking testimony and voluntary maintenance promises in the ledger.
+- id: keeper-plate
+  kind: key
+  name: Hester's Authority Plate
+  description: Authority to inspect the heart vault, carrying no obligation to accept its office.

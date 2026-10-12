@@ -1,0 +1,110 @@
+schemaVersion: 1
+id: the-drowned-ledger
+title: The Drowned Ledger
+description: Descend beneath a failing sea wall, recover a city's hidden history, and
+  decide what the living owe the dead. Repairs can buy time; only a choice can close the
+  account.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+intro: |
+  You reach Greyhaven on the morning the tide stops going out. The sea presses against
+  the harbour wall under a clear sky, rising without wind or rain.
+
+  Below the wall lies Lowwater, a district flooded sixty years ago. People above say it
+  was empty. Through the clear water, you can see someone setting a table.
+startLocation: greyhaven
+deathEnding: death
+flags:
+  - commissioned
+  - ferry-rescued
+  - watch-cooperates
+  - knows-coverup
+  - lock-open
+  - porter-passed
+  - knows-names
+  - archive-open
+  - ledger-read
+  - pumps-set
+  - diver-rescued
+  - foundry-safe
+  - counterweight-forged
+  - witnesses-heard
+  - causeway-open
+  - tower-safe
+  - beacon-lit
+  - keeper-heard
+  - heart-open
+locations:
+  - locations/greyhaven.yaml
+  - locations/quay.yaml
+  - locations/watch-house.yaml
+  - locations/lockhouse.yaml
+  - locations/stairwell.yaml
+  - locations/sunken-square.yaml
+  - locations/archive.yaml
+  - locations/archive-vault.yaml
+  - locations/pump-hall.yaml
+  - locations/cistern.yaml
+  - locations/foundry.yaml
+  - locations/refuge.yaml
+  - locations/causeway.yaml
+  - locations/signal-tower.yaml
+  - locations/bell-chamber.yaml
+  - locations/heart-vault.yaml
+scenes:
+  - scenes/market-arrival.yaml
+  - scenes/town-briefing.yaml
+  - scenes/relief-table.yaml
+  - scenes/progress-report.yaml
+  - scenes/quay-arrival.yaml
+  - scenes/ferry-rescue.yaml
+  - scenes/ferry-crossing.yaml
+  - scenes/watch-captain.yaml
+  - scenes/captain-confession.yaml
+  - scenes/watch-stores.yaml
+  - scenes/lockhouse-arrival.yaml
+  - scenes/descent-preparations.yaml
+  - scenes/stairwell-descent.yaml
+  - scenes/drowned-porter.yaml
+  - scenes/square-arrival.yaml
+  - scenes/street-memorial.yaml
+  - scenes/archive-door.yaml
+  - scenes/ledger-discovery.yaml
+  - scenes/ledger-account.yaml
+  - scenes/pump-arrival.yaml
+  - scenes/pump-calibration.yaml
+  - scenes/cistern-arrival.yaml
+  - scenes/cistern-diver.yaml
+  - scenes/cistern-cache.yaml
+  - scenes/foundry-sentinel.yaml
+  - scenes/foundry-workbench.yaml
+  - scenes/smith-memory.yaml
+  - scenes/refuge-arrival.yaml
+  - scenes/witness-council.yaml
+  - scenes/refuge-rest.yaml
+  - scenes/causeway-crossing.yaml
+  - scenes/tower-arrival.yaml
+  - scenes/tower-watch.yaml
+  - scenes/beacon-lighting.yaml
+  - scenes/keeper-audience.yaml
+  - scenes/keeper-truth.yaml
+  - scenes/keeper-answer.yaml
+  - scenes/heart-threshold.yaml
+  - scenes/heart-controls.yaml
+  - scenes/resolution-covenant.yaml
+  - scenes/resolution-keeper.yaml
+  - scenes/resolution-evacuation.yaml
+  - scenes/resolution-break.yaml
+items:
+  - items.yaml
+enemies:
+  - enemies.yaml
+encounters:
+  - encounters.yaml
+templates:
+  - templates.yaml
+endings:
+  - endings.yaml
+images:
+  - images.yaml

@@ -1,0 +1,30 @@
+id: keeper-audience
+illustration: keeper-audience
+title: Hester Marr Keeps the Last Watch
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: keeper-heard
+text: |
+  The keeper turns as you enter. Her hands are flesh, but the water behind her coat
+  flows through the chair. You recognise her name from the archive: Hester Marr.
+
+  "You brought a corrected pressure and a sound weight," she says. "The wall will hold
+  long enough for a decision. You also brought the ledger. That was the harder errand."
+
+  She looks at your face rather than your weapon. "Before you touch the engine, you
+  deserve to know why I stayed."
+choices:
+  - id: hear-hester
+    text: Hear why Hester remained beneath the water.
+    outcome:
+      next: keeper-truth
+  - id: request-options
+    text: Ask her to explain the available choices.
+    outcome:
+      next: keeper-answer
+  - id: leave
+    text: Return to make further preparations.
+    outcome:
+      move: causeway

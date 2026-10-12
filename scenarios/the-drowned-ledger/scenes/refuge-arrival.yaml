@@ -1,0 +1,19 @@
+id: refuge-arrival
+illustration: refuge-arrival
+title: Two Shores at One Table
+trigger: on-enter
+text: |
+  An elderly woman named Sella Marr is organising the blankets. She lived in Lowwater as
+  a child; her mother was Hester, the engineer who stayed below when the gates opened.
+
+  A few translucent figures stand at the edge of the cottage. They reached the service
+  passage, but hesitate to enter among the living. Sella sets out more cups.
+
+  "If they have come home," she says, "they should not have to wait outside."
+choices:
+  - id: make-room
+    text: Move the benches to make room for both shores.
+    outcome:
+      text: |
+        The room settles around the new places. Someone passes a cup to a hand that barely
+        holds its shape, and nobody laughs.

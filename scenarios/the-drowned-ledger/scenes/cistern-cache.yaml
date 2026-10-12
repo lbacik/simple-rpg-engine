@@ -1,0 +1,23 @@
+id: cistern-cache
+illustration: cistern-cache
+title: The Maintenance Tool Cage
+trigger: on-demand
+text: |
+  The tool cage was left unlocked for whoever had to work the next shift. Inside lie a
+  bronze locking pin, two sealed medical tins and a coil of clean cord.
+
+  A slate says: TAKE WHAT THE JOB NEEDS. REPLACE IT WHEN THE JOB IS DONE. There is no
+  signature; the rule seems to have been enough.
+choices:
+  - id: take-tools
+    text: Take the pin and the medical tins.
+    outcome:
+      text: |
+        You wrap the locking pin so it cannot roll out of your pack. The slate gets a brief
+        note explaining where the supplies went.
+      effects:
+        - give-item:
+            item: locking-pin
+        - give-item:
+            item: salt-tonic
+            quantity: 2

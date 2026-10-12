@@ -1,0 +1,50 @@
+id: heart-controls
+illustration: heart-controls
+title: The Account Desk
+trigger: on-demand
+repeatable: true
+when:
+  flag: heart-open
+text: |
+  The pump needle is steady. Nera's counterweight moves through its linkage above the
+  cage. The ledger lies open beside the stylus, ready for an entry that will outlast
+  this hour.
+
+  The controls allow a correction, a transfer of the keeper's duty, or the opening of
+  the south spillway. A fourth lever will break the cylinder's retaining cage. Its
+  handle is painted red.
+
+  You can still leave. None of these choices is made by approaching the desk.
+choices:
+  - id: correct-account
+    text: Prepare a witnessed correction that releases the drowned.
+    when:
+      all:
+        - has:
+            item: original-ledger
+        - has:
+            item: witness-ribbon
+        - flag: knows-names
+        - flag: witnesses-heard
+    outcome:
+      next: resolution-covenant
+  - id: become-keeper
+    text: Consider taking Hester's watch yourself.
+    outcome:
+      next: resolution-keeper
+  - id: evacuate
+    text: Prepare a controlled evacuation through the south spillway.
+    when:
+      all:
+        - flag: ferry-rescued
+        - flag: beacon-lit
+    outcome:
+      next: resolution-evacuation
+  - id: break-engine
+    text: Inspect the red lever and its consequences.
+    outcome:
+      next: resolution-break
+  - id: return
+    text: Return to the bell chamber and finish any missing preparations.
+    outcome:
+      move: bell-chamber

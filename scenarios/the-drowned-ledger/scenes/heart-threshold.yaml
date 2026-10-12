@@ -1,0 +1,50 @@
+id: heart-threshold
+illustration: heart-threshold
+title: The Auditor of Borrowed Hours
+trigger: on-enter
+repeatable: true
+when:
+  all:
+    - not:
+        flag: heart-open
+    - not:
+        defeated: auditor-fight
+text: |
+  A figure made of tally sticks rises before the account desk. It wears an official's
+  collar and has no face. "Authority," it says, extending a hand over the turning
+  cylinder.
+
+  Hester's plate will admit you. The original ledger also carries the authority to
+  inspect its own entries. The auditor can be fought, but its purpose is to prevent an
+  unrecorded alteration, not to demand a death.
+choices:
+  - id: show-plate
+    text: Present Hester's authority plate.
+    when:
+      has:
+        item: keeper-plate
+    outcome:
+      text: |
+        The auditor checks the plate against its own register. "Inspection admitted.
+        Alterations require responsibility." It folds itself beside the desk.
+      effects:
+        - set-flag: heart-open
+  - id: show-ledger
+    text: Open the original ledger at the maintenance authority.
+    when:
+      has:
+        item: original-ledger
+    outcome:
+      text: |
+        The tally sticks click together. "The account may inspect itself." You pass without
+        disturbing the machinery.
+      effects:
+        - set-flag: heart-open
+  - id: fight
+    text: Destroy the auditor before approaching the controls.
+    outcome:
+      start-combat: auditor-fight
+  - id: withdraw
+    text: Return to Hester.
+    outcome:
+      move: bell-chamber

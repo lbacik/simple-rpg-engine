@@ -1,0 +1,41 @@
+id: resolution-break
+illustration: resolution-break
+title: The Red Lever
+repeatable: true
+text: |
+  The red lever will snap the retaining cage. The wall will lose the engine's protection
+  at once. The dead will be released with it, but the water will arrive as a surge
+  rather than a measured tide.
+
+  A prepared beacon can warn the upper city, and a working Mercy can carry the people on
+  the quay into the clear south channel. Both preparations are necessary. Hester rests
+  her hand beside yours, offering no blessing and no obstruction.
+
+  "You have reached the part of the account," she says, "where an action cannot be
+  corrected by better handwriting."
+choices:
+  - id: break-prepared
+    text: Send the evacuation signal, then break the engine.
+    when:
+      all:
+        - flag: ferry-rescued
+        - flag: beacon-lit
+    outcome:
+      text: |
+        You wait until Mercy's lamp answers and the watch begins clearing the quay. Then you
+        pull. The first crack sounds small enough to be a dropped cup.
+      end: engine-broken
+  - id: break-unprepared
+    text: Break the engine despite the missing evacuation preparations.
+    when:
+      not:
+        all:
+          - flag: ferry-rescued
+          - flag: beacon-lit
+    outcome:
+      text: |
+        You pull before the harbour is ready. Hester catches the chain, trying to buy the
+        people above a few more breaths.
+      end: flood-unleashed
+  - id: reconsider
+    text: Release the red handle and return to the desk.

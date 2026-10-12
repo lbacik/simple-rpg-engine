@@ -1,0 +1,49 @@
+id: drowned-porter
+illustration: drowned-porter
+title: The Porter Who Still Checks Tickets
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - not:
+        flag: porter-passed
+    - not:
+        defeated: porter-fight
+text: |
+  The porter wears a uniform darkened by water and carries a punch for tickets. His
+  badge reads ELIAS ROOK. "Authorised persons only," he says. A stream of bubbles leaves
+  his mouth and rises through the stone.
+
+  He is frightened of making a mistake, not eager for a fight. A survey chart will
+  satisfy his rules. Otherwise, you can write your name and purpose in the visitors'
+  book he has kept dry beneath his coat.
+choices:
+  - id: show-chart
+    text: Show him Ivo's survey chart.
+    when:
+      has:
+        item: survey-chart
+    outcome:
+      text: |
+        Elias studies the signature. "Inspection and relief. Both permitted." He punches a
+        neat hole in the margin and stands aside.
+      effects:
+        - set-flag: porter-passed
+        - reveal: sunken-square
+  - id: sign-book
+    text: Sign the visitors' book and state that you came to help.
+    outcome:
+      text: |
+        The porter reads your entry aloud. "{name}. Relief work." He underlines the second
+        phrase twice. "We have had very few of those."
+      effects:
+        - set-flag: porter-passed
+        - reveal: sunken-square
+  - id: fight
+    text: Force a way past the porter.
+    outcome:
+      start-combat: porter-fight
+  - id: back
+    text: Return to the upper stair.
+    outcome:
+      move: lockhouse

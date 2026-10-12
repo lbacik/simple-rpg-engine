@@ -1,0 +1,42 @@
+id: beacon-lighting
+illustration: beacon-lighting
+title: Prepare the Three-Flash Signal
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - flag: tower-safe
+    - not:
+        flag: beacon-lit
+text: |
+  The lamp reservoir is empty. A sealed oil locker stands underneath it, stocked for
+  emergencies. Mercy's rescue supplies may also have provided a flask.
+
+  You can prepare the lantern without ordering an evacuation yet. Once the lamp is
+  burning, the keeper's controls can open the signal shutters and the south spillway
+  together. Bram will recognise the three long flashes.
+choices:
+  - id: use-oil
+    text: Fill the reservoir with the oil from Mercy.
+    when:
+      has:
+        item: lamp-oil
+    outcome:
+      text: |
+        The lamp catches. You set the shutter linkage to the emergency pattern. The speaking
+        pipe carries your report to Greyhaven, where someone answers with a very relieved
+        breath.
+      effects:
+        - take-item:
+            item: lamp-oil
+        - set-flag: beacon-lit
+  - id: open-locker
+    text: Open the emergency locker and use its reserve oil.
+    outcome:
+      text: |
+        The wax seal breaks beneath your thumb. You fill the lamp and set the shutter linkage.
+        Emergency stores have finally met the emergency they were saved for.
+      effects:
+        - set-flag: beacon-lit
+  - id: wait
+    text: Leave the lamp ready to fill later.

@@ -1,0 +1,26 @@
+id: square-arrival
+illustration: square-arrival
+title: The City Kept Below
+trigger: on-enter
+text: |
+  A tram stands in the middle of the square with its destination board still reading
+  HOME. Its passengers are pale outlines. They watch you without the hunger you expected
+  from the dead.
+
+  A woman at the fountain is washing a cup in an empty basin. "New inspector?" she asks.
+  "The last one said we would be moved by morning. Which morning did they send you for?"
+
+  When you cannot answer, she points to the overturned memorial. "You can begin there.
+  Someone paid good money to make that stone unreadable."
+choices:
+  - id: look-around
+    text: Ask the way to the archive, pumps and foundry.
+    outcome:
+      text: |
+        She gives precise directions, then adds the service passage to Lantern Island. "Some
+        of us can still leave by it. Others have their names caught in the engine."
+      effects:
+        - reveal: archive
+        - reveal: pump-hall
+        - reveal: foundry
+        - reveal: refuge

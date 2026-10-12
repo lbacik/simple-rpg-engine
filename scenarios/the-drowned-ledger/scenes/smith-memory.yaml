@@ -1,0 +1,36 @@
+id: smith-memory
+illustration: smith-memory
+title: The Shape of an Apology
+repeatable: true
+text: |
+  Nera wraps the weight in wet sacking. "You can carry it. I cannot. The engine has my
+  name, and it keeps pulling me back to this shift."
+
+  She opens her hand to show the imprint of an old wedding ring. "If you change the
+  account, do not make us saints. Some of us obeyed. Some of us looked away. We were
+  people. That is what the ledger should say."
+
+  The weight is warm through its wrapping. It feels less like a key than something you
+  have agreed to be responsible for.
+choices:
+  - id: take-weight
+    text: Take the weight and promise to record the truth.
+    outcome:
+      text: |
+        Nera rests her hammer on the anvil. "Then I can wait a little longer."
+      effects:
+        - give-item:
+            item: counterweight
+        - set-flag: counterweight-forged
+      move: foundry
+  - id: take-without-promise
+    text: Take the weight without promising a particular outcome.
+    outcome:
+      text: |
+        "Fair enough," she says. "An honest uncertainty is better than another official
+        assurance." She watches you carry the weight out.
+      effects:
+        - give-item:
+            item: counterweight
+        - set-flag: counterweight-forged
+      move: foundry

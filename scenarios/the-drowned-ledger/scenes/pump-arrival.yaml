@@ -1,0 +1,21 @@
+id: pump-arrival
+illustration: pump-arrival
+title: A Rhythm with Two Missing Beats
+trigger: on-enter
+text: |
+  The working piston lands with a thud that goes through your teeth. A shadow behind the
+  machine repeats the same wrenching motion, unable to finish tightening a bolt that no
+  longer exists.
+
+  The bypass board is legible. It calls for a locking pin from the cistern, then three
+  valve turns in the order marked on the diagram. No hidden formula is required; someone
+  expected a tired worker to manage this in the dark.
+choices:
+  - id: inspect
+    text: Read the maintenance board.
+    outcome:
+      text: |
+        You copy the valve order and locate the pin socket. A light gleams beyond the cistern
+        door.
+      effects:
+        - reveal: cistern
