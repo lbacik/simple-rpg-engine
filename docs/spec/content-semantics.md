@@ -107,7 +107,7 @@ Conditions are structured predicates combined with `all`, `any` and `not`. There
 | `health: { atLeast \| atMost }` | current Health meets the bound |
 | `visited: L` | the Location has been entered at least once |
 | `fired: S` | the Scene has been activated at least once |
-| `defeated: E` | every participant of the Encounter has been killed |
+| `defeated: E` | every participant's recorded Damage taken reaches its Enemy's current maximum Health |
 
 Conditions are evaluated live: when rendering a view and again when an action is submitted. Author-defined state is Flags only; there are no counters.
 
@@ -115,11 +115,13 @@ Conditions are evaluated live: when rendering a view and again when an action is
 
 An **Enemy** is a reusable definition. An **Encounter** is a named placement of one or two Enemies as **participants** (see [mechanics.md](mechanics.md#participants)), with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Each participant carries its own wounds under the persistence rules in [mechanics.md](mechanics.md#persistence-of-wounds).
 
-- `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; each surviving participant keeps its wounds, and a participant defeated earlier does not return.
+- `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; each surviving participant keeps its wounds, and with unchanged content a participant defeated earlier does not return.
 - `start-combat: E` on an Encounter that is **already defeated** is a **no-op**: no fight, the victory Outcome is not applied again, play returns to the Location view.
 - **Victory** (the last participant defeated) applies the `victory` Outcome. Defeating one of two participants is not a victory and applies nothing. Without one, the engine shows a brief **Enemy-defeated notice**, and play returns to the Location view of the Location where the fight happened.
 - **Escape** applies the `escape` Outcome.
 - **Character death** is not an Encounter Outcome. It always ends the Playthrough on the Scenario's death Ending.
+
+Defeat is checked against current content, not remembered as a separate victory flag. A content change outside Combat may revive a previously defeated participant by increasing its maximum Health above its recorded Damage. In an active Playthrough, a later `start-combat` then fights the current survivors, and the next victory applies the `victory` Outcome and its Effects again. The usual once-only guarantee holds while content remains unchanged. Revival that changes the surviving membership of an active Combat makes the Playthrough incompatible instead ([architecture.md](architecture.md#content-compatibility)); content edits never reopen an ended Playthrough or automatically start a Combat.
 
 ### Authoring pattern: re-offering an escapable fight
 
@@ -149,3 +151,4 @@ An on-enter Scene that starts a fight is once-only by default, so after an escap
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (re-offering pattern)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, `defeated`)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (Combat position)
+- [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (content-driven revival and victory Outcomes)
