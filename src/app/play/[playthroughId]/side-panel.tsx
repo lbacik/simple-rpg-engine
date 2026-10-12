@@ -11,36 +11,23 @@
 
 import Link from 'next/link';
 import type { CompiledItem, Scenario } from '@/content/model';
-import { effectiveAttributes, type GameView } from '@/engine/index';
-import { equipmentBonusSources, EQUIPMENT_SLOTS } from '@/engine/inventory';
+import type { GameView } from '@/engine/index';
+import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { playHref, type PanelId } from '@/app/lib/panel';
+import {
+  ATTRIBUTE_LABELS,
+  CharacterSheet,
+  healthPercent,
+  initial,
+  isLowHealth,
+} from './character-sheet';
 import { LocationMap } from './map';
 import { PanelModal } from './panel-modal';
 
-const ATTRIBUTE_LABELS = {
-  might: 'Might',
-  agility: 'Agility',
-  wits: 'Wits',
-  presence: 'Presence',
-} as const;
-
-type AttributeName = keyof typeof ATTRIBUTE_LABELS;
-
 function itemName(scenario: Scenario, itemId: string): string {
   return scenario.itemsById[itemId]?.name ?? itemId;
-}
-
-/** Health as a clamped 0–100 percentage for the medal ring. */
-function healthPercent(health: number, max: number): number {
-  if (max <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((health / max) * 100)));
-}
-
-function initial(name: string): string {
-  const first = name.trim().charAt(0);
-  return first === '' ? '?' : first.toUpperCase();
 }
 
 function LauncherIcon({ name }: { name: 'character' | 'inventory' | 'journal' | 'map' }) {
@@ -92,7 +79,7 @@ function StatusCard({
 }) {
   const template = scenario.templatesById[state.character.templateId];
   const percent = healthPercent(state.character.health, MAX_HEALTH);
-  const low = percent <= 34;
+  const low = isLowHealth(state.character.health, MAX_HEALTH);
   return (
     <section aria-label="Character status" className="status-card">
       <span
@@ -118,78 +105,6 @@ function StatusCard({
           ))}
         </span>
       </div>
-    </section>
-  );
-}
-
-function AttributeLine({
-  label,
-  base,
-  effective,
-  counted,
-  ignored,
-}: {
-  label: string;
-  base: number;
-  effective: number;
-  /** Bonus sources that add to the total (at most two: the bonus cap). */
-  counted: string[];
-  /** Bonus sources beyond the +2 cap, adding nothing. */
-  ignored: string[];
-}) {
-  if (counted.length === 0 && ignored.length === 0) {
-    return (
-      <li>
-        {label} {effective}
-      </li>
-    );
-  }
-  return (
-    <li>
-      {label} {effective} ({[String(base), ...counted.map((name) => `1 ${name}`)].join(' + ')}
-      {ignored.length > 0
-        ? `; ${ignored.map((name) => `1 ${name}`).join(' + ')} ignored: bonus capped at +2`
-        : ''}
-      )
-    </li>
-  );
-}
-
-export function CharacterSheet({
-  scenario,
-  state,
-}: {
-  scenario: Scenario;
-  state: PlaythroughState;
-}) {
-  const template = scenario.templatesById[state.character.templateId];
-  const effective = effectiveAttributes(scenario, state);
-  const sources = equipmentBonusSources(scenario, state);
-  return (
-    <section aria-label="Character">
-      <h2>Character</h2>
-      <p>
-        <strong>{state.character.name}</strong>
-        {template ? ` · ${template.name}` : null}
-      </p>
-      <p>
-        Health {state.character.health}/{MAX_HEALTH}
-      </p>
-      <ul>
-        {(Object.keys(ATTRIBUTE_LABELS) as AttributeName[]).map((name) => {
-          const ids = sources[name];
-          return (
-            <AttributeLine
-              key={name}
-              label={ATTRIBUTE_LABELS[name]}
-              base={state.character.baseAttributes[name]}
-              effective={effective[name]}
-              counted={ids.slice(0, 2).map((id) => itemName(scenario, id))}
-              ignored={ids.slice(2).map((id) => itemName(scenario, id))}
-            />
-          );
-        })}
-      </ul>
     </section>
   );
 }
@@ -538,6 +453,15 @@ export function SidePanel({
       scenario.itemsById[itemId] === undefined ? total : total + quantity,
     0,
   );
+  // The Character sheet header names the current Location. Ended views
+  // carry no Location, so fall back to the stored Location id; anything gone
+  // from the content reads best effort.
+  const locationName =
+    gameView.kind === 'location'
+      ? gameView.name
+      : gameView.kind === 'scene' || gameView.kind === 'combat'
+        ? gameView.locationName
+        : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
   // The label and sublabel are separate inline spans, so the accessible name
   // is set explicitly instead of relying on their concatenation.
   const characterName = `Character, Health ${state.character.health}/${MAX_HEALTH}`;
@@ -603,7 +527,7 @@ export function SidePanel({
       {panel === 'character' ? (
         <PanelModal label="Character" closeHref={closeHref} launcherId="launcher-character">
           <ModalShell title="Character" closeHref={closeHref} noticeText={noticeText}>
-            <CharacterSheet scenario={scenario} state={state} />
+            <CharacterSheet scenario={scenario} state={state} locationName={locationName} />
           </ModalShell>
         </PanelModal>
       ) : null}
