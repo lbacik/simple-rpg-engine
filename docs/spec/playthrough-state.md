@@ -20,7 +20,7 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 
 | Area | Stored | Derived |
 |---|---|---|
-| Identity | Scenario id; content `version` and content hash pinned at creation (updated when a reference check passes); status; `step` counter | |
+| Identity | `stateVersion`; Scenario id; content `version` and content hash pinned at creation (updated when a reference check passes); status; `step` counter | |
 | Character | Template id, name, **copy of the base Attributes at creation**, current Health | effective Attributes (base + Equipment, +2 cap per Attribute); maximum Health (12); attack Damage and Reach (equipped weapon, or 2 / `melee`) |
 | Inventory | item id → quantity ≥ 1 (entries at zero are removed) | |
 | Equipment | slot → item id, pointing at a held item | Attribute bonuses |
@@ -28,15 +28,17 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 | Exploration | `visited` Location set; `revealed` Location set | map nodes, drawn Connections, highlighted travel targets |
 | Scenes and Choices | set of fired Scene ids; set of taken `once` Choices as (Scene id, Choice id) | on-demand Scenes on offer; visible Choices |
 | Flags | set of Flags currently true | |
-| Encounters | per Encounter id, created on its first `start-combat`: **Damage taken per participant id** | each participant's remaining Health (its Enemy's maximum − taken) and defeated (remaining ≤ 0); the Encounter is defeated when every participant is. An Encounter or participant without a record is at full Health. |
-| Active Combat | Encounter id, the Range to each Enemy participant, round number, the current Round's committed Intents, each participant's prepared state, temporary effects that outlast the step (a Wary participant and the Round its Wary ends) | each participant's Health (from the Encounter record); the Round's order; available Character actions with their Speed |
+| Encounters | per Encounter id, created on its first `start-combat`: **Damage taken per participant id**, with an entry, 0 included, for every participant the Encounter had at creation | each participant's remaining Health (its Enemy's maximum − taken) and defeated (remaining ≤ 0); the Encounter is defeated when every participant is. An Encounter without a record is at full Health, and so is a participant without an entry (one added to the content later). |
+| Active Combat | Encounter id, round number, and for each participant taking part (surviving when the Combat started, not defeated since): the Range to it, its committed Intent (the Intent kind only), whether it is prepared, and the last round of its Wary, if any | each participant's Health (from the Encounter record); each Intent's Speed, Damage and what a Prepare prepares (from the rules and the Enemy); the Round's order; available Character actions with their Speed and targets |
 | Journal | append-only entries: Scenario text as presented, engine events, and the language of each | the result panel; the intro display; all Interface Text in it |
 
 Notes:
 
 - **Equipment is a pointer, not a copy.** An equipped item counts towards its held quantity. Removing one of two copies leaves it equipped; removing the last copy unequips it first.
 - **Participant identity is (Encounter id, participant id).** Two Encounters with the same Enemy are independent, and so are two participants of the same Enemy kind in one Encounter. Storing only Damage taken makes "defeated" impossible to desynchronise, for a participant and for the Encounter.
-- **Round-scoped effects are never stored** (for example Guarded, and the once-per-Round counterattack). A whole Round resolves in one step, so an effect that expires at the end of its own Round never outlives it. The committed Intents, prepared states and effects lasting into the next Round are stored, so reading or reloading never re-selects or changes them. Their exact shape is set with the tactical Combat state migration.
+- **Round-scoped effects are never stored** (for example Guarded, and the once-per-Round counterattack). A whole Round resolves in one step, so an effect that expires at the end of its own Round never outlives it. The committed Intents, prepared states and effects lasting into the next Round are stored, so reading or reloading never re-selects or changes them.
+- **Only rule state is stored.** An Intent is stored as its kind (Strike, Close in, Prepare, Heavy attack); its Speed, Damage and wording are derived, and no display text enters the state. A participant leaves the Combat's entries when it is defeated; its Damage taken stays in the Encounter record.
+- **An Encounter record lists every participant from its creation**, so a participant added to the content later is recognisable as new ([Content compatibility](architecture.md#content-compatibility)). A participant with 0 Damage taken is at full Health.
 - **Flags all start false.** There are no counters.
 - The base Attributes are copied so that later Template edits do not change an existing Character.
 
@@ -57,7 +59,9 @@ Notes:
 | **Equip** (item id) | Location view or Scene active; the item is held Equipment | puts it in its slot, replacing whatever was there |
 | **Unequip** (slot) | Location view or Scene active; the slot is occupied | empties the slot |
 | **Use item** (item id) | Location view or Scene active; a held Consumable; Health below maximum | heals, consumes one copy; position unchanged |
-| **Combat action** (defend, distract, attack, advance, use item, escape, fall back; with a target Enemy participant for distract, attack and advance) | Combat; the action is available in the current state, including its target (see [mechanics.md](mechanics.md#character-actions)) | one Combat Round (see [mechanics.md](mechanics.md#rounds)) |
+| **Combat action** (defend, distract, attack, advance, use item, escape, fall back; with a target participant id for distract, attack and advance) | Combat; the action is available in the current state, including its target (see [mechanics.md](mechanics.md#character-actions)) | one Combat Round (see [mechanics.md](mechanics.md#rounds)) |
+
+A Combat action's target is a participant id of the active Combat. With one surviving participant it may be omitted, and is then that participant; with two it is required for distract, attack and advance. A missing, unknown or defeated target, or a target on an action that takes none, is rejected. A submission rendered before this change (an action without a target, against a single participant) therefore stays valid, and the `step` guard rejects anything older than the current state.
 
 Travel identifies a Connection by its target: every visible Connection to the same target has the same effect. Equip, Unequip and Use item outside Combat each advance `step` and append an inventory Journal entry.
 
@@ -127,12 +131,48 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 
 - **`start-combat: E`**:
   - if E is defeated, it is a no-op: no fight, no victory Outcome, Location view;
-  - otherwise create E's record if absent, set the position to Combat {E, each surviving participant at E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
-- **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round and stores the next Round's Intents. It appends one Combat round entry, which records the actions in resolved order, including dropped and cancelled ones.
+  - otherwise create E's record if absent, add an entry of 0 for each participant without one, set the position to Combat {E, each surviving participant at E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
+- **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round and stores the next Round's Intents. It appends one Combat round entry, which records every action of the Round in order: executed, cancelled, dropped, or not reached because the sequence stopped ([Journal](#journal)).
 - A **rejected** Combat action changes nothing: the round, the Intents and `step` stay as they were.
 - **Victory** (every participant's Damage taken ≥ its Enemy's maximum Health): the Combat ends and a Combat end entry is appended. Then the `victory` Outcome is applied, or, when there is none, an Enemy-defeated notice is appended and the position becomes Location view in the Location where the fight happened.
 - **Escape**: the Combat ends, the Ranges and temporary effects are discarded, the Encounter record keeps each participant's Damage taken, including defeated participants, and the `escape` Outcome is applied.
 - **Character death**: Health 0, then `ended(death Ending)`, appending the Ending entry.
+
+## State versions and migration
+
+Recorded in [ADR 0005](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md).
+
+- The state document carries a **`stateVersion`**. Version 1 is the single-Enemy state (one Damage taken per Encounter id, one Range per Combat). Version 2 is the tactical state described above. A version is a frozen contract: its schema never changes once released.
+- Each stored version is validated **strictly against its own schema**, then migrated one version at a time to the current one, then validated against the current schema. A document with an unknown or newer version is an error, never downgraded or guessed.
+- Migration is a **deterministic** engine function of the stored document and the current Scenario. It draws no randomness, so repeating it gives the same result, and a current document is returned unchanged.
+- It runs when a Playthrough is read (page or action), before the reference check and before `applyAction`. A migrated Playthrough that is compatible is written back with the pin, in the same `step`-guarded update, without advancing `step` and without a Journal entry. An incompatible one is never written back, so it recovers if the content is restored. If a turn commits between the read and the write-back, the fresh row is used instead.
+- The database schema does not change for a state version: the state stays in the `state` JSON column ([architecture.md](architecture.md#persistence)).
+
+### Version 1 to version 2
+
+| Version 1 | Version 2 |
+|---|---|
+| Damage taken `n` for Encounter E | E's record `{ p: n }`, where `p` is E's only participant in the current content |
+| active Combat {E, Range r, round k} | active Combat {E, round k, participant `p`: Range r, an Intent selected now, not prepared, not Wary} |
+| everything else | unchanged |
+
+- The participant id comes from the current content, because version 1 stores no Enemy id. It is unambiguous while E has one participant. If E no longer exists, or now has two participants, the stored Damage cannot be assigned and the Playthrough is **incompatible**. Its read-only views use the parts that need no assignment (Character, inventory, map, Ending) and its Journal.
+- The migrated Combat's Intent is selected by the ordinary rules **without rule 3**: a `heavy` Enemy does not draw to Prepare in this first Round, so the selection needs no randomness. From the end of that Round on, selection is unchanged.
+- Nothing resolves during migration: the Character gets no free action and the Enemy no free attack. The next Combat action resolves round k as an ordinary tactical Round, with the Character's Health, inventory, wounds, round number and `step` as they were. The old Defend bonus expired within its own turn, so nothing of it carries over.
+- Version 1 Playthroughs in other positions (Location view, Scene, ended) only have their Encounter records mapped. A Playthrough whose Scenario has left the collection is not migrated: only its Journal is shown.
+
+Example, a Playthrough in a Combat with the wolf, before and after:
+
+```jsonc
+// version 1
+{ "stateVersion": 1, "step": 41, "encounterDamage": { "hollow-wolf": 3, "camp-bandit": 0 },
+  "activeCombat": { "encounterId": "hollow-wolf", "range": "near", "round": 4 }, … }
+// version 2 (layout illustrative; the contents are normative)
+{ "stateVersion": 2, "step": 41,
+  "encounters": { "hollow-wolf": { "grey-wolf": 3 }, "camp-bandit": { "bandit-archer": 0 } },
+  "activeCombat": { "encounterId": "hollow-wolf", "round": 4,
+    "participants": { "grey-wolf": { "range": "near", "intent": "strike", "prepared": false } } }, … }
+```
 
 ## Journal
 
@@ -157,12 +197,24 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
   | Outcome narration | narration | |
   | state change from an Effect, other than a Flag change | item name, for item changes | kind (item received or lost, Health gained or lost), item id, amount |
   | travel | target Location name | target Location id |
-  | Combat start | opening narration, Enemy name | Encounter id |
-  | Combat round | Enemy name, weapon and item names | Encounter id, round, action, rolls, Damage, Range before and after, guard |
-  | Combat end | Enemy name | Encounter id, how it ended (victory or escape) |
-  | Enemy-defeated notice, when the Encounter has no victory Outcome | Enemy name | Encounter id |
+  | Combat start | opening narration; the name of each participant taking part | Encounter id; the participants taking part, in participant order |
+  | Combat round | participant names, weapon and item names | Encounter id, round; every action of the Round in order (below); how the sequence stopped, if it did (death, victory, escape) |
+  | Combat end | the participant names | Encounter id, how it ended (victory or escape) |
+  | Enemy-defeated notice, when the Encounter has no victory Outcome | the participant names | Encounter id; every participant of the Encounter, in participant order |
   | inventory action outside Combat | item name | kind (equipped, unequipped, used), item id, Health restored |
   | Ending, appended whenever the Playthrough ends, by `end` or by death | title, closing narration | Ending id, kind (victory or defeat) |
+
+### Combat events
+
+- A **participant reference** in an event is the participant id, its Enemy id, the Enemy name as presented and an **ordinal**: its 1-based position among the participants of the same Enemy kind in its Encounter, or none when the kind is unique there. The ordinal lets the Interface Text tell two grey wolves apart without authored names; how it is worded is presentation.
+- Each action of a Combat round records:
+  - its **actor** (the Character or a participant reference), its action or Intent kind and its Speed, in the Round's order;
+  - its **target**, for a targeted Character action (Intents always target the Character);
+  - its **status**: executed; cancelled with a reason (interrupted, target defeated, out of Reach, already Near, none Near); dropped (actor defeated); or not reached (the sequence stopped earlier);
+  - for an executed action, what it did: the roll (both dice, modifier, total, target number, success), Damage dealt and to whom, Range changes (participant, before, after), Health restored and the item used, effects applied (Guarded, Wary with its last round, prepared, a target's Intent interrupted), participants defeated by it, and Escape success;
+  - a **counterattack** reaction inside the action it answers, with its roll, its Damage and any defeat.
+- Display text is not stored in these events, only names as presented ([ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)).
+- **Single-Enemy Combat entries already stored** (`combat-start`, `combat-round`, `combat-end`, `enemy-defeated` with an English `text`, one Range and a `guard` marker) are kept unchanged and shown verbatim, as the legacy rule above says. They are never rewritten into the tactical shape, which would invent Speeds, order and targets they never had. New entries carry the tactical shape under a payload version, so both shapes stay renderable and no stored shape changes. The legacy `guard` marker never drives the tactical Combat panel.
 
 ## Ended Playthroughs
 
@@ -182,6 +234,7 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - An Outcome is applied once, by exactly one step-guarded action. A stale or duplicate submission is rejected.
 - Nothing changes after `ended`.
 - A committed Intent changes only by resolving or being cancelled within its Round; reading, reloading or a rejected action never re-selects it.
+- Migrating a stored state resolves nothing and never advances `step`; migrating it again gives the same state.
 
 ## Sources
 
@@ -195,3 +248,5 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
 - [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (action targets, per-participant Range, stored Wary)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (per-participant Damage taken, Encounter defeat)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (stored tactical Combat, state versions and migration, action targets, Combat events)
+- [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md)

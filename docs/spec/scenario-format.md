@@ -271,18 +271,37 @@ A sequence of items, discriminated by `kind`.
   health: 1-30                 # maximum Health
   damage: 1-6
   reach?: melee | ranged
+  behaviour?: steady | heavy   # default steady; see mechanics.md, Enemy Intents
 ```
 
 ### Encounter catalog
 
 ```yaml
 - id: <id>
-  enemy: <enemy-id>
-  startRange?: near | far
+  enemy: <enemy-id>            # one participant; exactly one of `enemy` and `participants`
+  participants:                # 1-2 participants, in participant order
+    - id?: <participant-id>    # default: the `enemy` id; unique within the Encounter
+      enemy: <enemy-id>
+  startRange?: near | far      # every participant's starting Range
   text: <narration>            # opening narration
   victory?: <Outcome>          # omitted: a brief Enemy-defeated notice, then the Location view
   escape: <Outcome>
 ```
+
+- `enemy: X` is shorthand for `participants: [{ enemy: X }]`, a single participant with id `X`. It is not deprecated. The two spellings are the same Encounter: converting one into the other changes no participant id.
+- A participant id defaults to its `enemy`. Two participants of the same Enemy kind must name explicit, distinct ids:
+
+  ```yaml
+  - id: wolf-pack
+    participants:
+      - { id: wolf-a, enemy: grey-wolf }
+      - { id: wolf-b, enemy: grey-wolf }
+    text: Two grey shapes slip out of the bracken.
+    escape: { text: You run until the howling fades. }
+  ```
+
+- A one-entry `participants` list is valid, for example to give a single participant an id other than its Enemy's.
+- Participants carry no text. On screen and in the Journal a participant is named by its Enemy's `name`; two participants of one kind are told apart by the engine, not by authored names (see [playthrough-state.md](playthrough-state.md#journal)).
 
 ### Character Template catalog
 
@@ -388,7 +407,7 @@ The translatable fields are:
 | Outcome | `text` |
 | item (all kinds) | `name`, `description` |
 | Enemy | `name`, `description` |
-| Encounter | `text` |
+| Encounter | `text` (participants have no text; an Encounter is translated alike in either spelling) |
 | Character Template | `name`, `description` |
 | Ending | `title`, `text` |
 | image | `alt` |
@@ -523,3 +542,4 @@ choices:
 - [Location map: auto-laid-out graph vs author-provided coordinates](https://github.com/lbacik/simple-rpg-engine/issues/11#issuecomment-6099544434) (`map`)
 - [Combat presentation: abstract exchange vs simple grid board](https://github.com/lbacik/simple-rpg-engine/issues/9#issuecomment-6099395150) (`reach`, `startRange`)
 - [Cross-file references in multi-file YAML packages](https://github.com/lbacik/simple-rpg-engine/issues/4) (background: [research notes](../research/multi-file-yaml-references.md))
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (Encounter `participants`, Enemy `behaviour`)

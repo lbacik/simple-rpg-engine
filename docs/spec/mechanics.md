@@ -264,7 +264,7 @@ At the start of a Combat and at the end of each Round, the surviving participant
 3. **Preparing.** A `heavy` Enemy draws one die from the injected random source. On 1–2 it selects Prepare, unless another participant is prepared or has selected Prepare in this same selection; then it does not draw and goes on to rule 4.
 4. **Strike.**
 
-So at most one Heavy attack is ever in preparation, and a second participant never turns a Round into two heavy attacks. Only rule 3 uses randomness: the dice are drawn in participant order after the Round's resolution rolls. Re-entry after an Escape selects from the unprepared state.
+So at most one Heavy attack is ever in preparation, and a second participant never turns a Round into two heavy attacks. Only rule 3 uses randomness: the dice are drawn in participant order after the Round's resolution rolls. Re-entry after an Escape selects from the unprepared state. A Combat carried over from a single-Enemy save selects its first Intents without rule 3 ([playthrough-state.md](playthrough-state.md#state-versions-and-migration)).
 
 ### End of Combat
 
@@ -302,3 +302,4 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (Character actions, per-participant Range, Guarded and Wary)
 - [Enemy intent profiles for tactical one- and two-Enemy Combat](https://github.com/lbacik/simple-rpg-engine/issues/79) (Behaviours, Intent vocabulary, selection)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, individual wounds, partial victory)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (migrated Combat's first Intents)

@@ -10,7 +10,7 @@ The Character is always in exactly one Location. At any moment play is in one of
 
 - **Location view**: the Location's description, its visible Connections and its available on-demand Scenes;
 - **Scene active**: a Scene's narration and its visible Choices;
-- **Combat**: a fight with one Encounter's Enemy;
+- **Combat**: a fight with the surviving participants of one Encounter;
 - **Ended**: the Playthrough has reached an Ending.
 
 ## Scenario start
@@ -148,3 +148,4 @@ An on-enter Scene that starts a fight is once-only by default, so after an escap
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (empty Outcome, follow-on Scenes without `when`, `next` only to follow-on Scenes)
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (re-offering pattern)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, `defeated`)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (Combat position)

@@ -99,6 +99,7 @@ Files present in the directory but not listed produce no diagnostic.
 | `schema/when-on-follow-on` | A Scene without `trigger` has `when`. |
 | `schema/condition-bounds` | An `attribute` or `health` Condition has zero bounds or both. |
 | `schema/empty-combinator` | An `all` or `any` list is empty. |
+| `schema/encounter-enemies` | An Encounter has both `enemy` and `participants`, or neither. |
 | `schema/weapon-only-field` | `reach` or `damage` on an item that is not a weapon, or a weapon without `damage`. |
 | `schema/invalid-language` | `language` is not a valid BCP 47 tag (checked with `Intl.getCanonicalLocales`). |
 | `schema/narration-brace` | A `{` in narration other than in `{name}`. |
@@ -110,8 +111,8 @@ Ranges and shapes checked under `schema/invalid-value` and `schema/missing-field
 - **Character Template**: base Attributes integers 0–3, all four present; starting item `quantity` ≥ 1.
 - **Equipment**: `slot` `weapon` | `outfit` | `talisman`; `bonus` an Attribute; weapon `reach` `melee` | `ranged`; `melee` weapon `damage` 2–4, `ranged` weapon `damage` 2–3.
 - **Consumable**: `heal` 1–12.
-- **Enemy**: Attributes integers 0–3, all four present; `health` 1–30; `damage` 1–6; `reach` `melee` | `ranged`.
-- **Encounter**: `escape` present; `startRange` `near` | `far`.
+- **Enemy**: Attributes integers 0–3, all four present; `health` 1–30; `damage` 1–6; `reach` `melee` | `ranged`; `behaviour` `steady` | `heavy`.
+- **Encounter**: `escape` present; `startRange` `near` | `far`; `participants` a list of 1–2 entries, each with `enemy`.
 - **Ending**: `kind` `victory` | `defeat`.
 - **Effects**: `heal` and `damage` 1–12; `give-item` and `take-item` `quantity` ≥ 1, no upper bound.
 - **Conditions**: `has.atLeast` ≥ 1; `attribute` `atLeast` 1–5 or `atMost` 0–4; `health` `atLeast` 2–12 or `atMost` 1–11.
@@ -125,14 +126,15 @@ Optional text fields (Connection `label`, item, Enemy and Template `description`
 
 | Code | Rule |
 |---|---|
-| `ref/invalid-id` | An ID does not match `[a-z][a-z0-9-]*`. |
+| `ref/invalid-id` | An ID, including a participant ID, does not match `[a-z][a-z0-9-]*`. |
 | `ref/duplicate-id` | Two entities of the same type share an ID within the Scenario. |
 | `ref/duplicate-choice-id` | Two Choices of one Scene share an ID. |
+| `ref/duplicate-participant-id` | Two participants of one Encounter share an ID, whether explicit or defaulted from `enemy` (two participants of the same Enemy kind without explicit IDs). The message suggests explicit IDs. |
 | `ref/duplicate-connection-target` | Two Connections of one Location have the same `to`. (A Translation keys Connection `label`s by `to`.) |
 | `ref/unknown-location` | A reference to a Location that does not exist: `startLocation`, Connection `to`, `move`, `reveal`, `visited`. |
 | `ref/unknown-scene` | A reference to a Scene that does not exist: Location `scenes`, `next`, `fired`. |
 | `ref/unknown-item` | A reference to an item that does not exist: Template `items`, `give-item`, `take-item`, `has`. |
-| `ref/unknown-enemy` | An Encounter's `enemy` does not exist. |
+| `ref/unknown-enemy` | An Encounter's `enemy`, or a participant's `enemy`, does not exist. |
 | `ref/unknown-encounter` | `start-combat` or `defeated` names an Encounter that does not exist. |
 | `ref/unknown-ending` | `deathEnding` or `end` names an Ending that does not exist. |
 | `ref/unknown-image` | `illustration` names an image that is not declared. |
@@ -193,7 +195,7 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 | `play/flag-never-read` **(W)** | A Flag is set but never used in a Condition. |
 | `play/item-never-obtainable` **(W)** | An item is in no Template and given by no `give-item`. |
 | `play/key-item-unused` **(W)** | A Key Item is used in no Condition. |
-| `play/enemy-unused` **(W)** | An Enemy has no Encounter. |
+| `play/enemy-unused` **(W)** | An Enemy is a participant of no Encounter. |
 | `play/image-unused` **(W)** | A declared image is referenced by no Scene. |
 | `play/missing-map-coordinates` **(W)** | A Location has no `map`. |
 | `play/map-too-close` **(W)** | Two Locations' `map` points are less than 5 units apart (Euclidean). |
@@ -264,3 +266,4 @@ Translations have two reference fixtures of their own, `two-bridges` and `stara-
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (rule catalog changes, death Ending, the "not defeated" and `next` warning definitions)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (image rules)
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (walk-through)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (participant diagnostics)
