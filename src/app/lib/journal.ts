@@ -33,6 +33,12 @@ export type JournalEntryView = {
   payload: unknown;
 };
 
+/** A stored Journal row as the batch renderers read it: the entry plus its sequence position. */
+export type StoredJournalEntry = JournalEntryView & {
+  seq: number;
+  step: number;
+};
+
 /** The entry's recorded language, defaulting to English for legacy rows. */
 function entryLang(lang: unknown): string {
   return typeof lang === 'string' && lang !== '' ? lang : 'en';
@@ -118,7 +124,7 @@ export function newestJournalBatch<T extends { seq: number }>(
  * screens, which all open the same modal.
  */
 export function modalJournalBatch(
-  entries: ReadonlyArray<{ seq: number; step: number; type: string; lang?: unknown; payload: unknown }>,
+  entries: ReadonlyArray<StoredJournalEntry>,
   catalogue: Catalogue,
   characterName: string,
 ): { entries: RenderedJournalEntry[]; nextCursor: number | null; total: number } {
@@ -152,13 +158,7 @@ export type JournalBatchResponse = {
  * appends what this returns, on first paint and for every older batch.
  */
 export function renderJournalEntries(
-  entries: ReadonlyArray<{
-    seq: number;
-    step: number;
-    type: string;
-    lang?: unknown;
-    payload: unknown;
-  }>,
+  entries: ReadonlyArray<StoredJournalEntry>,
   catalogue: Catalogue,
   characterName: string,
 ): RenderedJournalEntry[] {
