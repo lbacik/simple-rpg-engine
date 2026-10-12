@@ -47,8 +47,12 @@ A named true/false fact an author sets and checks to remember what has happened 
 _Avoid_: Variable, switch
 
 **Encounter**:
-A named, single placement of an Enemy in a Scenario, with its own opening narration and Outcomes for victory and escape.
+A named placement of one or two Enemies in a Scenario, as its Participants, with its own opening narration and Outcomes for victory and escape; it is defeated when every Participant is.
 _Avoid_: Fight, battle instance
+
+**Participant**:
+One placement of an Enemy in an Encounter, with its own identity within that Encounter, its own wounds and its own defeat.
+_Avoid_: Enemy instance, combatant, foe, slot
 
 **Ending**:
 A Scenario-defined conclusion of a Playthrough, either a victory or a defeat; every Scenario has one defeat Ending for the Character's death.
@@ -139,15 +143,15 @@ A reusable Scenario-defined kind of opponent with the same four Attributes as a 
 _Avoid_: Monster, mob
 
 **Combat**:
-A fight between the Character and one Enemy, ending in death or the Character's escape.
+A fight between the Character and the surviving Participants of one Encounter, ending in victory, death or the Character's escape.
 _Avoid_: Battle
 
 **Round**:
-One exchange of a Combat in which the Character takes one action and every surviving Enemy carries out its Intent, all resolved in order of Speed and then Agility.
+One exchange of a Combat in which the Character takes one action and every surviving Participant carries out its Intent, all resolved in order of Speed and then Agility.
 _Avoid_: Turn, initiative pass
 
 **Intent**:
-The action an Enemy has committed to for the current Round, chosen and shown before the Character acts; it resolves as shown or is cancelled, never swapped.
+The action a Participant has committed to for the current Round, chosen and shown before the Character acts; it resolves as shown or is cancelled, never swapped.
 _Avoid_: Telegraph, plan, enemy move
 
 **Behaviour**:
@@ -159,7 +163,7 @@ Whether a Combat action or Intent resolves early, in the middle or late in a Rou
 _Avoid_: Initiative, tempo
 
 **Range**:
-The current distance between the Character and one Enemy during a Combat: either Near or Far; with two Enemies, each has its own Range.
+The current distance between the Character and one Participant during a Combat: either Near or Far; each Participant has its own.
 _Avoid_: Zone, distance
 
 **Reach**:

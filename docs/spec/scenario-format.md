@@ -221,7 +221,7 @@ A one-key mapping.
 flag: <flag-id>                # the Flag is true
 visited: <location-id>         # the Location has been entered
 fired: <scene-id>              # the Scene has been activated
-defeated: <encounter-id>       # the Encounter's Enemy is dead
+defeated: <encounter-id>       # every participant of the Encounter is dead
 has: { item: <item-id>, atLeast?: <integer ≥ 1> }
 attribute: { name: <attribute>, atLeast: 1-5 | atMost: 0-4 }  # effective value
 health: { atLeast: 2-12 | atMost: 1-11 }                       # current Health

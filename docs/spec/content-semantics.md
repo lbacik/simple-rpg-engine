@@ -107,17 +107,17 @@ Conditions are structured predicates combined with `all`, `any` and `not`. There
 | `health: { atLeast \| atMost }` | current Health meets the bound |
 | `visited: L` | the Location has been entered at least once |
 | `fired: S` | the Scene has been activated at least once |
-| `defeated: E` | the Encounter's Enemy has been killed |
+| `defeated: E` | every participant of the Encounter has been killed |
 
 Conditions are evaluated live: when rendering a view and again when an action is submitted. Author-defined state is Flags only; there are no counters.
 
 ## Encounters and Combat
 
-An **Enemy** is a reusable definition. An **Encounter** is a named placement of one Enemy, with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Encounter identity carries the wound persistence rules from [mechanics.md](mechanics.md#persistence-of-wounds).
+An **Enemy** is a reusable definition. An **Encounter** is a named placement of one or two Enemies as **participants** (see [mechanics.md](mechanics.md#participants)), with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Each participant carries its own wounds under the persistence rules in [mechanics.md](mechanics.md#persistence-of-wounds).
 
-- `start-combat: E` on an Encounter that is **not defeated** starts a Combat at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; the Enemy keeps its wounds.
+- `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; each surviving participant keeps its wounds, and a participant defeated earlier does not return.
 - `start-combat: E` on an Encounter that is **already defeated** is a **no-op**: no fight, the victory Outcome is not applied again, play returns to the Location view.
-- **Victory** applies the `victory` Outcome. Without one, the engine shows a brief **Enemy-defeated notice**, and play returns to the Location view of the Location where the fight happened.
+- **Victory** (the last participant defeated) applies the `victory` Outcome. Defeating one of two participants is not a victory and applies nothing. Without one, the engine shows a brief **Enemy-defeated notice**, and play returns to the Location view of the Location where the fight happened.
 - **Escape** applies the `escape` Outcome.
 - **Character death** is not an Encounter Outcome. It always ends the Playthrough on the Scenario's death Ending.
 
@@ -147,3 +147,4 @@ An on-enter Scene that starts a fight is once-only by default, so after an escap
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109) (implicit Continue when every Choice is hidden)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (empty Outcome, follow-on Scenes without `when`, `next` only to follow-on Scenes)
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (re-offering pattern)
+- [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, `defeated`)
