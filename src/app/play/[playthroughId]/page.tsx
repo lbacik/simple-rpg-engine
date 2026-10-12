@@ -31,6 +31,10 @@ import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes'
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { ResultPanel } from './result-panel';
+import { cookies } from 'next/headers';
+// PROTOTYPE — throwaway Combat panel variants (see _combat-prototype/).
+import { COMBAT_VARIANTS, VariantA, VariantB, VariantC } from './_combat-prototype/variants';
+import { PrototypeSwitcher, VARIANT_COOKIE } from './_combat-prototype/switcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -730,10 +734,15 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ playthroughId: string }>;
-  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string }>;
+  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string; variant?: string }>;
 }) {
   const { playthroughId } = await params;
-  const { notice, tab: tabParam, unknown } = await searchParams;
+  const { notice, tab: tabParam, unknown, variant: variantParam } = await searchParams;
+  // PROTOTYPE: ?variant= wins, then the cookie the switcher sets (the Combat
+  // action redirect drops the query string).
+  const variantCookie = (await cookies()).get(VARIANT_COOKIE)?.value;
+  const protoVariant =
+    COMBAT_VARIANTS.find((v) => v.key === (variantParam ?? variantCookie))?.key ?? 'current';
   const tab = parsePanelTab(tabParam);
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
@@ -993,14 +1002,30 @@ export default async function PlayPage({
               )}
             </>
           ) : gameView.kind === 'combat' ? (
-            <CombatPanel
-              combat={gameView}
-              playthroughId={playthrough.id}
-              step={playthrough.step}
-              guardUp={guardUp}
-              rounds={combatLog}
-              consumables={combatConsumables}
-            />
+            (() => {
+              const props = {
+                combat: gameView,
+                playthroughId: playthrough.id,
+                step: playthrough.step,
+                guardUp,
+                rounds: combatLog,
+                consumables: combatConsumables,
+              };
+              return (
+                <>
+                  {protoVariant === 'A' ? (
+                    <VariantA {...props} />
+                  ) : protoVariant === 'B' ? (
+                    <VariantB {...props} />
+                  ) : protoVariant === 'C' ? (
+                    <VariantC {...props} />
+                  ) : (
+                    <CombatPanel {...props} />
+                  )}
+                  <PrototypeSwitcher variants={COMBAT_VARIANTS} current={protoVariant} />
+                </>
+              );
+            })()
           ) : (
             <>
               <EndingBlock
