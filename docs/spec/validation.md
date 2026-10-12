@@ -254,8 +254,11 @@ Structural drift is already an error: a Scene, Choice or optional field added to
 
 [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/) has been walked through every phase by hand and passes with **no errors and no warnings**. It is the reference fixture for the validator's tests; invalid fixtures are written alongside the validator.
 
+Translations have two reference fixtures of their own, `two-bridges` and `stara-studnia` in `tests/fixtures/scenarios/`, which must also pass with no diagnostics. Invalid and stale Translations are derived from them in the tests ([architecture.md](architecture.md#testing-strategy)).
+
 ## Sources
 
+- [Test strategy for two languages](https://github.com/lbacik/simple-rpg-engine/issues/91) (Translation reference fixtures)
 - [Translation validation and staleness](https://github.com/lbacik/simple-rpg-engine/issues/58) (Translations, scoped rejection, `baseVersion`)
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (rule catalog changes, death Ending, the "not defeated" and `next` warning definitions)

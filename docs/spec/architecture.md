@@ -157,8 +157,19 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - **Engine**: unit tests of the pure functions with a deterministic RNG. The example Scenario is a fixture. Tests assert structured events, not wording.
 - **Interface Text**: the catalogue key-parity test, the plural helper (Polish `one`/`few`/`many`/`other` boundaries such as 1, 2, 5, 12, 22, 25, 112), and the `Accept-Language` matcher (`pl-PL,pl;q=0.9,en;q=0.8` → `pl`, `de-DE,pl;q=0.5` → `pl`, `pl;q=0,en;q=0.1` → `en`, `*`, malformed and missing headers → `en`).
 - **Loader and validator**: valid and invalid fixture packages; the example Scenario must produce no diagnostics.
+- **Translations**: two small fixture Scenarios, kept in `tests/fixtures/scenarios/` (outside `scenarios/`, so they are never shipped), serve both the unit and the end-to-end tests. Both must produce no diagnostics.
+  - `two-bridges`: Base Language `en` with a complete `pl` Translation. It has at least one of every kind of translatable field ([Translation files](scenario-format.md#translation-files)), Illustration `alt` included, so the overlay is checked for each kind and every mutation below has a target.
+  - `stara-studnia`: Base Language `pl` with an `en` Translation, minimal (two Locations, a Scene with a Choice, an Ending). It covers fallback to a Base Language other than English.
+  - Invalid and stale variants are not separate packages: a test copies a fixture to a temporary directory and changes one file.
+  - Validation: one test per `translation/*` code ([validation.md](validation.md#translations)); a rejected Translation leaves the Scenario valid and shown in its Base Language, while another valid Translation of it stays available (except under `translation/duplicate-language`); a `translation/stale` Translation is still shown; changing Translation text changes the content hash.
+  - Selection: a Translation is chosen by primary language subtag (`en-US` selects an `en` Translation).
+  - Journal: rows stored before Interface Languages existed are seeded through the persistence port and rendered verbatim in English with a catalogue type label.
+- **Interface Text rendering**: a table test with one example of every structured event kind the engine emits, rendered with both catalogues; each result is non-empty and contains no `undefined`, `NaN` or `{`. There are no snapshots of whole texts; wording is reviewed by a person against the [term table](ui.md#polish-terms).
 - **Persistence**: port tests against in-memory SQLite, including a race test: two actions with the same `step`, exactly one succeeds.
-- **End to end**: one Playwright smoke test: start a Playthrough, take one Choice, reload.
+- **End to end**: Playwright against a production build, with a temporary Scenario directory holding the shipped Scenarios and both Translation fixtures.
+  - The smoke test: start a Playthrough, take one Choice, reload.
+  - The Interface Language: a first visit with `Accept-Language: pl-PL` is in Polish; a switch in the language menu survives a reload; a switch also works with JavaScript disabled (one test); the collection groups and each card's language flags; the fallback badge on the game screen; a switch mid-Playthrough followed by the Journal, where earlier narration stays in its language with a flag and Interface Text is in the new language.
+  - Which language is shown is asserted through `<html lang>` and the `lang` of elements holding Scenario text. Where visible text matters, it is written in the test, not imported from the catalogue.
 
 ## Sources
 
@@ -170,3 +181,4 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (catalogue, Interface Language resolution, the engine's structured output)
 - [i18n approach for the Next.js 16 App Router](https://github.com/lbacik/simple-rpg-engine/issues/59) (research)
 - [ADR 0003: the engine emits no Interface Text](../adr/0003-interface-text-from-a-typed-catalogue.md)
+- [Test strategy for two languages](https://github.com/lbacik/simple-rpg-engine/issues/91) (Translation fixtures, Interface Text rendering, language end-to-end tests)
