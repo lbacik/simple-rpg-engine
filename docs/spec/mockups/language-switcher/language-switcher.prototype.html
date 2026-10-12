@@ -1,0 +1,451 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. A spec mockup for docs/spec/ui.md; not application code, never import into src/.
+  Question (lbacik/simple-rpg-engine#62, "Language switcher and availability UX"):
+    - where the Interface Language switcher lives and how it looks on desktop and phone;
+    - how the collection (/) and Character creation show whether a Scenario has a Translation
+      for the current Interface Language;
+    - what the game screen shows when the language is switched mid-Playthrough.
+  Three variants, switchable via `?variant=A|B|C`, the bottom bar or the arrow keys:
+    A  Header toggle   — EN | PL segmented toggle in the top nav; a badge only where a Scenario falls back;
+                         a transient notice after a switch.
+    B  Language menu   — a "language" disclosure menu in the top nav; the collection grouped by availability
+                         with flag icons for the languages; a persistent fallback chip on the game screen; flags in the Journal.
+                         (Review 2026-10-12: B chosen, with flags as icons instead of text codes. Flags are inline SVG,
+                         not emoji: Windows renders flag emoji as letters.)
+    C  Footer & ask    — the switcher in the footer; a first-visit banner while the language is only negotiated;
+                         a list with a language column; a confirmation step before a switch during play.
+  VERDICT: variant B chosen, with flag icons (inline SVG, UK flag for English) instead of text codes:
+  flag + name in the menu (flag only on phone), all Scenario languages as flags with the shown one ringed,
+  the collection grouped by availability, a fallback badge on the game screen, flags in the Journal, no notice
+  after a switch. docs/spec/ui.md is normative; the resolution comment on lbacik/simple-rpg-engine#62 records it.
+  Fixture data: The Whispering Woods has an illustrative Polish Translation (not real content);
+  The Drowned Ledger has none; "Wieża Kruka" is an invented Polish-only Scenario that shows the fallback
+  the other way round. All state is in memory; reload resets it. The Polish copy is draft UI copy.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Language Switcher Prototype</title>
+<style>
+:root {
+  --paper: #faf7f0; --ink: #2a251d; --muted: #6f6455; --rule: #ddd2bd; --accent: #5a4a2f;
+  --card: #fffdf8; --soft: #f1ebdd; --warn: #8a5a12;
+  --bar: #1d1d1f; --bar-ink: #ffffff; --tool: #2b2b2f; --tool-ink: #ececee; --tool-line: #45454c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #d9d4c8; color: var(--ink); }
+
+/* ---------- Prototype chrome (not part of the design) ---------- */
+.proto { font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.toolbar { position: sticky; top: 0; z-index: 20; background: var(--tool); color: var(--tool-ink); display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 8px 14px; }
+.toolbar .grp { display: flex; gap: 4px; align-items: center; }
+.toolbar .lbl { color: #a9a9b2; margin-right: 4px; }
+.toolbar button { font: inherit; color: var(--tool-ink); background: transparent; border: 1px solid var(--tool-line); border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+.toolbar button.on { background: var(--tool-ink); color: var(--tool); }
+.toolbar select { font: inherit; background: var(--tool); color: var(--tool-ink); border: 1px solid var(--tool-line); border-radius: 6px; padding: 3px 6px; }
+.stage { padding: 18px 14px 120px; display: flex; gap: 18px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+.frame { background: var(--paper); border: 1px solid #b9b2a3; box-shadow: 0 6px 24px rgba(0,0,0,.12); width: min(1100px, 100%); min-height: 560px; container-type: inline-size; container-name: app; overflow: hidden; display: flex; flex-direction: column; }
+.frame.phone { width: 390px; border-radius: 22px; }
+.inspector { width: 290px; background: var(--tool); color: var(--tool-ink); border-radius: 10px; padding: 12px 14px; }
+.inspector h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #a9a9b2; }
+.inspector dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 10px; }
+.inspector dt { color: #a9a9b2; }
+.inspector dd { margin: 0; }
+.inspector p { margin: 6px 0; color: #c9c9d0; }
+.inspector .changed { background: #4a3f12; border-radius: 3px; padding: 0 4px; }
+.switcher { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px; background: var(--bar); color: var(--bar-ink); border-radius: 999px; padding: 6px 8px; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.switcher button { font: 16px/1 sans-serif; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #3a3a3e; color: #fff; cursor: pointer; }
+.switcher span { min-width: 210px; text-align: center; }
+
+/* ---------- The app (mirrors src/app/globals.css) ---------- */
+.app { font-family: Georgia, 'Times New Roman', serif; line-height: 1.6; color: var(--ink); flex: 1; display: flex; flex-direction: column; }
+.app a { color: var(--accent); cursor: pointer; }
+.app main { width: 100%; max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; flex: 1; }
+.topnav { border-bottom: 1px solid var(--rule); background: var(--card); }
+.topnav nav { max-width: 72rem; margin: 0 auto; padding: 0.6rem 1rem; display: flex; gap: 1.25rem; align-items: center; }
+.topnav .spacer { flex: 1; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; list-style: none; padding: 0; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 0.5rem; padding: 1rem 1.1rem; position: relative; }
+.card h2, .card h3 { margin: 0 0 0.4rem; font-size: 1.25rem; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+.button { display: inline-block; background: var(--accent); color: #fff !important; border: none; border-radius: 0.35rem; padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; text-decoration: none; font-family: inherit; }
+.button.secondary { background: transparent; color: var(--accent) !important; border: 1px solid var(--accent); }
+.app input[type=text] { width: 100%; max-width: 24rem; padding: 0.5rem; font: inherit; border: 1px solid var(--rule); border-radius: 0.35rem; background: #fff; }
+.app label { display: block; margin: 0.75rem 0 0.25rem; font-weight: bold; }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 1.5rem; align-items: start; }
+.reading h1 { font-size: 1.8rem; margin: 0 0 0.25rem; }
+.exits { display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; }
+.side { border: 1px solid var(--rule); border-radius: 0.5rem; background: var(--card); padding: 1rem; }
+.side h2 { font-size: 1.05rem; margin: 0.75rem 0 0.25rem; }
+.side h2:first-child { margin-top: 0; }
+.mapbox { height: 120px; border: 1px solid var(--rule); border-radius: .35rem; background: var(--paper); display: grid; place-items: center; color: var(--muted); font-size: .85rem; }
+.compact-summary { display: none; border: 1px solid var(--rule); border-radius: .5rem; background: var(--card); padding: .6rem .9rem; margin-bottom: 1rem; }
+.notice { border-left: 3px solid var(--accent); background: var(--card); padding: 0.6rem 1rem; margin: 0 0 1rem; border-radius: 0 0.35rem 0.35rem 0; display: flex; gap: 1rem; justify-content: space-between; align-items: start; }
+.notice button { background: none; border: 0; font: inherit; color: var(--muted); cursor: pointer; }
+.journal { list-style: none; padding: 0; }
+.journal li { border-top: 1px solid var(--rule); padding: .55rem 0; }
+.journal .type { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+footer.appfoot { border-top: 1px solid var(--rule); background: var(--card); }
+footer.appfoot div { max-width: 72rem; margin: 0 auto; padding: .7rem 1rem; display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; color: var(--muted); font-size: .9rem; }
+
+/* Variant A — header toggle */
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; font-size: .85rem; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: .1rem .65rem; cursor: pointer; letter-spacing: .04em; }
+.seg button[aria-pressed=true] { background: var(--accent); color: #fff; }
+.badge { display: inline-block; font-size: .75rem; line-height: 1.3; padding: .1rem .5rem; border-radius: 999px; background: var(--soft); color: var(--warn); border: 1px solid #e3d3b2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .01em; }
+.card .badge.corner { position: absolute; top: .8rem; right: .9rem; }
+.card.has-corner h2 { padding-right: 6.5rem; }
+
+/* Variant B — language menu, groups, chips */
+details.langmenu { position: relative; font-size: .9rem; }
+details.langmenu summary { list-style: none; cursor: pointer; color: var(--accent); border: 1px solid var(--rule); border-radius: .35rem; padding: .1rem .55rem; }
+details.langmenu summary::-webkit-details-marker { display: none; }
+details.langmenu .menu { position: absolute; right: 0; top: calc(100% + 4px); background: var(--card); border: 1px solid var(--rule); border-radius: .4rem; box-shadow: 0 6px 18px rgba(0,0,0,.1); padding: .3rem; min-width: 11rem; z-index: 5; }
+details.langmenu .menu button { display: flex; width: 100%; justify-content: space-between; font: inherit; background: none; border: 0; padding: .35rem .6rem; border-radius: .3rem; cursor: pointer; color: var(--ink); text-align: left; }
+details.langmenu .menu button:hover { background: var(--soft); }
+details.langmenu .menu .hint { font-size: .78rem; color: var(--muted); padding: .3rem .6rem 0; border-top: 1px solid var(--rule); margin-top: .3rem; }
+.chips { display: inline-flex; gap: .3rem; vertical-align: middle; }
+.chip { font: 600 .7rem/1 -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: .05em; padding: .25rem .4rem; border-radius: .25rem; border: 1px solid var(--rule); color: var(--muted); }
+.chip.current { background: var(--accent); border-color: var(--accent); color: #fff; }
+.group-note { color: var(--muted); margin: -.4rem 0 .6rem; }
+.lang-chip { display: inline-block; margin-left: .4rem; vertical-align: middle; }
+.flag { display: inline-block; width: 1.35em; height: .9em; vertical-align: -0.08em; border-radius: 2px; box-shadow: 0 0 0 1px rgba(42,37,29,.25); overflow: hidden; }
+.flag svg { display: block; width: 100%; height: 100%; }
+.flags { display: inline-flex; gap: .35rem; vertical-align: middle; align-items: center; }
+.flags .flag { opacity: .45; }
+.flags .flag.current { opacity: 1; box-shadow: 0 0 0 1px rgba(42,37,29,.25), 0 0 0 3px var(--card), 0 0 0 4px var(--accent); }
+details.langmenu .menu button span:first-child { display: inline-flex; gap: .5rem; align-items: center; }
+details.langmenu summary { display: inline-flex; gap: .4rem; align-items: center; }
+
+/* Variant C — footer, banner, list, confirm */
+.banner { background: var(--soft); border-bottom: 1px solid var(--rule); }
+.banner div { max-width: 72rem; margin: 0 auto; padding: .55rem 1rem; display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; font-size: .95rem; }
+.banner .button { padding: .2rem .7rem; font-size: .9rem; }
+.rows { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--rule); }
+.rows li { display: grid; grid-template-columns: minmax(0, 1fr) 11rem auto; gap: .5rem 1.2rem; align-items: center; padding: .9rem 0; border-bottom: 1px solid var(--rule); }
+.rows h2 { font-size: 1.15rem; margin: 0; }
+.rows p { margin: .15rem 0 0; }
+.rows .lang { font-size: .9rem; }
+.rows .lang .muted, .muted { color: var(--muted); }
+.footswitch button { font: inherit; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.footswitch b { color: var(--ink); }
+.confirm { border: 1px solid var(--rule); background: var(--card); border-radius: .5rem; padding: 1rem 1.1rem; max-width: 34rem; }
+.confirm h1 { font-size: 1.3rem; margin: 0 0 .5rem; }
+.confirm .row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+.infobox { border: 1px dashed var(--rule); border-radius: .4rem; padding: .5rem .8rem; color: var(--muted); font-size: .95rem; margin: .8rem 0; }
+
+/* Phone (the frame, not the window: container queries) */
+@container app (max-width: 46rem) {
+  .game { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  .compact-summary { display: block; }
+  .topnav nav { gap: .8rem; font-size: .95rem; }
+  .rows li { grid-template-columns: minmax(0, 1fr); }
+  .card.has-corner h2 { padding-right: 0; }
+  .card .badge.corner { position: static; margin-bottom: .4rem; }
+  .hide-phone { display: none; }
+}
+@container app (min-width: 46.01rem) { .only-phone { display: none; } }
+</style>
+</head>
+<body>
+<div class="proto toolbar" id="toolbar"></div>
+<div class="stage">
+  <div class="frame" id="frame"><div class="app" id="app"></div></div>
+  <aside class="proto inspector" id="inspector"></aside>
+</div>
+<div class="proto switcher" id="switcher">
+  <button id="prev" aria-label="Previous variant">‹</button><span id="vlabel"></span><button id="next" aria-label="Next variant">›</button>
+</div>
+<script>
+const VARIANTS = { A: 'Header toggle', B: 'Language menu', C: 'Footer & ask' };
+const KEYS = Object.keys(VARIANTS);
+const NATIVE = { en: 'English', pl: 'Polski' };
+// Inline SVG flags (English: the UK flag; one flag per Interface Language, decorative next to a name
+// or labelled with the language name when it stands alone).
+const FLAG_SVG = {
+  en: '<svg viewBox="0 0 60 30" preserveAspectRatio="none"><clipPath id="uk"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#uk)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg>',
+  pl: '<svg viewBox="0 0 16 10" preserveAspectRatio="none"><rect width="16" height="5" fill="#fff"/><rect y="5" width="16" height="5" fill="#DC143C"/></svg>',
+};
+const flag = (l, label, cls = '') => `<span class="flag ${cls}" ${label ? `role="img" aria-label="${label}" title="${label}"` : 'aria-hidden="true"'}>${FLAG_SVG[l]}</span>`;
+
+// ---------- Interface Text catalogue (draft copy) ----------
+const T = {
+  en: {
+    scenarios: 'Scenarios', mine: 'My Playthroughs', newPt: 'New Playthrough', templates: 'Character Templates',
+    begin: 'Begin', name: 'Name', start: 'Start', journal: 'Journal', map: 'Map', character: 'Character', health: 'Health',
+    attrs: ['Might', 'Agility', 'Wits', 'Presence'], language: 'Language',
+    langName: { en: 'English', pl: 'Polish' }, inLang: { en: 'In English', pl: 'In Polish' },
+    notTranslated: (scn, ui) => `Not translated into ${T.en.langName[ui]}. Shown in ${T.en.langName[scn]}.`,
+    original: 'original', translation: 'translation', noTranslation: 'no translation',
+    groupHere: (ui) => `In ${T.en.langName[ui]}`, groupOther: 'In other languages',
+    groupOtherNote: (ui) => `These Scenarios are not translated into ${T.en.langName[ui]} yet. You play them in their original language.`,
+    switched: (ui) => `Language: ${NATIVE[ui]}. Journal entries keep the language they were shown in.`,
+    switchedFallback: (ui, scn) => `Language: ${NATIVE[ui]}. This Scenario has no ${T.en.langName[ui]} translation, so its text stays in ${T.en.langName[scn]}.`,
+    dismiss: 'Dismiss', scenarioText: 'Scenario text', interface: 'Interface',
+    negotiated: (ui) => `We picked ${NATIVE[ui]} from your browser settings.`, keep: (ui) => `Keep ${NATIVE[ui]}`,
+    confirmTitle: (to) => `Switch to ${NATIVE[to]}?`,
+    confirmBody: (to, scnLang) => scnLang === to
+      ? `Menus, messages and this Scenario's text change to ${T.en.langName[to]} now. Narration already in the Journal stays in the language you read it in.`
+      : `Menus and messages change to ${T.en.langName[to]}. This Scenario has no ${T.en.langName[to]} translation, so its text stays in ${T.en.langName[scnLang]}.`,
+    confirm: 'Switch', cancel: 'Keep playing', footLang: 'Language',
+    exitsLabel: 'Exits', youAreHere: 'You are here', back: 'Back to the game',
+    jIntro: 'Intro', jTravel: 'Travel', jNarr: 'Narration', jItem: 'Item',
+    travelMsg: (n) => `You travel to: ${n}`, itemMsg: (n) => `Received: ${n} × 2`,
+    shownIn: (l) => `Text: ${T.en.langName[l]}`,
+  },
+  pl: {
+    scenarios: 'Scenariusze', mine: 'Moje rozgrywki', newPt: 'Nowa rozgrywka', templates: 'Szablony postaci',
+    begin: 'Początek', name: 'Imię', start: 'Zacznij', journal: 'Dziennik', map: 'Mapa', character: 'Postać', health: 'Zdrowie',
+    attrs: ['Krzepa', 'Zręczność', 'Spryt', 'Prezencja'], language: 'Język',
+    langName: { en: 'angielski', pl: 'polski' }, inLang: { en: 'Po angielsku', pl: 'Po polsku' },
+    notTranslated: (scn, ui) => `Brak tłumaczenia na język ${T.pl.langName[ui]}. Tekst w języku: ${T.pl.langName[scn]}.`,
+    original: 'oryginał', translation: 'tłumaczenie', noTranslation: 'brak tłumaczenia',
+    groupHere: (ui) => T.pl.inLang[ui], groupOther: 'W innych językach',
+    groupOtherNote: () => 'Te scenariusze nie mają jeszcze polskiego tłumaczenia. Grasz w nie w oryginale.',
+    switched: (ui) => `Język: ${NATIVE[ui]}. Wpisy w Dzienniku zostają w języku, w którym je wyświetlono.`,
+    switchedFallback: (ui, scn) => `Język: ${NATIVE[ui]}. Ten scenariusz nie ma polskiego tłumaczenia, więc jego tekst zostaje w języku: ${T.pl.langName[scn]}.`,
+    dismiss: 'Zamknij', scenarioText: 'Tekst scenariusza', interface: 'Interfejs',
+    negotiated: (ui) => `Wybraliśmy język ${T.pl.langName[ui]} na podstawie ustawień przeglądarki.`, keep: (ui) => `Zostaw: ${NATIVE[ui]}`,
+    confirmTitle: (to) => `Zmienić język na: ${NATIVE[to]}?`,
+    confirmBody: (to, scnLang) => scnLang === to
+      ? 'Menu, komunikaty i tekst tego scenariusza zmienią język od razu. Narracja zapisana już w Dzienniku zostaje w języku, w którym ją czytałeś.'
+      : `Menu i komunikaty zmienią język. Ten scenariusz nie ma tłumaczenia, więc jego tekst zostaje w języku: ${T.pl.langName[scnLang]}.`,
+    confirm: 'Zmień', cancel: 'Graj dalej', footLang: 'Język',
+    exitsLabel: 'Wyjścia', youAreHere: 'Jesteś tutaj', back: 'Wróć do gry',
+    jIntro: 'Wstęp', jTravel: 'Podróż', jNarr: 'Narracja', jItem: 'Przedmiot',
+    travelMsg: (n) => `Podróż: ${n}`, itemMsg: (n) => `Otrzymano: ${n} × 2`,
+    shownIn: (l) => `Tekst: ${T.pl.langName[l]}`,
+  },
+};
+
+// ---------- Fixture Scenarios (text per language; Woods' Polish is illustrative) ----------
+const SCENARIOS = [
+  { id: 'whispering-woods', base: 'en', author: 'Simple RPG Engine contributors', text: {
+      en: { title: 'The Whispering Woods', description: 'A girl has vanished from the village of Ashford, and the woods beyond the fields have begun to whisper. Find her before the barrow claims her.',
+            templates: [['Hunter', 'You know the woods, their paths and their silences.', [1,3,2,0]], ['Soldier', 'You marched under three banners and walked away from all of them.', [3,1,0,2]]],
+            loc: 'Ashford', locText: 'A huddle of thatched cottages around a muddy green and a stone well. The villagers keep their doors shut and their eyes on the dark line of the woods.',
+            exits: ['Take the cart track towards the woods', 'Knock at the reeve\'s door'], intro: 'Rain has followed you for three days along the old road.', next: 'Forest Edge', item: 'Healing Herbs' },
+      pl: { title: 'Szepczące Lasy', description: 'Z wioski Ashford zniknęła dziewczyna, a lasy za polami zaczęły szeptać. Odnajdź ją, zanim zabierze ją kurhan.',
+            templates: [['Łowca', 'Znasz lasy, ich ścieżki i ich ciszę.', [1,3,2,0]], ['Żołnierz', 'Maszerowałeś pod trzema sztandarami i od każdego odszedłeś.', [3,1,0,2]]],
+            loc: 'Ashford', locText: 'Garść krytych strzechą chat wokół błotnistej łąki i kamiennej studni. Wieśniacy trzymają drzwi zamknięte, a oczy na ciemnej linii lasu.',
+            exits: ['Idź wozową drogą w stronę lasu', 'Zapukaj do drzwi sołtysa'], intro: 'Deszcz szedł za tobą trzy dni starym traktem.', next: 'Skraj lasu', item: 'Zioła lecznicze' } } },
+  { id: 'the-drowned-ledger', base: 'en', author: 'Simple RPG Engine contributors', text: {
+      en: { title: 'The Drowned Ledger', description: 'Descend beneath a failing sea wall, recover a city\'s hidden history, and decide what the living owe the dead.',
+            templates: [['Diver', 'You have held your breath for coin since you were nine.', [2,2,1,1]]],
+            loc: 'Greyhaven', locText: 'The harbour wall groans under a sea that will not go out. Lanterns burn in daylight along the quay.',
+            exits: ['Climb down the wall stair', 'Visit the harbourmaster'], intro: 'You reach Greyhaven on the morning the tide stops going out.', next: 'Lowwater Steps', item: 'Lamp Oil' } } },
+  { id: 'wieza-kruka', base: 'pl', author: 'Fixture: an invented Polish-only Scenario', text: {
+      pl: { title: 'Wieża Kruka', description: 'Stara strażnica nad przełęczą znów pali sygnałowy ogień. Nikt tam nie mieszka od czterdziestu lat.',
+            templates: [['Posłaniec', 'Znasz każdą przełęcz i każdego karczmarza po drodze.', [1,2,2,1]]],
+            loc: 'Przełęcz', locText: 'Wiatr szarpie płaszczem. Nad tobą czernieje wieża.', exits: ['Wspinaj się ścieżką'], intro: 'Ogień na wieży widać z doliny.', next: 'Wieża', item: 'Suchary' } } },
+];
+const shownLang = (s, ui) => (s.text[ui] ? ui : s.base);
+const hasTr = (s, ui) => !!s.text[ui];
+const langsOf = (s) => [s.base, ...Object.keys(s.text).filter((l) => l !== s.base)];
+
+// ---------- State ----------
+const params = new URLSearchParams(location.search);
+const S = {
+  variant: KEYS.includes(params.get('variant')) ? params.get('variant') : 'A',
+  screen: params.get('screen') || 'collection',
+  phone: params.get('phone') === '1',
+  accept: 'pl-PL,pl;q=0.9,en;q=0.8',
+  cookie: null,           // the language cookie; only a switch sets it
+  scenario: 'whispering-woods',
+  menuOpen: false,
+  notice: null,           // A: transient notice after a switch
+  pendingSwitch: null,    // C: confirmation step during play
+  changed: '',
+};
+function negotiate(accept) {
+  for (const part of accept.split(',')) {
+    const [tag, q] = part.trim().split(';q=');
+    if (q === '0' || tag === '*') continue;
+    const primary = tag.toLowerCase().split('-')[0];
+    if (primary === 'en' || primary === 'pl') return primary;
+  }
+  return 'en';
+}
+const ui = () => S.cookie || negotiate(S.accept);
+const scn = () => SCENARIOS.find((s) => s.id === S.scenario);
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// A switch is a Server Action: set the cookie, refresh the current page.
+function switchTo(lang, { confirmed = false } = {}) {
+  S.menuOpen = false;
+  if (lang === ui()) { render(); return; }
+  if (S.variant === 'C' && S.screen === 'game' && !confirmed) { S.pendingSwitch = lang; S.changed = 'pendingSwitch'; render(); return; }
+  S.pendingSwitch = null;
+  S.cookie = lang;
+  S.changed = 'cookie';
+  S.notice = S.screen === 'game' ? { lang, fallback: !hasTr(scn(), lang) } : null;
+  render();
+}
+
+// ---------- Variant pieces ----------
+function switcherA() {
+  return `<div class="seg" role="group" aria-label="${T[ui()].language}">${['en', 'pl'].map((l) =>
+    `<button lang="${l}" aria-pressed="${l === ui()}" title="${NATIVE[l]}" onclick="switchTo('${l}')">${l.toUpperCase()}</button>`).join('')}</div>`;
+}
+function switcherB() {
+  const t = T[ui()];
+  return `<details class="langmenu" ${S.menuOpen ? 'open' : ''} ontoggle="S.menuOpen=this.open">
+    <summary aria-label="${t.language}: ${NATIVE[ui()]}">${flag(ui())} <span class="hide-phone">${NATIVE[ui()]}</span> ▾</summary>
+    <div class="menu">${['en', 'pl'].map((l) => `<button lang="${l}" onclick="switchTo('${l}')"><span>${flag(l)}${NATIVE[l]}</span><span>${l === ui() ? '✓' : ''}</span></button>`).join('')}
+    <div class="hint">${t.language}: ${t.langName[ui()]}</div></div></details>`;
+}
+function footerC() {
+  const t = T[ui()];
+  return `<footer class="appfoot"><div class="footswitch"><span>${t.footLang}:</span>${['en', 'pl'].map((l) =>
+    l === ui() ? `<b lang="${l}">${NATIVE[l]}</b>` : `<button lang="${l}" onclick="switchTo('${l}')">${NATIVE[l]}</button>`).join('<span>·</span>')}
+    <span class="muted" style="margin-left:auto">Simple RPG Engine</span></div></footer>`;
+}
+function bannerC() {
+  if (S.cookie) return '';
+  const t = T[ui()], other = ui() === 'en' ? 'pl' : 'en';
+  return `<div class="banner"><div><span>${t.negotiated(ui())}</span>
+    <a class="button" onclick="S.cookie='${ui()}';S.changed='cookie';render()">${t.keep(ui())}</a>
+    <a lang="${other}" onclick="switchTo('${other}')">${NATIVE[other]}</a></div></div>`;
+}
+function header() {
+  const t = T[ui()];
+  const right = S.variant === 'A' ? switcherA() : S.variant === 'B' ? switcherB() : '';
+  return `<header class="topnav"><nav><a onclick="go('collection')">${t.scenarios}</a><a>${t.mine}</a><span class="spacer"></span>${right}</nav></header>`;
+}
+
+// ---------- Screens ----------
+function collection() {
+  const t = T[ui()], L = ui();
+  if (S.variant === 'A') {
+    return `<main><h1>${t.scenarios}</h1><ul class="cards">${SCENARIOS.map((s) => {
+      const sl = shownLang(s, L), x = s.text[sl], fb = sl !== L;
+      return `<li class="card ${fb ? 'has-corner' : ''}">${fb ? `<span class="badge corner" title="${esc(t.notTranslated(sl, L))}">${t.inLang[sl]}</span>` : ''}
+        <h2 lang="${sl}">${esc(x.title)}</h2><p lang="${sl}">${esc(x.description)}</p><p class="meta">${esc(s.author)}</p>
+        <p><a class="button" onclick="pick('${s.id}','creation')">${t.newPt}</a></p></li>`;
+    }).join('')}</ul></main>`;
+  }
+  if (S.variant === 'B') {
+    const here = SCENARIOS.filter((s) => shownLang(s, L) === L), other = SCENARIOS.filter((s) => shownLang(s, L) !== L);
+    const card = (s) => {
+      const sl = shownLang(s, L), x = s.text[sl];
+      return `<li class="card"><h2 lang="${sl}">${esc(x.title)}</h2><p lang="${sl}">${esc(x.description)}</p>
+        <p class="meta">${esc(s.author)} · <span class="flags">${langsOf(s).map((l) => flag(l, cap(t.langName[l]) + (l === s.base ? ` (${t.original})` : ''), l === sl ? 'current' : '')).join('')}</span></p>
+        <p><a class="button" onclick="pick('${s.id}','creation')">${t.newPt}</a></p></li>`;
+    };
+    return `<main><h1>${t.scenarios}</h1>
+      ${here.length ? `<h2>${t.groupHere(L)}</h2><ul class="cards">${here.map(card).join('')}</ul>` : ''}
+      ${other.length ? `<h2>${t.groupOther}</h2><p class="group-note">${t.groupOtherNote(L)}</p><ul class="cards">${other.map(card).join('')}</ul>` : ''}</main>`;
+  }
+  return `${bannerC()}<main><h1>${t.scenarios}</h1><ul class="rows">${SCENARIOS.map((s) => {
+    const sl = shownLang(s, L), x = s.text[sl];
+    const lang = sl === L
+      ? `${cap(t.langName[L])} <span class="muted">(${sl === s.base ? t.original : t.translation})</span>`
+      : `${cap(t.langName[sl])} <span class="muted">— ${t.noTranslation}</span>`;
+    return `<li><div><h2 lang="${sl}">${esc(x.title)}</h2><p lang="${sl}">${esc(x.description)}</p><p class="meta">${esc(s.author)}</p></div>
+      <div class="lang">${lang}</div><div><a class="button" onclick="pick('${s.id}','creation')">${t.newPt}</a></div></li>`;
+  }).join('')}</ul></main>`;
+}
+const cap = (x) => x[0].toUpperCase() + x.slice(1);
+
+function creation() {
+  const t = T[ui()], L = ui(), s = scn(), sl = shownLang(s, L), x = s.text[sl], fb = sl !== L;
+  let langLine = '';
+  if (S.variant === 'A') langLine = fb ? `<p><span class="badge">${t.inLang[sl]}</span> <span class="muted">${t.notTranslated(sl, L)}</span></p>` : '';
+  if (S.variant === 'B') langLine = `<p class="meta">${esc(s.author)} · <span class="flags">${langsOf(s).map((l) => flag(l, cap(t.langName[l]) + (l === s.base ? ` (${t.original})` : ''), l === sl ? 'current' : '')).join('')}</span>${fb ? ` · ${t.notTranslated(sl, L)}` : ''}</p>`;
+  const infoC = S.variant === 'C' ? `<div class="infobox">${t.scenarioText}: ${t.langName[sl]}${fb ? ` (${t.noTranslation})` : sl === s.base ? '' : ` (${t.translation})`} · ${t.interface}: ${t.langName[L]}</div>` : '';
+  return `${S.variant === 'C' ? bannerC() : ''}<main><h1 lang="${sl}">${esc(x.title)}</h1>${langLine}<p lang="${sl}">${esc(x.description)}</p>
+    ${S.variant !== 'B' ? `<p class="meta">${esc(s.author)}</p>` : ''}
+    <h2>${t.templates}</h2>${x.templates.map(([n, d, a]) => `<section class="card" style="margin-bottom:.8rem"><h3 lang="${sl}">${esc(n)}</h3><p lang="${sl}">${esc(d)}</p>
+      <p>${t.attrs.map((an, i) => `${an} ${a[i]}`).join(' · ')} · ${t.health} 12</p></section>`).join('')}
+    <h2>${t.begin}</h2>${infoC}<label>${t.name}</label><input type="text" value="Mira"><p><a class="button" onclick="go('game')">${t.start}</a></p></main>`;
+}
+
+function game() {
+  const t = T[ui()], L = ui(), s = scn(), sl = shownLang(s, L), x = s.text[sl], fb = sl !== L;
+  if (S.variant === 'C' && S.pendingSwitch) {
+    const to = S.pendingSwitch, tt = T[to];
+    return `<main><div class="confirm"><h1 lang="${to}">${tt.confirmTitle(to)}</h1><p lang="${to}">${tt.confirmBody(to, shownLang(s, to))}</p>
+      <div class="row"><a class="button" lang="${to}" onclick="switchTo('${to}',{confirmed:true})">${tt.confirm}</a>
+      <a class="button secondary" lang="${to}" onclick="S.pendingSwitch=null;render()">${tt.cancel}</a></div></div></main>`;
+  }
+  let notice = '';
+  if (S.variant === 'A' && S.notice) {
+    notice = `<div class="notice" role="status"><span>${S.notice.fallback ? t.switchedFallback(S.notice.lang, sl) : t.switched(S.notice.lang)}</span><button onclick="S.notice=null;render()" aria-label="${t.dismiss}">✕</button></div>`;
+  }
+  const chipB = S.variant === 'B' && fb ? `<span class="badge lang-chip">${flag(sl)} ${t.shownIn(sl)}</span>` : '';
+  return `<main><div class="game"><div class="reading">${notice}
+      <div class="compact-summary">Mira · ${t.health} 12/12 · <a>${t.character}</a> · <a>${t.map}</a></div>
+      <h1><span lang="${sl}">${esc(x.loc)}</span>${chipB}</h1>
+      <p lang="${sl}">${esc(x.locText)}</p>
+      <div class="exits">${x.exits.map((e) => `<a class="button secondary" lang="${sl}">${esc(e)}</a>`).join('')}</div>
+      <p style="margin-top:1.2rem"><a onclick="go('journal')">${t.journal}</a></p></div>
+    <aside class="side"><h2>${t.map}</h2><div class="mapbox"><span><span lang="${sl}">${esc(x.loc)}</span> · ${t.youAreHere}</span></div>
+      <h2>${t.character}</h2><p style="margin:.2rem 0">Mira · ${t.health} 12/12</p><p class="meta" style="margin:0">${t.attrs.map((an, i) => `${an} ${x.templates[0][2][i]}`).join(' · ')}</p></aside></div></main>`;
+}
+
+function journal() {
+  const t = T[ui()], L = ui(), s = scn(), now = shownLang(s, L), first = shownLang(s, L === 'en' ? 'pl' : 'en');
+  const a = s.text[first], b = s.text[now];
+  // Entries 1–3 were presented before the switch (in `first`), entry 4 after it (in `now`).
+  const entries = [
+    { type: t.jIntro, lang: first, text: a.intro },
+    { type: t.jItem, event: t.itemMsg(`<span lang="${first}">${esc(a.item)}</span>`) },
+    { type: t.jTravel, event: t.travelMsg(`<span lang="${first}">${esc(a.loc)}</span>`) },
+    { type: t.jNarr, lang: now, text: b.locText },
+  ].reverse();
+  const tag = (l) => (S.variant === 'B' && l && l !== L ? ` ${flag(l, cap(t.langName[l]))}` : '');
+  return `<main><p><a onclick="go('game')">← ${t.back}</a></p><h1>${t.journal}</h1><ul class="journal">${entries.map((e) =>
+    `<li><div class="type">${e.type}${tag(e.lang)}</div>${e.text ? `<div lang="${e.lang}">${esc(e.text)}</div>` : `<div>${e.event}</div>`}</li>`).join('')}</ul></main>`;
+}
+
+// ---------- Render ----------
+function go(screen) { S.screen = screen; S.notice = null; S.pendingSwitch = null; S.menuOpen = false; render(); }
+function pick(id, screen) { S.scenario = id; go(screen); }
+function render() {
+  const L = ui();
+  const body = { collection, creation, game, journal }[S.screen]();
+  document.getElementById('app').innerHTML = header() + body + (S.variant === 'C' ? footerC() : '');
+  document.getElementById('app').setAttribute('lang', L);
+  document.getElementById('frame').className = 'frame' + (S.phone ? ' phone' : '');
+  document.getElementById('vlabel').textContent = `${S.variant} (${VARIANTS[S.variant]})`;
+  const s = scn();
+  const tb = (grp, items) => items.map(([k, label]) => `<button class="${S[grp] === k ? 'on' : ''}" onclick="S.${grp}=${JSON.stringify(k)};${grp === 'screen' ? 'go(S.screen)' : 'render()'}">${label}</button>`).join('');
+  document.getElementById('toolbar').innerHTML = `
+    <div class="grp"><span class="lbl">Screen</span>${tb('screen', [['collection', 'Collection'], ['creation', 'Character creation'], ['game', 'Game'], ['journal', 'Journal']])}</div>
+    <div class="grp"><span class="lbl">Viewport</span>${tb('phone', [[false, 'Desktop'], [true, 'Phone']])}</div>
+    <div class="grp"><span class="lbl">Scenario</span><select onchange="S.scenario=this.value;render()">${SCENARIOS.map((x) => `<option value="${x.id}" ${x.id === S.scenario ? 'selected' : ''}>${x.id}</option>`).join('')}</select></div>
+    <div class="grp"><span class="lbl">Accept-Language</span><select onchange="S.accept=this.value;render()">${['pl-PL,pl;q=0.9,en;q=0.8', 'en-US,en;q=0.9', 'de-DE,de;q=0.9'].map((v) => `<option ${v === S.accept ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+    <div class="grp"><button onclick="S.cookie=null;S.notice=null;S.changed='cookie';render()">Clear cookie</button></div>`;
+  const ch = (k) => (S.changed === k ? ' class="changed"' : '');
+  document.getElementById('inspector').innerHTML = `<h3>State</h3><dl>
+    <dt>Variant</dt><dd>${S.variant} — ${VARIANTS[S.variant]}</dd>
+    <dt>Accept-Language</dt><dd>${S.accept}</dd>
+    <dt>Cookie</dt><dd${ch('cookie')}>${S.cookie ?? '— (not set)'}</dd>
+    <dt>Interface Lang.</dt><dd>${L} <span style="color:#a9a9b2">(${S.cookie ? 'cookie' : 'negotiated'})</span></dd>
+    <dt>Scenario</dt><dd>${s.id}</dd>
+    <dt>Base Language</dt><dd>${s.base}</dd>
+    <dt>Translations</dt><dd>${Object.keys(s.text).filter((l) => l !== s.base).join(', ') || '—'}</dd>
+    <dt>Text shown in</dt><dd>${shownLang(s, L)}${shownLang(s, L) !== L ? ' (fallback)' : ''}</dd>
+    ${S.variant === 'C' ? `<dt>Pending switch</dt><dd${ch('pendingSwitch')}>${S.pendingSwitch ?? '—'}</dd>` : ''}
+    </dl><p>Journal fixture: the first three entries were presented in the other language (before a switch), the last one in the current one. Scenario text keeps its recorded lang; event wording follows the Interface Language.</p>
+    <p>A switch is a Server Action: it sets the cookie and refreshes the page. The negotiated language is never written to the cookie.</p>`;
+  S.changed = '';
+  const u = new URL(location.href);
+  u.searchParams.set('variant', S.variant); u.searchParams.set('screen', S.screen); u.searchParams.set('phone', S.phone ? '1' : '0');
+  history.replaceState(null, '', u);
+}
+function cycle(d) { S.variant = KEYS[(KEYS.indexOf(S.variant) + d + KEYS.length) % KEYS.length]; S.notice = null; S.pendingSwitch = null; render(); }
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+render();
+</script>
+</body>
+</html>
