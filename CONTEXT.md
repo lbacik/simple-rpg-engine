@@ -150,6 +150,10 @@ _Avoid_: Turn, initiative pass
 The action an Enemy has committed to for the current Round, chosen and shown before the Character acts; it resolves as shown or is cancelled, never swapped.
 _Avoid_: Telegraph, plan, enemy move
 
+**Behaviour**:
+An Enemy's engine-defined pattern for selecting its Intents, chosen by the author from a fixed list.
+_Avoid_: AI, profile, script, tactic
+
 **Speed**:
 Whether a Combat action or Intent resolves early, in the middle or late in a Round: fast, normal or slow.
 _Avoid_: Initiative, tempo

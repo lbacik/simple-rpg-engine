@@ -95,6 +95,7 @@ An Enemy is a reusable definition, fought through Encounters. Authors choose int
 | maximum Health | 1–30 |
 | attack Damage | 1–6 |
 | Reach | `melee` or `ranged` (default `melee`) |
+| Behaviour | `steady` or `heavy` (default `steady`; see [Enemy Intents](#enemy-intents)) |
 
 These limits keep content valid; they do not guarantee that a fight can be won.
 
@@ -116,7 +117,7 @@ Both sides hit when **2d6 + attacker's Might ≥ 7 + defender's Agility** (effec
 
 A Combat proceeds in **Rounds**. In each Round the Character takes exactly one action and every surviving Enemy participant carries out exactly one **Intent**. A Round is one player action and one `step` (see [playthrough-state.md](playthrough-state.md#combat)). There is no initiative roll.
 
-> **Transition note.** This Round contract replaces the earlier "the Character always acts first" turn. The Character actions below use it. The Enemy response and the single-Enemy wording of the Combat, End of Combat and Persistence of wounds sections still describe the earlier rules until [Enemy intent profiles](https://github.com/lbacik/simple-rpg-engine/issues/79) and [Encounter participants](https://github.com/lbacik/simple-rpg-engine/issues/80) are resolved; those decisions assign the concrete Intents and participants that use this contract.
+> **Transition note.** This Round contract replaces the earlier "the Character always acts first" turn. The Character actions and Enemy Intents below use it. The single-Enemy wording of the Combat, End of Combat and Persistence of wounds sections still describes the earlier rules until [Encounter participants](https://github.com/lbacik/simple-rpg-engine/issues/80) is resolved; that decision assigns the participants that use this contract.
 
 #### Speed and order
 
@@ -224,11 +225,42 @@ These are the only temporary effects. Each follows the rules under [Timing hooks
 
 A counterattack can defeat its target. Like any defeat during a Round, the participant loses its pending action, and defeating the last participant is a victory.
 
-### Enemy response
+### Enemy Intents
 
-- A `melee` Enemy at Far spends its turn **closing to Near** and does not attack.
-- Otherwise the Enemy attacks (a `ranged` Enemy never moves).
-- There are no other Enemy behaviours.
+Every Enemy has a **Behaviour**, chosen by the author from an engine-owned list. An Enemy without one is `steady`, which reproduces the earlier response: close in when out of Reach, otherwise attack.
+
+| Behaviour | Meant for | Prepares a heavy attack |
+|---|---|---|
+| `steady` | ordinary pressure | never |
+| `heavy` | telegraphed heavy blows (`melee`) or aimed shots (`ranged`) | sometimes, see selection |
+
+#### Intent vocabulary
+
+These are the only Intents. Each targets the Character.
+
+| Intent | Speed | Kind | Resolution | Cancelled when its turn comes if |
+|---|---|---|---|---|
+| **Strike** | `normal` | attack | Hit roll; a hit deals the Enemy's Damage. | its Reach does not allow it at the current Range |
+| **Close in** | `normal` | movement | The Range to this participant becomes Near. No roll. | the Range is already Near |
+| **Prepare** | `normal` | preparing | No roll. The participant becomes **prepared**. | never (except by interruption) |
+| **Heavy attack** | `slow` | prepared attack | Hit roll; a hit deals the Enemy's Damage **+2**. | its Reach does not allow it at the current Range |
+
+- A `ranged` Enemy never moves; only a `melee` Enemy closes in. No Intent moves an Enemy away from the Character.
+- A prepared state ends when the Heavy attack it prepares resolves or is cancelled for any reason (interruption, Reach, Fall back). The next Intent is then selected from the unprepared state.
+- A missed `melee` Strike or Heavy attack against a Guarded Character can trigger the counterattack (see [Temporary effects](#temporary-effects)).
+- Each Intent is shown honestly before the Character commits: its kind, its Speed, its place in the order and, for an attack, its Damage. A Prepare also shows what it prepares: a `slow` Heavy attack next Round with its Damage. How an Intent is worded for each Reach (for example "takes aim" and "aimed shot" for a `ranged` Enemy) is presentation.
+- There are no defensive, healing or support Intents.
+
+#### Selecting Intents
+
+At the start of a Combat and at the end of each Round, the surviving participants select their Intents **in participant order**. Each takes the first rule that applies:
+
+1. **Prepared.** If the Heavy attack would be in Reach at the current Range, it is selected. Otherwise the prepared state ends and selection continues with rule 2.
+2. **Out of Reach.** A `melee` Enemy at Far selects Close in.
+3. **Preparing.** A `heavy` Enemy draws one die from the injected random source. On 1–2 it selects Prepare, unless another participant is prepared or has selected Prepare in this same selection; then it does not draw and goes on to rule 4.
+4. **Strike.**
+
+So at most one Heavy attack is ever in preparation, and a second participant never turns a Round into two heavy attacks. Only rule 3 uses randomness: the dice are drawn in participant order after the Round's resolution rolls. Re-entry after an Escape selects from the unprepared state.
 
 ### End of Combat
 
@@ -249,6 +281,7 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - Fast actions protect but deal no Damage. Defend weakens every attack in the Round; Distract stops one announced Intent outright, including a prepared strike, but not the same participant two Rounds running.
 - The counterattack uses the ordinary hit roll, deals 1 Damage and happens at most once per Round, so Defend is protection, never a better source of Damage than Attack.
 - Fall back is `slow`: it does not dodge an ordinary `normal` attack in the same Round. It does step out of a `slow` melee attack from a participant acting after the Character, it makes `melee` participants spend an Intent closing in again, and it gives the next Escape its +2 while nothing is Near.
+- A Prepare is a Round without an attack from that participant: a window to heal, attack or reposition. The Heavy attack that follows is `slow`, so Defend, Distract and a Fall back by a Character at least as agile all come before it. Because preparing is drawn at random, no fixed sequence of answers is always best.
 - Against a `melee` Enemy, Advancing gains little, because the Enemy closes in by itself. Advance matters against `ranged` Enemies, which get free shots while the Character approaches.
 - Healing is `normal`: a faster Enemy's attack resolves before it, so drinking at very low Health can come too late.
 - No fight is unwinnable by construction: the worst hit chance (Might 0 against Agility 3) is 1/6, Damage is at least 2, Enemy Health is at most 30, a `melee` Character can always Advance without a roll, and Escape is always available.
@@ -262,3 +295,4 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (`very-hard`)
 - [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
 - [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (Character actions, per-participant Range, Guarded and Wary)
+- [Enemy intent profiles for tactical one- and two-Enemy Combat](https://github.com/lbacik/simple-rpg-engine/issues/79) (Behaviours, Intent vocabulary, selection)
