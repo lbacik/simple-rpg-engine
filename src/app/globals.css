@@ -499,6 +499,11 @@ fieldset {
   }
 }
 
+/* The Inventory modal holds two columns, so it runs wider than the rest. */
+.panel-modal:has(.inv-grid) {
+  width: min(56rem, 100%);
+}
+
 .panel-modal-head {
   display: flex;
   align-items: start;
@@ -556,20 +561,179 @@ fieldset {
   }
 }
 
-/* Inventory items. */
-.items {
+/* Inventory modal, variant A: the equipped "paper doll" beside a grid of
+ * carried item tiles, with a detail pane for the selected tile. Two columns
+ * on desktop, stacked on phones. */
+.inv-grid {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 46rem) {
+  .inv-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inv-grid h3 {
+  margin-top: 0.75rem;
+}
+
+.inv-doll {
+  background: linear-gradient(180deg, var(--card), #f3ecdc);
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+  padding: 0.25rem 0.85rem 0.85rem;
+}
+
+.inv-slot {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.inv-slot:last-child {
+  border-bottom: none;
+}
+
+.inv-slot p {
+  margin: 0;
+}
+
+.inv-slot-icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #fff;
+}
+
+.inv-slot.empty .inv-slot-icon {
+  background: transparent;
+  color: var(--muted);
+  border: 1.5px dashed var(--rule);
+}
+
+.inv-slot.empty em {
+  color: var(--muted);
+}
+
+.inv-tiles {
   list-style: none;
   padding: 0;
-  margin: 0.5rem 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.6rem;
 }
 
-.item {
-  border-top: 1px solid var(--rule);
-  padding: 0.5rem 0;
+.inv-tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+  background: var(--card);
+  color: var(--accent);
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.5rem;
+  padding-bottom: 1.25rem;
+  overflow: hidden;
 }
 
-.item p {
-  margin: 0.25rem 0;
+.inv-tile:hover {
+  border-color: var(--accent);
+}
+
+.inv-tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.inv-tile.selected {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 3px rgb(90 74 47 / 0.15);
+}
+
+.inv-tile-name {
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.inv-qty {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-spark {
+  color: var(--accent);
+}
+
+.inv-spark.corner {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.45rem;
+}
+
+.inv-ribbon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.1rem 0;
+}
+
+.inv-detail {
+  margin-top: 1rem;
+  border-top: 2px solid var(--accent);
+  padding-top: 0.75rem;
+}
+
+.inv-detail p {
+  margin: 0.3rem 0;
+}
+
+.inv-desc {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.inv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.inv-chips > span {
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+  background: var(--card);
 }
 
 .magic {

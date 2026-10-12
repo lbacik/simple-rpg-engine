@@ -20,7 +20,7 @@ import { getScenario } from '@/content/registry';
 import type { Action } from '@/engine/index';
 import { isEquipmentSlot } from '@/engine/inventory';
 import { getDatabase } from '@/persistence/index';
-import { parseSeenStep, playHref } from './panel';
+import { cleanParam, parseSeenStep, playHref } from './panel';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -30,6 +30,8 @@ type InventoryForm = {
   value: string;
   seen: number | undefined;
   showUnknownExits: boolean;
+  /** The tile selected in the detail pane, preserved across the redirect. */
+  selectedItem: string | undefined;
 };
 
 function readForm(formData: FormData, field: string): InventoryForm | null {
@@ -40,6 +42,7 @@ function readForm(formData: FormData, field: string): InventoryForm | null {
     return null;
   }
   const seenRaw = formData.get('seen');
+  const selectedRaw = formData.get('item');
   return {
     playthroughId,
     expectedStep,
@@ -48,6 +51,9 @@ function readForm(formData: FormData, field: string): InventoryForm | null {
     // redirect lands back on the same view.
     seen: seenRaw === null ? undefined : parseSeenStep(String(seenRaw)),
     showUnknownExits: String(formData.get('unknown') ?? '') === '1',
+    // The selected tile survives the redirect after the action, so the result
+    // is visible in place (or the first item, when the selected one is gone).
+    selectedItem: cleanParam(selectedRaw === null ? undefined : String(selectedRaw)),
   };
 }
 
@@ -68,8 +74,18 @@ async function runInventoryTurn(form: InventoryForm, action: Action): Promise<ne
   if (result.ok) {
     revalidatePath(path);
     // The turn advanced `step`, so the old acknowledgement is stale and stays
-    // behind; the "?" map setting is preserved. The Inventory modal stays open.
-    redirect(playHref(form.playthroughId, 'inventory', undefined, undefined, form.showUnknownExits));
+    // behind; the "?" map setting is preserved. The Inventory modal stays open
+    // with the same tile selected.
+    redirect(
+      playHref(
+        form.playthroughId,
+        'inventory',
+        undefined,
+        undefined,
+        form.showUnknownExits,
+        form.selectedItem,
+      ),
+    );
   }
   if (result.reason === 'not-found') {
     notFound();
@@ -85,6 +101,7 @@ async function runInventoryTurn(form: InventoryForm, action: Action): Promise<ne
       result.reason === 'stale' ? 'stale' : 'unavailable',
       form.seen,
       form.showUnknownExits,
+      form.selectedItem,
     ),
   );
 }
@@ -110,7 +127,16 @@ export async function unequipAction(formData: FormData): Promise<never> {
     // re-validates real slots independently.
     await ensureSessionId();
     revalidatePath(`/play/${form.playthroughId}`);
-    redirect(playHref(form.playthroughId, 'inventory', 'unavailable', form.seen, form.showUnknownExits));
+    redirect(
+      playHref(
+        form.playthroughId,
+        'inventory',
+        'unavailable',
+        form.seen,
+        form.showUnknownExits,
+        form.selectedItem,
+      ),
+    );
   }
   return runInventoryTurn(
     form,
