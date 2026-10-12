@@ -30,7 +30,7 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 | Flags | set of Flags currently true | |
 | Encounters | per Encounter id, created on its first `start-combat`: **Damage taken** | remaining Enemy Health (maximum − taken); defeated (remaining ≤ 0). An Encounter without a record is at full Health. |
 | Active Combat | Encounter id, current Range, round number | Enemy Health (from the Encounter record) |
-| Journal | append-only entries | the result panel; the intro display |
+| Journal | append-only entries: Scenario text as presented, engine events, and the language of each | the result panel; the intro display; all Interface Text in it |
 
 Notes:
 
@@ -72,6 +72,8 @@ The result panel is derived from the Journal entries of the **latest step**, tak
 
 While the result panel is shown, the reading column shows **only** the panel and its Continue: the Location view, Scene, Combat panel and the "View journal" link are not rendered until the player continues. The side panel (map, Character, Inventory) and any transient notice stay visible throughout. This applies to every result panel: after a Choice or Test, after Combat ends, and to the intro at the start of a Playthrough.
 
+The panel renders its entries as the Journal does. When the Interface Language changed after the step (for example a switch before Continue, then a reload), its narration stays in the language it was presented in, with that `lang`, while its Test and state changes follow the new Interface Language. Narration is not re-read from content.
+
 ## Transitions
 
 ### Starting a Playthrough (one atomic step)
@@ -110,7 +112,7 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
    | `damage` | Health − n; at ≤ 0, set Health to 0, skip the remaining Effects and the transition, and end on the death Ending (appending the Ending entry) |
    | `reveal` | add the Location to `revealed` (a no-op if visited) |
 
-   Each state change is appended to the Journal (for example "received: rope", "−3 Health"), except a Flag change: Flags are the author's internal memory, their ids are not text, and they are never presented to the player. The engine reports every state change as a structured value (kind, content ids, numbers), and its wording comes from the Interface Text catalogue ([architecture.md](architecture.md#interface-text)).
+   Each state change is appended to the Journal (for example "received: rope", "−3 Health"), except a Flag change: Flags are the author's internal memory, their ids are not text, and they are never presented to the player. The engine reports every state change as a structured value (kind, content ids, numbers), the Journal stores it as such ([Journal](#journal)), and its wording comes from the Interface Text catalogue when it is shown ([architecture.md](architecture.md#interface-text)).
 3. Apply the transition:
 
    | Transition | Result |
@@ -133,21 +135,33 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 
 ## Journal
 
-- Entries store the **text as presented** (with `{name}` substituted) and the numbers, together with an entry type and the `step` that produced them. The Journal therefore stays true when Scenario content changes later.
+Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md).
+
+- Each entry stores its type, the `step` that produced it, and the **language of the Scenario text in effect** when it was presented (`lang`: the `language` of the Translation shown, or the Base Language). Every entry records it, including entries that hold no Scenario text, since the language cannot change within a step.
+- **Scenario text is stored as presented**: narration with `{name}` substituted, Choice wording, an Ending's title and closing narration, and the Scenario names an engine event mentions (item, Enemy, Location, weapon). It stays in the language it was shown in, and so stays true when Scenario content or the Interface Language changes later. After a language switch the Journal holds Scenario text in more than one language.
+- **Engine-generated entries are stored as structured events**: a kind, the content ids, the numbers, and the names as presented. They are never stored as Interface Text. They are rendered when read, through the catalogue of the current Interface Language ([architecture.md](architecture.md#interface-text)), so all Interface Text in the Journal follows the current Interface Language, including in old entries.
+- Rendering an entry needs only the entry and the catalogue, never the Scenario content. Ids are kept for mechanical use, such as the Combat panel's guard marker, and are never resolved to names when read.
+- An event shape changes only together with a migration that rewrites the stored rows, so every stored entry stays renderable.
+- **Entries stored before this rule** hold English text and no language. They are kept, tagged `en` (the Base Language of every Scenario at the time), and shown verbatim, with only their type label from the catalogue.
+- Adding, changing, rejecting or outdating a Translation never changes stored entries.
 - The Journal is text-only; it records no Illustrations.
-- Entry types:
-  - intro;
-  - Scene narration;
-  - Choice taken;
-  - Test (Attribute, Difficulty, both dice, modifier, total, success or failure);
-  - Outcome narration;
-  - state change from an Effect, other than a Flag change;
-  - travel;
-  - Combat start (opening narration);
-  - Combat round (actions, rolls, Damage, Range change);
-  - Combat end, and the Enemy-defeated notice when the Encounter has no victory Outcome;
-  - inventory action outside Combat (equipped, unequipped, used an item, with the Health restored);
-  - Ending (kind, title and closing narration), appended whenever the Playthrough ends, by `end` or by death.
+- Entry types, with what each stores beyond type, `step` and `lang`:
+
+  | Type | Scenario text as presented | Event data |
+  |---|---|---|
+  | intro | narration | |
+  | Scene narration | narration | Scene id |
+  | Choice taken | Choice wording | Scene id, Choice id |
+  | Test | | Attribute, Difficulty, both dice, modifier, total, success or failure |
+  | Outcome narration | narration | |
+  | state change from an Effect, other than a Flag change | item name, for item changes | kind (item received or lost, Health gained or lost), item id, amount |
+  | travel | target Location name | target Location id |
+  | Combat start | opening narration, Enemy name | Encounter id |
+  | Combat round | Enemy name, weapon and item names | Encounter id, round, action, rolls, Damage, Range before and after, guard |
+  | Combat end | Enemy name | Encounter id, how it ended (victory or escape) |
+  | Enemy-defeated notice, when the Encounter has no victory Outcome | Enemy name | Encounter id |
+  | inventory action outside Combat | item name | kind (equipped, unequipped, used), item id, Health restored |
+  | Ending, appended whenever the Playthrough ends, by `end` or by death | title, closing narration | Ending id, kind (victory or defeat) |
 
 ## Ended Playthroughs
 
@@ -174,3 +188,5 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (empty Outcome)
 - [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575) (content hash pin)
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md)
+- [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (events, names and `lang` per entry, legacy rows)
+- [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)

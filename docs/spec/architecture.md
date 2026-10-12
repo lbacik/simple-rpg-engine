@@ -105,14 +105,14 @@ Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
   - while the Scenario is in the collection, the Character sheet, inventory, map and Ending render from its current content, and anything whose ID no longer exists is left out;
   - when the Scenario is no longer in the collection, only the Journal is shown, and the Ending is read from its Journal entry.
 
-  The Journal always renders completely, because it stores the text as presented.
+  The Journal always renders completely, because it stores Scenario text as presented and engine events that the catalogue renders without the content ([ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)). Its Interface Text, and the Ending kind read from it, follow the current Interface Language.
 - Incompatibility is derived on read. It is not a stored status. The author's `version` is informational.
 
 ## Persistence
 
 - **Kysely** behind two async ports, `PlaythroughStore` and `SessionStore`. Now: `SqliteDialect` with `better-sqlite3`. Later: `PostgresDialect` or `MysqlDialect`. (Drizzle was rejected because its schema is defined per dialect.)
 - Table **`playthroughs`**: scalar columns for queries and guards (`id` UUID v4, `session_id`, `scenario_id`, `scenario_version`, `content_hash`, `status`, `ending_id`, `step`, `created_at`, `updated_at`) and a **`state` JSON document** owned by the engine, holding everything in the [Playthrough state model](playthrough-state.md#stored-and-derived-state).
-- Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `payload` JSON, `created_at`): append-only, paginated when read.
+- Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `lang`, `payload` JSON, `created_at`): append-only, paginated when read. `lang` is the language of the Scenario text in effect when the entry was presented. The migration that adds it sets it to `en` on existing rows, whose payload holds English text only ([playthrough-state.md](playthrough-state.md#journal)).
 - Table **`sessions`** (`id_hash`, `created_at`, `last_seen_at`).
 - JSON maps to `TEXT` (SQLite), `jsonb` (PostgreSQL) and `JSON` (MySQL).
 - **Migrations** are Kysely migrations run by a separate `npm run migrate` step. The Docker entrypoint runs `migrate`, then `start`; development uses the same script. They are not run in `register()`, so they stay safe with several instances later.
@@ -157,8 +157,19 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - **Engine**: unit tests of the pure functions with a deterministic RNG. The example Scenario is a fixture. Tests assert structured events, not wording.
 - **Interface Text**: the catalogue key-parity test, the plural helper (Polish `one`/`few`/`many`/`other` boundaries such as 1, 2, 5, 12, 22, 25, 112), and the `Accept-Language` matcher (`pl-PL,pl;q=0.9,en;q=0.8` → `pl`, `de-DE,pl;q=0.5` → `pl`, `pl;q=0,en;q=0.1` → `en`, `*`, malformed and missing headers → `en`).
 - **Loader and validator**: valid and invalid fixture packages; the example Scenario must produce no diagnostics.
+- **Translations**: two small fixture Scenarios, kept in `tests/fixtures/scenarios/` (outside `scenarios/`, so they are never shipped), serve both the unit and the end-to-end tests. Both must produce no diagnostics.
+  - `two-bridges`: Base Language `en` with a complete `pl` Translation. It has at least one of every kind of translatable field ([Translation files](scenario-format.md#translation-files)), Illustration `alt` included, so the overlay is checked for each kind and every mutation below has a target.
+  - `stara-studnia`: Base Language `pl` with an `en` Translation, minimal (two Locations, a Scene with a Choice, an Ending). It covers fallback to a Base Language other than English.
+  - Invalid and stale variants are not separate packages: a test copies a fixture to a temporary directory and changes one file.
+  - Validation: one test per `translation/*` code ([validation.md](validation.md#translations)); a rejected Translation leaves the Scenario valid and shown in its Base Language, while another valid Translation of it stays available (except under `translation/duplicate-language`); a `translation/stale` Translation is still shown; changing Translation text changes the content hash.
+  - Selection: a Translation is chosen by primary language subtag (`en-US` selects an `en` Translation).
+  - Journal: rows stored before Interface Languages existed are seeded through the persistence port and rendered verbatim in English with a catalogue type label.
+- **Interface Text rendering**: a table test with one example of every structured event kind the engine emits, rendered with both catalogues; each result is non-empty and contains no `undefined`, `NaN` or `{`. There are no snapshots of whole texts; wording is reviewed by a person against the [term table](ui.md#polish-terms).
 - **Persistence**: port tests against in-memory SQLite, including a race test: two actions with the same `step`, exactly one succeeds.
-- **End to end**: one Playwright smoke test: start a Playthrough, take one Choice, reload.
+- **End to end**: Playwright against a production build, with a temporary Scenario directory holding the shipped Scenarios and both Translation fixtures.
+  - The smoke test: start a Playthrough, take one Choice, reload.
+  - The Interface Language: a first visit with `Accept-Language: pl-PL` is in Polish; a switch in the language menu survives a reload; a switch also works with JavaScript disabled (one test); the collection groups and each card's language flags; the fallback badge on the game screen; a switch mid-Playthrough followed by the Journal, where earlier narration stays in its language with a flag and Interface Text is in the new language.
+  - Which language is shown is asserted through `<html lang>` and the `lang` of elements holding Scenario text. Where visible text matters, it is written in the test, not imported from the catalogue.
 
 ## Sources
 
@@ -170,3 +181,4 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (catalogue, Interface Language resolution, the engine's structured output)
 - [i18n approach for the Next.js 16 App Router](https://github.com/lbacik/simple-rpg-engine/issues/59) (research)
 - [ADR 0003: the engine emits no Interface Text](../adr/0003-interface-text-from-a-typed-catalogue.md)
+- [Test strategy for two languages](https://github.com/lbacik/simple-rpg-engine/issues/91) (Translation fixtures, Interface Text rendering, language end-to-end tests)

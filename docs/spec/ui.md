@@ -8,16 +8,34 @@ The screens, layout and interaction model. This document is normative; the [mock
 - A neutral, lightly book-inspired style that suits Scenarios of different genres. The UI does not change per Scenario.
 - All Interface Text is shown in the Interface Language (`en` or `pl`), from the catalogue ([Interface Text](#interface-text)). Scenario text is shown from the Translation that the Interface Language selects, or else in the Base Language ([scenario-format.md](scenario-format.md#language-tags)).
 - `<html lang>` is the Interface Language. Each element holding Scenario text carries the `lang` of the text shown (the Translation's or the Base Language's `language`); Interface Text around it is not wrapped in that `lang`.
+- A Scenario's text is **shown in the Interface Language** when its Base Language or one of its Translations matches the Interface Language by primary language subtag; otherwise it **falls back** to the Base Language ([scenario-format.md](scenario-format.md#language-tags)).
 - The main view shows the **current** Scene or Location, not a growing conversation. Earlier narration lives in the separate, read-only Journal.
 - Content gated by an unmet Condition (Choices, Connections, on-demand Scenes) is hidden. Unavailable inventory and Combat actions are shown disabled, with the reason. The server validates every action independently.
 
+## Language switcher
+
+- A **language menu** at the right end of the top navigation, on every page (collection, Character creation, game screen, Journal, Endings, read-only Playthroughs).
+- Closed, it shows the current Interface Language's [flag](#language-flags) and its name in that language ("English", "Polski") with a disclosure arrow; on phone width, the flag and the arrow only. Its accessible name is "Language: <name>" from the catalogue.
+- Open, it lists every Interface Language as its flag and its name in that language, each item carrying that `lang`, with a check mark on the current one.
+- It is a `<details>` disclosure whose items are submit buttons of a form posting to the switching Server Action ([architecture.md](architecture.md#interface-language)), so it works without JavaScript. Choosing the current language does nothing.
+
+### Language flags
+
+Languages are marked with small flag icons:
+
+- `en` is the flag of the United Kingdom, `pl` the flag of Poland. A language is matched by its primary language subtag, so `en-US` is marked with the United Kingdom flag too.
+- A Base Language with no flag in this list is marked with its primary language subtag in capitals, in a box of the flag's size.
+- Flags are inline SVG, not emoji (some platforms render flag emoji as two letters). They are decorative next to a language's name; where a flag stands alone it has an accessible name: the language's name in the Interface Language, followed by "(original)" for a Scenario's Base Language.
+
 ## Collection (`/`)
 
-- One card per valid Scenario: `title`, `description`, `author` and language, with a **new Playthrough** action.
+- One card per valid Scenario: `title`, `description` and `author`, with the Scenario's [language flags](#scenario-language-flags) after the author, and a **new Playthrough** action. Title and description are shown in the Interface Language or in the fallback. The raw BCP 47 tag is not shown.
+- The cards are in **two groups**, each keeping the collection order: "In <Interface Language>" (for example "Po polsku") for the Scenarios shown in the Interface Language, then "In other languages" for those that fall back, introduced by one sentence: they are not translated into the Interface Language yet and are played in their original language. An empty group is omitted with its heading. Switching the Interface Language may move a Scenario between the groups.
 - The current Session's existing Playthroughs are reachable separately (resume an `active` one, view an `ended` or incompatible one), distinct from starting a new one. `/playthroughs` lists them all. A Session may have any number of Playthroughs, including several of the same Scenario.
 
 ## Character creation (`/scenarios/[scenarioId]`)
 
+- The Scenario title, `author` and [language flags](#scenario-language-flags); when the Scenario falls back, one sentence after the flags: it is not translated into the Interface Language and is shown in its Base Language (for example "Not translated into Polish. Shown in English.").
 - The Scenario description, then the Character Templates to choose from. For each: `name`, `description`, base Attributes, Health (12) and starting Equipment and items.
 - A name field. Confirming the Template and name starts the Playthrough (and creates the Session if needed), then opens the game screen.
 
@@ -27,6 +45,10 @@ Layout **A, "Book & character"**:
 
 - **Desktop**: a reading column with the current narration and its actions, beside a side panel. The side panel holds the **map** at the top (always visible), a **status card**, and the **Character**, **Inventory** and **Journal** launchers.
 - **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind a fourth **Map** launcher.
+
+### Scenario language flags
+
+The collection card and Character creation show one flag per language the Scenario can be shown in: its Base Language first, then its Translations into Interface Languages (a Translation into any other language is never shown, so it is not listed). The flag of the language the text is shown in now is ringed; the others are dimmed.
 
 ### Reading column
 
@@ -40,6 +62,11 @@ The order within the column is always:
 **Location view** actions: the on-demand Scenes on offer (labelled with their Scene `title`, in the order the Location lists them) and the exits (one button per visible Connection, labelled with its `label` or the target's name, in authored order).
 
 **Scene active** actions: the visible Choices below the narration, or the single implicit "Continue" when none is visible. While a Scene is active, there are no exits and no map travel.
+
+### Language fallback on the game screen
+
+- When the Scenario falls back, the reading column's title (Scene title, Location name, the Encounter name in the Combat panel, the Ending title) is followed by a small badge: the Base Language's flag and "Text: <language>" (for example "Tekst: angielski"). It is shown for as long as the Scenario falls back. Nothing is shown when the text is in the Interface Language.
+- **Switching mid-Playthrough** is the same Server Action as anywhere else: the page is refreshed in the new Interface Language, with the Scenario's text from the Translation it now selects, or the fallback with the badge. No notice is shown and nothing is confirmed, since the switch changes no Playthrough state. A result panel shown again after the switch mixes languages as described in [playthrough-state.md](playthrough-state.md#result-panel).
 
 ### Tests and results
 
@@ -103,6 +130,11 @@ Every "View journal" link that sits next to play opens the Journal in a modal ov
 Opening the Journal (in the modal or on the standalone page) shows the newest batch of entries at the top. Scrolling towards the bottom loads older entries automatically and appends them below, with a visible loading state, until the very first entry (the intro) is reached; there loading stops and the list says the start of the Journal has been reached. Batches are addressed by a cursor on the entry sequence ("entries older than X"), not by page number or offset, so entries appended during play never shift or duplicate what is already on screen. Without JavaScript, an "Older entries" link at the bottom of the list walks the whole Journal batch by batch.
 
 A sticky position indicator stays visible at the top of the list's scroll container (the modal body in the modal, the window on the standalone page). It names the step and the sequence position (out of the total entry count) of the entry at the top of the viewport (for example "Step 12 · entry 37 of 134"), with a thin progress bar showing how far into the Journal the reader has scrolled by entry count against the total, not the number loaded so far. The indicator stays correct as older batches are appended; an empty Journal shows no indicator and reads "Nothing has happened yet.". The position is plain text (not a live region, so scrolling does not flood screen readers) and the bar is decorative. Without JavaScript the page still renders; the indicator keeps its server-rendered first entry.
+
+- Entry type labels and the wording of engine-generated entries come from the catalogue of the **current** Interface Language, so after a switch the whole Journal's Interface Text is in the new language ([playthrough-state.md](playthrough-state.md#journal)).
+- Scenario text (narration, Choice wording, Ending title and narration, and names inside engine messages) is shown as it was presented, so after a switch the Journal shows Scenario text in more than one language. Each element holding it carries the entry's recorded `lang`; a name inside an engine message is wrapped in its own element with that `lang`.
+- Entries stored before Interface Languages existed are shown verbatim, in English, with only their type label from the catalogue.
+- An entry holding Scenario text whose recorded `lang` (`en` for the entries above) differs from the Interface Language by primary language subtag has that language's [flag](#language-flags) after its type label, so the mixed languages are visibly marked. Engine-generated entries carry no flag; a name inside them only carries its `lang`.
 
 ## Endings
 
@@ -170,6 +202,7 @@ Rejected actions refresh the current state and show a transient notice, such as 
 | [Game screen layout](mockups/game-screen-layout/) | Collection, Character creation, play, inventory, Test feedback, Journal, Endings, Illustration on/off; variants A (selected), B, C | `python3 docs/spec/mockups/game-screen-layout/serve.py`, then open `http://127.0.0.1:4310/?variant=A` |
 | [Combat presentation](mockups/combat-presentation/combat-presentation.prototype.html) | three Combat presentations; **B** (Range zones) is selected; its `CombatCore` module implements the Combat rules | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Location map](mockups/location-map/location-map.prototype.html) | four map presentations; **B** (author coordinates) is selected | open the file; `?variant=A\|B\|C\|D` |
+| [Language switcher](mockups/language-switcher/language-switcher.prototype.html) | three switcher and availability presentations; **B** (language menu, with flags) is selected | open the file; `?variant=A\|B\|C` or the arrow keys |
 
 The mockups are throwaway specification artifacts, not application code, and must not be imported into `src/`.
 
@@ -181,3 +214,5 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478)
 - [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575) (routes, rejection notices)
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (Interface Text, `lang`, Polish terms)
+- [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (Journal rendering after a language switch)
+- [Language switcher and availability UX](https://github.com/lbacik/simple-rpg-engine/issues/62) (language menu, flags, collection groups, fallback badge)
