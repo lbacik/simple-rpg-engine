@@ -15,6 +15,8 @@ import {
 } from '../src/app/lib/panel';
 import { ResultPanel } from '../src/app/play/[playthroughId]/result-panel';
 import { RESULT_PANEL_ENTRY_TYPES } from '../src/engine/index';
+import { en } from '../src/i18n/en';
+import { pl } from '../src/i18n/pl';
 
 describe('parseSeenStep', () => {
   it('parses the current step', () => {
@@ -134,11 +136,17 @@ describe('Continue href', () => {
 describe('ResultPanel', () => {
   it('renders the entries with a Continue link carrying the step', () => {
     const html = renderToStaticMarkup(
-      <ResultPanel entries={['<p>Outcome narration.</p>']} continueHref="/play/pt-1?seen=4" />,
+      <ResultPanel
+        entries={['<p>Outcome narration.</p>']}
+        continueHref="/play/pt-1?seen=4"
+        continueLabel={en.game.continue}
+        label={en.game.latestEvents}
+      />,
     );
     expect(html).toContain('Outcome narration.');
     expect(html).toContain('href="/play/pt-1?seen=4"');
     expect(html).toContain('Continue');
+    expect(html).toContain('aria-label="Latest events"');
     // Continue is a plain link, not a form: following it changes no game
     // state and does not advance `step`.
     expect(html).not.toContain('<form');
@@ -146,7 +154,27 @@ describe('ResultPanel', () => {
   });
 
   it('renders nothing without entries', () => {
-    const html = renderToStaticMarkup(<ResultPanel entries={[]} continueHref="/play/pt-1?seen=4" />);
+    const html = renderToStaticMarkup(
+      <ResultPanel
+        entries={[]}
+        continueHref="/play/pt-1?seen=4"
+        continueLabel={en.game.continue}
+        label={en.game.latestEvents}
+      />,
+    );
     expect(html).toBe('');
+  });
+
+  it('renders the Continue control in Polish', () => {
+    const html = renderToStaticMarkup(
+      <ResultPanel
+        entries={['<p>Narracja wyniku.</p>']}
+        continueHref="/play/pt-1?seen=4"
+        continueLabel={pl.game.continue}
+        label={pl.game.latestEvents}
+      />,
+    );
+    expect(html).toContain('Kontynuuj');
+    expect(html).toContain('aria-label="Ostatnie wydarzenia"');
   });
 });

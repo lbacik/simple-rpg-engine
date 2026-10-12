@@ -10,6 +10,7 @@ export {
 export { en, type Catalogue } from './en';
 export { pl } from './pl';
 export { getCatalogue } from './catalogues';
+export { formatNumber } from './format';
 export {
   pluralCategory,
   selectPlural,

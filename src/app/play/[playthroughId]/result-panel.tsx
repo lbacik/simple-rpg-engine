@@ -16,20 +16,25 @@ import Link from 'next/link';
 export function ResultPanel({
   entries,
   continueHref,
+  continueLabel,
+  label,
 }: {
   entries: string[];
   continueHref: string;
+  /** Interface Text: the Continue button and the panel name, rendered by the game screen. */
+  continueLabel: string;
+  label: string;
 }) {
   if (entries.length === 0) return null;
   // Entries hold server-rendered narration HTML (HTML-escaped, emphasis only).
   return (
-    <section className="result" aria-label="Latest events">
+    <section className="result" aria-label={label}>
       {entries.map((html, index) => (
         <div key={index} dangerouslySetInnerHTML={{ __html: html }} />
       ))}
       <p>
         <Link className="button" href={continueHref}>
-          Continue
+          {continueLabel}
         </Link>
       </p>
     </section>

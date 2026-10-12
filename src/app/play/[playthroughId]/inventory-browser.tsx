@@ -34,7 +34,10 @@ export type InventorySlotData = {
 export type InventoryTileData = {
   id: string;
   name: string;
-  quantity: number;
+  /** The held quantity, formatted with `Intl` in the Interface Language. */
+  quantity: string;
+  /** True when more than one is held: the tile carries the "×N" marker. */
+  stacked: boolean;
   kind: 'equipment' | 'consumable' | 'key';
   /** Equipment slot, for the tile icon. */
   slot: InventorySlotId | undefined;
@@ -117,6 +120,27 @@ function SlotIcon({ slot }: { slot: InventorySlotId }) {
     </span>
   );
 }
+
+/**
+ * Every Interface Text string the browser shows. The server renders these
+ * through the catalogue and passes them as props, so no catalogue is shipped
+ * to the browser (docs/spec/architecture.md, interface text).
+ */
+export type InventoryBrowserText = {
+  equipped: string;
+  carried: string;
+  carriedEmpty: string;
+  emptySlot: string;
+  ribbon: string;
+  magicTitle: string;
+  magicLabel: string;
+  equip: string;
+  unequip: string;
+  use: string;
+  noChangeInCombat: string;
+  noUseInCombat: string;
+  fullHealth: string;
+};
 
 /** A disabled action with its reason. */
 function DisabledAction({ label, reason }: { label: string; reason: string }) {
@@ -201,6 +225,7 @@ export function InventoryBrowser({
   initialSelectedId,
   seen,
   showUnknownExits,
+  text,
 }: {
   slots: InventorySlotData[];
   items: InventoryTileData[];
@@ -212,6 +237,8 @@ export function InventoryBrowser({
   initialSelectedId: string | undefined;
   seen: number | undefined;
   showUnknownExits: boolean;
+  /** Interface Text, rendered by the server through the catalogue. */
+  text: InventoryBrowserText;
 }) {
   const [selectedId, setSelectedId] = useState<string | undefined>(
     initialSelectedId ?? items[0]?.id,
@@ -222,8 +249,8 @@ export function InventoryBrowser({
 
   return (
     <div className="inv-grid">
-      <section aria-label="Equipped" className="inv-doll">
-        <h3>Equipped</h3>
+      <section aria-label={text.equipped} className="inv-doll">
+        <h3>{text.equipped}</h3>
         {slots.map(({ slot, label, item }) =>
           item === undefined ? (
             <div key={slot} className="inv-slot empty">
@@ -231,7 +258,7 @@ export function InventoryBrowser({
               <div>
                 <p className="meta">{label}</p>
                 <p>
-                  <em>Empty</em>
+                  <em>{text.emptySlot}</em>
                 </p>
               </div>
             </div>
@@ -243,7 +270,7 @@ export function InventoryBrowser({
                 <p>
                   <strong>{item.name}</strong>
                   {item.magic ? (
-                    <span className="inv-spark" title="Magic item">
+                    <span className="inv-spark" title={text.magicTitle}>
                       {' '}
                       ✦
                     </span>
@@ -251,13 +278,13 @@ export function InventoryBrowser({
                 </p>
                 {item.stats.length > 0 ? <p className="meta">{item.stats.join(' · ')}</p> : null}
                 {readOnly ? null : inCombat ? (
-                  <DisabledAction label="Unequip" reason="Cannot change equipment during Combat." />
+                  <DisabledAction label={text.unequip} reason={text.noChangeInCombat} />
                 ) : (
                   <InventoryActionForm
                     action={unequipAction}
                     field="slot"
                     value={slot}
-                    label="Unequip"
+                    label={text.unequip}
                     selectedId={selected?.id}
                     playthroughId={playthroughId}
                     step={step}
@@ -270,10 +297,10 @@ export function InventoryBrowser({
           ),
         )}
       </section>
-      <section aria-label="Carried">
-        <h3>Carried</h3>
+      <section aria-label={text.carried}>
+        <h3>{text.carried}</h3>
         {items.length === 0 ? (
-          <p>Empty.</p>
+          <p>{text.carriedEmpty}</p>
         ) : (
           <ul className="inv-tiles">
             {items.map((tile) => (
@@ -285,15 +312,15 @@ export function InventoryBrowser({
                   onClick={() => setSelectedId(tile.id)}
                 >
                   {tile.magic ? (
-                    <span className="inv-spark corner" title="Magic item">
+                    <span className="inv-spark corner" title={text.magicTitle}>
                       ✦
                     </span>
                   ) : null}
-                  {tile.quantity > 1 ? <span className="inv-qty">×{tile.quantity}</span> : null}
+                  {tile.stacked ? <span className="inv-qty">×{tile.quantity}</span> : null}
                   <TileIcon tile={tile} />
                   <span className="inv-tile-name">{tile.name}</span>
                   {tile.equippedSlot !== undefined ? (
-                    <span className="inv-ribbon">equipped</span>
+                    <span className="inv-ribbon">{text.ribbon}</span>
                   ) : null}
                 </button>
               </li>
@@ -305,9 +332,9 @@ export function InventoryBrowser({
             <p>
               <strong>{selected.name}</strong> × {selected.quantity}
               {selected.magic ? (
-                <span className="magic" title="Magic item">
+                <span className="magic" title={text.magicTitle}>
                   {' '}
-                  ✦ magic
+                  {text.magicLabel}
                 </span>
               ) : null}
             </p>
@@ -325,6 +352,7 @@ export function InventoryBrowser({
               step={step}
               seen={seen}
               showUnknownExits={showUnknownExits}
+              text={text}
             />}
           </div>
         ) : null}
@@ -343,6 +371,7 @@ function DetailAction({
   step,
   seen,
   showUnknownExits,
+  text,
 }: {
   tile: InventoryTileData;
   inCombat: boolean;
@@ -351,6 +380,7 @@ function DetailAction({
   step: number;
   seen: number | undefined;
   showUnknownExits: boolean;
+  text: InventoryBrowserText;
 }) {
   const formProps = {
     selectedId: tile.id,
@@ -361,8 +391,8 @@ function DetailAction({
   };
   if (tile.kind === 'equipment') {
     if (inCombat) {
-      const label = tile.equippedSlot !== undefined ? 'Unequip' : 'Equip';
-      return <DisabledAction label={label} reason="Cannot change equipment during Combat." />;
+      const label = tile.equippedSlot !== undefined ? text.unequip : text.equip;
+      return <DisabledAction label={label} reason={text.noChangeInCombat} />;
     }
     if (tile.equippedSlot !== undefined) {
       return (
@@ -370,7 +400,7 @@ function DetailAction({
           action={unequipAction}
           field="slot"
           value={tile.equippedSlot}
-          label="Unequip"
+          label={text.unequip}
           {...formProps}
         />
       );
@@ -380,24 +410,24 @@ function DetailAction({
         action={equipAction}
         field="itemId"
         value={tile.id}
-        label="Equip"
+        label={text.equip}
         {...formProps}
       />
     );
   }
   if (tile.kind === 'consumable') {
     if (inCombat) {
-      return <DisabledAction label="Use" reason="Cannot use items here during Combat." />;
+      return <DisabledAction label={text.use} reason={text.noUseInCombat} />;
     }
     if (fullHealth) {
-      return <DisabledAction label="Use" reason="Already at full Health." />;
+      return <DisabledAction label={text.use} reason={text.fullHealth} />;
     }
     return (
       <InventoryActionForm
         action={useItemAction}
         field="itemId"
         value={tile.id}
-        label="Use"
+        label={text.use}
         {...formProps}
       />
     );

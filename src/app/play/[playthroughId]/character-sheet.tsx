@@ -5,7 +5,7 @@
 // Relative imports only: vitest has no `@/` alias, and tests drive this
 // module directly with react-dom/server.
 
-import type { Scenario } from '../../../content/model';
+import type { AttributeName, Scenario } from '../../../content/model';
 import { effectiveAttributes } from '../../../engine/index';
 import {
   equipmentBonusSources,
@@ -13,15 +13,12 @@ import {
   type EquipmentSlot,
 } from '../../../engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '../../../engine/state';
+import { en, type Catalogue } from '../../../i18n/en';
+import { formatNumber } from '../../../i18n/format';
+import type { InterfaceLanguage } from '../../../i18n/languages';
 
-export const ATTRIBUTE_LABELS = {
-  might: 'Might',
-  agility: 'Agility',
-  wits: 'Wits',
-  presence: 'Presence',
-} as const;
-
-export type AttributeName = keyof typeof ATTRIBUTE_LABELS;
+/** Attribute rows render in this order, named by the catalogue. */
+const ATTRIBUTE_ORDER: AttributeName[] = ['might', 'agility', 'wits', 'presence'];
 
 export function itemName(scenario: Scenario, itemId: string): string {
   return scenario.itemsById[itemId]?.name ?? itemId;
@@ -77,12 +74,6 @@ function SlotIcon({ slot }: { slot: EquipmentSlot }) {
   );
 }
 
-const SLOT_LABELS = {
-  weapon: 'Weapon',
-  outfit: 'Outfit',
-  talisman: 'Talisman',
-} as const;
-
 /**
  * One Attribute row: five pips (filled ● base first, then ◆ gold equipment
  * bonus, so the filled pips equal the effective value), the effective value
@@ -90,12 +81,16 @@ const SLOT_LABELS = {
  * The pips are decorative; the value and explanation are plain text.
  */
 function AttributeRow({
+  catalogue,
+  language,
   label,
   base,
   effective,
   counted,
   ignored,
 }: {
+  catalogue: Catalogue;
+  language: InterfaceLanguage;
   label: string;
   base: number;
   effective: number;
@@ -115,20 +110,22 @@ function AttributeRow({
           />
         ))}
       </span>
-      <span className="sheet-attr-total">{effective}</span>
+      <span className="sheet-attr-total">{formatNumber(language, effective)}</span>
       {counted.length > 0 || ignored.length > 0 ? (
         <span className="sheet-attr-src">
-          base {base}
+          {catalogue.character.bonusBase(base)}
           {counted.map((name) => (
-            <span key={name}> · +1 {name}</span>
+            <span key={name}> · {catalogue.character.bonusPoint(name)}</span>
           ))}
           {ignored.map((name) => (
             <span key={name}>
               {' · '}
-              <s title="bonus capped at +2">+1 {name}</s>
+              <s title={catalogue.character.bonusCapped}>
+                {catalogue.character.bonusPoint(name)}
+              </s>
             </span>
           ))}
-          {ignored.length > 0 ? ' · bonus capped at +2' : null}
+          {ignored.length > 0 ? ` · ${catalogue.character.bonusCapped}` : null}
         </span>
       ) : null}
     </li>
@@ -143,11 +140,16 @@ export function CharacterSheet({
   scenario,
   state,
   locationName,
+  catalogue = en,
+  language = 'en',
 }: {
   scenario: Scenario;
   state: PlaythroughState;
   /** The current Location's name, resolved by the caller from the game view. */
   locationName: string;
+  /** Interface Text: the game screen passes the current catalogue. */
+  catalogue?: Catalogue;
+  language?: InterfaceLanguage;
 }) {
   const template = scenario.templatesById[state.character.templateId];
   const effective = effectiveAttributes(scenario, state);
@@ -155,7 +157,7 @@ export function CharacterSheet({
   const percent = healthPercent(state.character.health, MAX_HEALTH);
   const low = isLowHealth(state.character.health, MAX_HEALTH);
   return (
-    <section aria-label="Character" className="sheet">
+    <section aria-label={catalogue.character.title} className="sheet">
       <header className="sheet-hero">
         <span
           className={low ? 'status-medal sheet-medal low' : 'status-medal sheet-medal'}
@@ -173,15 +175,17 @@ export function CharacterSheet({
         </div>
       </header>
       <div className="sheet-cols">
-        <section aria-label="Attributes">
-          <h3>Attributes</h3>
+        <section aria-label={catalogue.character.attributes}>
+          <h3>{catalogue.character.attributes}</h3>
           <ul className="sheet-attrs">
-            {(Object.keys(ATTRIBUTE_LABELS) as AttributeName[]).map((name) => {
+            {ATTRIBUTE_ORDER.map((name) => {
               const ids = sources[name];
               return (
                 <AttributeRow
                   key={name}
-                  label={ATTRIBUTE_LABELS[name]}
+                  catalogue={catalogue}
+                  language={language}
+                  label={catalogue.attributes[name]}
                   base={state.character.baseAttributes[name]}
                   effective={effective[name]}
                   counted={ids.slice(0, 2).map((id) => itemName(scenario, id))}
@@ -190,27 +194,27 @@ export function CharacterSheet({
               );
             })}
           </ul>
-          <p className="meta sheet-legend">● base ◆ equipment bonus (max +2)</p>
+          <p className="meta sheet-legend">{catalogue.character.legend}</p>
         </section>
         <div>
-          <section aria-label="Health">
-            <h3>Health</h3>
+          <section aria-label={catalogue.character.health}>
+            <h3>{catalogue.character.health}</h3>
             <p className="sheet-health">
-              {state.character.health}
-              <span className="meta"> / {MAX_HEALTH}</span>
+              {formatNumber(language, state.character.health)}
+              <span className="meta"> / {formatNumber(language, MAX_HEALTH)}</span>
             </p>
             <span
               className={low ? 'health-segments low' : 'health-segments'}
               role="img"
-              aria-label={`Health ${state.character.health} of ${MAX_HEALTH}`}
+              aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
             >
               {Array.from({ length: MAX_HEALTH }, (_, index) => (
                 <span key={index} className={index < state.character.health ? 'on' : ''} />
               ))}
             </span>
           </section>
-          <section aria-label="Equipped">
-            <h3>Equipped</h3>
+          <section aria-label={catalogue.character.equipped}>
+            <h3>{catalogue.character.equipped}</h3>
             <ul className="sheet-slots">
               {EQUIPMENT_SLOTS.map((slot) => {
                 const equippedId = state.equipment[slot];
@@ -219,7 +223,7 @@ export function CharacterSheet({
                 return (
                   <li key={slot} className={equippedName === undefined ? 'empty' : ''}>
                     <SlotIcon slot={slot} />
-                    <span className="meta">{SLOT_LABELS[slot]}</span>
+                    <span className="meta">{catalogue.slots[slot]}</span>
                     <span>{equippedName ?? '—'}</span>
                   </li>
                 );

@@ -21,12 +21,26 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { journalHref, type RenderedJournalEntry } from '../../../lib/journal';
 import { JournalEntries } from './journal-entries';
 
+/**
+ * Every Interface Text string the link and its modal show. The server renders
+ * these through the catalogue and passes them as props, so no catalogue is
+ * shipped to the browser (docs/spec/architecture.md, interface text).
+ */
+export type JournalModalText = {
+  viewJournal: string;
+  title: string;
+  total: string;
+  openInNewTab: string;
+  close: string;
+};
+
 export function JournalModalLink({
   playthroughId,
   initialEntries,
   initialNextCursor,
   total,
   className,
+  text,
 }: {
   playthroughId: string;
   initialEntries: RenderedJournalEntry[];
@@ -34,6 +48,8 @@ export function JournalModalLink({
   total: number;
   /** The trigger styling of the screen it sits on (for example the Ending screen's secondary button). */
   className?: string;
+  /** Interface Text, rendered by the server through the catalogue. */
+  text: JournalModalText;
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLAnchorElement | null>(null);
@@ -102,7 +118,7 @@ export function JournalModalLink({
   return (
     <>
       <a ref={triggerRef} href={href} className={className} onClick={openModal}>
-        View journal
+        {text.viewJournal}
       </a>
       {open ? (
         <div
@@ -121,15 +137,15 @@ export function JournalModalLink({
             data-testid="journal-modal"
           >
             <div className="journal-modal-header">
-              <h2 id={titleId}>Journal</h2>
+              <h2 id={titleId}>{text.title}</h2>
               <p className="meta">
-                {total === 1 ? '1 entry.' : `${total} entries.`}{' '}
+                {text.total}{' '}
                 <a href={href} target="_blank" rel="noreferrer">
-                  Open in new tab
+                  {text.openInNewTab}
                 </a>
               </p>
               <button ref={closeRef} type="button" className="button secondary" onClick={close}>
-                Close
+                {text.close}
               </button>
             </div>
             <div className="journal-modal-body" data-testid="journal-modal-body">
