@@ -1,6 +1,13 @@
-// Query helpers for the Character/Inventory/Map panel tab and the transient
-// rejection notice, shared by the play page and the inventory server actions
+// Query helpers for the Character/Inventory/Map panel tab, the transient
+// rejection notice, the app-level "?" map setting and the client-side Continue
+// acknowledgement, shared by the play page and the inventory server actions
 // so both build the same URLs.
+//
+// The Continue after a result panel is client-side only
+// (docs/spec/playthrough-state.md, two kinds of Continue): a plain link to the
+// same game page carrying `?seen=<step>`. When it equals the Playthrough's
+// current `step` the server skips the result panel and renders the position; a
+// value that does not match is ignored and the result panel is shown again.
 
 export type PanelTab = 'character' | 'inventory' | 'map';
 
@@ -8,15 +15,75 @@ export function parsePanelTab(value: string | undefined): PanelTab {
   return value === 'inventory' || value === 'map' ? value : 'character';
 }
 
+/**
+ * Parse `?seen=`. Anything missing or invalid becomes undefined, which the
+ * game screen treats like no acknowledgement: the result panel is shown.
+ */
+export function parseSeenStep(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return undefined;
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isSafeInteger(parsed)) return undefined;
+  return parsed;
+}
+
+/**
+ * Whether the reading column shows only the result panel (with Continue)
+ * instead of the current position: the latest step produced result-panel
+ * entries and `?seen=` does not equal the current `step`.
+ */
+export function shouldShowResultPanel(
+  hasResultEntries: boolean,
+  currentStep: number,
+  seenStep: number | undefined,
+): boolean {
+  if (!hasResultEntries) return false;
+  return seenStep !== currentStep;
+}
+
+type PlayQuery = {
+  tab?: string;
+  notice?: string;
+  seen?: number;
+  showUnknownExits?: boolean;
+};
+
+function playQueryString(query: PlayQuery): string {
+  const params = new URLSearchParams();
+  if (query.tab === 'inventory' || query.tab === 'map') params.set('tab', query.tab);
+  if (query.notice === 'stale' || query.notice === 'unavailable') params.set('notice', query.notice);
+  if (query.showUnknownExits === true) params.set('unknown', '1');
+  if (query.seen !== undefined && Number.isInteger(query.seen) && query.seen >= 0) {
+    params.set('seen', String(query.seen));
+  }
+  return params.toString();
+}
+
 /** `/play/[id]` with the panel tab preserved, plus a rejection notice when given. */
 export function playHref(
   playthroughId: string,
   tab: string | undefined,
   notice?: string,
+  seen?: number,
+  showUnknownExits?: boolean,
 ): string {
-  const params = new URLSearchParams();
-  if (tab === 'inventory' || tab === 'map') params.set('tab', tab);
-  if (notice === 'stale' || notice === 'unavailable') params.set('notice', notice);
-  const query = params.toString();
+  const query = playQueryString({ tab, notice, seen, showUnknownExits });
   return query === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${query}`;
+}
+
+/**
+ * The Continue link after a result panel: the same game page carrying the
+ * current `step` as `?seen=`, preserving the panel tab, the transient notice
+ * and the "?" map setting. Following it changes no game state and does not
+ * advance `step`; the Outcome was already applied when the Choice was made.
+ */
+export function continueHref(
+  playthroughId: string,
+  step: number,
+  tab?: string,
+  notice?: string,
+  showUnknownExits?: boolean,
+): string {
+  return playHref(playthroughId, tab, notice, step, showUnknownExits);
 }

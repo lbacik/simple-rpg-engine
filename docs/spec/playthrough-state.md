@@ -64,11 +64,13 @@ Travel identifies a Connection by its target: every visible Connection to the sa
 ### Two kinds of "Continue"
 
 - The **implicit Continue** of a Scene with no visible Choice is a domain action: it advances `step`.
-- The **Continue after reading a Test or Outcome result** is client-side only. The Outcome was already applied when the Choice was made. After a reload the result panel may be shown again, which is harmless. There is no persisted "awaiting Continue" state.
+- The **Continue after reading a Test or Outcome result** is client-side only: a plain link to the same game page carrying the current `step` (for example `?seen=<step>`). The Outcome was already applied when the Choice was made, so following the link changes no game state and does not advance `step`. When the parameter equals the Playthrough's current `step`, the server skips the result panel and renders the position; a value that does not match is ignored. After a reload without the parameter the result panel may be shown again, which is harmless. There is no persisted "awaiting Continue" state.
 
 ### Result panel
 
 The result panel is derived from the Journal entries of the **latest step**, taking only these types, in order: intro, Test, Outcome narration, state change, Combat end and the Enemy-defeated notice. Scene narration, travel, Combat start and Combat rounds are not part of it; they are shown by the new position itself (the Scene, the Location view or the Combat panel). If the latest step produced none of these types (for example an empty Outcome), there is no result panel, and the new position is shown directly. A step that ended the Playthrough shows the Ending screen instead.
+
+While the result panel is shown, the reading column shows **only** the panel and its Continue: the Location view, Scene, Combat panel and the "View journal" link are not rendered until the player continues. The side panel (map, Character, Inventory) and any transient notice stay visible throughout. This applies to every result panel: after a Choice or Test, after Combat ends, and to the intro at the start of a Playthrough.
 
 ## Transitions
 
