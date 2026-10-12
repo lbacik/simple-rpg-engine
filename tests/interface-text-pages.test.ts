@@ -91,6 +91,24 @@ describe('non-game interface text', () => {
       pl.error.retry,
       en.error.home,
       pl.error.home,
+      en.scenarioLanguage.name('pl'),
+      pl.scenarioLanguage.name('en'),
+      en.scenarioLanguage.flagName('pl', true),
+      pl.scenarioLanguage.flagName('en', true),
+      en.scenarioLanguage.flagName('en', false),
+      pl.scenarioLanguage.flagName('pl', false),
+      en.scenarioLanguage.inInterfaceLanguage('en'),
+      pl.scenarioLanguage.inInterfaceLanguage('pl'),
+      en.scenarioLanguage.otherLanguages,
+      pl.scenarioLanguage.otherLanguages,
+      en.scenarioLanguage.otherLanguagesNote('en'),
+      pl.scenarioLanguage.otherLanguagesNote('pl'),
+      en.scenarioLanguage.notTranslated('pl', 'en'),
+      pl.scenarioLanguage.notTranslated('pl', 'en'),
+      en.scenarioLanguage.textBadge('pl'),
+      pl.scenarioLanguage.textBadge('en'),
+      en.scenario.templateItemSuffix(1, null),
+      pl.scenario.templateItemSuffix(2, 'Broń'),
     ];
     for (const text of strings) {
       expect(text.length).toBeGreaterThan(0);
@@ -185,6 +203,7 @@ describe('catalogue parity', () => {
       expect(Object.keys(catalogue), name).toContain('playthroughs');
       expect(Object.keys(catalogue), name).toContain('notFound');
       expect(Object.keys(catalogue), name).toContain('error');
+      expect(Object.keys(catalogue), name).toContain('scenarioLanguage');
     }
   });
 });

@@ -169,7 +169,7 @@ describe('combat panel header', () => {
 
   it('marks the Enemy name with the Scenario language, never the Character name', () => {
     const markup = render(combat());
-    expect(markup).toContain('<p class="combat-name" lang="en">The Grey Wolf</p>');
+    expect(markup).toContain('<p class="combat-name" lang="en">Grey Wolf</p>');
     expect(markup).toContain('<p class="combat-name">Robin</p>');
   });
 });

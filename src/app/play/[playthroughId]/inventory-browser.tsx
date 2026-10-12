@@ -226,6 +226,7 @@ export function InventoryBrowser({
   seen,
   showUnknownExits,
   text,
+  lang,
 }: {
   slots: InventorySlotData[];
   items: InventoryTileData[];

@@ -111,6 +111,7 @@ describe('ReadOnlyPosition', () => {
         gameView={gameView}
         characterName="Robin"
         recordedEnding={{ endingId: 'w', kind: 'victory', title: 'Recorded Triumph', text: 'Won.', lang: 'en' }}
+        lang="en"
       />,
     );
     expect(html).toContain('Recorded Triumph');
