@@ -111,8 +111,46 @@ function loadOne(registry: Map<string, RegistryEntry>, dir: string, name: string
       );
     }
   } else {
-    console.error(`scenario "${name}" is invalid and was left out of the collection:`);
-    for (const diagnostic of result.diagnostics) {
+    logLoadFailure(
+      name,
+      `scenario "${name}" is invalid and was left out of the collection:`,
+      result.diagnostics,
+      result.rejectedTranslations,
+    );
+  }
+}
+
+/**
+ * Log a rejected run: the base diagnostics first, then each rejected
+ * Translation under its own header (the same identity line the success path
+ * emits), so the author can tell which Translation failed even when the
+ * Scenario itself is invalid too.
+ */
+function logLoadFailure(
+  name: string,
+  header: string,
+  diagnostics: Diagnostic[],
+  rejectedTranslations: { manifestPath: string; language?: string }[],
+): void {
+  console.error(header);
+  const byTranslation = new Map<string, Diagnostic[]>();
+  for (const diagnostic of diagnostics) {
+    if (diagnostic.translation === undefined) {
+      console.error(
+        `  [${diagnostic.code}]${diagnostic.file ? ` ${diagnostic.file}` : ''}: ${diagnostic.message}`,
+      );
+    } else {
+      const group = byTranslation.get(diagnostic.translation);
+      if (group) group.push(diagnostic);
+      else byTranslation.set(diagnostic.translation, [diagnostic]);
+    }
+  }
+  for (const [manifestPath, group] of byTranslation) {
+    const language = rejectedTranslations.find((entry) => entry.manifestPath === manifestPath)?.language;
+    console.error(
+      `scenario "${name}" translation "${manifestPath}" (${language ?? 'unknown'}) is invalid and was left out:`,
+    );
+    for (const diagnostic of group) {
       console.error(
         `  [${diagnostic.code}]${diagnostic.file ? ` ${diagnostic.file}` : ''}: ${diagnostic.message}`,
       );
@@ -133,12 +171,12 @@ function refreshIfStale(registry: Map<string, RegistryEntry>, name: string): voi
   if (result.ok) {
     registry.set(name, snapshotEntry(entry.scenario.dir, result.scenario, result.warnings));
   } else {
-    console.error(`scenario "${name}" is invalid after an edit and was left out of the collection:`);
-    for (const diagnostic of result.diagnostics) {
-      console.error(
-        `  [${diagnostic.code}]${diagnostic.file ? ` ${diagnostic.file}` : ''}: ${diagnostic.message}`,
-      );
-    }
+    logLoadFailure(
+      name,
+      `scenario "${name}" is invalid after an edit and was left out of the collection:`,
+      result.diagnostics,
+      result.rejectedTranslations,
+    );
     registry.delete(name);
   }
 }

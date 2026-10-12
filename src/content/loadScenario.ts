@@ -219,8 +219,14 @@ export function loadScenario(dir: string): LoadScenarioResult {
   // once the base has passed Integrity. Any error rejects only that
   // Translation; the Scenario loads without it.
   const translationRefs = collectTranslationRefs(manifestRoot, manifestValue, manifest.lineCounter);
-  const { accepted, rejected } = runTranslationPipelines(scenarioDir, translationRefs, listed);
+  const {
+    accepted,
+    rejected,
+    acceptedWarnings,
+    contents: translationContents,
+  } = runTranslationPipelines(scenarioDir, translationRefs, listed);
   const rejectedTranslations: RejectedTranslation[] = rejected;
+  const acceptedPaths = new Set(accepted.map((loaded) => loaded.manifestPath));
 
   // Phase 4 (Playability): reachability, way-out and authoring-quality
   // warnings over the compiled model. An error (no-victory, no-way-out)
@@ -243,8 +249,14 @@ export function loadScenario(dir: string): LoadScenarioResult {
       listedPaths: loaded.files.map((file) => file.parsed.file),
       fileBytes: loaded.fileBytes,
     })),
+    rejectedTranslationContents: translationContents.filter(
+      (content) => !acceptedPaths.has(content.manifestPath),
+    ),
   });
   runPlayabilityPhase(scenario, manifestParsed, parsedFiles, push);
+  // Accepted Translations' warnings ride with the base warnings; every
+  // rejected Translation's diagnostics ride along too, tagged in `translation`.
+  diagnostics.push(...acceptedWarnings);
   for (const { diagnostics: rejectedDiagnostics } of rejectedTranslations) {
     diagnostics.push(...rejectedDiagnostics);
   }

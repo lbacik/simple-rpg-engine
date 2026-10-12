@@ -12,8 +12,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
-import { checkPlaythroughCompatibility, loadScenario } from '../src/content/index';
+import { describe, expect, it, vi } from 'vitest';
+import { checkPlaythroughCompatibility, loadAllScenarios, loadScenario } from '../src/content/index';
 import { startPlaythrough } from '../src/engine/index';
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -310,5 +310,104 @@ describe('validate CLI with translations', () => {
     const { stdout, status } = runValidate([dir]);
     expect(status).toBe(1);
     expect(stdout).toContain(`; Translation ${TWO_BRIDGES_MANIFEST} (unknown) rejected`);
+  });
+});
+
+describe('translation warnings', () => {
+  it('a warning inside an accepted Translation rides with the base warnings', () => {
+    const dir = copyFixture('two-bridges');
+    // A Markdown heading is outside the narration subset: a warning, not an error.
+    writeRel(
+      dir,
+      'translations/pl/scenes/arrival.yaml',
+      readRel(dir, 'translations/pl/scenes/arrival.yaml').replace(
+        '  Przewoźnik zastawia',
+        '  # Most\n  Przewoźnik zastawia',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // The Translation is accepted despite the warning.
+    expect(result.scenario.translations).toHaveLength(1);
+    expect(result.rejectedTranslations).toEqual([]);
+    const warning = result.warnings.find((d) => d.code === 'schema/markdown-outside-subset');
+    expect(warning).toMatchObject({
+      severity: 'warning',
+      file: 'translations/pl/scenes/arrival.yaml',
+      translation: TWO_BRIDGES_MANIFEST,
+    });
+  });
+
+  it('prints the Translation warning and exits 0', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      'translations/pl/scenes/arrival.yaml',
+      readRel(dir, 'translations/pl/scenes/arrival.yaml').replace(
+        '  Przewoźnik zastawia',
+        '  # Most\n  Przewoźnik zastawia',
+      ),
+    );
+    const { stdout, status } = runValidate([dir]);
+    expect(status).toBe(0);
+    expect(stdout).toContain('warning schema/markdown-outside-subset');
+    expect(stdout).toContain('0 errors, 1 warning');
+  });
+});
+
+describe('rejected translation content', () => {
+  it('a rejected Translation still feeds the content hash and the watch list', () => {
+    const dir = copyFixture('two-bridges');
+    // A T2 error after a clean T1: the whole Translation package was read.
+    writeRel(dir, 'translations/pl/scenes/ferry.yaml', `${readRel(dir, 'translations/pl/scenes/ferry.yaml')}when: { flag: something }\n`);
+    const broken = loadScenario(dir);
+    expect(broken.ok).toBe(true);
+    if (!broken.ok) return;
+    expect(broken.rejectedTranslations).toHaveLength(1);
+    // The dev registry watches the rejected Translation's files, so fixing
+    // them reloads the Scenario on the next request.
+    expect(broken.scenario.listedPaths).toContain(TWO_BRIDGES_MANIFEST);
+    expect(broken.scenario.listedPaths).toContain('translations/pl/scenes/ferry.yaml');
+    const started = startPlaythrough(broken.scenario, 'wayfarer', 'Aldric', () => 1);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    // Editing the rejected Translation's text changes the hash, and no id
+    // changed, so the stored Playthrough survives the reference check.
+    writeRel(
+      dir,
+      'translations/pl/items.yaml',
+      readRel(dir, 'translations/pl/items.yaml').replace('Miecz mostowy', 'Miecz rzeczny'),
+    );
+    const edited = loadScenario(dir);
+    expect(edited.ok).toBe(true);
+    if (!edited.ok) return;
+    expect(edited.rejectedTranslations).toHaveLength(1);
+    expect(edited.scenario.contentHash).not.toBe(broken.scenario.contentHash);
+    expect(checkPlaythroughCompatibility(edited.scenario, started.state)).toEqual({ ok: true });
+  });
+});
+
+describe('registry logging with translations', () => {
+  it('names the rejected Translation even when the Scenario itself is invalid', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-tr-collection-'));
+    const dir = path.join(root, 'two-bridges');
+    fs.cpSync(fixturePath('two-bridges'), dir, { recursive: true });
+    // Break playability (no victory reachable) and the pl Translation.
+    writeRel(dir, 'endings.yaml', readRel(dir, 'endings.yaml').replace('kind: victory', 'kind: defeat'));
+    writeRel(dir, 'translations/pl/scenes/ferry.yaml', `${readRel(dir, 'translations/pl/scenes/ferry.yaml')}when: { flag: something }\n`);
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      errors.push(args.join(' '));
+    });
+    try {
+      loadAllScenarios(root);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(errors.join('\n')).toContain(
+      `translation "${TWO_BRIDGES_MANIFEST}" (pl) is invalid and was left out`,
+    );
   });
 });

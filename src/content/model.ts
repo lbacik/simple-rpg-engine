@@ -229,8 +229,10 @@ export type Scenario = {
   contentHash: string;
   /**
    * Manifest-relative paths of every listed content file, in manifest order:
-   * the base files, then per accepted Translation its manifest and the files
-   * it lists. The dev registry watches these (plus the manifest) for reloads.
+   * the base files, then per Translation (accepted or rejected-but-readable)
+   * its manifest and the files it lists. The dev registry watches these (plus
+   * the manifest) for reloads, so editing a rejected Translation's files
+   * reloads the Scenario on the next request.
    */
   listedPaths: string[];
 };
@@ -297,6 +299,16 @@ export type TranslationModelInputs = {
   fileBytes: Map<string, Buffer>;
 };
 
+/**
+ * The raw content of a Translation that T1 managed to read but a later stage
+ * rejected. It carries no compiled text, but its bytes still feed the content
+ * hash and the dev watch list: the author edits exactly these files to fix it.
+ */
+export type RejectedTranslationContent = Pick<
+  TranslationModelInputs,
+  'manifestPath' | 'manifestBytes' | 'listedPaths' | 'fileBytes'
+>;
+
 export type ModelInputs = {
   id: string;
   dir: string;
@@ -311,17 +323,31 @@ export type ModelInputs = {
   fileBytes: Map<string, Buffer>;
   /** Accepted Translations, in base-manifest listing order. */
   translations: TranslationModelInputs[];
+  /**
+   * Translations the pipelines rejected after T1 read them, in
+   * base-manifest listing order. Only their bytes matter (hash, watch list).
+   */
+  rejectedTranslationContents: RejectedTranslationContent[];
 };
 
 /**
  * Compute the deterministic content hash: SHA-256 over the manifest bytes,
  * every listed file's bytes in manifest order, every listed Translation
- * manifest and every file it lists (so a Translation-only change changes the
- * hash), and every declared image's bytes in declaration order, each bound to
- * its path.
+ * manifest and every file it lists (accepted or rejected, so a
+ * Translation-only change changes the hash), and every declared image's bytes
+ * in declaration order, each bound to its path.
  */
 export function computeContentHash(
-  inputs: Pick<ModelInputs, 'images' | 'imageBytes' | 'manifestBytes' | 'listedPaths' | 'fileBytes' | 'translations'>,
+  inputs: Pick<
+    ModelInputs,
+    | 'images'
+    | 'imageBytes'
+    | 'manifestBytes'
+    | 'listedPaths'
+    | 'fileBytes'
+    | 'translations'
+    | 'rejectedTranslationContents'
+  >,
 ): string {
   const hash = createHash('sha256');
   const segment = (name: string, bytes: Buffer): void => {
@@ -329,11 +355,7 @@ export function computeContentHash(
     hash.update(Buffer.from([0]));
     hash.update(bytes);
   };
-  segment('scenario.yaml', inputs.manifestBytes);
-  for (const listedPath of inputs.listedPaths) {
-    segment(listedPath, required(inputs.fileBytes.get(listedPath), `listed file "${listedPath}"`));
-  }
-  for (const translation of inputs.translations) {
+  const segmentTranslation = (translation: TranslationModelInputs | RejectedTranslationContent): void => {
     segment(translation.manifestPath, translation.manifestBytes);
     for (const listedPath of translation.listedPaths) {
       segment(
@@ -341,6 +363,16 @@ export function computeContentHash(
         required(translation.fileBytes.get(listedPath), `listed file "${listedPath}"`),
       );
     }
+  };
+  segment('scenario.yaml', inputs.manifestBytes);
+  for (const listedPath of inputs.listedPaths) {
+    segment(listedPath, required(inputs.fileBytes.get(listedPath), `listed file "${listedPath}"`));
+  }
+  for (const translation of inputs.translations) {
+    segmentTranslation(translation);
+  }
+  for (const translation of inputs.rejectedTranslationContents) {
+    segmentTranslation(translation);
   }
   for (const image of inputs.images) {
     segment(image.path, required(inputs.imageBytes.get(image.id), `image "${image.id}"`));
@@ -474,9 +506,14 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     })),
   }));
 
+  const translationPaths = (translation: TranslationModelInputs | RejectedTranslationContent): string[] => [
+    translation.manifestPath,
+    ...translation.listedPaths,
+  ];
   const listedPaths = [
     ...inputs.listedPaths,
-    ...inputs.translations.flatMap((translation) => [translation.manifestPath, ...translation.listedPaths]),
+    ...inputs.translations.flatMap(translationPaths),
+    ...inputs.rejectedTranslationContents.flatMap(translationPaths),
   ];
 
   const scenario: Scenario = {

@@ -49,6 +49,7 @@ import type { Ctx, ManifestSection, ParsedFile } from './structure';
 import { nodeRange, parseYamlText } from './yamlFile';
 import type {
   CompiledTranslation,
+  RejectedTranslationContent,
   TranslationChoiceText,
   TranslationEncounterText,
   TranslationEndingText,
@@ -617,14 +618,25 @@ export function checkPackageWideDuplicates(
 /**
  * Run every listed Translation's own pipeline (T1 then T2). Translations whose
  * stage produced any error are rejected with their diagnostics; the rest load.
+ * Warnings from accepted Translations are returned separately (warnings never
+ * reject, but they still reach the CLI and the startup logs). `contents`
+ * covers every Translation T1 managed to read — accepted or rejected, in
+ * listing order — so the content hash and the dev watch list cover the
+ * rejected ones too.
  */
 export function runTranslationPipelines(
   scenarioDir: string,
   refs: TranslationManifestRef[],
   baseEntries: { value: string; range: DiagnosticRange | undefined; section: string }[],
-): { accepted: LoadedTranslation[]; rejected: { manifestPath: string; language?: string; diagnostics: Diagnostic[] }[] } {
+): {
+  accepted: LoadedTranslation[];
+  rejected: { manifestPath: string; language?: string; diagnostics: Diagnostic[] }[];
+  acceptedWarnings: Diagnostic[];
+  contents: RejectedTranslationContent[];
+} {
   const accepted: LoadedTranslation[] = [];
   const rejected: { manifestPath: string; language?: string; diagnostics: Diagnostic[] }[] = [];
+  const acceptedWarnings: Diagnostic[] = [];
   const t1Loaded: LoadedTranslation[] = [];
   const t1Diagnostics = new Map<string, Diagnostic[]>();
 
@@ -682,9 +694,22 @@ export function runTranslationPipelines(
       // above); refresh it from the parsed value for the summary line.
       loaded.language = readLanguage(loaded.manifest.value) ?? loaded.language;
       accepted.push(loaded);
+      acceptedWarnings.push(...diagnostics.filter((d) => d.severity === 'warning'));
     }
   }
-  return { accepted, rejected };
+  const contents: RejectedTranslationContent[] = [];
+  for (const ref of refs) {
+    const loaded = t1Loaded.find((candidate) => candidate.manifestPath === ref.manifestPath);
+    if (loaded !== undefined && !contents.some((known) => known.manifestPath === loaded.manifestPath)) {
+      contents.push({
+        manifestPath: loaded.manifestPath,
+        manifestBytes: loaded.manifestBytes,
+        listedPaths: loaded.files.map((file) => file.parsed.file),
+        fileBytes: loaded.fileBytes,
+      });
+    }
+  }
+  return { accepted, rejected, acceptedWarnings, contents };
 }
 
 /**
