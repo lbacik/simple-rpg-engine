@@ -123,6 +123,7 @@ Optional text fields (Connection `label`, item, Enemy and Template `description`
 | `ref/invalid-id` | An ID does not match `[a-z][a-z0-9-]*`. |
 | `ref/duplicate-id` | Two entities of the same type share an ID within the Scenario. |
 | `ref/duplicate-choice-id` | Two Choices of one Scene share an ID. |
+| `ref/duplicate-connection-target` | Two Connections of one Location have the same `to`. (A Translation keys Connection `label`s by `to`.) |
 | `ref/unknown-location` | A reference to a Location that does not exist: `startLocation`, Connection `to`, `move`, `reveal`, `visited`. |
 | `ref/unknown-scene` | A reference to a Scene that does not exist: Location `scenes`, `next`, `fired`. |
 | `ref/unknown-item` | A reference to an item that does not exist: Template `items`, `give-item`, `take-item`, `has`. |

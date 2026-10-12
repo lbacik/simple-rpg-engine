@@ -6,7 +6,7 @@ The screens, layout and interaction model. This document is normative; the [mock
 
 - Desktop and phone layouts.
 - A neutral, lightly book-inspired style that suits Scenarios of different genres. The UI does not change per Scenario.
-- The UI is in a single language. Scenario text is shown in the Scenario's declared `language` (set as the page's `lang` for Scenario content).
+- The UI is in a single language. Scenario text is shown from the Translation that the Interface Language selects, or else in the Base Language ([scenario-format.md](scenario-format.md#language-tags)); the shown text's `language` is set as the `lang` of Scenario content.
 - The main view shows the **current** Scene or Location, not a growing conversation. Earlier narration lives in the separate, read-only Journal.
 - Content gated by an unmet Condition (Choices, Connections, on-demand Scenes) is hidden. Unavailable inventory and Combat actions are shown disabled, with the reason. The server validates every action independently.
 
