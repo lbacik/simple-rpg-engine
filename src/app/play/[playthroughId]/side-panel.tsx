@@ -119,11 +119,26 @@ const SLOT_LABELS = {
   talisman: 'Talisman',
 } as const;
 
-/** Stat lines for a filled slot: the bonus, and Damage and Reach for weapons. */
-function slotStats(itemId: string, scenario: Scenario): { name: string; magic: boolean; stats: string[] } {
+/**
+ * The facts the inventory modal shows for an item: the stat lines (bonus,
+ * and Damage and Reach for weapons) double as the filled-slot stats and,
+ * prefixed with the kind chip, as the detail-pane chips.
+ */
+function itemFacts(
+  itemId: string,
+  scenario: Scenario,
+): { name: string; magic: boolean; stats: string[]; chips: InventoryTileData['chips'] } {
   const item = scenario.itemsById[itemId];
-  if (item === undefined || item.kind !== 'equipment') {
-    return { name: itemName(scenario, itemId), magic: false, stats: [] };
+  if (item === undefined || item.kind === 'key') {
+    return { name: itemName(scenario, itemId), magic: item?.magic ?? false, stats: [], chips: ['Key item'] };
+  }
+  if (item.kind === 'consumable') {
+    return {
+      name: item.name,
+      magic: item.magic,
+      stats: [],
+      chips: [`Consumable · restores ${item.heal} Health`],
+    };
   }
   const stats: string[] = [];
   if (item.bonus !== undefined) {
@@ -134,29 +149,7 @@ function slotStats(itemId: string, scenario: Scenario): { name: string; magic: b
       item.damage !== undefined ? `Damage ${item.damage} · Reach ${item.reach}` : `Reach ${item.reach}`,
     );
   }
-  return { name: item.name, magic: item.magic, stats };
-}
-
-/** Chips for the detail pane: kind/slot, bonus, Damage and Reach or healing. */
-function tileChips(itemId: string, scenario: Scenario): { chips: InventoryTileData['chips']; bonusLabel: string | undefined } {
-  const item = scenario.itemsById[itemId];
-  if (item === undefined || item.kind !== 'equipment') {
-    if (item?.kind === 'consumable') {
-      return { chips: [`Consumable · restores ${item.heal} Health`], bonusLabel: undefined };
-    }
-    return { chips: ['Key item'], bonusLabel: undefined };
-  }
-  const chips = [`Equipment · ${item.slot}`];
-  const bonusLabel = item.bonus !== undefined ? ATTRIBUTE_LABELS[item.bonus] : undefined;
-  if (bonusLabel !== undefined) {
-    chips.push(`+1 ${bonusLabel}`);
-  }
-  if (item.slot === 'weapon') {
-    chips.push(
-      item.damage !== undefined ? `Damage ${item.damage} · Reach ${item.reach}` : `Reach ${item.reach}`,
-    );
-  }
-  return { chips, bonusLabel };
+  return { name: item.name, magic: item.magic, stats, chips: [`Equipment · ${item.slot}`, ...stats] };
 }
 
 /**
@@ -195,7 +188,7 @@ export function InventorySheet({
     if (equippedId === undefined || scenario.itemsById[equippedId] === undefined) {
       return { slot, label: SLOT_LABELS[slot], item: undefined };
     }
-    const { name, magic, stats } = slotStats(equippedId, scenario);
+    const { name, magic, stats } = itemFacts(equippedId, scenario);
     return { slot, label: SLOT_LABELS[slot], item: { id: equippedId, name, magic, stats } };
   });
   // Best effort: anything whose id is gone from the content is left out.
@@ -203,19 +196,15 @@ export function InventorySheet({
     ([itemId, quantity]) => {
       const item = scenario.itemsById[itemId];
       if (item === undefined) return [];
-      const { chips, bonusLabel } = tileChips(itemId, scenario);
+      const { name, magic, chips } = itemFacts(itemId, scenario);
       return [
         {
           id: itemId,
-          name: item.name,
+          name,
           quantity,
           kind: item.kind,
           slot: item.kind === 'equipment' ? item.slot : undefined,
-          bonusLabel,
-          damage: item.kind === 'equipment' ? item.damage : undefined,
-          reach: item.kind === 'equipment' && item.slot === 'weapon' ? item.reach : undefined,
-          heal: item.kind === 'consumable' ? item.heal : undefined,
-          magic: item.magic,
+          magic,
           description: item.description,
           equippedSlot:
             item.kind === 'equipment' && state.equipment[item.slot] === itemId

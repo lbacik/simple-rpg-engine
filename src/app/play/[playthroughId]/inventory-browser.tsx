@@ -36,12 +36,8 @@ export type InventoryTileData = {
   name: string;
   quantity: number;
   kind: 'equipment' | 'consumable' | 'key';
-  /** Equipment slot, for the kind/slot chip. */
+  /** Equipment slot, for the tile icon. */
   slot: InventorySlotId | undefined;
-  bonusLabel: string | undefined;
-  damage: number | undefined;
-  reach: string | undefined;
-  heal: number | undefined;
   magic: boolean;
   description: string | undefined;
   equippedSlot: InventorySlotId | undefined;
@@ -49,25 +45,36 @@ export type InventoryTileData = {
   chips: string[];
 };
 
-function TileIcon({ tile }: { tile: InventoryTileData }) {
-  const name =
-    tile.kind === 'equipment' ? (tile.slot ?? 'weapon') : tile.kind === 'consumable' ? 'consumable' : 'key';
-  const paths =
-    name === 'weapon' ? (
+/** The equipment-slot glyphs, shared by the carried tiles and the paper doll. */
+function SlotIconPaths({ slot }: { slot: InventorySlotId }) {
+  if (slot === 'weapon') {
+    return (
       <>
         <path d="M20 4 9.5 14.5" />
         <path d="M20 4h-4M20 4v4" />
         <path d="M6.5 11.5l6 6" />
         <path d="M8.5 15.5 4 20" />
       </>
-    ) : name === 'outfit' ? (
-      <path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3q-4 3-8 0Z" />
-    ) : name === 'talisman' ? (
-      <>
-        <path d="M7 3q5 7 10 0" />
-        <circle cx="12" cy="15" r="5" />
-        <path d="M12 12l2 3-2 3-2-3Z" />
-      </>
+    );
+  }
+  if (slot === 'outfit') {
+    return <path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3q-4 3-8 0Z" />;
+  }
+  return (
+    <>
+      <path d="M7 3q5 7 10 0" />
+      <circle cx="12" cy="15" r="5" />
+      <path d="M12 12l2 3-2 3-2-3Z" />
+    </>
+  );
+}
+
+function TileIcon({ tile }: { tile: InventoryTileData }) {
+  const name =
+    tile.kind === 'equipment' ? (tile.slot ?? 'weapon') : tile.kind === 'consumable' ? 'consumable' : 'key';
+  const paths =
+    name === 'weapon' || name === 'outfit' || name === 'talisman' ? (
+      <SlotIconPaths slot={name} />
     ) : name === 'consumable' ? (
       <>
         <path d="M10 3h4M10.5 3v6l-5 9.5Q5 21 7.5 21h9q2.5 0 2-2.5l-5-9.5V3" />
@@ -109,24 +116,60 @@ function SlotIcon({ slot }: { slot: InventorySlotId }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {slot === 'weapon' ? (
-          <>
-            <path d="M20 4 9.5 14.5" />
-            <path d="M20 4h-4M20 4v4" />
-            <path d="M6.5 11.5l6 6" />
-            <path d="M8.5 15.5 4 20" />
-          </>
-        ) : slot === 'outfit' ? (
-          <path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3q-4 3-8 0Z" />
-        ) : (
-          <>
-            <path d="M7 3q5 7 10 0" />
-            <circle cx="12" cy="15" r="5" />
-            <path d="M12 12l2 3-2 3-2-3Z" />
-          </>
-        )}
+        <SlotIconPaths slot={slot} />
       </svg>
     </span>
+  );
+}
+
+/** A disabled action with its reason. */
+function DisabledAction({ label, reason }: { label: string; reason: string }) {
+  return (
+    <p>
+      <button className="button secondary" type="button" disabled>
+        {label}
+      </button>{' '}
+      <span className="reason">{reason}</span>
+    </p>
+  );
+}
+
+/** An inventory Server Action form: the identity inputs, the preserved query
+ * inputs and the submit button. */
+function InventoryActionForm({
+  action,
+  field,
+  value,
+  label,
+  selectedId,
+  playthroughId,
+  step,
+  seen,
+  showUnknownExits,
+}: {
+  action: (formData: FormData) => Promise<never>;
+  /** The subject input: `slot` for unequip, `itemId` for equip and use. */
+  field: 'slot' | 'itemId';
+  value: string;
+  label: string;
+  selectedId: string | undefined;
+  playthroughId: string;
+  step: number;
+  seen: number | undefined;
+  showUnknownExits: boolean;
+}) {
+  return (
+    <form action={action} className="inline">
+      <input type="hidden" name="playthroughId" value={playthroughId} />
+      <input type="hidden" name="expectedStep" value={step} />
+      <input type="hidden" name={field} value={value} />
+      <PreservedInputs selectedId={selectedId} seen={seen} showUnknownExits={showUnknownExits} />
+      <p>
+        <button className="button secondary" type="submit">
+          {label}
+        </button>
+      </p>
+    </form>
   );
 }
 
@@ -212,28 +255,19 @@ export function InventoryBrowser({
                 </p>
                 {item.stats.length > 0 ? <p className="meta">{item.stats.join(' · ')}</p> : null}
                 {readOnly ? null : inCombat ? (
-                  <p>
-                    <button className="button secondary" type="button" disabled>
-                      Unequip
-                    </button>{' '}
-                    <span className="reason">Cannot change equipment during Combat.</span>
-                  </p>
+                  <DisabledAction label="Unequip" reason="Cannot change equipment during Combat." />
                 ) : (
-                  <form action={unequipAction} className="inline">
-                    <input type="hidden" name="playthroughId" value={playthroughId} />
-                    <input type="hidden" name="expectedStep" value={step} />
-                    <input type="hidden" name="slot" value={slot} />
-                    <PreservedInputs
-                      selectedId={selected?.id}
-                      seen={seen}
-                      showUnknownExits={showUnknownExits}
-                    />
-                    <p>
-                      <button className="button secondary" type="submit">
-                        Unequip
-                      </button>
-                    </p>
-                  </form>
+                  <InventoryActionForm
+                    action={unequipAction}
+                    field="slot"
+                    value={slot}
+                    label="Unequip"
+                    selectedId={selected?.id}
+                    playthroughId={playthroughId}
+                    step={step}
+                    seen={seen}
+                    showUnknownExits={showUnknownExits}
+                  />
                 )}
               </div>
             </div>
@@ -322,80 +356,54 @@ function DetailAction({
   seen: number | undefined;
   showUnknownExits: boolean;
 }) {
+  const formProps = {
+    selectedId: tile.id,
+    playthroughId,
+    step,
+    seen,
+    showUnknownExits,
+  };
   if (tile.kind === 'equipment') {
     if (inCombat) {
       const label = tile.equippedSlot !== undefined ? 'Unequip' : 'Equip';
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            {label}
-          </button>{' '}
-          <span className="reason">Cannot change equipment during Combat.</span>
-        </p>
-      );
+      return <DisabledAction label={label} reason="Cannot change equipment during Combat." />;
     }
     if (tile.equippedSlot !== undefined) {
       return (
-        <form action={unequipAction} className="inline">
-          <input type="hidden" name="playthroughId" value={playthroughId} />
-          <input type="hidden" name="expectedStep" value={step} />
-          <input type="hidden" name="slot" value={tile.equippedSlot} />
-          <PreservedInputs selectedId={tile.id} seen={seen} showUnknownExits={showUnknownExits} />
-          <p>
-            <button className="button secondary" type="submit">
-              Unequip
-            </button>
-          </p>
-        </form>
+        <InventoryActionForm
+          action={unequipAction}
+          field="slot"
+          value={tile.equippedSlot}
+          label="Unequip"
+          {...formProps}
+        />
       );
     }
     return (
-      <form action={equipAction} className="inline">
-        <input type="hidden" name="playthroughId" value={playthroughId} />
-        <input type="hidden" name="expectedStep" value={step} />
-        <input type="hidden" name="itemId" value={tile.id} />
-        <PreservedInputs selectedId={tile.id} seen={seen} showUnknownExits={showUnknownExits} />
-        <p>
-          <button className="button secondary" type="submit">
-            Equip
-          </button>
-        </p>
-      </form>
+      <InventoryActionForm
+        action={equipAction}
+        field="itemId"
+        value={tile.id}
+        label="Equip"
+        {...formProps}
+      />
     );
   }
   if (tile.kind === 'consumable') {
     if (inCombat) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Use
-          </button>{' '}
-          <span className="reason">Cannot use items here during Combat.</span>
-        </p>
-      );
+      return <DisabledAction label="Use" reason="Cannot use items here during Combat." />;
     }
     if (fullHealth) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Use
-          </button>{' '}
-          <span className="reason">Already at full Health.</span>
-        </p>
-      );
+      return <DisabledAction label="Use" reason="Already at full Health." />;
     }
     return (
-      <form action={useItemAction} className="inline">
-        <input type="hidden" name="playthroughId" value={playthroughId} />
-        <input type="hidden" name="expectedStep" value={step} />
-        <input type="hidden" name="itemId" value={tile.id} />
-        <PreservedInputs selectedId={tile.id} seen={seen} showUnknownExits={showUnknownExits} />
-        <p>
-          <button className="button secondary" type="submit">
-            Use
-          </button>
-        </p>
-      </form>
+      <InventoryActionForm
+        action={useItemAction}
+        field="itemId"
+        value={tile.id}
+        label="Use"
+        {...formProps}
+      />
     );
   }
   return null;
