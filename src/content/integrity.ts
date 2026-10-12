@@ -740,6 +740,44 @@ function checkSceneMembership(
   }
 }
 
+function checkDuplicateConnectionTargets(files: ParsedFile[], ctx: Ctx): void {
+  for (const file of files) {
+    if (file.section !== 'locations' || !isRecord(file.value)) continue;
+    const locationId = typeof file.value['id'] === 'string' ? file.value['id'] : undefined;
+    const connections = file.value['connections'];
+    if (!Array.isArray(connections)) continue;
+    const seen = new Map<string, (string | number)[]>();
+    connections.forEach((connection, connectionIndex) => {
+      if (!isRecord(connection) || typeof connection['to'] !== 'string') return;
+      const target = connection['to'];
+      const path: (string | number)[] = ['connections', connectionIndex, 'to'];
+      const first = seen.get(target);
+      if (!first) {
+        seen.set(target, path);
+        return;
+      }
+      ctx.push({
+        severity: 'error',
+        code: 'ref/duplicate-connection-target',
+        message:
+          locationId === undefined
+            ? `duplicate connection target "${target}" within this location`
+            : `location "${locationId}" has two connections to "${target}"`,
+        file: file.file,
+        range: nodeRangeOf(file, path),
+        path,
+        related: [
+          {
+            file: file.file,
+            range: nodeRangeOf(file, first),
+            message: 'first connection to this target here',
+          },
+        ],
+      });
+    });
+  }
+}
+
 function collectItemSlots(files: ParsedFile[]): Map<string, string> {
   const slots = new Map<string, string>();
   for (const file of files) {
@@ -1029,6 +1067,7 @@ export function runIntegrityPhase(
     }
   }
   checkReferences(manifest, files, index, sceneTriggers, ctx);
+  checkDuplicateConnectionTargets(files, ctx);
   checkSceneMembership(declarations, listings, ctx);
   checkTemplateSlots(files, collectItemSlots(files), ctx);
   return checkImages(files, scenarioDir, ctx);

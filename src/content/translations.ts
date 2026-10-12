@@ -1,4 +1,4 @@
-// Translation pipelines T1 (Package) and T2 (Structure):
+// Translation pipelines T1 (Package), T2 (Structure) and T3 (Match):
 // docs/spec/validation.md, Translations; docs/spec/scenario-format.md,
 // Translation files; ADR 0002.
 //
@@ -8,14 +8,14 @@
 // never reject. Every diagnostic of the pipeline carries the Translation's
 // manifest path in `translation`.
 //
-// Stage T3 (Match: completeness, language tags, staleness) is a later ticket;
-// this module stops after T2, and the compiled model holds the accepted
-// Translations' text keyed for a later overlay.
+// The compiled model holds the accepted Translations' text keyed for a later
+// overlay.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { isMap, isPair, isScalar, isSeq } from 'yaml';
 import { z } from 'zod';
+import { INTERFACE_LANGUAGES, primaryLanguageSubtag } from '../i18n/languages';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
 import {
   hasDotDot,
@@ -43,6 +43,7 @@ import {
   checkNarrationValue,
   checkTextValue,
   isRecord,
+  nodeAtPath,
   runZodCheck,
 } from './structure';
 import type { Ctx, ManifestSection, ParsedFile } from './structure';
@@ -394,6 +395,879 @@ function runTranslationStructure(loaded: LoadedTranslation, push: (diagnostic: D
 }
 
 // ---------------------------------------------------------------------------
+// Stage T3: Match (docs/spec/validation.md, Stage T3: Match).
+//
+// Entries are matched to the base by their keys: `id` for entities, catalog
+// entries and Choices, `to` for Connections, and the base nesting for
+// Outcomes. A translatable field the base has must be present in the
+// Translation (translation/missing-text); anything the Translation has
+// without a base counterpart is translation/unmatched. Language tags and
+// staleness are checked alongside.
+// ---------------------------------------------------------------------------
+
+function validLanguageTag(value: unknown): value is string {
+  if (typeof value !== 'string' || value.trim() === '') return false;
+  try {
+    return Intl.getCanonicalLocales(value).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+type FilePos = {
+  file: string;
+  contents: unknown;
+  lineCounter: LoadedTranslation['manifest']['lineCounter'];
+};
+
+function rangeIn(pos: FilePos, path: (string | number)[]): DiagnosticRange | undefined {
+  return nodeRange(nodeAtPath(pos.contents, path), pos.lineCounter);
+}
+
+type BaseChoiceInfo = {
+  outcome: boolean;
+  outcomeText: boolean;
+  test: boolean;
+  successText: boolean;
+  failureText: boolean;
+};
+
+type BaseIndex = {
+  manifest: FilePos & { hasIntro: boolean; version: string; language: string };
+  locations: Map<string, { pos: FilePos; idPath: (string | number)[]; labels: Map<string, boolean> }>;
+  scenes: Map<string, { pos: FilePos; idPath: (string | number)[]; choices: Map<string, BaseChoiceInfo> }>;
+  items: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
+  enemies: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
+  encounters: Map<string, { pos: FilePos; idPath: (string | number)[]; victory: boolean; victoryText: boolean; escapeText: boolean }>;
+  templates: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
+  endings: Map<string, { pos: FilePos; idPath: (string | number)[] }>;
+  images: Map<string, { pos: FilePos; idPath: (string | number)[] }>;
+};
+
+function outcomeTextOf(value: unknown): boolean {
+  return isRecord(value) && typeof value['text'] === 'string';
+}
+
+function baseChoiceInfo(value: unknown): BaseChoiceInfo {
+  const info: BaseChoiceInfo = {
+    outcome: false,
+    outcomeText: false,
+    test: false,
+    successText: false,
+    failureText: false,
+  };
+  if (!isRecord(value)) return info;
+  if (isRecord(value['outcome'])) {
+    info.outcome = true;
+    info.outcomeText = outcomeTextOf(value['outcome']);
+  }
+  const test = value['test'];
+  if (isRecord(test)) {
+    info.test = true;
+    if (isRecord(test['success'])) info.successText = outcomeTextOf(test['success']);
+    if (isRecord(test['failure'])) info.failureText = outcomeTextOf(test['failure']);
+  }
+  return info;
+}
+
+function buildBaseIndex(manifest: ParsedFile, files: ParsedFile[]): BaseIndex {
+  const manifestValue = isRecord(manifest.value) ? manifest.value : {};
+  const index: BaseIndex = {
+    manifest: {
+      file: manifest.file,
+      contents: manifest.contents,
+      lineCounter: manifest.lineCounter,
+      hasIntro: typeof manifestValue['intro'] === 'string',
+      version: typeof manifestValue['version'] === 'string' ? manifestValue['version'] : '',
+      language: typeof manifestValue['language'] === 'string' ? manifestValue['language'] : '',
+    },
+    locations: new Map(),
+    scenes: new Map(),
+    items: new Map(),
+    enemies: new Map(),
+    encounters: new Map(),
+    templates: new Map(),
+    endings: new Map(),
+    images: new Map(),
+  };
+  const posOf = (file: ParsedFile): FilePos => ({
+    file: file.file,
+    contents: file.contents,
+    lineCounter: file.lineCounter,
+  });
+  for (const file of files) {
+    const pos = posOf(file);
+    if ((file.section === 'locations' || file.section === 'scenes') && isRecord(file.value)) {
+      const id = file.value['id'];
+      if (typeof id !== 'string') continue;
+      if (file.section === 'locations') {
+        const labels = new Map<string, boolean>();
+        const connections = file.value['connections'];
+        if (Array.isArray(connections)) {
+          for (const connection of connections) {
+            if (isRecord(connection) && typeof connection['to'] === 'string') {
+              if (!labels.has(connection['to'])) {
+                labels.set(connection['to'], typeof connection['label'] === 'string');
+              }
+            }
+          }
+        }
+        if (!index.locations.has(id)) {
+          index.locations.set(id, { pos, idPath: ['id'], labels });
+        }
+      } else {
+        const choices = new Map<string, BaseChoiceInfo>();
+        const rawChoices = file.value['choices'];
+        if (Array.isArray(rawChoices)) {
+          for (const choice of rawChoices) {
+            if (isRecord(choice) && typeof choice['id'] === 'string' && !choices.has(choice['id'])) {
+              choices.set(choice['id'], baseChoiceInfo(choice));
+            }
+          }
+        }
+        if (!index.scenes.has(id)) {
+          index.scenes.set(id, { pos, idPath: ['id'], choices });
+        }
+      }
+      continue;
+    }
+    if (!Array.isArray(file.value)) continue;
+    file.value.forEach((entry, entryIndex) => {
+      if (!isRecord(entry) || typeof entry['id'] !== 'string') return;
+      const idPath: (string | number)[] = [entryIndex, 'id'];
+      switch (file.section) {
+        case 'items':
+        case 'enemies':
+        case 'templates': {
+          const target =
+            file.section === 'items' ? index.items : file.section === 'enemies' ? index.enemies : index.templates;
+          if (!target.has(entry['id'])) {
+            target.set(entry['id'], {
+              pos,
+              idPath,
+              hasDescription: typeof entry['description'] === 'string',
+            });
+          }
+          break;
+        }
+        case 'encounters': {
+          if (!index.encounters.has(entry['id'])) {
+            const victory = isRecord(entry['victory']) ? entry['victory'] : undefined;
+            index.encounters.set(entry['id'], {
+              pos,
+              idPath,
+              victory: victory !== undefined,
+              victoryText: victory !== undefined && outcomeTextOf(victory),
+              escapeText: isRecord(entry['escape']) && outcomeTextOf(entry['escape']),
+            });
+          }
+          break;
+        }
+        case 'endings':
+          if (!index.endings.has(entry['id'])) index.endings.set(entry['id'], { pos, idPath });
+          break;
+        case 'images':
+          if (!index.images.has(entry['id'])) index.images.set(entry['id'], { pos, idPath });
+          break;
+        default:
+          break;
+      }
+    });
+  }
+  return index;
+}
+
+type Occurrence = {
+  key: string;
+  file: string;
+  contents: unknown;
+  lineCounter: LoadedTranslation['manifest']['lineCounter'];
+  keyPath: (string | number)[];
+};
+
+/**
+ * translation/duplicate-entry: two Translation entries with the same key, in
+ * one file or across its files. The first entry is in `related`. Returns the
+ * keys seen once (first occurrences), for the match checks to use.
+ */
+function checkDuplicateEntries(
+  occurrences: Occurrence[],
+  kind: string,
+  push: (diagnostic: Diagnostic) => void,
+): Set<string> {
+  const seen = new Map<string, Occurrence>();
+  const once = new Set<string>();
+  for (const occurrence of occurrences) {
+    const first = seen.get(occurrence.key);
+    if (!first) {
+      seen.set(occurrence.key, occurrence);
+      once.add(occurrence.key);
+      continue;
+    }
+    once.delete(occurrence.key);
+    push({
+      severity: 'error',
+      code: 'translation/duplicate-entry',
+      message: `duplicate translation entry for ${kind} "${occurrence.key}"`,
+      file: occurrence.file,
+      range: nodeRange(nodeAtPath(occurrence.contents, occurrence.keyPath), occurrence.lineCounter),
+      path: [...occurrence.keyPath],
+      related: [
+        {
+          file: first.file,
+          range: nodeRange(nodeAtPath(first.contents, first.keyPath), first.lineCounter),
+          message: 'first entry here',
+        },
+      ],
+    });
+  }
+  return once;
+}
+
+function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Diagnostic) => void): void {
+  const manifestValue = isRecord(loaded.manifest.value) ? loaded.manifest.value : {};
+  const manifestPos: FilePos = {
+    file: loaded.manifestPath,
+    contents: loaded.manifest.contents,
+    lineCounter: loaded.manifest.lineCounter,
+  };
+
+  const missingAtBase = (
+    basePos: FilePos,
+    idPath: (string | number)[],
+    message: string,
+  ): void => {
+    push({
+      severity: 'error',
+      code: 'translation/missing-text',
+      message,
+      file: basePos.file,
+      range: rangeIn(basePos, idPath),
+      path: [...idPath],
+    });
+  };
+
+  const unmatchedAt = (
+    pos: FilePos,
+    atPath: (string | number)[],
+    message: string,
+  ): void => {
+    push({
+      severity: 'error',
+      code: 'translation/unmatched',
+      message,
+      file: pos.file,
+      range: rangeIn(pos, atPath),
+      path: [...atPath],
+    });
+  };
+
+  // ---- Manifest fields (title/description required on both sides). ----
+  if (base.manifest.hasIntro && manifestValue['intro'] === undefined) {
+    push({
+      severity: 'error',
+      code: 'translation/missing-text',
+      message: 'translation is missing "intro" the base manifest has',
+      file: base.manifest.file,
+      range: rangeIn(base.manifest, ['intro']),
+      path: ['intro'],
+    });
+  } else if (!base.manifest.hasIntro && manifestValue['intro'] !== undefined) {
+    unmatchedAt(manifestPos, ['intro'], 'translation has "intro" the base manifest omits');
+  }
+
+  const filesBySection = (section: TranslationSection): LoadedTranslationFile[] =>
+    loaded.files.filter((file) => file.section === section);
+
+  // ---- Locations (id; Connections by `to`). ----
+  const locationOccurrences: Occurrence[] = [];
+  const translationLocations = new Map<
+    string,
+    { file: LoadedTranslationFile; connections: { to: string; toPath: (string | number)[]; labelPath: (string | number)[]; hasLabel: boolean }[] }
+  >();
+  for (const file of filesBySection('locations')) {
+    const value = file.parsed.value;
+    if (!isRecord(value) || typeof value['id'] !== 'string') continue;
+    const pos: FilePos = { file: file.parsed.file, contents: file.parsed.contents, lineCounter: file.parsed.lineCounter };
+    locationOccurrences.push({
+      key: value['id'],
+      file: pos.file,
+      contents: pos.contents,
+      lineCounter: pos.lineCounter,
+      keyPath: ['id'],
+    });
+    if (translationLocations.has(value['id'])) continue;
+    const connections: { to: string; toPath: (string | number)[]; labelPath: (string | number)[]; hasLabel: boolean }[] = [];
+    const raw = value['connections'];
+    if (Array.isArray(raw)) {
+      raw.forEach((connection, connectionIndex) => {
+        if (isRecord(connection) && typeof connection['to'] === 'string') {
+          connections.push({
+            to: connection['to'],
+            toPath: ['connections', connectionIndex, 'to'],
+            labelPath: ['connections', connectionIndex, 'label'],
+            hasLabel: typeof connection['label'] === 'string',
+          });
+        }
+      });
+    }
+    translationLocations.set(value['id'], { file, connections });
+  }
+  const onceLocations = checkDuplicateEntries(locationOccurrences, 'location', push);
+  // Connection duplicates are per Location, keyed by `to`.
+  const onceConnections = new Map<string, Set<string>>();
+  for (const [id, entry] of translationLocations) {
+    const pos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    onceConnections.set(
+      id,
+      checkDuplicateEntries(
+        entry.connections.map((connection) => ({
+          key: connection.to,
+          file: pos.file,
+          contents: pos.contents,
+          lineCounter: pos.lineCounter,
+          keyPath: connection.toPath,
+        })),
+        `connection of location "${id}"`,
+        push,
+      ),
+    );
+  }
+  for (const [id, baseLocation] of base.locations) {
+    const entry = onceLocations.has(id) ? translationLocations.get(id) : undefined;
+    if (!entry) {
+      missingAtBase(baseLocation.pos, baseLocation.idPath, `translation is missing location "${id}" ("name")`);
+      missingAtBase(baseLocation.pos, baseLocation.idPath, `translation is missing location "${id}" ("description")`);
+      for (const [to, hasLabel] of baseLocation.labels) {
+        if (hasLabel) {
+          missingAtBase(
+            baseLocation.pos,
+            baseLocation.idPath,
+            `translation is missing the label of connection to "${to}" in location "${id}"`,
+          );
+        }
+      }
+      continue;
+    }
+    const seenTo = onceConnections.get(id) ?? new Set<string>();
+    const entryPos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    for (const [to, hasLabel] of baseLocation.labels) {
+      const translated = entry.connections.find((connection) => connection.to === to && seenTo.has(to));
+      if (hasLabel && (!translated || !translated.hasLabel)) {
+        missingAtBase(
+          baseLocation.pos,
+          baseLocation.idPath,
+          `translation is missing the label of connection to "${to}" in location "${id}"`,
+        );
+      }
+    }
+    for (const connection of entry.connections) {
+      if (!seenTo.has(connection.to)) continue;
+      const baseHasLabel = baseLocation.labels.get(connection.to);
+      if (baseHasLabel === undefined) {
+        unmatchedAt(entryPos, connection.toPath, `translation has connection to "${connection.to}" with no base counterpart in location "${id}"`);
+      } else if (!baseHasLabel && connection.hasLabel) {
+        unmatchedAt(entryPos, connection.labelPath, `translation has a label for connection to "${connection.to}" the base omits in location "${id}"`);
+      }
+    }
+  }
+  for (const [id] of translationLocations) {
+    if (!onceLocations.has(id) || base.locations.has(id)) continue;
+    const entry = translationLocations.get(id);
+    if (!entry) continue;
+    const entryPos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    unmatchedAt(entryPos, ['id'], `translation has location "${id}" with no base counterpart`);
+  }
+
+  // ---- Scenes (id; Choices by id; Outcomes by base nesting). ----
+  type TranslationChoiceInfo = {
+    idPath: (string | number)[];
+    outcome: boolean;
+    outcomeText: boolean;
+    outcomePath: (string | number)[];
+    outcomeTextPath: (string | number)[];
+    test: boolean;
+    testPath: (string | number)[];
+    successText: boolean;
+    successTextPath: (string | number)[];
+    failureText: boolean;
+    failureTextPath: (string | number)[];
+  };
+  const sceneOccurrences: Occurrence[] = [];
+  const translationScenes = new Map<string, { file: LoadedTranslationFile; choices: Map<string, TranslationChoiceInfo>; choiceOrder: string[] }>();
+  for (const file of filesBySection('scenes')) {
+    const value = file.parsed.value;
+    if (!isRecord(value) || typeof value['id'] !== 'string') continue;
+    sceneOccurrences.push({
+      key: value['id'],
+      file: file.parsed.file,
+      contents: file.parsed.contents,
+      lineCounter: file.parsed.lineCounter,
+      keyPath: ['id'],
+    });
+    if (translationScenes.has(value['id'])) continue;
+    const choices = new Map<string, TranslationChoiceInfo>();
+    const choiceOrder: string[] = [];
+    const raw = value['choices'];
+    if (Array.isArray(raw)) {
+      raw.forEach((choice, choiceIndex) => {
+        if (!isRecord(choice) || typeof choice['id'] !== 'string') return;
+        const basePath: (string | number)[] = ['choices', choiceIndex];
+        const outcome = isRecord(choice['outcome']) ? choice['outcome'] : undefined;
+        const test = isRecord(choice['test']) ? choice['test'] : undefined;
+        const success = test && isRecord(test['success']) ? test['success'] : undefined;
+        const failure = test && isRecord(test['failure']) ? test['failure'] : undefined;
+        if (!choices.has(choice['id'])) {
+          choiceOrder.push(choice['id']);
+          choices.set(choice['id'], {
+            idPath: [...basePath, 'id'],
+            outcome: outcome !== undefined,
+            outcomeText: outcome !== undefined && typeof outcome['text'] === 'string',
+            outcomePath: [...basePath, 'outcome'],
+            outcomeTextPath: [...basePath, 'outcome', 'text'],
+            test: test !== undefined,
+            testPath: [...basePath, 'test'],
+            successText: success !== undefined && typeof success['text'] === 'string',
+            successTextPath: [...basePath, 'test', 'success', 'text'],
+            failureText: failure !== undefined && typeof failure['text'] === 'string',
+            failureTextPath: [...basePath, 'test', 'failure', 'text'],
+          });
+        } else {
+          choiceOrder.push(choice['id']);
+        }
+      });
+    }
+    translationScenes.set(value['id'], { file, choices, choiceOrder });
+  }
+  const onceScenes = checkDuplicateEntries(sceneOccurrences, 'scene', push);
+  // Choice duplicates live within their Scene.
+  const onceChoices = new Map<string, Set<string>>();
+  for (const [id, entry] of translationScenes) {
+    const pos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    // Every occurrence located by its own index, for a precise range.
+    const raw = isRecord(entry.file.parsed.value) ? entry.file.parsed.value['choices'] : undefined;
+    const occurrences: Occurrence[] = [];
+    if (Array.isArray(raw)) {
+      raw.forEach((choice, choiceIndex) => {
+        if (isRecord(choice) && typeof choice['id'] === 'string') {
+          occurrences.push({
+            key: choice['id'],
+            file: pos.file,
+            contents: pos.contents,
+            lineCounter: pos.lineCounter,
+            keyPath: ['choices', choiceIndex, 'id'],
+          });
+        }
+      });
+    }
+    onceChoices.set(id, checkDuplicateEntries(occurrences, `choice of scene "${id}"`, push));
+  }
+
+  const checkOutcomeTextPair = (
+    basePos: FilePos,
+    baseIdPath: (string | number)[],
+    transPos: FilePos,
+    baseHasText: boolean,
+    transHasText: boolean,
+    textPath: (string | number)[],
+    describe: string,
+  ): void => {
+    if (baseHasText && !transHasText) {
+      missingAtBase(basePos, baseIdPath, `translation is missing ${describe}`);
+    } else if (!baseHasText && transHasText) {
+      unmatchedAt(transPos, textPath, `translation has ${describe} the base omits`);
+    }
+  };
+
+  for (const [id, baseScene] of base.scenes) {
+    const entry = onceScenes.has(id) ? translationScenes.get(id) : undefined;
+    if (!entry) {
+      missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing scene "${id}" ("title")`);
+      missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing scene "${id}" ("text")`);
+      for (const [choiceId, choice] of baseScene.choices) {
+        missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing choice "${choiceId}" ("text") in scene "${id}"`);
+        if (choice.outcomeText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the outcome text of choice "${choiceId}" in scene "${id}"`);
+        }
+        if (choice.successText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the success text of choice "${choiceId}" in scene "${id}"`);
+        }
+        if (choice.failureText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the failure text of choice "${choiceId}" in scene "${id}"`);
+        }
+      }
+      continue;
+    }
+    const entryPos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    const seenChoices = onceChoices.get(id) ?? new Set<string>();
+    for (const [choiceId, choice] of baseScene.choices) {
+      const translated = seenChoices.has(choiceId) ? entry.choices.get(choiceId) : undefined;
+      if (!translated) {
+        missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing choice "${choiceId}" ("text") in scene "${id}"`);
+        if (choice.outcomeText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the outcome text of choice "${choiceId}" in scene "${id}"`);
+        }
+        if (choice.successText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the success text of choice "${choiceId}" in scene "${id}"`);
+        }
+        if (choice.failureText) {
+          missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing the failure text of choice "${choiceId}" in scene "${id}"`);
+        }
+        continue;
+      }
+      if (translated.outcome && !choice.outcome) {
+        unmatchedAt(entryPos, translated.outcomePath, `translation has an "outcome" branch for choice "${choiceId}" the base does not have in scene "${id}"`);
+      } else if (translated.outcome && choice.outcome) {
+        checkOutcomeTextPair(
+          baseScene.pos,
+          baseScene.idPath,
+          entryPos,
+          choice.outcomeText,
+          translated.outcomeText,
+          translated.outcomeTextPath,
+          `the outcome text of choice "${choiceId}" in scene "${id}"`,
+        );
+      }
+      if (translated.test && !choice.test) {
+        unmatchedAt(entryPos, translated.testPath, `translation has a "test" branch for choice "${choiceId}" the base does not have in scene "${id}"`);
+      } else if (translated.test && choice.test) {
+        checkOutcomeTextPair(
+          baseScene.pos,
+          baseScene.idPath,
+          entryPos,
+          choice.successText,
+          translated.successText,
+          translated.successTextPath,
+          `the success text of choice "${choiceId}" in scene "${id}"`,
+        );
+        checkOutcomeTextPair(
+          baseScene.pos,
+          baseScene.idPath,
+          entryPos,
+          choice.failureText,
+          translated.failureText,
+          translated.failureTextPath,
+          `the failure text of choice "${choiceId}" in scene "${id}"`,
+        );
+      }
+    }
+    for (const [choiceId, info] of entry.choices) {
+      if (!seenChoices.has(choiceId) || baseScene.choices.has(choiceId)) continue;
+      unmatchedAt(entryPos, info.idPath, `translation has choice "${choiceId}" with no base counterpart in scene "${id}"`);
+    }
+  }
+  for (const [id, entry] of translationScenes) {
+    if (!onceScenes.has(id) || base.scenes.has(id)) continue;
+    const entryPos: FilePos = {
+      file: entry.file.parsed.file,
+      contents: entry.file.parsed.contents,
+      lineCounter: entry.file.parsed.lineCounter,
+    };
+    unmatchedAt(entryPos, ['id'], `translation has scene "${id}" with no base counterpart`);
+  }
+
+  // ---- Catalogs with name + optional description. ----
+  const checkNamedCatalog = (
+    section: TranslationSection,
+    kind: string,
+    baseEntries: BaseIndex['items'],
+    field: string,
+  ): void => {
+    const occurrences: Occurrence[] = [];
+    const translated = new Map<string, { file: LoadedTranslationFile; index: number; hasDescription: boolean }>();
+    for (const file of filesBySection(section)) {
+      const value = file.parsed.value;
+      if (!Array.isArray(value)) continue;
+      value.forEach((item, itemIndex) => {
+        if (!isRecord(item) || typeof item['id'] !== 'string') return;
+        occurrences.push({
+          key: item['id'],
+          file: file.parsed.file,
+          contents: file.parsed.contents,
+          lineCounter: file.parsed.lineCounter,
+          keyPath: [itemIndex, 'id'],
+        });
+        if (!translated.has(item['id'])) {
+          translated.set(item['id'], {
+            file,
+            index: itemIndex,
+            hasDescription: typeof item['description'] === 'string',
+          });
+        }
+      });
+    }
+    const once = checkDuplicateEntries(occurrences, kind, push);
+    for (const [id, baseEntry] of baseEntries) {
+      const match = once.has(id) ? translated.get(id) : undefined;
+      if (!match) {
+        missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("${field}")`);
+        if (baseEntry.hasDescription) {
+          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("description")`);
+        }
+        continue;
+      }
+      const transPos: FilePos = {
+        file: match.file.parsed.file,
+        contents: match.file.parsed.contents,
+        lineCounter: match.file.parsed.lineCounter,
+      };
+      if (baseEntry.hasDescription && !match.hasDescription) {
+        missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("description")`);
+      } else if (!baseEntry.hasDescription && match.hasDescription) {
+        unmatchedAt(transPos, [match.index, 'description'], `translation has "description" for ${kind} "${id}" the base omits`);
+      }
+    }
+    for (const [id, match] of translated) {
+      if (!once.has(id) || baseEntries.has(id)) continue;
+      const transPos: FilePos = {
+        file: match.file.parsed.file,
+        contents: match.file.parsed.contents,
+        lineCounter: match.file.parsed.lineCounter,
+      };
+      unmatchedAt(transPos, [match.index, 'id'], `translation has ${kind} "${id}" with no base counterpart`);
+    }
+  };
+  checkNamedCatalog('items', 'item', base.items, 'name');
+  checkNamedCatalog('enemies', 'enemy', base.enemies, 'name');
+  checkNamedCatalog('templates', 'template', base.templates, 'name');
+
+  // ---- Encounters (text; victory/escape Outcomes by base nesting). ----
+  {
+    const occurrences: Occurrence[] = [];
+    const translated = new Map<
+      string,
+      {
+        file: LoadedTranslationFile;
+        index: number;
+        victory: boolean;
+        victoryText: boolean;
+        victoryPath: (string | number)[];
+        victoryTextPath: (string | number)[];
+        escapeText: boolean;
+        escapeTextPath: (string | number)[];
+      }
+    >();
+    for (const file of filesBySection('encounters')) {
+      const value = file.parsed.value;
+      if (!Array.isArray(value)) continue;
+      value.forEach((item, itemIndex) => {
+        if (!isRecord(item) || typeof item['id'] !== 'string') return;
+        occurrences.push({
+          key: item['id'],
+          file: file.parsed.file,
+          contents: file.parsed.contents,
+          lineCounter: file.parsed.lineCounter,
+          keyPath: [itemIndex, 'id'],
+        });
+        if (translated.has(item['id'])) return;
+        const victory = isRecord(item['victory']) ? item['victory'] : undefined;
+        translated.set(item['id'], {
+          file,
+          index: itemIndex,
+          victory: victory !== undefined,
+          victoryText: victory !== undefined && typeof victory['text'] === 'string',
+          victoryPath: [itemIndex, 'victory'],
+          victoryTextPath: [itemIndex, 'victory', 'text'],
+          escapeText: isRecord(item['escape']) && typeof item['escape']['text'] === 'string',
+          escapeTextPath: [itemIndex, 'escape', 'text'],
+        });
+      });
+    }
+    const once = checkDuplicateEntries(occurrences, 'encounter', push);
+    for (const [id, baseEntry] of base.encounters) {
+      const match = once.has(id) ? translated.get(id) : undefined;
+      if (!match) {
+        missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing encounter "${id}" ("text")`);
+        if (baseEntry.victoryText) {
+          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the victory text of encounter "${id}"`);
+        }
+        if (baseEntry.escapeText) {
+          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the escape text of encounter "${id}"`);
+        }
+        continue;
+      }
+      const transPos: FilePos = {
+        file: match.file.parsed.file,
+        contents: match.file.parsed.contents,
+        lineCounter: match.file.parsed.lineCounter,
+      };
+      if (match.victory && !baseEntry.victory) {
+        unmatchedAt(transPos, match.victoryPath, `translation has a "victory" branch for encounter "${id}" the base does not have`);
+      } else if (match.victory && baseEntry.victory) {
+        checkOutcomeTextPair(
+          baseEntry.pos,
+          baseEntry.idPath,
+          transPos,
+          baseEntry.victoryText,
+          match.victoryText,
+          match.victoryTextPath,
+          `the victory text of encounter "${id}"`,
+        );
+      }
+      checkOutcomeTextPair(
+        baseEntry.pos,
+        baseEntry.idPath,
+        transPos,
+        baseEntry.escapeText,
+        match.escapeText,
+        match.escapeTextPath,
+        `the escape text of encounter "${id}"`,
+      );
+    }
+    for (const [id, match] of translated) {
+      if (!once.has(id) || base.encounters.has(id)) continue;
+      const transPos: FilePos = {
+        file: match.file.parsed.file,
+        contents: match.file.parsed.contents,
+        lineCounter: match.file.parsed.lineCounter,
+      };
+      unmatchedAt(transPos, [match.index, 'id'], `translation has encounter "${id}" with no base counterpart`);
+    }
+  }
+
+  // ---- Endings (title, text) and images (alt): all required. ----
+  const checkRequiredCatalog = (section: TranslationSection, kind: string, baseEntries: BaseIndex['endings'], fields: readonly string[]): void => {
+    const occurrences: Occurrence[] = [];
+    const translated = new Map<string, { file: LoadedTranslationFile; index: number }>();
+    for (const file of filesBySection(section)) {
+      const value = file.parsed.value;
+      if (!Array.isArray(value)) continue;
+      value.forEach((item, itemIndex) => {
+        if (!isRecord(item) || typeof item['id'] !== 'string') return;
+        occurrences.push({
+          key: item['id'],
+          file: file.parsed.file,
+          contents: file.parsed.contents,
+          lineCounter: file.parsed.lineCounter,
+          keyPath: [itemIndex, 'id'],
+        });
+        if (!translated.has(item['id'])) translated.set(item['id'], { file, index: itemIndex });
+      });
+    }
+    const once = checkDuplicateEntries(occurrences, kind, push);
+    for (const [id, baseEntry] of baseEntries) {
+      if (once.has(id) && translated.has(id)) continue;
+      for (const field of fields) {
+        missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("${field}")`);
+      }
+    }
+    for (const [id, match] of translated) {
+      if (!once.has(id) || baseEntries.has(id)) continue;
+      const transPos: FilePos = {
+        file: match.file.parsed.file,
+        contents: match.file.parsed.contents,
+        lineCounter: match.file.parsed.lineCounter,
+      };
+      unmatchedAt(transPos, [match.index, 'id'], `translation has ${kind} "${id}" with no base counterpart`);
+    }
+  };
+  checkRequiredCatalog('endings', 'ending', base.endings, ['title', 'text']);
+  checkRequiredCatalog('images', 'image', base.images, ['alt']);
+
+  // ---- Language tags. ----
+  const language = manifestValue['language'];
+  if (validLanguageTag(language) && validLanguageTag(base.manifest.language)) {
+    if (primaryLanguageSubtag(language) === primaryLanguageSubtag(base.manifest.language)) {
+      push({
+        severity: 'error',
+        code: 'translation/base-language',
+        message: `translation language "${language}" shares its primary language subtag ("${primaryLanguageSubtag(language)}") with the base language "${base.manifest.language}"`,
+        file: manifestPos.file,
+        range: rangeIn(manifestPos, ['language']),
+        path: ['language'],
+      });
+    }
+    if (!(INTERFACE_LANGUAGES as readonly string[]).includes(primaryLanguageSubtag(language))) {
+      push({
+        severity: 'warning',
+        code: 'translation/not-interface-language',
+        message: `translation language "${language}" (primary subtag "${primaryLanguageSubtag(language)}") is not an interface language (${INTERFACE_LANGUAGES.join(', ')}); it is valid but never shown`,
+        file: manifestPos.file,
+        range: rangeIn(manifestPos, ['language']),
+        path: ['language'],
+      });
+    }
+  }
+
+  // ---- Staleness: plain string comparison, no ordering, no semver. ----
+  const baseVersion = manifestValue['baseVersion'];
+  if (typeof baseVersion === 'string' && baseVersion !== base.manifest.version) {
+    push({
+      severity: 'warning',
+      code: 'translation/stale',
+      message: `translation baseVersion "${baseVersion}" differs from the base version "${base.manifest.version}"`,
+      file: manifestPos.file,
+      range: rangeIn(manifestPos, ['baseVersion']),
+      path: ['baseVersion'],
+    });
+  }
+}
+
+/**
+ * translation/duplicate-language: two Translations sharing a primary language
+ * subtag. Both are rejected, since neither has precedence; each names the
+ * other in `related`. Every Translation whose manifest declares a valid
+ * `language` counts, even one rejected by another rule.
+ */
+function checkDuplicateLanguages(
+  candidates: { manifestPath: string; manifest: ParsedFile; language: string }[],
+  pushFor: (manifestPath: string) => (diagnostic: Diagnostic) => void,
+): void {
+  const groups = new Map<string, { manifestPath: string; manifest: ParsedFile; language: string }[]>();
+  for (const candidate of candidates) {
+    const key = primaryLanguageSubtag(candidate.language);
+    const group = groups.get(key);
+    if (group) group.push(candidate);
+    else groups.set(key, [candidate]);
+  }
+  for (const [primary, group] of groups) {
+    if (group.length < 2) continue;
+    for (const candidate of group) {
+      const push = pushFor(candidate.manifestPath);
+      const languageRange = nodeRange(
+        nodeAtPath(candidate.manifest.contents, ['language']),
+        candidate.manifest.lineCounter,
+      );
+      push({
+        severity: 'error',
+        code: 'translation/duplicate-language',
+        message: `two translations share primary language subtag "${primary}"`,
+        file: candidate.manifestPath,
+        range: languageRange,
+        path: ['language'],
+        related: group
+          .filter((other) => other.manifestPath !== candidate.manifestPath)
+          .map((other) => ({
+            file: other.manifestPath,
+            range: nodeRange(nodeAtPath(other.manifest.contents, ['language']), other.manifest.lineCounter),
+            message: `other translation with primary subtag "${primary}" here (language "${other.language}")`,
+          })),
+      });
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Pipeline entry points.
 // ---------------------------------------------------------------------------
 
@@ -628,6 +1502,7 @@ export function runTranslationPipelines(
   scenarioDir: string,
   refs: TranslationManifestRef[],
   baseEntries: { value: string; range: DiagnosticRange | undefined; section: string }[],
+  base: { manifest: ParsedFile; files: ParsedFile[] },
 ): {
   accepted: LoadedTranslation[];
   rejected: { manifestPath: string; language?: string; diagnostics: Diagnostic[] }[];
@@ -681,12 +1556,17 @@ export function runTranslationPipelines(
     }
   }
 
+  const t3Base = buildBaseIndex(base.manifest, base.files);
+  const fullDiagnostics = new Map<string, Diagnostic[]>();
   for (const loaded of t2Candidates) {
     const diagnostics: Diagnostic[] = [...(t1Diagnostics.get(loaded.manifestPath) ?? [])];
     const push = (diagnostic: Diagnostic): void => {
       diagnostics.push({ ...diagnostic, translation: loaded.manifestPath });
     };
     runTranslationStructure(loaded, push);
+    if (!diagnostics.some((d) => d.severity === 'error')) {
+      runT3(loaded, t3Base, push);
+    }
     if (diagnostics.some((d) => d.severity === 'error')) {
       rejected.push({ manifestPath: loaded.manifestPath, language: loaded.language, diagnostics });
     } else {
@@ -694,8 +1574,41 @@ export function runTranslationPipelines(
       // above); refresh it from the parsed value for the summary line.
       loaded.language = readLanguage(loaded.manifest.value) ?? loaded.language;
       accepted.push(loaded);
-      acceptedWarnings.push(...diagnostics.filter((d) => d.severity === 'warning'));
+      fullDiagnostics.set(loaded.manifestPath, diagnostics);
     }
+  }
+
+  // translation/duplicate-language runs across every Translation whose
+  // manifest declares a valid `language`, even one rejected by another rule.
+  const languageCandidates = t1Loaded
+    .map((loaded) => ({
+      manifestPath: loaded.manifestPath,
+      manifest: loaded.manifest,
+      language: readLanguage(loaded.manifest.value),
+    }))
+    .filter((candidate): candidate is { manifestPath: string; manifest: ParsedFile; language: string } =>
+      candidate.language !== undefined && validLanguageTag(candidate.language),
+    );
+  checkDuplicateLanguages(
+    languageCandidates,
+    (manifestPath) => (diagnostic: Diagnostic) => {
+      const tagged = { ...diagnostic, translation: manifestPath };
+      const acceptedIndex = accepted.findIndex((loaded) => loaded.manifestPath === manifestPath);
+      if (acceptedIndex >= 0) {
+        const [loaded] = accepted.splice(acceptedIndex, 1);
+        const full = [...(fullDiagnostics.get(manifestPath) ?? []), tagged];
+        fullDiagnostics.delete(manifestPath);
+        rejected.push({ manifestPath, language: loaded?.language, diagnostics: full });
+        return;
+      }
+      const already = rejected.find((entry) => entry.manifestPath === manifestPath);
+      if (already) already.diagnostics.push(tagged);
+    },
+  );
+  for (const loaded of accepted) {
+    acceptedWarnings.push(
+      ...(fullDiagnostics.get(loaded.manifestPath) ?? []).filter((d) => d.severity === 'warning'),
+    );
   }
   const contents: RejectedTranslationContent[] = [];
   for (const ref of refs) {

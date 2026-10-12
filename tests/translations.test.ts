@@ -389,6 +389,289 @@ describe('rejected translation content', () => {
   });
 });
 
+describe('stage T3 match', () => {
+  it('translation/missing-text rejects only that Translation and points at the base', () => {
+    const dir = copyFixture('two-bridges');
+    // The base gives bridge-sword a description; drop it from the Translation.
+    writeRel(
+      dir,
+      'translations/pl/items.yaml',
+      readRel(dir, 'translations/pl/items.yaml').replace(
+        '  description: Krótka klinga, wżerana przez rzeczną wodę.\n',
+        '',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toEqual([]);
+    expect(result.rejectedTranslations).toHaveLength(1);
+    const diagnostics = result.rejectedTranslations[0]?.diagnostics ?? [];
+    const missing = diagnostics.find((d) => d.code === 'translation/missing-text');
+    expect(missing).toMatchObject({
+      severity: 'error',
+      file: 'items.yaml',
+      translation: TWO_BRIDGES_MANIFEST,
+    });
+    expect(missing?.message).toContain('bridge-sword');
+  });
+
+  it('translation/unmatched rejects an entry with no base counterpart', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      'translations/pl/items.yaml',
+      `${readRel(dir, 'translations/pl/items.yaml')}- id: extra-trinket\n  name: Dodatkowa błyskotka\n`,
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toEqual([]);
+    const diagnostics = result.rejectedTranslations[0]?.diagnostics ?? [];
+    const unmatched = diagnostics.find((d) => d.code === 'translation/unmatched');
+    expect(unmatched).toMatchObject({
+      severity: 'error',
+      file: 'translations/pl/items.yaml',
+      translation: TWO_BRIDGES_MANIFEST,
+    });
+    expect(unmatched?.message).toContain('extra-trinket');
+  });
+
+  it('translation/unmatched rejects an Outcome branch the base does not have', () => {
+    const dir = copyFixture('two-bridges');
+    // "sneak" is a bare start-combat Outcome in the base; giving it text is unmatched.
+    writeRel(
+      dir,
+      'translations/pl/scenes/ferry.yaml',
+      readRel(dir, 'translations/pl/scenes/ferry.yaml').replace(
+        '  - id: sneak\n    text: Przemknij obok niego w stronę wilczych trzcin.\n',
+        '  - id: sneak\n    text: Przemknij obok niego w stronę wilczych trzcin.\n    outcome:\n      text: Ciche kroki wśród trzcin.\n',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toEqual([]);
+    const diagnostics = result.rejectedTranslations[0]?.diagnostics ?? [];
+    expect(diagnostics.map((d) => d.code)).toContain('translation/unmatched');
+  });
+
+  it('translation/duplicate-entry names the first entry in related', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      'translations/pl/items.yaml',
+      `${readRel(dir, 'translations/pl/items.yaml')}- id: bread\n  name: Chleb bis\n`,
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toEqual([]);
+    const diagnostics = result.rejectedTranslations[0]?.diagnostics ?? [];
+    const duplicate = diagnostics.find((d) => d.code === 'translation/duplicate-entry');
+    expect(duplicate).toMatchObject({
+      severity: 'error',
+      file: 'translations/pl/items.yaml',
+      translation: TWO_BRIDGES_MANIFEST,
+    });
+    expect(duplicate?.message).toContain('bread');
+    expect(duplicate?.related).toHaveLength(1);
+    expect(duplicate?.related?.[0]).toMatchObject({ file: 'translations/pl/items.yaml' });
+  });
+
+  it('translation/base-language rejects a Translation in the Base Language', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      TWO_BRIDGES_MANIFEST,
+      readRel(dir, TWO_BRIDGES_MANIFEST).replace('language: pl', 'language: en'),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toEqual([]);
+    const diagnostics = result.rejectedTranslations[0]?.diagnostics ?? [];
+    const same = diagnostics.find((d) => d.code === 'translation/base-language');
+    expect(same).toMatchObject({
+      severity: 'error',
+      file: TWO_BRIDGES_MANIFEST,
+      translation: TWO_BRIDGES_MANIFEST,
+      path: ['language'],
+    });
+  });
+
+  it('translation/duplicate-language rejects both Translations', () => {
+    const dir = copyFixture('two-bridges');
+    // A second Translation with its own files but the same primary language.
+    fs.cpSync(path.join(dir, 'translations', 'pl'), path.join(dir, 'translations', 'pl-bis'), {
+      recursive: true,
+    });
+    for (const rel of [
+      'translations/pl-bis/translation.yaml',
+      'translations/pl-bis/locations/east-bank.yaml',
+      'translations/pl-bis/locations/west-bank.yaml',
+      'translations/pl-bis/scenes/arrival.yaml',
+      'translations/pl-bis/scenes/ferry.yaml',
+      'translations/pl-bis/items.yaml',
+      'translations/pl-bis/enemies.yaml',
+      'translations/pl-bis/encounters.yaml',
+      'translations/pl-bis/templates.yaml',
+      'translations/pl-bis/endings.yaml',
+      'translations/pl-bis/images.yaml',
+    ]) {
+      writeRel(dir, rel, readRel(dir, rel).replaceAll('translations/pl/', 'translations/pl-bis/'));
+    }
+    writeRel(
+      dir,
+      'scenario.yaml',
+      readRel(dir, 'scenario.yaml').replace(
+        '  - translations/pl/translation.yaml',
+        '  - translations/pl/translation.yaml\n  - translations/pl-bis/translation.yaml',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Neither has precedence: no Translation is available.
+    expect(result.scenario.translations).toEqual([]);
+    expect(result.rejectedTranslations).toHaveLength(2);
+    for (const rejected of result.rejectedTranslations) {
+      const duplicate = rejected.diagnostics.find((d) => d.code === 'translation/duplicate-language');
+      expect(duplicate).toMatchObject({ severity: 'error', translation: rejected.manifestPath });
+      expect(duplicate?.related).toHaveLength(1);
+    }
+  });
+
+  it('a T3 rejection leaves another valid Translation available', () => {
+    const dir = copyFixture('two-bridges');
+    fs.cpSync(path.join(dir, 'translations', 'pl'), path.join(dir, 'translations', 'de'), {
+      recursive: true,
+    });
+    for (const rel of [
+      'translations/de/translation.yaml',
+      'translations/de/locations/east-bank.yaml',
+      'translations/de/locations/west-bank.yaml',
+      'translations/de/scenes/arrival.yaml',
+      'translations/de/scenes/ferry.yaml',
+      'translations/de/items.yaml',
+      'translations/de/enemies.yaml',
+      'translations/de/encounters.yaml',
+      'translations/de/templates.yaml',
+      'translations/de/endings.yaml',
+      'translations/de/images.yaml',
+    ]) {
+      writeRel(dir, rel, readRel(dir, rel).replaceAll('translations/pl/', 'translations/de/'));
+    }
+    writeRel(
+      dir,
+      'translations/de/translation.yaml',
+      readRel(dir, 'translations/de/translation.yaml').replace('language: pl', 'language: de'),
+    );
+    writeRel(
+      dir,
+      'scenario.yaml',
+      readRel(dir, 'scenario.yaml').replace(
+        '  - translations/pl/translation.yaml',
+        '  - translations/pl/translation.yaml\n  - translations/de/translation.yaml',
+      ),
+    );
+    // Break only the pl Translation: drop a description the base has.
+    writeRel(
+      dir,
+      'translations/pl/items.yaml',
+      readRel(dir, 'translations/pl/items.yaml').replace(
+        '  description: Krótka klinga, wżerana przez rzeczną wodę.\n',
+        '',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rejectedTranslations).toHaveLength(1);
+    expect(result.rejectedTranslations[0]?.manifestPath).toBe(TWO_BRIDGES_MANIFEST);
+    expect(result.scenario.translations).toHaveLength(1);
+    expect(result.scenario.translations[0]?.language).toBe('de');
+  });
+
+  it('translation/not-interface-language warns and keeps the Translation', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      TWO_BRIDGES_MANIFEST,
+      readRel(dir, TWO_BRIDGES_MANIFEST).replace('language: pl', 'language: de'),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toHaveLength(1);
+    expect(result.rejectedTranslations).toEqual([]);
+    const warning = result.warnings.find((d) => d.code === 'translation/not-interface-language');
+    expect(warning).toMatchObject({
+      severity: 'warning',
+      file: TWO_BRIDGES_MANIFEST,
+      translation: TWO_BRIDGES_MANIFEST,
+    });
+  });
+
+  it('translation/stale warns, names both versions and keeps the Translation', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      TWO_BRIDGES_MANIFEST,
+      readRel(dir, TWO_BRIDGES_MANIFEST).replace('baseVersion: "1.0.0"', 'baseVersion: "0.9.0"'),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.translations).toHaveLength(1);
+    expect(result.rejectedTranslations).toEqual([]);
+    const warning = result.warnings.find((d) => d.code === 'translation/stale');
+    expect(warning).toMatchObject({
+      severity: 'warning',
+      file: TWO_BRIDGES_MANIFEST,
+      translation: TWO_BRIDGES_MANIFEST,
+      path: ['baseVersion'],
+    });
+    expect(warning?.message).toContain('0.9.0');
+    expect(warning?.message).toContain('1.0.0');
+  });
+});
+
+describe('duplicate connection targets', () => {
+  it('ref/duplicate-connection-target rejects a Location with two Connections to one target', () => {
+    const dir = copyFixture('two-bridges');
+    writeRel(
+      dir,
+      'locations/east-bank.yaml',
+      readRel(dir, 'locations/east-bank.yaml').replace(
+        'connections:\n  - to: west-bank\n    label: Cross the near bridge\n',
+        'connections:\n  - to: west-bank\n    label: Cross the near bridge\n  - to: west-bank\n    label: Cross again\n',
+      ),
+    );
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const duplicate = result.diagnostics.find((d) => d.code === 'ref/duplicate-connection-target');
+    expect(duplicate).toMatchObject({
+      severity: 'error',
+      file: 'locations/east-bank.yaml',
+      path: ['connections', 1, 'to'],
+    });
+    expect(duplicate?.message).toContain('west-bank');
+    expect(duplicate?.related).toHaveLength(1);
+  });
+
+  it('the shipped Scenarios still pass with no diagnostics', () => {
+    for (const name of ['whispering-woods', 'the-drowned-ledger']) {
+      const result = loadScenario(path.join(repoRoot, 'scenarios', name));
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings).toEqual([]);
+      expect(result.rejectedTranslations).toEqual([]);
+    }
+  });
+});
+
 describe('registry logging with translations', () => {
   it('names the rejected Translation even when the Scenario itself is invalid', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-tr-collection-'));
