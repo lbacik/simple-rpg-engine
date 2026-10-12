@@ -239,6 +239,8 @@ export function InventoryBrowser({
   showUnknownExits: boolean;
   /** Interface Text, rendered by the server through the catalogue. */
   text: InventoryBrowserText;
+  /** The language of the item names and descriptions shown. */
+  lang: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | undefined>(
     initialSelectedId ?? items[0]?.id,
@@ -268,7 +270,7 @@ export function InventoryBrowser({
               <div>
                 <p className="meta">{label}</p>
                 <p>
-                  <strong>{item.name}</strong>
+                  <strong lang={lang}>{item.name}</strong>
                   {item.magic ? (
                     <span className="inv-spark" title={text.magicTitle}>
                       {' '}
@@ -318,7 +320,9 @@ export function InventoryBrowser({
                   ) : null}
                   {tile.stacked ? <span className="inv-qty">×{tile.quantity}</span> : null}
                   <TileIcon tile={tile} />
-                  <span className="inv-tile-name">{tile.name}</span>
+                  <span className="inv-tile-name" lang={lang}>
+                    {tile.name}
+                  </span>
                   {tile.equippedSlot !== undefined ? (
                     <span className="inv-ribbon">{text.ribbon}</span>
                   ) : null}
@@ -330,7 +334,7 @@ export function InventoryBrowser({
         {selected ? (
           <div className="inv-detail">
             <p>
-              <strong>{selected.name}</strong> × {selected.quantity}
+              <strong lang={lang}>{selected.name}</strong> × {selected.quantity}
               {selected.magic ? (
                 <span className="magic" title={text.magicTitle}>
                   {' '}
@@ -338,7 +342,11 @@ export function InventoryBrowser({
                 </span>
               ) : null}
             </p>
-            {selected.description ? <p className="inv-desc">{selected.description}</p> : null}
+            {selected.description ? (
+              <p className="inv-desc" lang={lang}>
+                {selected.description}
+              </p>
+            ) : null}
             <p className="inv-chips">
               {selected.chips.map((chip) => (
                 <span key={chip}>{chip}</span>

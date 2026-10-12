@@ -98,6 +98,7 @@ function Medallion({
   detail,
   guard,
   catalogue,
+  lang,
 }: {
   side: 'character' | 'enemy';
   name: string;
@@ -106,6 +107,8 @@ function Medallion({
   detail: string;
   guard?: boolean;
   catalogue: Catalogue;
+  /** The language of the name shown: set for the Enemy only, never the Character. */
+  lang?: string;
 }) {
   const percent = healthPercent(health, maxHealth);
   return (
@@ -120,7 +123,13 @@ function Medallion({
         </span>
         {guard ? <span className="combat-guard">{catalogue.combat.guardUp}</span> : null}
       </div>
-      <p className="combat-name">{name}</p>
+      {lang === undefined ? (
+        <p className="combat-name">{name}</p>
+      ) : (
+        <p className="combat-name" lang={lang}>
+          {name}
+        </p>
+      )}
       <p className="combat-health">
         {health}/{maxHealth}
       </p>
@@ -177,6 +186,8 @@ export function CombatPanel({
   consumables,
   formAction,
   catalogue,
+  lang,
+  badge,
 }: {
   combat: CombatView;
   playthroughId: string;
@@ -189,6 +200,10 @@ export function CombatPanel({
   formAction: CombatFormAction;
   /** Interface Text: the game screen passes the current catalogue. */
   catalogue: Catalogue;
+  /** The language of the Scenario text shown. */
+  lang: string;
+  /** The fallback badge, shown after the Encounter name while the Scenario falls back. */
+  badge?: React.ReactNode;
 }) {
   const near = combat.range === 'near';
   const rangeWord = catalogue.range[combat.range];
@@ -218,11 +233,16 @@ export function CombatPanel({
     <>
       <header className="combat-header">
         <p className="combat-kicker">
-          {catalogue.combat.title} · {combat.locationName} · {catalogue.combat.round(combat.round)}
+          {catalogue.combat.title} · <span lang={lang}>{combat.locationName}</span> ·{' '}
+          {catalogue.combat.round(combat.round)}
         </p>
-        <h1>{combat.encounterName}</h1>
+        <h1>
+          <span lang={lang}>{combat.encounterName}</span>
+          {badge === undefined ? null : <> {badge}</>}
+        </h1>
         <div
           className="combat-narration"
+          lang={lang}
           dangerouslySetInnerHTML={{
             __html: renderNarration(combat.text, combat.characterName),
           }}
@@ -259,6 +279,7 @@ export function CombatPanel({
             catalogue.reach[combat.enemy.reach],
           )}
           catalogue={catalogue}
+          lang={lang}
         />
         <div className="combat-range">{rangeWord}</div>
       </section>

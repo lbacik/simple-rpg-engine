@@ -10,6 +10,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
+import { localizeScenario } from '@/content/index';
 import { startPlaythrough } from '@/engine/index';
 import { getCatalogue } from '@/i18n/index';
 import { getDatabase, PlaythroughStore, SessionStore } from '@/persistence/index';
@@ -24,12 +25,17 @@ export async function startPlaythroughAction(
   formData: FormData,
 ): Promise<StartState> {
   const scenario = getScenario(scenarioId);
-  const catalogue = getCatalogue(await getInterfaceLanguage());
+  const interfaceLanguage = await getInterfaceLanguage();
+  const catalogue = getCatalogue(interfaceLanguage);
   if (!scenario) return { error: catalogue.startForm.unknownScenario };
   const templateId = String(formData.get('templateId') ?? '');
   const name = String(formData.get('name') ?? '');
 
-  const engineResult = startPlaythrough(scenario, templateId, name, randomInt);
+  // The Playthrough starts in the text the Interface Language selects, so the
+  // intro Journal entry records the shown language. Ids and hashes are
+  // identical either way, so the stored pin stays on the base Scenario.
+  const localized = localizeScenario(scenario, interfaceLanguage).scenario;
+  const engineResult = startPlaythrough(localized, templateId, name, randomInt);
   if (!engineResult.ok) {
     if (engineResult.reason === 'invalid-name') {
       return { error: catalogue.startForm.invalidName() };

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
+import { localizeScenario } from '@/content/index';
 import {
   combatGuardUp,
   combatRounds,
@@ -9,6 +10,7 @@ import {
   view,
 } from '@/engine/index';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
+import { ScenarioFallbackBadge } from '@/app/flag';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
@@ -146,8 +148,9 @@ export default async function PlayPage({
           {recordedEnding ? (
             <section aria-label={catalogue.ending.title}>
               <p className="meta">{catalogue.ending[recordedEnding.kind]}</p>
-              <h2>{recordedEnding.title}</h2>
+              <h2 lang={recordedEnding.lang}>{recordedEnding.title}</h2>
               <div
+                lang={recordedEnding.lang}
                 dangerouslySetInnerHTML={{
                   __html: renderStoredText(recordedEnding.text, incompatibleName),
                 }}
@@ -173,7 +176,15 @@ export default async function PlayPage({
     // The Scenario is still in the collection but its content changed: the
     // Character sheet, inventory and map render best effort from the current
     // content, and a new Playthrough is on offer.
-    const incompatibleScenario = resolved.scenario;
+    // Compatibility was checked on the base Scenario by resolvePlaythrough;
+    // everything rendered comes from the text the Interface Language selects.
+    const incompatibleBase = resolved.scenario;
+    const incompatibleLocalized = localizeScenario(incompatibleBase, language);
+    const incompatibleScenario = incompatibleLocalized.scenario;
+    const incompatibleShown = incompatibleLocalized.shownLanguage;
+    const incompatibleBadge = incompatibleLocalized.fallback ? (
+      <ScenarioFallbackBadge baseLanguage={incompatibleBase.language} catalogue={catalogue} />
+    ) : undefined;
     const incompatibleState = resolved.playthrough.state;
     const incompatibleView = view(incompatibleScenario, incompatibleState, {
       includeUnknownExits: showUnknownExits,
@@ -181,7 +192,7 @@ export default async function PlayPage({
     return (
       <main>
         <div className="game">
-          <article className="reading" lang={incompatibleScenario.language}>
+          <article className="reading">
             <p className="notice" role="status">
               {catalogue.game.scenarioChanged}
             </p>
@@ -197,6 +208,8 @@ export default async function PlayPage({
               characterName={incompatibleName}
               recordedEnding={recordedEnding}
               catalogue={catalogue}
+              lang={incompatibleShown}
+              badge={incompatibleBadge}
             />
           </article>
           <SidePanel
@@ -229,7 +242,16 @@ export default async function PlayPage({
     );
   }
 
-  const scenario = resolved.scenario;
+  // Compatibility was checked on the base Scenario by resolvePlaythrough; the
+  // view, the side panel and every action run on the text the Interface
+  // Language selects, so the Journal records the shown language.
+  const baseScenario = resolved.scenario;
+  const localized = localizeScenario(baseScenario, language);
+  const scenario = localized.scenario;
+  const shown = localized.shownLanguage;
+  const badge = localized.fallback ? (
+    <ScenarioFallbackBadge baseLanguage={baseScenario.language} catalogue={catalogue} />
+  ) : undefined;
   const playthrough = resolved.playthrough;
 
   const gameView = view(scenario, playthrough.state, {
@@ -323,7 +345,7 @@ export default async function PlayPage({
     return (
       <main>
         <div className="game">
-          <article className="reading" lang={scenario.language}>
+          <article className="reading">
             {noticeText ? (
               <p className="notice" role="status">
                 {noticeText}
@@ -362,7 +384,7 @@ export default async function PlayPage({
   return (
     <main>
       <div className="game">
-        <article className="reading" lang={scenario.language}>
+        <article className="reading">
           {noticeText ? (
             <p className="notice" role="status">
               {noticeText}
@@ -370,7 +392,10 @@ export default async function PlayPage({
           ) : null}
           {gameView.kind === 'location' ? (
             <>
-              <h1>{gameView.name}</h1>
+              <h1>
+                <span lang={shown}>{gameView.name}</span>
+                {badge === undefined ? null : <> {badge}</>}
+              </h1>
               {gameView.illustration ? (
                 <SceneIllustration
                   src={gameView.illustration.src}
@@ -380,7 +405,12 @@ export default async function PlayPage({
                 />
               ) : null}
               {/* Location description: rendered narration subset. */}
-              <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }} />
+              <div
+                lang={shown}
+                dangerouslySetInnerHTML={{
+                  __html: renderNarration(gameView.description, characterName),
+                }}
+              />
               {gameView.onDemandScenes.length > 0 ? (
                 <section aria-label={catalogue.game.scenes}>
                   {gameView.onDemandScenes.map((scene) => (
@@ -390,7 +420,7 @@ export default async function PlayPage({
                       <input type="hidden" name="scene" value={scene.sceneId} />
                       <p>
                         <button className="button" type="submit">
-                          {scene.title}
+                          <span lang={shown}>{scene.title}</span>
                         </button>
                       </p>
                     </form>
@@ -405,7 +435,7 @@ export default async function PlayPage({
                     <input type="hidden" name="target" value={exit.targetLocationId} />
                     <p>
                       <button className="button" type="submit">
-                        {exit.label}
+                        <span lang={shown}>{exit.label}</span>
                       </button>
                     </p>
                   </form>
@@ -414,7 +444,10 @@ export default async function PlayPage({
             </>
           ) : gameView.kind === 'scene' ? (
             <>
-              <h1>{gameView.title}</h1>
+              <h1>
+                <span lang={shown}>{gameView.title}</span>
+                {badge === undefined ? null : <> {badge}</>}
+              </h1>
               {gameView.illustration ? (
                 <SceneIllustration
                   src={gameView.illustration.src}
@@ -423,7 +456,12 @@ export default async function PlayPage({
                   alt={gameView.illustration.alt}
                 />
               ) : null}
-              <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.text, gameView.characterName) }} />
+              <div
+                lang={shown}
+                dangerouslySetInnerHTML={{
+                  __html: renderNarration(gameView.text, gameView.characterName),
+                }}
+              />
               {gameView.choices.length > 0 ? (
                 <section aria-label={catalogue.game.choices}>
                   {gameView.choices.map((choice) => (
@@ -433,7 +471,7 @@ export default async function PlayPage({
                       <input type="hidden" name="choice" value={choice.id} />
                       <p>
                         <button className="button" type="submit">
-                          {choice.text}
+                          <span lang={shown}>{choice.text}</span>
                           {choice.test ? (
                             <span className="meta">
                               {' '}
@@ -473,6 +511,8 @@ export default async function PlayPage({
               consumables={combatConsumables}
               formAction={combatAction}
               catalogue={catalogue}
+              lang={shown}
+              badge={badge}
             />
           ) : (
             <>
@@ -480,6 +520,8 @@ export default async function PlayPage({
                 kindLabel={catalogue.ending[gameView.endingKind]}
                 title={gameView.title}
                 html={renderNarration(gameView.text, characterName)}
+                lang={shown}
+                badge={badge}
               />
               <section aria-label={catalogue.game.afterEnding}>
                 <p>

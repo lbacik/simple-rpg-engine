@@ -33,16 +33,31 @@ function trimmed(
   };
 }
 
-function NodeLabel({ node, catalogue }: { node: MapNode; catalogue: Catalogue }) {
+function NodeLabel({
+  node,
+  catalogue,
+  lang,
+}: {
+  node: MapNode;
+  catalogue: Catalogue;
+  /** The language of the Location names shown. */
+  lang: string;
+}) {
   return (
     <>
       <span className="dot" aria-hidden="true">
         {node.isCurrent ? <span className="ring" aria-hidden="true" /> : null}
         {node.status === 'unknown' ? '?' : null}
       </span>
-      <span className="label">
-        {node.status === 'revealed' ? catalogue.map.heardOf(node.name) : node.name}
-      </span>
+      {node.status === 'revealed' ? (
+        // Interface Text around the name: the name itself cannot be split out
+        // of the catalogue message, so no `lang` here.
+        <span className="label">{catalogue.map.heardOf(node.name)}</span>
+      ) : (
+        <span className="label" lang={lang}>
+          {node.name}
+        </span>
+      )}
     </>
   );
 }
@@ -53,12 +68,15 @@ function PlacedNode({
   step,
   canTravel,
   catalogue,
+  lang,
 }: {
   node: MapNode;
   playthroughId: string;
   step: number;
   canTravel: boolean;
   catalogue: Catalogue;
+  /** The language of the Location names shown. */
+  lang: string;
 }) {
   const position = { left: `${node.x}%`, top: `${node.y}%` };
   const classes = [
@@ -77,7 +95,7 @@ function PlacedNode({
     return (
       <div className={classes} style={position}>
         <span className="here">{catalogue.map.youAreHere}</span>
-        <NodeLabel node={node} catalogue={catalogue} />
+        <NodeLabel node={node} catalogue={catalogue} lang={lang} />
       </div>
     );
   }
@@ -88,14 +106,14 @@ function PlacedNode({
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="target" value={node.id} />
         <button className="map-travel" type="submit" aria-label={catalogue.map.travelTo(node.name)}>
-          <NodeLabel node={node} catalogue={catalogue} />
+          <NodeLabel node={node} catalogue={catalogue} lang={lang} />
         </button>
       </form>
     );
   }
   return (
     <div className={classes} style={position}>
-      <NodeLabel node={node} catalogue={catalogue} />
+      <NodeLabel node={node} catalogue={catalogue} lang={lang} />
     </div>
   );
 }
@@ -109,6 +127,7 @@ export function LocationMap({
   toggleHref,
   markerId,
   catalogue,
+  lang,
 }: {
   map: MapView;
   playthroughId: string;
@@ -122,6 +141,8 @@ export function LocationMap({
   markerId: string;
   /** Interface Text: the game screen passes the current catalogue. */
   catalogue: Catalogue;
+  /** The language of the Location names shown. */
+  lang: string;
 }) {
   const byId = new Map(map.nodes.map((node) => [node.id, node]));
   return (
@@ -173,6 +194,7 @@ export function LocationMap({
             step={step}
             canTravel={canTravel}
             catalogue={catalogue}
+            lang={lang}
           />
         ))}
       </div>

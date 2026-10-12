@@ -96,7 +96,11 @@ function StatusCard({
         <p className="status-name">
           <strong>{state.character.name}</strong>
         </p>
-        {template ? <p className="meta status-template">{template.name}</p> : null}
+        {template ? (
+          <p className="meta status-template" lang={scenario.language}>
+            {template.name}
+          </p>
+        ) : null}
         <span
           className={low ? 'health-segments low' : 'health-segments'}
           role="img"
@@ -280,6 +284,7 @@ export function InventorySheet({
         seen={seen}
         showUnknownExits={showUnknownExits}
         text={inventoryBrowserText(catalogue)}
+        lang={scenario.language}
       />
     </section>
   );
@@ -417,6 +422,7 @@ export function SidePanel({
           toggleHref={toggleHref}
           markerId="map-arrow-desktop"
           catalogue={catalogue}
+          lang={scenario.language}
         />
       </div>
       <StatusCard scenario={scenario} state={state} catalogue={catalogue} />
@@ -532,6 +538,7 @@ export function SidePanel({
               toggleHref={toggleHref}
               markerId="map-arrow-modal"
               catalogue={catalogue}
+              lang={scenario.language}
             />
           </ModalShell>
         </PanelModal>

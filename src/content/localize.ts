@@ -138,7 +138,9 @@ function overlayOutcome(
   endingsById: Record<string, Scenario['endingsById'][string]>,
 ): CompiledOutcome {
   return {
-    text: text?.text,
+    // A Translation is validated complete, but the overlay never erases
+    // narration: a missing Translation field falls back to the base text.
+    text: text?.text ?? outcome.text,
     effects: outcome.effects,
     next: outcome.next === undefined ? undefined : required(lookups.scenes.get(outcome.next.id), `scene "${outcome.next.id}"`),
     move:

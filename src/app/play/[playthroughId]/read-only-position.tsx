@@ -18,17 +18,30 @@ export function EndingBlock({
   kindLabel,
   title,
   html,
+  lang,
+  badge,
 }: {
   /** The Ending kind, already rendered through the catalogue. */
   kindLabel: string;
   title: string;
   html: string;
+  /** The language of the Ending text shown, when it comes from the Scenario. */
+  lang?: string;
+  /** The fallback badge, shown after the title while the Scenario falls back. */
+  badge?: React.ReactNode;
 }) {
   return (
     <>
       <p className="meta">{kindLabel}</p>
-      <h1>{title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: html }} />
+      <h1>
+        {lang === undefined ? title : <span lang={lang}>{title}</span>}
+        {badge === undefined ? null : <> {badge}</>}
+      </h1>
+      {lang === undefined ? (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      ) : (
+        <div lang={lang} dangerouslySetInnerHTML={{ __html: html }} />
+      )}
     </>
   );
 }
@@ -46,6 +59,8 @@ export function ReadOnlyPosition({
   characterName,
   recordedEnding,
   catalogue = en,
+  lang,
+  badge,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -54,6 +69,10 @@ export function ReadOnlyPosition({
   recordedEnding: JournalEnding | undefined;
   /** Interface Text: the game screen passes the current catalogue. */
   catalogue?: Catalogue;
+  /** The language of the Scenario text shown. */
+  lang: string;
+  /** The fallback badge, shown after the title while the Scenario falls back. */
+  badge?: React.ReactNode;
 }) {
   const gap = readOnlyGap(scenario, state, gameView.kind, recordedEnding !== undefined);
   if (gap === 'location') {
@@ -65,9 +84,13 @@ export function ReadOnlyPosition({
   if (gameView.kind === 'location') {
     return (
       <>
-        <h1>{gameView.name}</h1>
+        <h1>
+          <span lang={lang}>{gameView.name}</span>
+          {badge === undefined ? null : <> {badge}</>}
+        </h1>
         {/* Location description: rendered narration subset. */}
         <div
+          lang={lang}
           dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }}
         />
       </>
@@ -76,8 +99,12 @@ export function ReadOnlyPosition({
   if (gameView.kind === 'scene') {
     return (
       <>
-        <h1>{gameView.title}</h1>
+        <h1>
+          <span lang={lang}>{gameView.title}</span>
+          {badge === undefined ? null : <> {badge}</>}
+        </h1>
         <div
+          lang={lang}
           dangerouslySetInnerHTML={{
             __html: renderNarration(gameView.text, gameView.characterName),
           }}
@@ -88,8 +115,12 @@ export function ReadOnlyPosition({
   if (gameView.kind === 'combat') {
     return (
       <>
-        <h1>{gameView.encounterName}</h1>
+        <h1>
+          <span lang={lang}>{gameView.encounterName}</span>
+          {badge === undefined ? null : <> {badge}</>}
+        </h1>
         <div
+          lang={lang}
           dangerouslySetInnerHTML={{
             __html: renderNarration(gameView.text, gameView.characterName),
           }}
@@ -116,11 +147,14 @@ export function ReadOnlyPosition({
   const contentEndingGone =
     state.endingId !== undefined && scenario.endingsById[state.endingId] === undefined;
   if (contentEndingGone && recordedEnding) {
+    // The Ending comes from its Journal entry as presented, with its own
+    // recorded language: never the fallback badge.
     return (
       <EndingBlock
         kindLabel={catalogue.ending[recordedEnding.kind]}
         title={recordedEnding.title}
         html={renderStoredText(recordedEnding.text, characterName)}
+        lang={recordedEnding.lang}
       />
     );
   }
@@ -129,6 +163,8 @@ export function ReadOnlyPosition({
       kindLabel={catalogue.ending[gameView.endingKind]}
       title={gameView.title}
       html={renderNarration(gameView.text, characterName)}
+      lang={lang}
+      badge={badge}
     />
   );
 }

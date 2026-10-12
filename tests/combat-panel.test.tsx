@@ -145,6 +145,7 @@ function render(view: CombatView, extra: Record<string, unknown> = {}): string {
       consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
       formAction="#combat"
       catalogue={en}
+      lang="en"
       {...extra}
     />,
   );
@@ -153,9 +154,23 @@ function render(view: CombatView, extra: Record<string, unknown> = {}): string {
 describe('combat panel header', () => {
   it('shows the kicker, the Encounter name and the opening narration', () => {
     const markup = render(combat());
-    expect(markup).toContain('Combat · Whispering Woods · Round 3');
-    expect(markup).toContain('<h1>The Grey Wolf</h1>');
+    expect(markup).toContain('Combat · <span lang="en">Whispering Woods</span> · Round 3');
+    expect(markup).toContain('<h1><span lang="en">The Grey Wolf</span></h1>');
     expect(markup).toContain('A wolf blocks the path.');
+  });
+
+  it('shows no badge without one, and the badge after the Encounter name with one', () => {
+    expect(render(combat())).not.toContain('lang-chip');
+    const markup = render(combat(), { badge: <span className="lang-chip">Text: Polish</span> });
+    expect(markup).toContain(
+      '<h1><span lang="en">The Grey Wolf</span> <span class="lang-chip">Text: Polish</span></h1>',
+    );
+  });
+
+  it('marks the Enemy name with the Scenario language, never the Character name', () => {
+    const markup = render(combat());
+    expect(markup).toContain('<p class="combat-name" lang="en">The Grey Wolf</p>');
+    expect(markup).toContain('<p class="combat-name">Robin</p>');
   });
 });
 
@@ -382,6 +397,7 @@ describe('combat panel in Polish', () => {
         consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
         formAction="#combat"
         catalogue={pl}
+        lang="en"
         {...extra}
       />,
     );
@@ -389,7 +405,7 @@ describe('combat panel in Polish', () => {
 
   it('shows the kicker, groups, arena and reasons in Polish', () => {
     const markup = renderPl(combat());
-    expect(markup).toContain('Walka · Whispering Woods · Runda 3');
+    expect(markup).toContain('Walka · <span lang="en">Whispering Woods</span> · Runda 3');
     for (const group of ['Pozycja', 'Walka', 'Przedmioty', 'Ucieczka']) {
       expect(markup).toContain(`aria-label="${group}"`);
     }

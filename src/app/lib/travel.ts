@@ -14,6 +14,7 @@ import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import { getDatabase } from '@/persistence/index';
+import { getInterfaceLanguage } from './language';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -32,6 +33,7 @@ export async function travelAction(formData: FormData): Promise<never> {
     sessionHash,
     { kind: 'travel', targetLocationId: target, expectedStep },
     randomInt,
+    await getInterfaceLanguage(),
   );
   const path = `/play/${playthroughId}`;
   if (result.ok) {

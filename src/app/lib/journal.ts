@@ -358,6 +358,8 @@ export type JournalEnding = {
   kind: 'victory' | 'defeat';
   title: string;
   text: string;
+  /** The language the Ending was presented in; `en` for legacy rows. */
+  lang: string;
 };
 
 /**
@@ -366,7 +368,7 @@ export type JournalEnding = {
  * Ending with it) and only the Journal remains.
  */
 export function latestJournalEnding(
-  entries: ReadonlyArray<{ type: string; payload: unknown }>,
+  entries: ReadonlyArray<{ type: string; lang?: unknown; payload: unknown }>,
 ): JournalEnding | undefined {
   for (let index = entries.length - 1; index >= 0; index -= 1) {
     const entry = entries[index];
@@ -377,6 +379,7 @@ export function latestJournalEnding(
       kind: record.kind === 'victory' ? 'victory' : 'defeat',
       title: String(record.title ?? ''),
       text: String(record.text ?? ''),
+      lang: entryLang(entry.lang),
     };
   }
   return undefined;

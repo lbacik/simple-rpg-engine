@@ -16,6 +16,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import type { Action } from '@/engine/index';
 import { getDatabase } from '@/persistence/index';
+import { getInterfaceLanguage } from './language';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -31,6 +32,7 @@ async function runSceneAction(playthroughId: string, expectedStep: number, actio
     sessionHash,
     action,
     randomInt,
+    await getInterfaceLanguage(),
   );
   const path = `/play/${playthroughId}`;
   if (result.ok) {

@@ -25,6 +25,7 @@ import type { Kysely } from 'kysely';
 // directly against in-memory SQLite.
 import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
+import { localizeScenario } from '../../content/localize';
 import { applyAction, type Action, type Rng } from '../../engine/index';
 import { PlaythroughStore } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
@@ -40,6 +41,10 @@ export async function executeTurn(
   sessionHash: string | undefined,
   action: Action,
   rng: Rng,
+  // The player's Interface Language: the turn runs on the Scenario text it
+  // selects, so the Journal records the shown language. Compatibility stays
+  // on the base Scenario (IDs are identical either way).
+  interfaceLanguage: string = 'en',
 ): Promise<TurnResult> {
   const store = new PlaythroughStore(db);
   const row = await store.findById(playthroughId);
@@ -63,7 +68,8 @@ export async function executeTurn(
     state = { ...state, scenarioVersion: scenario.version, contentHash: scenario.contentHash };
     pinMoved = true;
   }
-  const applied = applyAction(scenario, state, action, rng);
+  const localized = localizeScenario(scenario, interfaceLanguage).scenario;
+  const applied = applyAction(localized, state, action, rng);
   if (!applied.ok) {
     if (pinMoved) {
       // Best effort: leave the pin moved even though the action was rejected,
