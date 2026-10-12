@@ -587,8 +587,9 @@ type Occurrence = {
 
 /**
  * translation/duplicate-entry: two Translation entries with the same key, in
- * one file or across its files. The first entry is in `related`. Returns the
- * keys seen once (first occurrences), for the match checks to use.
+ * one file or across its files. The first entry is in `related`. Matching
+ * always uses the first occurrence, so duplicates never cause spurious
+ * missing-text or suppress unmatched; the returned once-set is informational.
  */
 function checkDuplicateEntries(
   occurrences: Occurrence[],
@@ -713,32 +714,33 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
     }
     translationLocations.set(value['id'], { file, connections });
   }
-  const onceLocations = checkDuplicateEntries(locationOccurrences, 'location', push);
-  // Connection duplicates are per Location, keyed by `to`.
-  const onceConnections = new Map<string, Set<string>>();
+  // First occurrences always match: the returned set is intentionally unused.
+  checkDuplicateEntries(locationOccurrences, 'location', push);
+  // Connection duplicates are per Location, keyed by `to`. The returned
+  // sets are not used for matching: first occurrences always match, so a
+  // duplicated key contributes only translation/duplicate-entry.
   for (const [id, entry] of translationLocations) {
     const pos: FilePos = {
       file: entry.file.parsed.file,
       contents: entry.file.parsed.contents,
       lineCounter: entry.file.parsed.lineCounter,
     };
-    onceConnections.set(
-      id,
-      checkDuplicateEntries(
-        entry.connections.map((connection) => ({
-          key: connection.to,
-          file: pos.file,
-          contents: pos.contents,
-          lineCounter: pos.lineCounter,
-          keyPath: connection.toPath,
-        })),
-        `connection of location "${id}"`,
-        push,
-      ),
+    checkDuplicateEntries(
+      entry.connections.map((connection) => ({
+        key: connection.to,
+        file: pos.file,
+        contents: pos.contents,
+        lineCounter: pos.lineCounter,
+        keyPath: connection.toPath,
+      })),
+      `connection of location "${id}"`,
+      push,
     );
   }
   for (const [id, baseLocation] of base.locations) {
-    const entry = onceLocations.has(id) ? translationLocations.get(id) : undefined;
+    // First occurrences match even when duplicated: duplicates contribute
+    // only translation/duplicate-entry, never a spurious missing-text.
+    const entry = translationLocations.get(id);
     if (!entry) {
       missingAtBase(baseLocation.pos, baseLocation.idPath, `translation is missing location "${id}" ("name")`);
       missingAtBase(baseLocation.pos, baseLocation.idPath, `translation is missing location "${id}" ("description")`);
@@ -753,14 +755,13 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
       }
       continue;
     }
-    const seenTo = onceConnections.get(id) ?? new Set<string>();
     const entryPos: FilePos = {
       file: entry.file.parsed.file,
       contents: entry.file.parsed.contents,
       lineCounter: entry.file.parsed.lineCounter,
     };
     for (const [to, hasLabel] of baseLocation.labels) {
-      const translated = entry.connections.find((connection) => connection.to === to && seenTo.has(to));
+      const translated = entry.connections.find((connection) => connection.to === to);
       if (hasLabel && (!translated || !translated.hasLabel)) {
         missingAtBase(
           baseLocation.pos,
@@ -769,8 +770,12 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         );
       }
     }
+    const processedTo = new Set<string>();
     for (const connection of entry.connections) {
-      if (!seenTo.has(connection.to)) continue;
+      // First occurrence per `to` matches; later duplicates are already
+      // reported as translation/duplicate-entry above.
+      if (processedTo.has(connection.to)) continue;
+      processedTo.add(connection.to);
       const baseHasLabel = baseLocation.labels.get(connection.to);
       if (baseHasLabel === undefined) {
         unmatchedAt(entryPos, connection.toPath, `translation has connection to "${connection.to}" with no base counterpart in location "${id}"`);
@@ -780,7 +785,7 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
     }
   }
   for (const [id] of translationLocations) {
-    if (!onceLocations.has(id) || base.locations.has(id)) continue;
+    if (base.locations.has(id)) continue;
     const entry = translationLocations.get(id);
     if (!entry) continue;
     const entryPos: FilePos = {
@@ -851,9 +856,9 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
     }
     translationScenes.set(value['id'], { file, choices, choiceOrder });
   }
-  const onceScenes = checkDuplicateEntries(sceneOccurrences, 'scene', push);
+  // First occurrences always match: the returned sets are intentionally unused.
+  checkDuplicateEntries(sceneOccurrences, 'scene', push);
   // Choice duplicates live within their Scene.
-  const onceChoices = new Map<string, Set<string>>();
   for (const [id, entry] of translationScenes) {
     const pos: FilePos = {
       file: entry.file.parsed.file,
@@ -876,7 +881,7 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         }
       });
     }
-    onceChoices.set(id, checkDuplicateEntries(occurrences, `choice of scene "${id}"`, push));
+    checkDuplicateEntries(occurrences, `choice of scene "${id}"`, push);
   }
 
   const checkOutcomeTextPair = (
@@ -896,7 +901,7 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
   };
 
   for (const [id, baseScene] of base.scenes) {
-    const entry = onceScenes.has(id) ? translationScenes.get(id) : undefined;
+    const entry = translationScenes.get(id);
     if (!entry) {
       missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing scene "${id}" ("title")`);
       missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing scene "${id}" ("text")`);
@@ -919,9 +924,8 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
       contents: entry.file.parsed.contents,
       lineCounter: entry.file.parsed.lineCounter,
     };
-    const seenChoices = onceChoices.get(id) ?? new Set<string>();
     for (const [choiceId, choice] of baseScene.choices) {
-      const translated = seenChoices.has(choiceId) ? entry.choices.get(choiceId) : undefined;
+      const translated = entry.choices.get(choiceId);
       if (!translated) {
         missingAtBase(baseScene.pos, baseScene.idPath, `translation is missing choice "${choiceId}" ("text") in scene "${id}"`);
         if (choice.outcomeText) {
@@ -972,12 +976,12 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
       }
     }
     for (const [choiceId, info] of entry.choices) {
-      if (!seenChoices.has(choiceId) || baseScene.choices.has(choiceId)) continue;
+      if (baseScene.choices.has(choiceId)) continue;
       unmatchedAt(entryPos, info.idPath, `translation has choice "${choiceId}" with no base counterpart in scene "${id}"`);
     }
   }
   for (const [id, entry] of translationScenes) {
-    if (!onceScenes.has(id) || base.scenes.has(id)) continue;
+    if (base.scenes.has(id)) continue;
     const entryPos: FilePos = {
       file: entry.file.parsed.file,
       contents: entry.file.parsed.contents,
@@ -1016,9 +1020,10 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         }
       });
     }
-    const once = checkDuplicateEntries(occurrences, kind, push);
+    // First occurrences always match: the returned set is intentionally unused.
+    checkDuplicateEntries(occurrences, kind, push);
     for (const [id, baseEntry] of baseEntries) {
-      const match = once.has(id) ? translated.get(id) : undefined;
+      const match = translated.get(id);
       if (!match) {
         missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("${field}")`);
         if (baseEntry.hasDescription) {
@@ -1038,7 +1043,7 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
       }
     }
     for (const [id, match] of translated) {
-      if (!once.has(id) || baseEntries.has(id)) continue;
+      if (baseEntries.has(id)) continue;
       const transPos: FilePos = {
         file: match.file.parsed.file,
         contents: match.file.parsed.contents,
@@ -1093,9 +1098,10 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         });
       });
     }
-    const once = checkDuplicateEntries(occurrences, 'encounter', push);
+    // First occurrences always match: the returned set is intentionally unused.
+    checkDuplicateEntries(occurrences, 'encounter', push);
     for (const [id, baseEntry] of base.encounters) {
-      const match = once.has(id) ? translated.get(id) : undefined;
+      const match = translated.get(id);
       if (!match) {
         missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing encounter "${id}" ("text")`);
         if (baseEntry.victoryText) {
@@ -1135,7 +1141,7 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
       );
     }
     for (const [id, match] of translated) {
-      if (!once.has(id) || base.encounters.has(id)) continue;
+      if (base.encounters.has(id)) continue;
       const transPos: FilePos = {
         file: match.file.parsed.file,
         contents: match.file.parsed.contents,
@@ -1164,15 +1170,16 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         if (!translated.has(item['id'])) translated.set(item['id'], { file, index: itemIndex });
       });
     }
-    const once = checkDuplicateEntries(occurrences, kind, push);
+    // First occurrences always match: the returned set is intentionally unused.
+    checkDuplicateEntries(occurrences, kind, push);
     for (const [id, baseEntry] of baseEntries) {
-      if (once.has(id) && translated.has(id)) continue;
+      if (translated.has(id)) continue;
       for (const field of fields) {
         missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing ${kind} "${id}" ("${field}")`);
       }
     }
     for (const [id, match] of translated) {
-      if (!once.has(id) || baseEntries.has(id)) continue;
+      if (baseEntries.has(id)) continue;
       const transPos: FilePos = {
         file: match.file.parsed.file,
         contents: match.file.parsed.contents,
@@ -1514,6 +1521,9 @@ export function runTranslationPipelines(
   const acceptedWarnings: Diagnostic[] = [];
   const t1Loaded: LoadedTranslation[] = [];
   const t1Diagnostics = new Map<string, Diagnostic[]>();
+  // Every manifest T1 managed to read, even one rejected by a T1 error:
+  // translation/duplicate-language counts those too.
+  const t1Read: LoadedTranslation[] = [];
 
   for (const ref of refs) {
     const diagnostics: Diagnostic[] = [];
@@ -1521,6 +1531,9 @@ export function runTranslationPipelines(
       diagnostics.push({ ...diagnostic, translation: ref.manifestPath });
     };
     const loaded = runT1(scenarioDir, ref, push);
+    if (loaded !== undefined && !t1Read.some((known) => known.manifestPath === loaded.manifestPath)) {
+      t1Read.push(loaded);
+    }
     if (loaded === undefined || diagnostics.some((d) => d.severity === 'error')) {
       rejected.push({ manifestPath: ref.manifestPath, language: loaded?.language, diagnostics });
     } else {
@@ -1579,8 +1592,9 @@ export function runTranslationPipelines(
   }
 
   // translation/duplicate-language runs across every Translation whose
-  // manifest declares a valid `language`, even one rejected by another rule.
-  const languageCandidates = t1Loaded
+  // manifest declares a valid `language`, even one rejected by another rule
+  // (hence t1Read, not just the T1-clean t1Loaded).
+  const languageCandidates = t1Read
     .map((loaded) => ({
       manifestPath: loaded.manifestPath,
       manifest: loaded.manifest,
@@ -1612,7 +1626,7 @@ export function runTranslationPipelines(
   }
   const contents: RejectedTranslationContent[] = [];
   for (const ref of refs) {
-    const loaded = t1Loaded.find((candidate) => candidate.manifestPath === ref.manifestPath);
+    const loaded = t1Read.find((candidate) => candidate.manifestPath === ref.manifestPath);
     if (loaded !== undefined && !contents.some((known) => known.manifestPath === loaded.manifestPath)) {
       contents.push({
         manifestPath: loaded.manifestPath,
