@@ -1,17 +1,29 @@
+import type { Metadata } from 'next';
 import { listScenarios } from '@/content/registry';
+import { getCatalogue } from '@/i18n/index';
+import { getInterfaceLanguage } from './lib/language';
 
 export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const catalogue = getCatalogue(await getInterfaceLanguage());
+  return {
+    title: catalogue.collection.title,
+    description: catalogue.collection.description,
+  };
+}
+
+export default async function HomePage() {
+  const catalogue = getCatalogue(await getInterfaceLanguage());
   const scenarios = listScenarios();
   return (
     <main>
-      <h1>Scenarios</h1>
+      <h1>{catalogue.collection.title}</h1>
       <p>
-        <a href="/playthroughs">My Playthroughs</a>
+        <a href="/playthroughs">{catalogue.nav.playthroughs}</a>
       </p>
       {scenarios.length === 0 ? (
-        <p>No Scenarios are available right now.</p>
+        <p>{catalogue.collection.empty}</p>
       ) : (
         <ul className="cards">
           {scenarios.map((scenario) => (
@@ -23,7 +35,7 @@ export default function HomePage() {
               </p>
               <p>
                 <a className="button" href={`/scenarios/${scenario.id}`}>
-                  New Playthrough
+                  {catalogue.collection.newPlaythrough}
                 </a>
               </p>
             </li>
