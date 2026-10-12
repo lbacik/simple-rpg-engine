@@ -1,20 +1,22 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { getCatalogue } from '@/i18n/index';
+import { getInterfaceLanguage } from './lib/language';
+import { TopNavigation } from './top-navigation';
 
 export const metadata: Metadata = {
   title: 'Simple RPG Engine',
   description: 'Single-player RPG adventures in the browser.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const language = await getInterfaceLanguage();
+  const catalogue = getCatalogue(language);
   return (
-    <html lang="en">
+    <html lang={language}>
       <body>
         <header className="topnav">
-          <nav>
-            <a href="/">Scenarios</a>
-            <a href="/playthroughs">My Playthroughs</a>
-          </nav>
+          <TopNavigation language={language} catalogue={catalogue} />
         </header>
         {children}
       </body>
