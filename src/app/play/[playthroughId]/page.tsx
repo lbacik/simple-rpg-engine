@@ -20,9 +20,11 @@ import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import {
   JOURNAL_BATCH_SIZE,
   latestJournalEnding,
+  modalJournalBatch,
   renderJournalEntries,
 } from '@/app/lib/journal';
 import { JournalEntries } from './journal/journal-entries';
+import { JournalModalLink } from './journal/journal-modal';
 import {
   continueHref,
   parsePanelTab,
@@ -651,6 +653,9 @@ export default async function PlayPage({
     const incompatibleView = view(incompatibleScenario, incompatibleState, {
       includeUnknownExits: showUnknownExits,
     });
+    // The modal over the read-only screen reuses the Journal already read
+    // above: the newest batch, newest first, with the sequence cursor.
+    const incompatibleModalJournal = modalJournalBatch(journal, incompatibleName);
     return (
       <main>
         <div className="game">
@@ -664,7 +669,12 @@ export default async function PlayPage({
               </a>
             </p>
             <p>
-              <a href={`/play/${resolved.playthrough.id}/journal`}>View journal</a>
+              <JournalModalLink
+                playthroughId={resolved.playthrough.id}
+                initialEntries={incompatibleModalJournal.entries}
+                initialNextCursor={incompatibleModalJournal.nextCursor}
+                total={incompatibleModalJournal.total}
+              />
             </p>
             <ReadOnlyPosition
               scenario={incompatibleScenario}
@@ -702,6 +712,10 @@ export default async function PlayPage({
   const journal = await store.listJournal(playthrough.id);
   const state = playthrough.state;
   const characterName = state.character.name;
+  // "View journal" opens the Journal in a modal over the game screen instead
+  // of navigating away. The modal reuses the Journal already read here: the
+  // newest batch, newest first, with the sequence cursor for older batches.
+  const modalJournal = modalJournalBatch(journal, characterName);
   // A step that ended the Playthrough shows the Ending screen instead of the
   // result panel (docs/spec/playthrough-state.md, result panel).
   const resultEntries =
@@ -815,7 +829,12 @@ export default async function PlayPage({
             </p>
           ) : null}
           <p>
-            <a href={`/play/${playthrough.id}/journal`}>View journal</a>
+            <JournalModalLink
+              playthroughId={playthrough.id}
+              initialEntries={modalJournal.entries}
+              initialNextCursor={modalJournal.nextCursor}
+              total={modalJournal.total}
+            />
           </p>
           {gameView.kind === 'location' ? (
             <>
@@ -924,9 +943,13 @@ export default async function PlayPage({
               />
               <section aria-label="After the ending">
                 <p>
-                  <a className="button secondary" href={`/play/${playthrough.id}/journal`}>
-                    View journal
-                  </a>
+                  <JournalModalLink
+                    playthroughId={playthrough.id}
+                    initialEntries={modalJournal.entries}
+                    initialNextCursor={modalJournal.nextCursor}
+                    total={modalJournal.total}
+                    className="button secondary"
+                  />
                 </p>
                 <p>
                   <a className="button" href={`/scenarios/${scenario.id}`}>

@@ -744,3 +744,62 @@ form.map-node button.map-travel:focus-visible .dot {
   height: 100%;
   background: var(--accent);
 }
+
+/* Journal modal: "View journal" opens the Journal over the game screen
+ * instead of navigating away. The backdrop covers the game; the dialog holds
+ * a fixed header ("Open in new tab" to the full page, the close button) above
+ * a scroll container where the Journal behaves as on the full page: newest
+ * first, infinite scroll towards the first entry, the sticky position
+ * indicator naming the topmost entry against the modal's scroll. */
+.journal-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(42, 37, 29, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.journal-modal {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+  width: min(40rem, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1rem 3rem rgba(42, 37, 29, 0.35);
+}
+
+.journal-modal-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.journal-modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.journal-modal-header .meta {
+  margin: 0;
+  flex: 1;
+  min-width: 10rem;
+}
+
+.journal-modal-body {
+  overflow-y: auto;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.journal-modal-body .journal-position {
+  margin: 0 -1.25rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
