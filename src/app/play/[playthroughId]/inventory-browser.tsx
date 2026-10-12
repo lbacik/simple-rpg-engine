@@ -69,6 +69,25 @@ function SlotIconPaths({ slot }: { slot: InventorySlotId }) {
   );
 }
 
+/** The shared icon shell: stroke glyphs on a 24-grid, sized per use. */
+function IconShell({ size, children }: { size: number; children: React.ReactNode }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 function TileIcon({ tile }: { tile: InventoryTileData }) {
   const name =
     tile.kind === 'equipment' ? (tile.slot ?? 'weapon') : tile.kind === 'consumable' ? 'consumable' : 'key';
@@ -86,38 +105,15 @@ function TileIcon({ tile }: { tile: InventoryTileData }) {
         <path d="M11.2 11.2 20 20M16 16l2-2M18.5 18.5l2-2" />
       </>
     );
-  return (
-    <svg
-      width={34}
-      height={34}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths}
-    </svg>
-  );
+  return <IconShell size={34}>{paths}</IconShell>;
 }
 
 function SlotIcon({ slot }: { slot: InventorySlotId }) {
   return (
     <span className="inv-slot-icon" aria-hidden="true">
-      <svg
-        width={28}
-        height={28}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <IconShell size={28}>
         <SlotIconPaths slot={slot} />
-      </svg>
+      </IconShell>
     </span>
   );
 }

@@ -20,7 +20,7 @@ import { getScenario } from '@/content/registry';
 import type { Action } from '@/engine/index';
 import { isEquipmentSlot } from '@/engine/inventory';
 import { getDatabase } from '@/persistence/index';
-import { parseSeenStep, playHref } from './panel';
+import { cleanParam, parseSeenStep, playHref } from './panel';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -53,10 +53,7 @@ function readForm(formData: FormData, field: string): InventoryForm | null {
     showUnknownExits: String(formData.get('unknown') ?? '') === '1',
     // The selected tile survives the redirect after the action, so the result
     // is visible in place (or the first item, when the selected one is gone).
-    selectedItem:
-      selectedRaw === null || String(selectedRaw).trim() === ''
-        ? undefined
-        : String(selectedRaw).trim(),
+    selectedItem: cleanParam(selectedRaw === null ? undefined : String(selectedRaw)),
   };
 }
 

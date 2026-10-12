@@ -225,6 +225,9 @@ export function InventorySheet({
       <h2>Inventory</h2>
       {inCombat ? <p className="meta">Inventory actions are unavailable during Combat.</p> : null}
       <InventoryBrowser
+        // Remount when the `?item=` tile changes elsewhere (back/forward):
+        // the browser owns the selection as client state seeded from this id.
+        key={initialSelectedId}
         slots={slots}
         items={items}
         playthroughId={playthroughId}

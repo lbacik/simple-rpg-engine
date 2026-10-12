@@ -48,11 +48,16 @@ export function shouldShowResultPanel(
   return seenStep !== currentStep;
 }
 
-/** Parse `?item=`: the inventory tile selected in the detail pane. */
-export function parseSelectedItem(value: string | undefined): string | undefined {
-  if (value === undefined) return undefined;
+/** A raw query/form value with whitespace-only treated as absent. */
+export function cleanParam(value: string | undefined | null): string | undefined {
+  if (value === undefined || value === null) return undefined;
   const trimmed = value.trim();
   return trimmed === '' ? undefined : trimmed;
+}
+
+/** Parse `?item=`: the inventory tile selected in the detail pane. */
+export function parseSelectedItem(value: string | undefined): string | undefined {
+  return cleanParam(value);
 }
 
 /** The query parameters the game page preserves across navigation. */
@@ -77,9 +82,9 @@ function playQueryString(query: PlayQuery): string {
   }
   // The selected tile survives the redirect after an inventory action, so the
   // result is visible in place. It rides only on the inventory panel.
-  if (query.panel === 'inventory' && query.item !== undefined && query.item !== null) {
-    const trimmed = query.item.trim();
-    if (trimmed !== '') params.set('item', trimmed);
+  if (query.panel === 'inventory') {
+    const trimmed = cleanParam(query.item);
+    if (trimmed !== undefined) params.set('item', trimmed);
   }
   return params.toString();
 }
