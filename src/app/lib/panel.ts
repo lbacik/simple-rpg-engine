@@ -48,12 +48,21 @@ export function shouldShowResultPanel(
   return seenStep !== currentStep;
 }
 
+/** Parse `?item=`: the inventory tile selected in the detail pane. */
+export function parseSelectedItem(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
+}
+
 /** The query parameters the game page preserves across navigation. */
 export type PlayQuery = {
   panel?: string | null;
   notice?: string;
   seen?: number;
   showUnknownExits?: boolean;
+  /** The selected inventory tile; only meaningful with `panel=inventory`. */
+  item?: string | null;
 };
 
 function playQueryString(query: PlayQuery): string {
@@ -66,6 +75,12 @@ function playQueryString(query: PlayQuery): string {
   if (query.seen !== undefined && Number.isInteger(query.seen) && query.seen >= 0) {
     params.set('seen', String(query.seen));
   }
+  // The selected tile survives the redirect after an inventory action, so the
+  // result is visible in place. It rides only on the inventory panel.
+  if (query.panel === 'inventory' && query.item !== undefined && query.item !== null) {
+    const trimmed = query.item.trim();
+    if (trimmed !== '') params.set('item', trimmed);
+  }
   return params.toString();
 }
 
@@ -76,8 +91,9 @@ export function playHref(
   notice?: string,
   seen?: number,
   showUnknownExits?: boolean,
+  item?: string | null,
 ): string {
-  const query = playQueryString({ panel, notice, seen, showUnknownExits });
+  const query = playQueryString({ panel, notice, seen, showUnknownExits, item });
   return query === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${query}`;
 }
 
@@ -93,6 +109,7 @@ export function continueHref(
   panel?: string | null,
   notice?: string,
   showUnknownExits?: boolean,
+  item?: string | null,
 ): string {
-  return playHref(playthroughId, panel, notice, step, showUnknownExits);
+  return playHref(playthroughId, panel, notice, step, showUnknownExits, item);
 }

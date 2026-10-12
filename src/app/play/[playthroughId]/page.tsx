@@ -23,6 +23,7 @@ import {
   continueHref,
   parsePanel,
   parseSeenStep,
+  parseSelectedItem,
   playHref,
   shouldShowResultPanel,
 } from '@/app/lib/panel';
@@ -55,6 +56,7 @@ function mapToggleHrefFor(
   notice: string | undefined,
   showUnknownExits: boolean,
   seen?: number,
+  selectedItem?: string,
 ): string {
   return playHref(
     playthroughId,
@@ -63,6 +65,8 @@ function mapToggleHrefFor(
     seen,
     // The toggle flips the setting, so it carries the opposite value.
     !showUnknownExits,
+    // The selected inventory tile rides along while its modal is open.
+    panel === 'inventory' ? selectedItem : undefined,
   );
 }
 
@@ -86,14 +90,25 @@ export default async function PlayPage({
     tab?: string;
     unknown?: string;
     seen?: string;
+    item?: string;
   }>;
 }) {
   const { playthroughId } = await params;
-  const { notice, panel: panelParam, tab: legacyTab, unknown, seen: seenParam } = await searchParams;
+  const {
+    notice,
+    panel: panelParam,
+    tab: legacyTab,
+    unknown,
+    seen: seenParam,
+    item: itemParam,
+  } = await searchParams;
   // The open side-panel modal. `?tab=` is the previous name of this parameter
   // and is still honoured so older links land on the same panel.
   const panel = parsePanel(panelParam ?? legacyTab);
   const rawPanel = panelParam ?? legacyTab;
+  // The inventory tile the detail pane selects. It survives the redirect
+  // after an action, so the result is visible in place.
+  const selectedItem = parseSelectedItem(itemParam);
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
   const showUnknownExits = unknown === '1';
@@ -189,10 +204,18 @@ export default async function PlayPage({
             noticeText={noticeText}
             gameView={incompatibleView}
             showUnknownExits={showUnknownExits}
-            toggleHref={mapToggleHrefFor(resolved.playthrough.id, rawPanel, notice, showUnknownExits)}
+            toggleHref={mapToggleHrefFor(
+              resolved.playthrough.id,
+              rawPanel,
+              notice,
+              showUnknownExits,
+              undefined,
+              selectedItem,
+            )}
             canTravel={false}
             forceReadOnly
             journalTotal={journal.length}
+            selectedItem={selectedItem}
           />
         </div>
       </main>
@@ -259,13 +282,21 @@ export default async function PlayPage({
   // Once acknowledged, the panel and "?" links keep `?seen=` so the position
   // stays visible instead of bouncing back to the result panel.
   const preservedSeen = seenStep === playthrough.step ? seenStep : undefined;
-  const continueTo = continueHref(playthrough.id, playthrough.step, rawPanel, notice, showUnknownExits);
+  const continueTo = continueHref(
+    playthrough.id,
+    playthrough.step,
+    rawPanel,
+    notice,
+    showUnknownExits,
+    rawPanel === 'inventory' ? selectedItem : undefined,
+  );
   const mapToggleHref = mapToggleHrefFor(
     playthrough.id,
     rawPanel,
     notice,
     showUnknownExits,
     preservedSeen,
+    selectedItem,
   );
 
   // While the result panel is shown, the reading column holds only the panel
@@ -298,6 +329,7 @@ export default async function PlayPage({
             canTravel={canTravel}
             journalTotal={journal.length}
             seen={preservedSeen}
+            selectedItem={selectedItem}
           />
         </div>
       </main>
@@ -456,6 +488,7 @@ export default async function PlayPage({
           canTravel={canTravel}
           journalTotal={journal.length}
           seen={preservedSeen}
+          selectedItem={selectedItem}
         />
       </div>
     </main>

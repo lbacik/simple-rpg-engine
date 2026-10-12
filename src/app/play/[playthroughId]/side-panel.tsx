@@ -10,11 +10,10 @@
 // unchanged.
 
 import Link from 'next/link';
-import type { CompiledItem, Scenario } from '@/content/model';
+import type { Scenario } from '@/content/model';
 import type { GameView } from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
-import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { playHref, type PanelId } from '@/app/lib/panel';
 import {
   ATTRIBUTE_LABELS,
@@ -25,6 +24,11 @@ import {
 } from './character-sheet';
 import { LocationMap } from './map';
 import { PanelModal } from './panel-modal';
+import {
+  InventoryBrowser,
+  type InventorySlotData,
+  type InventoryTileData,
+} from './inventory-browser';
 
 function itemName(scenario: Scenario, itemId: string): string {
   return scenario.itemsById[itemId]?.name ?? itemId;
@@ -109,50 +113,59 @@ function StatusCard({
   );
 }
 
-function itemDetails(item: CompiledItem): string[] {
-  if (item.kind === 'equipment') {
-    const details = [`Equipment · ${item.slot}`];
-    if (item.bonus !== undefined) {
-      details.push(`+1 ${ATTRIBUTE_LABELS[item.bonus]}`);
-    }
-    if (item.slot === 'weapon') {
-      if (item.damage !== undefined) {
-        details.push(`Damage ${item.damage} · Reach ${item.reach}`);
-      } else {
-        details.push(`Reach ${item.reach}`);
-      }
-    }
-    return details;
+const SLOT_LABELS = {
+  weapon: 'Weapon',
+  outfit: 'Outfit',
+  talisman: 'Talisman',
+} as const;
+
+/** Stat lines for a filled slot: the bonus, and Damage and Reach for weapons. */
+function slotStats(itemId: string, scenario: Scenario): { name: string; magic: boolean; stats: string[] } {
+  const item = scenario.itemsById[itemId];
+  if (item === undefined || item.kind !== 'equipment') {
+    return { name: itemName(scenario, itemId), magic: false, stats: [] };
   }
-  if (item.kind === 'consumable') {
-    return [`Consumable · restores ${item.heal} Health`];
+  const stats: string[] = [];
+  if (item.bonus !== undefined) {
+    stats.push(`+1 ${ATTRIBUTE_LABELS[item.bonus]}`);
   }
-  return ['Key item'];
+  if (item.slot === 'weapon') {
+    stats.push(
+      item.damage !== undefined ? `Damage ${item.damage} · Reach ${item.reach}` : `Reach ${item.reach}`,
+    );
+  }
+  return { name: item.name, magic: item.magic, stats };
+}
+
+/** Chips for the detail pane: kind/slot, bonus, Damage and Reach or healing. */
+function tileChips(itemId: string, scenario: Scenario): { chips: InventoryTileData['chips']; bonusLabel: string | undefined } {
+  const item = scenario.itemsById[itemId];
+  if (item === undefined || item.kind !== 'equipment') {
+    if (item?.kind === 'consumable') {
+      return { chips: [`Consumable · restores ${item.heal} Health`], bonusLabel: undefined };
+    }
+    return { chips: ['Key item'], bonusLabel: undefined };
+  }
+  const chips = [`Equipment · ${item.slot}`];
+  const bonusLabel = item.bonus !== undefined ? ATTRIBUTE_LABELS[item.bonus] : undefined;
+  if (bonusLabel !== undefined) {
+    chips.push(`+1 ${bonusLabel}`);
+  }
+  if (item.slot === 'weapon') {
+    chips.push(
+      item.damage !== undefined ? `Damage ${item.damage} · Reach ${item.reach}` : `Reach ${item.reach}`,
+    );
+  }
+  return { chips, bonusLabel };
 }
 
 /**
- * The game-page query the inventory forms carry along: the Continue
- * acknowledgement (`?seen=`) and the "?" map setting, so the redirect after
- * the turn lands back on the same view instead of bouncing to the result
- * panel or losing the map setting. The Inventory modal stays open because
- * the inventory actions redirect back with `?panel=inventory`.
+ * The Inventory modal body, variant A (docs/spec/ui.md, Character and
+ * inventory panel): a "paper doll" of the equipped slots beside a grid of
+ * carried item tiles, with a detail pane for the selected tile. The server
+ * builds the slot and tile data; the client `InventoryBrowser` owns the
+ * selection.
  */
-function PreservedQueryInputs({
-  seen,
-  showUnknownExits,
-}: {
-  seen: number | undefined;
-  showUnknownExits: boolean;
-}) {
-  return (
-    <>
-      <input type="hidden" name="panel" value="inventory" />
-      {seen !== undefined ? <input type="hidden" name="seen" value={seen} /> : null}
-      {showUnknownExits ? <input type="hidden" name="unknown" value="1" /> : null}
-    </>
-  );
-}
-
 export function InventorySheet({
   scenario,
   state,
@@ -161,6 +174,7 @@ export function InventorySheet({
   forceReadOnly,
   seen,
   showUnknownExits,
+  selectedItem,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -170,202 +184,71 @@ export function InventorySheet({
   forceReadOnly?: boolean;
   seen: number | undefined;
   showUnknownExits: boolean;
+  /** The `?item=` tile the detail pane selects; else the first carried item. */
+  selectedItem: string | undefined;
 }) {
   const readOnly = forceReadOnly === true || state.status !== 'active';
   const inCombat = state.activeCombat != null;
+  const slots: InventorySlotData[] = EQUIPMENT_SLOTS.map((slot) => {
+    const equippedId = state.equipment[slot];
+    // Best effort: an equipped id that is gone from the content reads as empty.
+    if (equippedId === undefined || scenario.itemsById[equippedId] === undefined) {
+      return { slot, label: SLOT_LABELS[slot], item: undefined };
+    }
+    const { name, magic, stats } = slotStats(equippedId, scenario);
+    return { slot, label: SLOT_LABELS[slot], item: { id: equippedId, name, magic, stats } };
+  });
   // Best effort: anything whose id is gone from the content is left out.
-  const heldItems = Object.entries(state.inventory).filter(
-    ([itemId]) => scenario.itemsById[itemId] !== undefined,
+  const items: InventoryTileData[] = Object.entries(state.inventory).flatMap(
+    ([itemId, quantity]) => {
+      const item = scenario.itemsById[itemId];
+      if (item === undefined) return [];
+      const { chips, bonusLabel } = tileChips(itemId, scenario);
+      return [
+        {
+          id: itemId,
+          name: item.name,
+          quantity,
+          kind: item.kind,
+          slot: item.kind === 'equipment' ? item.slot : undefined,
+          bonusLabel,
+          damage: item.kind === 'equipment' ? item.damage : undefined,
+          reach: item.kind === 'equipment' && item.slot === 'weapon' ? item.reach : undefined,
+          heal: item.kind === 'consumable' ? item.heal : undefined,
+          magic: item.magic,
+          description: item.description,
+          equippedSlot:
+            item.kind === 'equipment' && state.equipment[item.slot] === itemId
+              ? item.slot
+              : undefined,
+          chips,
+        },
+      ];
+    },
   );
+  // Only a carried tile can be selected; anything else falls back to the first.
+  const initialSelectedId =
+    selectedItem !== undefined && items.some((tile) => tile.id === selectedItem)
+      ? selectedItem
+      : undefined;
   return (
     <section aria-label="Inventory">
       <h2>Inventory</h2>
       {inCombat ? <p className="meta">Inventory actions are unavailable during Combat.</p> : null}
-      {EQUIPMENT_SLOTS.map((slot) => {
-        const equippedId = state.equipment[slot];
-        // Best effort: an equipped id that is gone from the content reads as empty.
-        if (equippedId === undefined || scenario.itemsById[equippedId] === undefined) {
-          return (
-            <p key={slot}>
-              The {slot} slot is empty.{' '}
-              {readOnly ? null : (
-                <>
-                  <button className="button secondary" type="button" disabled>
-                    Unequip
-                  </button>{' '}
-                  <span className="reason">Slot is empty.</span>
-                </>
-              )}
-            </p>
-          );
-        }
-        const disabled = readOnly || inCombat;
-        return (
-          <p key={slot}>
-            {itemName(scenario, equippedId)} is equipped in the {slot} slot.{' '}
-            {readOnly ? null : (
-              <form action={unequipAction} className="inline">
-                <input type="hidden" name="playthroughId" value={playthroughId} />
-                <input type="hidden" name="expectedStep" value={step} />
-                <input type="hidden" name="slot" value={slot} />
-                <PreservedQueryInputs seen={seen} showUnknownExits={showUnknownExits} />
-                <button className="button secondary" type="submit" disabled={disabled}>
-                  Unequip
-                </button>{' '}
-                {disabled && !readOnly ? (
-                  <span className="reason">Cannot change equipment during Combat.</span>
-                ) : null}
-              </form>
-            )}
-          </p>
-        );
-      })}
-      {heldItems.length === 0 ? (
-        <p>Empty.</p>
-      ) : (
-        <ul className="items">
-          {heldItems.map(([itemId, quantity]) => {
-            const item = scenario.itemsById[itemId];
-            if (item === undefined) {
-              return (
-                <li key={itemId}>
-                  {itemId} × {quantity}
-                </li>
-              );
-            }
-            const equippedSlot =
-              item.kind === 'equipment' && state.equipment[item.slot] === itemId
-                ? item.slot
-                : undefined;
-            return (
-              <li key={itemId} className="item">
-                <p>
-                  <strong>{item.name}</strong> × {quantity}{' '}
-                  {item.magic ? (
-                    <span className="magic" title="Magic item">
-                      ✨ magic
-                    </span>
-                  ) : null}{' '}
-                  {equippedSlot !== undefined ? (
-                    <span className="meta">(equipped in {equippedSlot})</span>
-                  ) : null}
-                </p>
-                {item.description ? <p className="meta">{item.description}</p> : null}
-                <p className="meta">{itemDetails(item).join(' · ')}</p>
-                {readOnly ? null : (
-                  <ItemActions
-                    item={item}
-                    itemId={itemId}
-                    equipped={equippedSlot !== undefined}
-                    fullHealth={state.character.health >= MAX_HEALTH}
-                    inCombat={inCombat}
-                    playthroughId={playthroughId}
-                    step={step}
-                    seen={seen}
-                    showUnknownExits={showUnknownExits}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <InventoryBrowser
+        slots={slots}
+        items={items}
+        playthroughId={playthroughId}
+        step={step}
+        readOnly={readOnly}
+        inCombat={inCombat}
+        fullHealth={state.character.health >= MAX_HEALTH}
+        initialSelectedId={initialSelectedId}
+        seen={seen}
+        showUnknownExits={showUnknownExits}
+      />
     </section>
   );
-}
-
-function ItemActions({
-  item,
-  itemId,
-  equipped,
-  fullHealth,
-  inCombat,
-  playthroughId,
-  step,
-  seen,
-  showUnknownExits,
-}: {
-  item: CompiledItem;
-  itemId: string;
-  equipped: boolean;
-  fullHealth: boolean;
-  inCombat: boolean;
-  playthroughId: string;
-  step: number;
-  seen: number | undefined;
-  showUnknownExits: boolean;
-}) {
-  if (item.kind === 'equipment') {
-    if (inCombat) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Equip
-          </button>{' '}
-          <span className="reason">Cannot change equipment during Combat.</span>
-        </p>
-      );
-    }
-    if (equipped) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Equip
-          </button>{' '}
-          <span className="reason">Already equipped.</span>
-        </p>
-      );
-    }
-    return (
-      <form action={equipAction} className="inline">
-        <input type="hidden" name="playthroughId" value={playthroughId} />
-        <input type="hidden" name="expectedStep" value={step} />
-        <input type="hidden" name="itemId" value={itemId} />
-        <PreservedQueryInputs seen={seen} showUnknownExits={showUnknownExits} />
-        <p>
-          <button className="button secondary" type="submit">
-            Equip
-          </button>
-        </p>
-      </form>
-    );
-  }
-  if (item.kind === 'consumable') {
-    if (inCombat) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Use
-          </button>{' '}
-          <span className="reason">Cannot use items here during Combat.</span>
-        </p>
-      );
-    }
-    if (fullHealth) {
-      return (
-        <p>
-          <button className="button secondary" type="button" disabled>
-            Use
-          </button>{' '}
-          <span className="reason">Already at full Health.</span>
-        </p>
-      );
-    }
-    return (
-      <form action={useItemAction} className="inline">
-        <input type="hidden" name="playthroughId" value={playthroughId} />
-        <input type="hidden" name="expectedStep" value={step} />
-        <input type="hidden" name="itemId" value={itemId} />
-        <PreservedQueryInputs seen={seen} showUnknownExits={showUnknownExits} />
-        <p>
-          <button className="button secondary" type="submit">
-            Use
-          </button>
-        </p>
-      </form>
-    );
-  }
-  return null;
 }
 
 function ModalShell({
@@ -424,6 +307,7 @@ export function SidePanel({
   forceReadOnly,
   journalTotal,
   seen,
+  selectedItem,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -442,10 +326,19 @@ export function SidePanel({
   /** Total Journal entries, for the Journal launcher sublabel. */
   journalTotal: number;
   seen?: number;
+  /** The `?item=` tile the inventory detail pane selects. */
+  selectedItem?: string;
 }) {
   const closeHref = playHref(playthroughId, null, notice, seen, showUnknownExits);
   const characterHref = playHref(playthroughId, 'character', notice, seen, showUnknownExits);
-  const inventoryHref = playHref(playthroughId, 'inventory', notice, seen, showUnknownExits);
+  const inventoryHref = playHref(
+    playthroughId,
+    'inventory',
+    notice,
+    seen,
+    showUnknownExits,
+    selectedItem,
+  );
   const mapHref = playHref(playthroughId, 'map', notice, seen, showUnknownExits);
   // Best effort: anything whose id is gone from the content is left out.
   const itemCount = Object.entries(state.inventory).reduce(
@@ -542,6 +435,7 @@ export function SidePanel({
               forceReadOnly={forceReadOnly}
               seen={seen}
               showUnknownExits={showUnknownExits}
+              selectedItem={selectedItem}
             />
           </ModalShell>
         </PanelModal>

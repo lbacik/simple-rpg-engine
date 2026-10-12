@@ -35,35 +35,65 @@ test('the Inventory modal unequips and equips with the modal open', async ({ pag
   expect(page.url()).not.toMatch(/panel=/);
   await expect(page.getByRole('link', { name: 'Character, Health 12/12' })).toBeFocused();
 
-  // The Inventory launcher opens the inventory in a modal.
+  // The Inventory launcher opens the inventory in a modal: the equipped
+  // paper doll beside the carried tiles, with a detail pane for the selected
+  // tile.
   await page.getByRole('link', { name: /Inventory, \d+ items/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Inventory' });
   await expect(dialog).toBeVisible();
   await expect(page).toHaveURL(/panel=inventory/);
 
-  // Unequip lands back with the Inventory modal still open.
+  // The equipped slots: the bow and the cloak filled, the talisman empty.
+  await expect(dialog.getByRole('heading', { name: 'Equipped' })).toBeVisible();
+  await expect(dialog.locator('.inv-slot', { hasText: 'Hunting Bow' })).toBeVisible();
+  await expect(dialog.locator('.inv-slot', { hasText: "Hunter's Cloak" })).toBeVisible();
+  await expect(dialog.locator('.inv-slot.empty')).toHaveCount(1);
+
+  // One tile per carried item; the first tile is selected by default.
+  const tiles = dialog.locator('.inv-tile');
+  await expect(tiles).toHaveCount(3);
+  await expect(tiles.first()).toHaveAttribute('aria-pressed', 'true');
+
+  // Selecting a tile shows it in the detail pane. At full Health, Use is
+  // disabled with its reason.
+  await dialog.getByRole('button', { name: /Healing Herbs/ }).click();
+  await expect(dialog.getByRole('button', { name: /Healing Herbs/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  const detail = dialog.locator('.inv-detail');
+  await expect(detail.getByText('Healing Herbs')).toBeVisible();
+  await expect(detail.getByText('× 2')).toBeVisible();
+  await expect(detail.getByRole('button', { name: 'Use' })).toBeDisabled();
+  await expect(detail.getByText('Already at full Health.')).toBeVisible();
+
+  // Unequip from the slot lands back with the Inventory modal still open and
+  // the same tile selected.
   await dialog
-    .locator('p', { hasText: "Hunter's Cloak is equipped" })
+    .locator('.inv-slot', { hasText: "Hunter's Cloak" })
     .getByRole('button', { name: 'Unequip' })
     .click();
   await expect(page).toHaveURL(/panel=inventory/);
+  await expect(page).toHaveURL(/item=healing-herbs/);
   await expect(page.getByRole('dialog', { name: 'Inventory' })).toBeVisible();
-  await expect(
-    page.getByRole('dialog', { name: 'Inventory' }).getByText('The outfit slot is empty.'),
-  ).toBeVisible();
+  await expect(dialog.locator('.inv-slot.empty')).toHaveCount(2);
+  await expect(dialog.getByRole('button', { name: /Healing Herbs/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(dialog.locator('.inv-detail').getByText('Healing Herbs')).toBeVisible();
 
-  // Equip lands back with the Inventory modal still open.
-  await page
-    .getByRole('dialog', { name: 'Inventory' })
-    .locator('li', { hasText: "Hunter's Cloak" })
-    .getByRole('button', { name: 'Equip' })
-    .click();
+  // Selecting the cloak tile and equipping from the detail pane fills the
+  // outfit slot again, with the modal still open.
+  await dialog.getByRole('button', { name: /Hunter's Cloak/ }).click();
+  const cloakDetail = dialog.locator('.inv-detail');
+  await expect(cloakDetail.getByText("Hunter's Cloak")).toBeVisible();
+  await cloakDetail.getByRole('button', { name: 'Equip' }).click();
   await expect(page).toHaveURL(/panel=inventory/);
+  await expect(page).toHaveURL(/item=hunters-cloak/);
   await expect(page.getByRole('dialog', { name: 'Inventory' })).toBeVisible();
   await expect(
-    page
-      .getByRole('dialog', { name: 'Inventory' })
-      .getByText("Hunter's Cloak is equipped in the outfit slot."),
+    dialog.locator('.inv-slot', { hasText: "Hunter's Cloak" }).getByText("Hunter's Cloak"),
   ).toBeVisible();
 
   // The close button closes the modal and returns focus to the launcher.
