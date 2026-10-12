@@ -58,6 +58,24 @@ export function journalHref(playthroughId: string, beforeSeq?: number | null): s
   return `/play/${playthroughId}/journal?before=${beforeSeq}`;
 }
 
+/**
+ * The newest journal batch for the modal over the game screen: the game page
+ * already holds the whole Journal (oldest first) for the result panel, so the
+ * modal reuses it instead of a second store read. The slice is newest first
+ * with the same sequence cursor the batch route uses (`null` when the start
+ * of the Journal is reached), so entries appended during play never shift or
+ * duplicate what is on screen.
+ */
+export function newestJournalBatch<T extends { seq: number }>(
+  entries: ReadonlyArray<T>,
+  limit: number,
+): { shown: T[]; nextCursor: number | null; total: number } {
+  const total = entries.length;
+  const shown = [...entries].reverse().slice(0, limit);
+  const nextCursor = total > limit ? (shown[shown.length - 1]?.seq ?? null) : null;
+  return { shown, nextCursor, total };
+}
+
 /** One journal entry rendered to HTML, ready to append to the list. */
 export type RenderedJournalEntry = {
   seq: number;
