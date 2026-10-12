@@ -297,6 +297,65 @@ export const en = {
       `${character}: Health ${formatNumber('en', now)}/${formatNumber('en', max)} · ` +
       `${enemy}: Health ${formatNumber('en', enemyNow)}/${formatNumber('en', enemyMax)}`,
   },
+  combat: {
+    title: 'Combat',
+    round: (round: number) => `Round ${whole(round)}`,
+    log: 'Log',
+    lastRound: (round: number) => `Last round · ${whole(round)}`,
+    noRolls: 'No rolls yet.',
+    noConsumables: 'No Consumables held.',
+    guardUp: 'Guard up',
+    unarmed: 'Bare hands',
+    groups: {
+      position: 'Position',
+      fight: 'Fight',
+      items: 'Items',
+      leave: 'Leave',
+    },
+    advance: 'Advance',
+    fallBack: 'Fall back',
+    attack: 'Attack',
+    attackWith: (weapon: string) => `Attack: ${weapon}`,
+    defend: 'Defend',
+    useItem: (item: string) => `Use: ${item}`,
+    escape: 'Escape',
+    reasonAlreadyAt: (range: string) => `Already at ${range} Range.`,
+    reasonNeedsNear: (weapon: string, range: string) => `Your ${weapon} needs ${range} Range.`,
+    reasonNeedsNearUnarmed: (range: string) => `Unarmed attacks need ${range} Range.`,
+    reasonFullHealth: 'Already at full Health.',
+    arenaRange: (range: string) => `Range: ${range}`,
+    farMarker: (range: string) => `‹ — — ${range} — — ›`,
+    damage: (amount: number) => `${whole(amount)} Damage`,
+    rollScore: (die1: number, die2: number, modifier: number, total: number, target: number) =>
+      `${whole(die1)}+${whole(die2)}+${whole(modifier)}=${whole(total)} vs ${whole(target)}`,
+    rollHit: (who: string, score: string, damage: string) => `${who}: ${score} — hit, ${damage}`,
+    rollSuccess: (who: string, score: string) => `${who}: ${score} — success`,
+    rollMiss: (who: string, score: string) => `${who}: ${score} — miss`,
+    lineAdvance: (range: string) => `Advance — now at ${range} Range.`,
+    lineFallBackSuccess: (score: string, range: string) =>
+      `Fall back (${score}): success, now at ${range} Range.`,
+    lineFallBackFailure: (score: string, range: string) =>
+      `Fall back (${score}): failure, staying at ${range} Range.`,
+    lineEscapeSuccess: (score: string) => `Escape (${score}): success.`,
+    lineEscapeFailure: (score: string) => `Escape attempt (${score}): failure.`,
+    lineUseItem: (item: string, health: number) => `Use: ${item} — Health +${whole(health)}.`,
+    lineDefend: 'You raise your guard.',
+    lineAttackHit: (weapon: string, score: string, damage: string) =>
+      `Attack: ${weapon} (${score}) — hit, ${damage}.`,
+    lineAttackMiss: (weapon: string, score: string) => `Attack: ${weapon} (${score}) — miss.`,
+    lineEnemyAttackHit: (enemy: string, score: string, damage: string) =>
+      `${enemy} attacks (${score}) — hit, ${damage}.`,
+    lineEnemyAttackMiss: (enemy: string, score: string, counter: boolean) =>
+      counter
+        ? `${enemy} attacks (${score}) — miss; your counterattack deals 1 Damage.`
+        : `${enemy} attacks (${score}) — miss.`,
+    lineEnemyClosesIn: (enemy: string, range: string) =>
+      `${enemy} closes in to ${range} Range instead of attacking.`,
+    opponent: (enemy: string) => `Opponent: ${enemy}.`,
+    combatEndVictory: (enemy: string) => `${enemy} is defeated.`,
+    combatEndEscape: (enemy: string) => `You escape from ${enemy}.`,
+    enemyDefeated: (enemy: string) => `The ${enemy} is defeated.`,
+  },
   closePanel: (title: string) => `Close ${title}`,
 };
 

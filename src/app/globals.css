@@ -1091,6 +1091,7 @@ form.map-node button.map-travel:focus-visible .dot {
   letter-spacing: 0.3em;
   font-size: 0.7rem;
   color: var(--muted);
+  text-transform: uppercase;
 }
 
 .combat-arena.near .combat-range {

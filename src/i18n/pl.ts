@@ -33,6 +33,16 @@ const entriesCount = (count: number): string =>
     other: `${formatNumber('pl', count)} wpisów`,
   });
 
+// Damage amounts use the language's plural forms ("1 obrażenie",
+// "3 obrażenia", "5 obrażeń"), never a case-transformed name.
+const damageText = (amount: number): string =>
+  selectPlural('pl', amount, {
+    one: '1 obrażenie',
+    few: `${formatNumber('pl', amount)} obrażenia`,
+    many: `${formatNumber('pl', amount)} obrażeń`,
+    other: `${formatNumber('pl', amount)} obrażenia`,
+  });
+
 export const pl: Catalogue = {
   app: {
     title: 'Simple RPG Engine',
@@ -311,6 +321,65 @@ export const pl: Catalogue = {
     ) =>
       `${character}: Zdrowie ${formatNumber('pl', now)}/${formatNumber('pl', max)} · ` +
       `${enemy}: Zdrowie ${formatNumber('pl', enemyNow)}/${formatNumber('pl', enemyMax)}`,
+  },
+  combat: {
+    title: 'Walka',
+    round: (round: number) => `Runda ${whole(round)}`,
+    log: 'Przebieg',
+    lastRound: (round: number) => `Ostatnia runda · ${whole(round)}`,
+    noRolls: 'Brak rzutów.',
+    noConsumables: 'Brak przedmiotów jednorazowych.',
+    guardUp: 'Garda',
+    unarmed: 'Gołe ręce',
+    groups: {
+      position: 'Pozycja',
+      fight: 'Walka',
+      items: 'Przedmioty',
+      leave: 'Ucieczka',
+    },
+    advance: 'Podejdź',
+    fallBack: 'Wycofaj się',
+    attack: 'Atak',
+    attackWith: (weapon: string) => `Atak: ${weapon}`,
+    defend: 'Obrona',
+    useItem: (item: string) => `Użyj: ${item}`,
+    escape: 'Ucieczka',
+    reasonAlreadyAt: (range: string) => `Już: ${range}.`,
+    reasonNeedsNear: (weapon: string, range: string) => `${weapon}: tylko ${range}.`,
+    reasonNeedsNearUnarmed: (range: string) => `Bez broni: tylko ${range}.`,
+    reasonFullHealth: 'Zdrowie już pełne.',
+    arenaRange: (range: string) => `Dystans: ${range}`,
+    farMarker: (range: string) => `‹ — — ${range} — — ›`,
+    damage: damageText,
+    rollScore: (die1: number, die2: number, modifier: number, total: number, target: number) =>
+      `${whole(die1)}+${whole(die2)}+${whole(modifier)}=${whole(total)} vs ${whole(target)}`,
+    rollHit: (who: string, score: string, damage: string) => `${who}: ${score} — trafienie, ${damage}`,
+    rollSuccess: (who: string, score: string) => `${who}: ${score} — powodzenie`,
+    rollMiss: (who: string, score: string) => `${who}: ${score} — pudło`,
+    lineAdvance: (range: string) => `Zbliżenie: ${range}.`,
+    lineFallBackSuccess: (score: string, range: string) =>
+      `Wycofanie (${score}): powodzenie, ${range}.`,
+    lineFallBackFailure: (score: string, range: string) =>
+      `Wycofanie (${score}): niepowodzenie, ${range}.`,
+    lineEscapeSuccess: (score: string) => `Ucieczka (${score}): powodzenie.`,
+    lineEscapeFailure: (score: string) => `Ucieczka (${score}): niepowodzenie.`,
+    lineUseItem: (item: string, health: number) => `Użycie: ${item} — Zdrowie +${whole(health)}.`,
+    lineDefend: 'Obrona: garda w górze.',
+    lineAttackHit: (weapon: string, score: string, damage: string) =>
+      `Atak: ${weapon} (${score}) — trafienie, ${damage}.`,
+    lineAttackMiss: (weapon: string, score: string) => `Atak: ${weapon} (${score}) — pudło.`,
+    lineEnemyAttackHit: (enemy: string, score: string, damage: string) =>
+      `Atak: ${enemy} (${score}) — trafienie, ${damage}.`,
+    lineEnemyAttackMiss: (enemy: string, score: string, counter: boolean) =>
+      counter
+        ? `Atak: ${enemy} (${score}) — pudło, kontratak: ${damageText(1)}.`
+        : `Atak: ${enemy} (${score}) — pudło.`,
+    lineEnemyClosesIn: (enemy: string, range: string) =>
+      `${enemy}: zbliża się (${range}), zamiast atakować.`,
+    opponent: (enemy: string) => `Przeciwnik: ${enemy}.`,
+    combatEndVictory: (enemy: string) => `Pokonano: ${enemy}.`,
+    combatEndEscape: (enemy: string) => `Ucieczka: ${enemy}.`,
+    enemyDefeated: (enemy: string) => `Pokonany: ${enemy}.`,
   },
   closePanel: (title: string) => `Zamknij: ${title}`,
 };
