@@ -187,6 +187,9 @@ export type NewJournalEntry =
       type: 'combat-start';
       lang: string;
       encounterId: string;
+      /** The Enemy's name as presented. */
+      enemyName: string;
+      /** The opening narration as presented (Scenario text). */
       text: string;
     }
   | {
@@ -203,21 +206,30 @@ export type NewJournalEntry =
        * this entry; the Defend bonus itself is never stored.
        */
       guard: boolean;
-      /** The text as presented: actions, rolls, Damage and Range change. */
-      text: string;
+      /** The Enemy's name as presented. */
+      enemyName: string;
+      /** The Character's weapon name as presented; absent when unarmed. */
+      weaponName?: string;
+      /** The Consumable's name as presented; present only for `use-item`. */
+      itemName?: string;
+      /** Health restored; present only for `use-item`. */
+      healed?: number;
       rolls: CombatRoll[];
     }
   | {
       type: 'combat-end';
       lang: string;
       encounterId: string;
-      text: string;
+      /** The Enemy's name as presented. */
+      enemyName: string;
+      howEnded: 'victory' | 'escape';
     }
   | {
       type: 'enemy-defeated';
       lang: string;
       encounterId: string;
-      text: string;
+      /** The Enemy's name as presented. */
+      enemyName: string;
     };
 
 /**
@@ -1144,6 +1156,7 @@ function startCombat(
         type: 'combat-start',
         lang: scenario.language,
         encounterId: encounter.id,
+        enemyName: encounter.enemy.name,
         text: substituteName(encounter.text, state.character.name),
       },
     ],
@@ -1157,40 +1170,52 @@ function startCombat(
 function characterAttack(
   scenario: Scenario,
   state: PlaythroughState,
-): { damage: number; reach: 'melee' | 'ranged'; weaponName: string | undefined } {
+): {
+  damage: number;
+  reach: 'melee' | 'ranged';
+  weaponId: string | undefined;
+  weaponName: string | undefined;
+} {
   const weaponId = state.equipment.weapon;
   const item = weaponId === undefined ? undefined : scenario.itemsById[weaponId];
   if (item !== undefined && item.kind === 'equipment' && item.slot === 'weapon') {
-    return { damage: item.damage ?? 2, reach: item.reach, weaponName: item.name };
+    return { damage: item.damage ?? 2, reach: item.reach, weaponId: item.id, weaponName: item.name };
   }
-  return { damage: 2, reach: 'melee', weaponName: undefined };
+  return { damage: 2, reach: 'melee', weaponId: undefined, weaponName: undefined };
 }
+
+/** Action groups as codes; the catalogue renders them (docs/spec/ui.md, actions). */
+export type CombatActionGroup = 'position' | 'fight' | 'items' | 'leave';
+
+/**
+ * Why an action is unavailable, as a code; the catalogue renders the reason in
+ * the Interface Language.
+ */
+export type CombatDisabledReason = 'already-near' | 'already-far' | 'needs-near' | 'full-health';
 
 export type CombatAvailability = {
   id: CombatAction;
-  group: 'Position' | 'Fight' | 'Items' | 'Leave';
-  label: string;
+  group: CombatActionGroup;
   enabled: boolean;
-  reason?: string;
+  reason?: CombatDisabledReason;
   /** The Consumable a `use-item` entry uses; absent on every other action. */
   itemId?: string;
+  /** The Consumable's name as presented; present only on `use-item`. */
+  itemName?: string;
+  /** The equipped weapon's id; absent from Attack when unarmed. */
+  weaponId?: string;
+  /** The equipped weapon's name as presented; absent from Attack when unarmed. */
+  weaponName?: string;
 };
-
-/** Why an Attack is unavailable at the current Range. */
-function attackReason(weaponName: string | undefined): string {
-  if (weaponName === undefined) {
-    return 'Unarmed attacks need Near Range.';
-  }
-  return `Your ${weaponName.toLowerCase()} needs Near Range.`;
-}
 
 /**
  * Whether each Character action is available in the current Combat
  * (docs/spec/mechanics.md, character actions): Advance at Far, Fall back at
  * Near, Attack when the Character's Reach allows it at the current Range,
  * Defend and Escape always, and one Use entry per held Consumable while below
- * full Health. The UI disables unavailable actions with the reason; the engine
- * rejects them independently.
+ * full Health. Entries carry codes and names as presented; the UI renders
+ * labels and reasons through the catalogue. The engine rejects unavailable
+ * actions independently.
  */
 export function combatActions(
   scenario: Scenario,
@@ -1209,52 +1234,47 @@ export function combatActions(
   return [
     {
       id: 'advance',
-      group: 'Position',
-      label: 'Advance',
+      group: 'position',
       enabled: combat.range === 'far',
-      reason: combat.range === 'far' ? undefined : 'Already at Near Range.',
+      reason: combat.range === 'far' ? undefined : 'already-near',
     },
     {
       id: 'fall-back',
-      group: 'Position',
-      label: 'Fall back',
+      group: 'position',
       enabled: combat.range === 'near',
-      reason: combat.range === 'near' ? undefined : 'Already at Far Range.',
+      reason: combat.range === 'near' ? undefined : 'already-far',
     },
     {
       id: 'attack',
-      group: 'Fight',
-      label:
-        attack.weaponName === undefined ? 'Attack' : `Attack with ${attack.weaponName}`,
+      group: 'fight',
       enabled: inReach,
-      reason: inReach ? undefined : attackReason(attack.weaponName),
+      reason: inReach ? undefined : 'needs-near',
+      weaponId: attack.weaponId,
+      weaponName: attack.weaponName,
     },
-    { id: 'defend', group: 'Fight', label: 'Defend', enabled: true },
+    { id: 'defend', group: 'fight', enabled: true },
     ...consumables.map((itemId): CombatAvailability => {
       const name = scenario.itemsById[itemId]?.name ?? itemId;
       return {
         id: 'use-item',
-        group: 'Items',
-        label: `Use ${name}`,
+        group: 'items',
         enabled: belowFull,
-        reason: belowFull ? undefined : 'Already at full Health.',
+        reason: belowFull ? undefined : 'full-health',
         itemId,
+        itemName: name,
       };
     }),
-    { id: 'escape', group: 'Leave', label: 'Escape', enabled: true },
+    { id: 'escape', group: 'leave', enabled: true },
   ];
-}
-
-/** One roll as presented: dice, modifier, total and target. */
-function combatRollText(roll: CombatRoll): string {
-  return `${roll.die1}+${roll.die2}+${roll.modifier}=${roll.total} vs ${roll.target}`;
 }
 
 /**
  * Victory (Damage taken ≥ the Enemy's maximum Health, including from a
  * counterattack): the Combat ends, a Combat end entry is appended, then the
  * `victory` Outcome is applied — or, without one, the Enemy-defeated notice,
- * back in the Location view of the fight.
+ * back in the Location view of the fight. Entries carry the Enemy's name as
+ * presented and how the Combat ended; their wording comes from the catalogue
+ * when they are read.
  */
 function finishVictory(
   scenario: Scenario,
@@ -1270,7 +1290,8 @@ function finishVictory(
     type: 'combat-end',
     lang: scenario.language,
     encounterId: encounter.id,
-    text: `${encounter.enemy.name} is defeated.`,
+    enemyName: encounter.enemy.name,
+    howEnded: 'victory',
   };
   let next: PlaythroughState = {
     ...state,
@@ -1292,7 +1313,7 @@ function finishVictory(
       type: 'enemy-defeated',
       lang: scenario.language,
       encounterId: encounter.id,
-      text: `The ${encounter.enemy.name} is defeated.`,
+      enemyName: encounter.enemy.name,
     });
   }
   return { ok: true, state: next, journal };
@@ -1318,7 +1339,8 @@ function finishEscape(
     type: 'combat-end',
     lang: scenario.language,
     encounterId: encounter.id,
-    text: `You escape from ${encounter.enemy.name}.`,
+    enemyName: encounter.enemy.name,
+    howEnded: 'escape',
   };
   // The Range is discarded by clearing the active Combat before the Outcome:
   // `move` and `end` clear it again, and `next` keeps the cleared position.
@@ -1399,7 +1421,36 @@ function applyCombat(
   let equipment = state.equipment;
   const damageSoFar = (): number => encounterDamage[combat.encounterId] ?? 0;
   const rolls: CombatRoll[] = [];
-  const parts: string[] = [];
+  /** The Consumable used this turn, as presented, with the Health it restored. */
+  let usedItemName: string | undefined;
+  let healed = 0;
+
+  /**
+   * One Combat round entry: the action, rolls, Damage, Range change and guard
+   * as structured events, with the Enemy, weapon and item names as presented.
+   * Wording comes from the Interface Text catalogue when the entry is read, so
+   * no display text is stored here.
+   */
+  const roundEntry = (
+    rangeAfter: CombatRange,
+  ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
+    type: 'combat-round',
+    lang: scenario.language,
+    encounterId: encounter.id,
+    round: combat.round,
+    action: combatAction,
+    rangeBefore,
+    rangeAfter,
+    guard: defending,
+    enemyName: enemy.name,
+    ...(combatAction === 'attack' && attack.weaponName !== undefined
+      ? { weaponName: attack.weaponName }
+      : {}),
+    ...(combatAction === 'use-item' && usedItemName !== undefined
+      ? { itemName: usedItemName, healed }
+      : {}),
+    rolls,
+  });
 
   const strike = (
     side: 'character' | 'enemy',
@@ -1429,50 +1480,28 @@ function applyCombat(
 
   if (combatAction === 'advance') {
     range = 'near';
-    parts.push('You advance to Near Range.');
   } else if (combatAction === 'fall-back') {
     const roll = manoeuvre(0);
     rolls.push(roll);
     if (roll.hit) {
       range = 'far';
-      parts.push(`You fall back (${combatRollText(roll)}): success, now at Far Range.`);
-    } else {
-      parts.push(
-        `You try to fall back (${combatRollText(roll)}): failure, staying at Near Range.`,
-      );
     }
   } else if (combatAction === 'escape') {
     const bonus = combat.range === 'far' ? 2 : 0;
     const roll = manoeuvre(bonus);
     rolls.push(roll);
     if (roll.hit) {
-      parts.push(`You escape (${combatRollText(roll)}): success.`);
-      const round = (
-        rangeAfter: CombatRange,
-      ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
-        type: 'combat-round',
-        lang: scenario.language,
-        encounterId: encounter.id,
-        round: combat.round,
-        action: combatAction,
-        rangeBefore,
-        rangeAfter,
-        guard: defending,
-        text: parts.join(' '),
-        rolls,
-      });
       return finishEscape(
         scenario,
         state,
         encounter,
-        round(range),
+        roundEntry(range),
         health,
         encounterDamage,
         inventory,
         equipment,
       );
     }
-    parts.push(`You try to escape (${combatRollText(roll)}): failure.`);
   } else if (combatAction === 'use-item') {
     const heldId = itemId as string;
     const item = scenario.itemsById[heldId];
@@ -1482,8 +1511,8 @@ function applyCombat(
     inventory = taken.inventory;
     equipment = taken.equipment;
     health += restored;
-    const name = item?.name ?? heldId;
-    parts.push(`You use ${name}, restored ${restored} Health.`);
+    usedItemName = item?.name ?? heldId;
+    healed = restored;
   } else if (combatAction === 'attack') {
     const roll = strike(
       'character',
@@ -1493,36 +1522,10 @@ function applyCombat(
       attack.damage,
     );
     rolls.push(roll);
-    const weapon =
-      attack.weaponName === undefined
-        ? 'unarmed'
-        : `your ${attack.weaponName.toLowerCase()}`;
-    parts.push(
-      roll.hit
-        ? `You attack ${weapon} (${combatRollText(roll)}): hit, ${roll.damage} Damage.`
-        : `You attack ${weapon} (${combatRollText(roll)}): miss.`,
-    );
     if (roll.hit) {
       encounterDamage = { ...encounterDamage, [combat.encounterId]: damageSoFar() + roll.damage };
     }
-  } else {
-    parts.push('You raise your guard.');
   }
-
-  const roundEntry = (
-    rangeAfter: CombatRange,
-  ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
-    type: 'combat-round',
-    lang: scenario.language,
-    encounterId: encounter.id,
-    round: combat.round,
-    action: combatAction,
-    rangeBefore,
-    rangeAfter,
-    guard: defending,
-    text: parts.join(' '),
-    rolls,
-  });
 
   // Victory from the Character's action: the Enemy does not respond.
   if (damageSoFar() >= enemy.health) {
@@ -1542,7 +1545,6 @@ function applyCombat(
   // attacking; otherwise it attacks (a ranged Enemy never moves).
   if (enemy.reach === 'melee' && range === 'far') {
     range = 'near';
-    parts.push(`${enemy.name} closes in to Near Range instead of attacking.`);
     // The Defend bonus expires at the end of this Enemy turn, even though it
     // only moved; the round entry still records the guard that was up.
   } else {
@@ -1556,18 +1558,8 @@ function applyCombat(
     rolls.push(roll);
     if (roll.hit) {
       health -= roll.damage;
-      parts.push(
-        `${enemy.name} attacks (${combatRollText(roll)}): hit, ${roll.damage} Damage.`,
-      );
-    } else {
-      parts.push(
-        defending
-          ? `${enemy.name} attacks (${combatRollText(roll)}): miss; your counterattack deals 1 Damage.`
-          : `${enemy.name} attacks (${combatRollText(roll)}): miss.`,
-      );
-      if (defending) {
-        encounterDamage = { ...encounterDamage, [combat.encounterId]: damageSoFar() + 1 };
-      }
+    } else if (defending) {
+      encounterDamage = { ...encounterDamage, [combat.encounterId]: damageSoFar() + 1 };
     }
   }
 
@@ -1662,13 +1654,27 @@ export type CombatRoundView = {
   rangeBefore: CombatRange;
   rangeAfter: CombatRange;
   guard: boolean;
-  text: string;
   rolls: CombatRoll[];
+  /**
+   * New rows: the Enemy's name as presented. Absent on legacy rows, which
+   * carry stored English text instead and are shown verbatim.
+   */
+  enemyName?: string;
+  /** New `attack` rows: the weapon name as presented; absent when unarmed. */
+  weaponName?: string;
+  /** New `use-item` rows: the Consumable's name as presented. */
+  itemName?: string;
+  /** New `use-item` rows: the Health restored. */
+  healed?: number;
+  /** Legacy rows only: the stored English text, shown verbatim. */
+  text?: string;
 };
 
 /**
  * The rounds of the current Combat: the Combat round entries since the latest
- * opening narration of the Encounter.
+ * opening narration of the Encounter. New rows carry structured events and are
+ * rendered through the catalogue; legacy rows carry stored text and are shown
+ * verbatim.
  */
 export function combatRounds(
   entries: ReadonlyArray<CombatJournalRow>,
@@ -1688,6 +1694,10 @@ export function combatRounds(
         rangeBefore?: unknown;
         rangeAfter?: unknown;
         guard?: unknown;
+        enemyName?: unknown;
+        weaponName?: unknown;
+        itemName?: unknown;
+        healed?: unknown;
         text?: unknown;
         rolls?: unknown;
       };
@@ -1704,8 +1714,12 @@ export function combatRounds(
         rangeBefore: payload.rangeBefore === 'near' ? 'near' : 'far',
         rangeAfter: payload.rangeAfter === 'near' ? 'near' : 'far',
         guard: payload.guard === true,
-        text: typeof payload.text === 'string' ? payload.text : '',
         rolls: Array.isArray(payload.rolls) ? (payload.rolls as CombatRoll[]) : [],
+        ...(typeof payload.enemyName === 'string' ? { enemyName: payload.enemyName } : {}),
+        ...(typeof payload.weaponName === 'string' ? { weaponName: payload.weaponName } : {}),
+        ...(typeof payload.itemName === 'string' ? { itemName: payload.itemName } : {}),
+        ...(typeof payload.healed === 'number' ? { healed: payload.healed } : {}),
+        ...(typeof payload.text === 'string' ? { text: payload.text } : {}),
       });
     }
   }
@@ -1809,7 +1823,8 @@ export type GameView =
       character: {
         health: number;
         maxHealth: number;
-        weaponName: string;
+        /** The equipped weapon's name as presented; absent when unarmed. */
+        weaponName?: string;
         reach: 'melee' | 'ranged';
         damage: number;
       };
@@ -1870,7 +1885,9 @@ export function view(
         character: {
           health: state.character.health,
           maxHealth: MAX_HEALTH,
-          weaponName: attack.weaponName ?? 'Bare hands',
+          // The default weapon's name comes from the catalogue when rendered;
+          // the engine carries only the equipped weapon's name as presented.
+          ...(attack.weaponName === undefined ? {} : { weaponName: attack.weaponName }),
           reach: attack.reach,
           damage: attack.damage,
         },

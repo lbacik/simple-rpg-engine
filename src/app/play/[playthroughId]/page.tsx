@@ -245,12 +245,20 @@ export default async function PlayPage({
   // A step that ended the Playthrough shows the Ending screen instead of the
   // result panel (docs/spec/playthrough-state.md, result panel). The panel
   // renders its entries with the same entry renderer as the Journal.
+  // The Combat round that ended a Combat (victory or escape) is part of the
+  // result panel with the Combat end and the Outcome, so the decisive round
+  // reads without opening the Journal. Mid-Combat rounds belong to the Combat
+  // panel's log instead: while a Combat runs, its latest round never joins
+  // the panel.
   const resultEntries =
     gameView.kind === 'ended'
       ? []
       : journal
           .filter(
-            (entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type),
+            (entry) =>
+              entry.step === playthrough.step &&
+              (RESULT_PANEL_ENTRY_TYPES.has(entry.type) ||
+                (entry.type === 'combat-round' && gameView.kind !== 'combat')),
           )
           .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
   // The Combat panel reads the guard marker and the roll log from the
@@ -464,6 +472,7 @@ export default async function PlayPage({
               rounds={combatLog}
               consumables={combatConsumables}
               formAction={combatAction}
+              catalogue={catalogue}
             />
           ) : (
             <>
