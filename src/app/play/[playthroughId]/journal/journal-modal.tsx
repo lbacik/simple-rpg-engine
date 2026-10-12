@@ -81,10 +81,13 @@ export function JournalModalLink({
       const first = focusable[0] as HTMLElement;
       const last = focusable[focusable.length - 1] as HTMLElement;
       const active = document.activeElement;
+      // Focus starting outside the dialog (for example after a backdrop
+      // mousedown) wraps back inside on either Tab direction, so focus can
+      // never leave the modal while it is open.
       if (event.shiftKey && (active === first || !dialog.contains(active))) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && active === last) {
+      } else if (!event.shiftKey && (active === last || !dialog.contains(active))) {
         event.preventDefault();
         first.focus();
       }

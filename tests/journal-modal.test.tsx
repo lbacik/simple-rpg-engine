@@ -6,7 +6,7 @@
 
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { newestJournalBatch } from '../src/app/lib/journal';
+import { modalJournalBatch, newestJournalBatch } from '../src/app/lib/journal';
 import { JournalModalLink } from '../src/app/play/[playthroughId]/journal/journal-modal';
 
 function stored(seq: number) {
@@ -36,6 +36,25 @@ describe('newestJournalBatch', () => {
     const batch = newestJournalBatch([], 20);
     expect(batch.total).toBe(0);
     expect(batch.shown).toEqual([]);
+    expect(batch.nextCursor).toBeNull();
+  });
+});
+
+describe('modalJournalBatch', () => {
+  it('renders the newest batch in one step for the modal', () => {
+    const entries = Array.from({ length: 25 }, (_, index) => stored(index + 1));
+    const batch = modalJournalBatch(entries, 'Modal');
+    expect(batch.total).toBe(25);
+    expect(batch.entries.map((entry) => entry.seq)).toEqual(
+      Array.from({ length: 20 }, (_, index) => 25 - index),
+    );
+    expect(batch.nextCursor).toBe(6);
+  });
+
+  it('ends the batch when everything fits', () => {
+    const batch = modalJournalBatch([stored(1)], 'Modal');
+    expect(batch.total).toBe(1);
+    expect(batch.entries.map((entry) => entry.seq)).toEqual([1]);
     expect(batch.nextCursor).toBeNull();
   });
 });

@@ -62,15 +62,20 @@ test('view journal opens in a modal, scrolls older entries, closes unchanged', a
   await expect(openInNewTab).toHaveAttribute('href', /\/play\/.+\/journal$/);
   await expect(openInNewTab).toHaveAttribute('target', '_blank');
 
-  // One batch on screen; scrolling the modal body loads older entries.
+  // One batch on screen; scrolling the modal body loads older entries, and
+  // the position indicator tracks the modal's scroll: the entry at the top
+  // of the viewport changes as older entries scroll by.
   const body = page.getByTestId('journal-modal-body');
+  const positionText = dialog.locator('.journal-position-text');
   await expect.poll(() => body.locator('li[data-seq]').count()).toBe(20);
+  const positionBefore = await positionText.textContent();
   await body.evaluate((element) => {
     element.scrollTop = element.scrollHeight;
   });
   await expect
     .poll(() => body.locator('li[data-seq]').count(), { timeout: 15_000 })
     .toBeGreaterThan(20);
+  await expect.poll(() => positionText.textContent()).not.toBe(positionBefore);
 
   // Escape closes the modal, returns focus to the trigger, unlocks the
   // background scroll, and leaves the game screen unchanged.

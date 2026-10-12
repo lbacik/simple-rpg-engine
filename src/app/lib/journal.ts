@@ -76,6 +76,25 @@ export function newestJournalBatch<T extends { seq: number }>(
   return { shown, nextCursor, total };
 }
 
+/**
+ * The newest journal batch for the modal over the game screen, rendered to
+ * HTML in one step: the game page already holds the whole Journal (oldest
+ * first) for the result panel, so the modal reuses it instead of a second
+ * store read. Shared by the game, Ending and incompatible-with-Scenario
+ * screens, which all open the same modal.
+ */
+export function modalJournalBatch(
+  entries: ReadonlyArray<{ seq: number; step: number; type: string; payload: unknown }>,
+  characterName: string,
+): { entries: RenderedJournalEntry[]; nextCursor: number | null; total: number } {
+  const batch = newestJournalBatch(entries, JOURNAL_BATCH_SIZE);
+  return {
+    entries: renderJournalEntries(batch.shown, characterName),
+    nextCursor: batch.nextCursor,
+    total: batch.total,
+  };
+}
+
 /** One journal entry rendered to HTML, ready to append to the list. */
 export type RenderedJournalEntry = {
   seq: number;

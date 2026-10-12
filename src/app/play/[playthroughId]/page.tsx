@@ -20,7 +20,7 @@ import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import {
   JOURNAL_BATCH_SIZE,
   latestJournalEnding,
-  newestJournalBatch,
+  modalJournalBatch,
   renderJournalEntries,
 } from '@/app/lib/journal';
 import { JournalEntries } from './journal/journal-entries';
@@ -655,11 +655,7 @@ export default async function PlayPage({
     });
     // The modal over the read-only screen reuses the Journal already read
     // above: the newest batch, newest first, with the sequence cursor.
-    const incompatibleModalBatch = newestJournalBatch(journal, JOURNAL_BATCH_SIZE);
-    const incompatibleModalEntries = renderJournalEntries(
-      incompatibleModalBatch.shown,
-      incompatibleName,
-    );
+    const incompatibleModalJournal = modalJournalBatch(journal, incompatibleName);
     return (
       <main>
         <div className="game">
@@ -675,9 +671,9 @@ export default async function PlayPage({
             <p>
               <JournalModalLink
                 playthroughId={resolved.playthrough.id}
-                initialEntries={incompatibleModalEntries}
-                initialNextCursor={incompatibleModalBatch.nextCursor}
-                total={incompatibleModalBatch.total}
+                initialEntries={incompatibleModalJournal.entries}
+                initialNextCursor={incompatibleModalJournal.nextCursor}
+                total={incompatibleModalJournal.total}
               />
             </p>
             <ReadOnlyPosition
@@ -719,8 +715,7 @@ export default async function PlayPage({
   // "View journal" opens the Journal in a modal over the game screen instead
   // of navigating away. The modal reuses the Journal already read here: the
   // newest batch, newest first, with the sequence cursor for older batches.
-  const modalBatch = newestJournalBatch(journal, JOURNAL_BATCH_SIZE);
-  const modalEntries = renderJournalEntries(modalBatch.shown, characterName);
+  const modalJournal = modalJournalBatch(journal, characterName);
   // A step that ended the Playthrough shows the Ending screen instead of the
   // result panel (docs/spec/playthrough-state.md, result panel).
   const resultEntries =
@@ -836,9 +831,9 @@ export default async function PlayPage({
           <p>
             <JournalModalLink
               playthroughId={playthrough.id}
-              initialEntries={modalEntries}
-              initialNextCursor={modalBatch.nextCursor}
-              total={modalBatch.total}
+              initialEntries={modalJournal.entries}
+              initialNextCursor={modalJournal.nextCursor}
+              total={modalJournal.total}
             />
           </p>
           {gameView.kind === 'location' ? (
@@ -950,9 +945,9 @@ export default async function PlayPage({
                 <p>
                   <JournalModalLink
                     playthroughId={playthrough.id}
-                    initialEntries={modalEntries}
-                    initialNextCursor={modalBatch.nextCursor}
-                    total={modalBatch.total}
+                    initialEntries={modalJournal.entries}
+                    initialNextCursor={modalJournal.nextCursor}
+                    total={modalJournal.total}
                     className="button secondary"
                   />
                 </p>
