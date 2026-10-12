@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Combat Balance Harness</title>
+<style>
+  :root { --bg: #fbfaf7; --fg: #1f1d1a; --muted: #6b665e; --line: #e2ddd3; --card: #fff; --accent: #8a4b14; --good: #2f6b3a; --bad: #9b2c2c; --chip: #f2ede4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #171614; --fg: #ece8e1; --muted: #a39d93; --line: #34312c; --card: #201f1c; --accent: #e0a060; --good: #7fc28b; --bad: #e48b8b; --chip: #2a2824; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 24px 0 8px; } h3 { font-size: 15px; margin: 16px 0 6px; }
+  p { margin: 6px 0; } .muted { color: var(--muted); } .small { font-size: 13px; }
+  .intro { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--card); margin: 12px 0 16px; }
+  nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 16px 0; flex-wrap: wrap; }
+  nav.tabs button { border: 0; background: none; padding: 8px 12px; cursor: pointer; color: var(--muted); font: inherit; border-bottom: 2px solid transparent; }
+  nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+  label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+  select, input { font: inherit; padding: 4px 6px; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
+  input[type=number] { width: 70px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card h3 { margin-top: 0; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; }
+  .bar { height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; margin: 4px 0 6px; } .bar > i { display: block; height: 100%; background: var(--good); }
+  .changed { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 3px; padding: 0 3px; }
+  .actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  button.act { text-align: left; font: inherit; padding: 8px 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; cursor: pointer; }
+  button.act:hover { border-color: var(--accent); }
+  button.act.best { border-color: var(--good); box-shadow: inset 3px 0 0 var(--good); }
+  button.act .sub { display: block; font-size: 12px; color: var(--muted); }
+  button.plain { font: inherit; padding: 5px 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 4px; cursor: pointer; }
+  button.plain.primary { border-color: var(--accent); color: var(--accent); }
+  .log { font-size: 14px; } .log ol { margin: 4px 0; padding-left: 22px; } .log li { margin: 2px 0; }
+  .chip { display: inline-block; background: var(--chip); border-radius: 10px; padding: 0 8px; font-size: 12px; margin-right: 4px; }
+  .over { font-weight: 600; padding: 8px 12px; border-radius: 6px; background: var(--chip); margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0 16px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  td.lo { color: var(--bad); font-weight: 600; } td.hi { color: var(--good); }
+  .scroll { overflow-x: auto; }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .steps button.done { opacity: .45; }
+  code { background: var(--chip); padding: 0 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tactical Combat balance harness <span class="chip">PROTOTYPE · issue #83</span></h1>
+  <div class="intro">
+    <p><b>Question.</b> Do the agreed intent, initiative and action rules give the existing Character Templates changing, understandable choices in one- and two-Enemy Combats, and what numeric tuning is needed before implementation?</p>
+    <p class="small muted">The rules follow <code>docs/spec/mechanics.md</code> (Rounds, Character actions, Enemy Intents). Characters use their effective Attributes with starting Equipment; Enemies are the shipped ones. The <b>solver</b> plays perfectly: it knows every probability and maximises the chance of winning (with a small preference for Health left and for shorter fights). Its value for each action is "your chance to win if you take this action now and play perfectly afterwards". Tuning presets change only the listed numbers.</p>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <section id="panel"></section>
+</main>
+<script>
+// PROTOTYPE (issue #83): tactical Combat rules per docs/spec/mechanics.md, with tuning knobs.
+// Pure: no DOM. Dice are injected: dice.test(mod, target) -> { ok, d1, d2 }, dice.draw() -> 1..6.
+
+const DEFAULTS = {
+  maxHp: 12,
+  hitBase: 7,          // 2d6 + Might >= hitBase + Agility
+  guardBonus: 2,       // Guarded: attackers need hitBase + guardBonus + Agility
+  counterDamage: 1,
+  heavyBonus: 2,       // Heavy attack Damage = Enemy Damage + heavyBonus
+  prepareFaces: 2,     // heavy Behaviour prepares on a draw of 1..prepareFaces
+  distractBase: 7,     // 2d6 + Wits >= distractBase + target Wits
+  waryRounds: 1,       // Wary lasts until the end of round + waryRounds
+  escapeFarBonus: 2,
+  escapeBonusAt: 'resolution', // 'commit': the +2 is read from the state shown when the Character commits
+  offBalance: 0,       // EXPERIMENT: bonus to the Character's hit rolls against a Wary participant
+  heavyDouble: false,  // EXPERIMENT: Heavy attack deals double Damage instead of + heavyBonus
+  charOrder: 'agility',// EXPERIMENT: 'last' puts the Character after Enemies of the same Speed (measures the worth of initiative)
+  legacy: false,       // pre-tactical rules (one Enemy): Character first, flat counter, steady response, no Distract
+};
+const LEGACY = { ...DEFAULTS, legacy: true, prepareFaces: 0 };
+// Accepted tuning from the issue #83 review.
+const TUNED = { ...DEFAULTS, heavyBonus: 3, escapeBonusAt: 'commit' };
+
+const SPEED_RANK = { fast: 0, normal: 1, slow: 2 };
+const ACTION_SPEED = { defend: 'fast', distract: 'fast', attack: 'normal', advance: 'normal', consume: 'normal', escape: 'normal', fallback: 'slow' };
+const INTENT_SPEED = { strike: 'normal', close: 'normal', prepare: 'normal', heavy: 'slow' };
+
+function p2d6(need) { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b >= need) c++; return c / 36; }
+
+const alive = (p) => p.taken < p.maxHp;
+const inReach = (reach, range) => reach === 'ranged' || range === 'near';
+
+function clone(s) {
+  return { ...s, char: { ...s.char }, parts: s.parts.map((p) => ({ ...p })) };
+}
+
+function startCombat(fixture, dice, params = DEFAULTS, opts = {}) {
+  const c = fixture.char;
+  const s = {
+    round: 1,
+    over: null,
+    legacy: params.legacy,
+    charOrder: params.charOrder,
+    char: { ...c, hp: opts.hp ?? params.maxHp },
+    parts: fixture.enemies.map((e, i) => ({ ...e, id: e.id ?? `p${i}`, taken: e.taken ?? 0, range: fixture.startRange ?? 'far', intent: null, prepared: false, waryUntil: 0 })),
+  };
+  selectIntents(s, dice, params);
+  return s;
+}
+
+function selectIntents(s, dice, params) {
+  for (const p of s.parts) p.intent = null;
+  for (const p of s.parts) {
+    if (!alive(p)) { p.intent = null; continue; }
+    if (p.prepared) {
+      if (inReach(p.reach, p.range)) { p.intent = 'heavy'; continue; }
+      p.prepared = false;
+    }
+    if (p.reach === 'melee' && p.range === 'far') { p.intent = 'close'; continue; }
+    const blocked = s.parts.some((q) => q !== p && alive(q) && (q.prepared || q.intent === 'prepare'));
+    if (p.behaviour === 'heavy' && !blocked) {
+      if (dice.draw() <= params.prepareFaces) { p.intent = 'prepare'; continue; }
+    }
+    p.intent = 'strike';
+  }
+}
+
+function legalActions(s) {
+  const out = [{ kind: 'defend' }];
+  const live = s.parts.filter(alive);
+  for (const p of live) {
+    if (!s.legacy && p.waryUntil < s.round) out.push({ kind: 'distract', target: p.id });
+    if (inReach(s.char.reach, p.range)) out.push({ kind: 'attack', target: p.id });
+    if (p.range === 'far') out.push({ kind: 'advance', target: p.id });
+  }
+  if (s.char.items > 0 && s.char.hp < s.char.maxHp) out.push({ kind: 'consume' });
+  out.push({ kind: 'escape' });
+  if (live.some((p) => p.range === 'near')) out.push({ kind: 'fallback' });
+  return out;
+}
+
+function roundOrder(s, action) {
+  const entries = [{ actor: 'char', speed: ACTION_SPEED[action.kind], agility: s.charOrder === 'last' ? -1 : s.char.A, idx: -1 }];
+  s.parts.forEach((p, i) => { if (alive(p)) entries.push({ actor: p.id, speed: INTENT_SPEED[p.intent], agility: p.A, idx: i }); });
+  if (s.legacy) return entries;
+  return entries.sort((a, b) => SPEED_RANK[a.speed] - SPEED_RANK[b.speed] || b.agility - a.agility || a.idx - b.idx);
+}
+
+// Resolves one whole Round including cleanup. Returns { state, log }.
+function resolveRound(s0, action, dice, params = DEFAULTS) {
+  const s = clone(s0);
+  const c = s.char;
+  const byId = (id) => s.parts.find((p) => p.id === id);
+  const log = [];
+  let guarded = false, counterUsed = false;
+  const interrupted = new Set();
+  const checkEnd = () => {
+    if (c.hp <= 0) { s.over = 'death'; return true; }
+    if (!s.parts.some(alive)) { s.over = 'victory'; return true; }
+    return s.over === 'escape';
+  };
+  const noneNearAtCommit = !s.parts.some((p) => alive(p) && p.range === 'near');
+  const order = roundOrder(s, action);
+  for (const e of order) {
+    if (e.actor === 'char') {
+      const t = action.target ? byId(action.target) : null;
+      const L = { actor: 'char', kind: action.kind, target: action.target };
+      switch (action.kind) {
+        case 'defend': guarded = true; break;
+        case 'distract': {
+          if (!alive(t)) { L.cancelled = 'target defeated'; break; }
+          const r = dice.test(c.W, params.distractBase + t.W); L.roll = r;
+          if (r.ok) { interrupted.add(t.id); t.prepared = false; t.waryUntil = s.round + params.waryRounds; }
+          break;
+        }
+        case 'attack': {
+          if (!alive(t)) { L.cancelled = 'target defeated'; break; }
+          if (!inReach(c.reach, t.range)) { L.cancelled = 'out of Reach'; break; }
+          const r = dice.test(c.M + (t.waryUntil >= s.round ? params.offBalance : 0), params.hitBase + t.A); L.roll = r;
+          if (r.ok) t.taken = Math.min(t.maxHp, t.taken + c.dmg);
+          break;
+        }
+        case 'advance':
+          if (!alive(t)) { L.cancelled = 'target defeated'; break; }
+          if (t.range === 'near') { L.cancelled = 'already Near'; break; }
+          t.range = 'near'; break;
+        case 'consume': c.hp = Math.min(c.maxHp, c.hp + c.heal); c.items -= 1; break;
+        case 'escape': {
+          const live = s.parts.filter(alive);
+          const opp = Math.max(...live.map((p) => p.A));
+          const far = params.escapeBonusAt === 'commit' ? noneNearAtCommit : !live.some((p) => p.range === 'near');
+          const bonus = far ? params.escapeFarBonus : 0;
+          const r = dice.test(c.A + bonus, 7 + opp); L.roll = r;
+          if (r.ok) s.over = 'escape';
+          break;
+        }
+        case 'fallback': {
+          const near = s.parts.filter((p) => alive(p) && p.range === 'near');
+          if (!near.length) { L.cancelled = 'none Near'; break; }
+          const r = dice.test(c.A, 7 + Math.max(...near.map((p) => p.A))); L.roll = r;
+          if (r.ok) near.forEach((p) => { p.range = 'far'; });
+          break;
+        }
+      }
+      log.push(L);
+    } else {
+      const p = byId(e.actor);
+      if (params.legacy && alive(p)) p.intent = p.reach === 'melee' && p.range === 'far' ? 'close' : 'strike';
+      const L = { actor: p.id, kind: p.intent };
+      if (!alive(p)) { L.dropped = true; log.push(L); continue; }
+      if (interrupted.has(p.id)) { L.cancelled = 'interrupted'; if (p.intent === 'heavy') p.prepared = false; log.push(L); continue; }
+      switch (p.intent) {
+        case 'close':
+          if (p.range === 'near') L.cancelled = 'already Near'; else p.range = 'near';
+          break;
+        case 'prepare': p.prepared = true; break;
+        case 'strike':
+        case 'heavy': {
+          if (p.intent === 'heavy') p.prepared = false;
+          if (!inReach(p.reach, p.range)) { L.cancelled = 'out of Reach'; break; }
+          const r = dice.test(p.M, params.hitBase + (guarded ? params.guardBonus : 0) + c.A); L.roll = r;
+          if (r.ok) { const d = p.intent === 'heavy' ? (params.heavyDouble ? 2 * p.dmg : p.dmg + params.heavyBonus) : p.dmg; c.hp = Math.max(0, c.hp - d); L.damage = d; }
+          else if (guarded && params.legacy) {
+            L.counter = { ok: true }; p.taken = Math.min(p.maxHp, p.taken + params.counterDamage);
+          }
+          else if (guarded && p.reach === 'melee' && !counterUsed) {
+            counterUsed = true;
+            const cr = dice.test(c.M, params.hitBase + p.A); L.counter = cr;
+            if (cr.ok) p.taken = Math.min(p.maxHp, p.taken + params.counterDamage);
+          }
+          break;
+        }
+      }
+      log.push(L);
+    }
+    if (checkEnd()) break;
+  }
+  if (!s.over) {
+    s.round += 1;
+    selectIntents(s, dice, params);
+  }
+  return { state: s, log, order };
+}
+
+// Dice sources -------------------------------------------------------------
+
+function seededDice(seed) {
+  let t = seed >>> 0;
+  const rnd = () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), t | 1); r ^= r + Math.imul(r ^ (r >>> 7), r | 61); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+  const d6 = () => 1 + Math.floor(rnd() * 6);
+  return {
+    test(mod, target) { const d1 = d6(), d2 = d6(); return { ok: d1 + d2 + mod >= target, d1, d2, mod, target }; },
+    draw: d6,
+  };
+}
+
+// Enumerates every branch of a probabilistic computation by re-execution.
+// fn(dice) runs with a dice object whose results are binary branches.
+function enumerate(fn, params = DEFAULTS) {
+  const results = [];
+  const stack = [[]]; // each entry: forced prefix of branch indices
+  while (stack.length) {
+    const prefix = stack.pop();
+    let i = 0, prob = 1;
+    const pick = (pTrue) => {
+      if (i < prefix.length) { const b = prefix[i++]; prob *= b ? pTrue : 1 - pTrue; return b; }
+      // new choice point: take true now, queue the false branch
+      if (pTrue <= 0) { i++; prefix.push(0); return 0; }
+      if (pTrue >= 1) { i++; prefix.push(1); return 1; }
+      stack.push([...prefix, 0]);
+      prefix.push(1); i++; prob *= pTrue; return 1;
+    };
+    const dice = {
+      test(mod, target) { const ok = pick(p2d6(target - mod)); return { ok: !!ok, mod, target }; },
+      draw() { return pick(params.prepareFaces / 6) ? 1 : 6; },
+    };
+    const value = fn(dice);
+    if (prob > 0) results.push([prob, value]);
+  }
+  return results;
+}
+
+// PROTOTYPE (issue #83): Characters at effective Attributes with starting Equipment, and Enemies from shipped content.
+
+const CHARS = {
+  hunter:   { name: 'Hunter',         M: 1, A: 4, W: 2, dmg: 3, reach: 'ranged', heal: 3, items: 2 },
+  soldier:  { name: 'Soldier',        M: 4, A: 1, W: 0, dmg: 3, reach: 'melee',  heal: 3, items: 1 },
+  scholar:  { name: 'Scholar',        M: 0, A: 2, W: 3, dmg: 2, reach: 'melee',  heal: 3, items: 2 },
+  warden:   { name: 'Harbour Warden', M: 5, A: 1, W: 0, dmg: 3, reach: 'melee',  heal: 4, items: 2 },
+  runner:   { name: 'Canal Runner',   M: 1, A: 4, W: 2, dmg: 3, reach: 'ranged', heal: 4, items: 2 },
+  engineer: { name: 'Tide Engineer',  M: 1, A: 1, W: 4, dmg: 2, reach: 'melee',  heal: 4, items: 2 },
+  advocate: { name: 'Crew Advocate',  M: 1, A: 0, W: 2, dmg: 3, reach: 'melee',  heal: 4, items: 2 },
+};
+
+const ENEMIES = {
+  'grey-wolf':        { name: 'Grey Wolf',         M: 2, A: 2, W: 1, maxHp: 8,  dmg: 2, reach: 'melee',  behaviour: 'steady' },
+  'bandit-archer':    { name: 'Bandit Archer',     M: 1, A: 2, W: 1, maxHp: 6,  dmg: 2, reach: 'ranged', behaviour: 'heavy' },
+  'barrow-wight':     { name: 'Barrow Wight',      M: 3, A: 1, W: 2, maxHp: 14, dmg: 3, reach: 'melee',  behaviour: 'heavy' },
+  'drowned-porter':   { name: 'Drowned Porter',    M: 1, A: 1, W: 1, maxHp: 6,  dmg: 1, reach: 'melee',  behaviour: 'steady' },
+  'iron-foreman':     { name: 'Iron Foreman',      M: 2, A: 0, W: 1, maxHp: 9,  dmg: 2, reach: 'melee',  behaviour: 'heavy' },
+  'channel-watchman': { name: 'Channel Watchman',  M: 1, A: 2, W: 1, maxHp: 7,  dmg: 2, reach: 'ranged', behaviour: 'heavy' },
+  'brass-auditor':    { name: 'Brass Auditor',     M: 2, A: 1, W: 2, maxHp: 10, dmg: 2, reach: 'melee',  behaviour: 'steady' },
+};
+
+const ENCOUNTERS = {
+  'hollow-wolf':  { scenario: 'ww', parts: ['grey-wolf'], startRange: 'far' },
+  'camp-bandit':  { scenario: 'ww', parts: ['bandit-archer'], startRange: 'far' },
+  'wight-fight':  { scenario: 'ww', parts: ['barrow-wight'], startRange: 'near' },
+  'porter-fight': { scenario: 'dl', parts: ['drowned-porter'], startRange: 'near' },
+  'foundry-fight':{ scenario: 'dl', parts: ['iron-foreman'], startRange: 'near' },
+  'tower-fight':  { scenario: 'dl', parts: ['channel-watchman'], startRange: 'far' },
+  'auditor-fight':{ scenario: 'dl', parts: ['brass-auditor'], startRange: 'near' },
+  'ref-wolf-archer': { scenario: 'ref', parts: ['grey-wolf', 'bandit-archer'], startRange: 'far' },
+  'ref-two-wolves':  { scenario: 'ref', parts: ['grey-wolf', 'grey-wolf'], startRange: 'far' },
+};
+
+const SCENARIO_CHARS = { ww: ['hunter', 'soldier', 'scholar'], dl: ['warden', 'runner', 'engineer', 'advocate'] };
+
+function fixture(charId, encId, overrides = {}) {
+  const enc = ENCOUNTERS[encId];
+  const counts = {};
+  return {
+    char: { ...CHARS[charId], ...(overrides.char || {}) , maxHp: overrides.maxHp ?? 12 },
+    startRange: enc.startRange,
+    enemies: enc.parts.map((k) => {
+      counts[k] = (counts[k] || 0) + 1;
+      const id = enc.parts.filter((x) => x === k).length > 1 ? `${k}-${'ab'[counts[k] - 1]}` : k;
+      return { ...ENEMIES[k], ...(overrides.enemies?.[k] || {}), id, kind: k };
+    }),
+  };
+}
+
+// PROTOTYPE (issue #83): exact optimal play by value iteration over the reachable Round states.
+
+
+function keyOf(s) {
+  if (s.over) return s.over === 'victory' ? `V${s.char.hp}` : s.over === 'death' ? 'D' : `E${s.char.hp}`;
+  return `${s.char.hp},${s.char.items}|` + s.parts.map((p) => `${p.taken},${p.range[0]},${p.intent ? p.intent[0] : '-'},${p.prepared ? 1 : 0},${Math.max(-1, p.waryUntil - s.round)}`).join('|');
+}
+const actionKey = (a) => a.target ? `${a.kind}:${a.target}` : a.kind;
+
+// objective: value of terminal outcomes. victory = 1 + hpWeight * hp / maxHp; escape = escapeValue; death = 0.
+function solve(fixture, params = DEFAULTS, objective = { hpWeight: 0.25, escapeValue: 0, discount: 0.98 }, startHp) {
+  const maxHp = fixture.char.maxHp;
+  const g = objective.discount ?? 1;
+  const terminal = (k) => k === 'D' ? 0 : k[0] === 'V' ? 1 + objective.hpWeight * Number(k.slice(1)) / maxHp : objective.escapeValue;
+  const index = new Map(); const states = []; const trans = [];
+  const add = (s, k) => { if (index.has(k)) return index.get(k); const i = states.length; index.set(k, i); states.push(s); return i; };
+  const start = enumerate((d) => startCombat(fixture, d, params, { hp: startHp }), params).map(([p, s]) => [p, s]);
+  const merge = (list) => { const m = new Map(); for (const [p, s] of list) { const k = keyOf(s); const e = m.get(k); if (e) e[0] += p; else m.set(k, [p, s]); } return [...m.entries()].map(([k, [p, s]]) => ({ p, k, s })); };
+  const startDist = merge(start).map(({ p, k, s }) => ({ p, k, i: s.over ? -1 : add(s, k) }));
+  for (let i = 0; i < states.length; i++) {
+    const s = states[i];
+    const acts = legalActions(s);
+    trans[i] = acts.map((a) => ({
+      a, key: actionKey(a),
+      out: merge(enumerate((d) => resolveRound(s, a, d, params).state, params)).map(({ p, k, s: n }) => n.over ? { p, t: terminal(k), k } : { p, i: add(n, k), k }),
+    }));
+  }
+  const V = new Float64Array(states.length);
+  for (let it = 0; it < 5000; it++) {
+    let delta = 0;
+    for (let i = 0; i < states.length; i++) {
+      let best = -1;
+      for (const tr of trans[i]) { let v = 0; for (const o of tr.out) v += o.p * (o.i === undefined ? o.t : g * V[o.i]); if (v > best) best = v; }
+      delta = Math.max(delta, Math.abs(best - V[i])); V[i] = best;
+    }
+    if (delta < 1e-9) break;
+  }
+  const qValues = (i) => trans[i].map((tr) => ({ key: tr.key, a: tr.a, q: tr.out.reduce((v, o) => v + o.p * (o.i === undefined ? o.t : g * V[o.i]), 0) }));
+  const policy = new Map();
+  for (let i = 0; i < states.length; i++) { const qs = qValues(i); qs.sort((x, y) => y.q - x.q); policy.set(keyOf(states[i]), qs); }
+  const value = startDist.reduce((v, d) => v + d.p * (d.i < 0 ? terminal(d.k) : V[d.i]), 0);
+  return { policy, value, count: states.length, states, trans, V, index, startDist };
+}
+
+// Exact outcome distribution of following a policy (map key -> actionKey) from the start, via Markov chain iteration.
+function evaluate(fixture, solved, chooser, params = DEFAULTS, rounds = 60) {
+  const { trans, states, startDist } = solved;
+  let dist = new Map();
+  for (const d of startDist) if (d.i >= 0) dist.set(d.i, (dist.get(d.i) || 0) + d.p);
+  const res = { win: 0, death: 0, escape: 0, rounds: 0, hpLeftWin: 0, deathBy: [], actions: {}, unresolved: 0 };
+  for (let r = 1; r <= rounds; r++) {
+    const next = new Map(); let deathNow = 0;
+    for (const [i, p] of dist) {
+      const pick = chooser(states[i], trans[i]);
+      const tr = trans[i].find((t) => t.key === pick) || trans[i][0];
+      const kind = tr.a.kind; res.actions[kind] = (res.actions[kind] || 0) + p;
+      for (const o of tr.out) {
+        const q = p * o.p;
+        if (o.i !== undefined) { next.set(o.i, (next.get(o.i) || 0) + q); continue; }
+        res.rounds += q * r;
+        if (o.k === 'D') { res.death += q; deathNow += q; }
+        else if (o.k[0] === 'V') { res.win += q; res.hpLeftWin += q * Number(o.k.slice(1)); }
+        else res.escape += q;
+      }
+    }
+    res.deathBy.push(res.death);
+    dist = next;
+  }
+  for (const p of dist.values()) res.unresolved += p;
+  res.hpLeftWin = res.win ? res.hpLeftWin / res.win : 0;
+  const total = Object.values(res.actions).reduce((a, b) => a + b, 0);
+  for (const k in res.actions) res.actions[k] /= total;
+  res.rounds = res.rounds / (1 - res.unresolved);
+  return res;
+}
+
+const optimalChooser = (solved) => (s) => solved.policy.get(keyOf(s))[0].key;
+
+// Naive player: heal at low Health, otherwise Attack the weakest reachable participant, else Advance. Never Defends, Distracts or Escapes.
+const naiveChooser = (healAt = 4) => (s, trs) => {
+  const has = (k) => trs.some((t) => t.key === k);
+  if (s.char.hp <= healAt && has('consume')) return 'consume';
+  const live = s.parts.filter((p) => p.taken < p.maxHp);
+  const atk = live.filter((p) => has('attack:' + p.id)).sort((a, b) => (a.maxHp - a.taken) - (b.maxHp - b.taken));
+  if (atk.length) return 'attack:' + atk[0].id;
+  const adv = live.filter((p) => has('advance:' + p.id)).sort((a, b) => (a.reach === 'ranged' ? 0 : 1) - (b.reach === 'ranged' ? 0 : 1));
+  if (adv.length) return 'advance:' + adv[0].id;
+  return 'defend';
+};
+
+// Restricted optimum: best play using only the listed action kinds.
+function restrictedChooser(solved, kinds) {
+  return (s) => { const qs = solved.policy.get(keyOf(s)); return (qs.find((q) => kinds.includes(q.a.kind)) || qs[0]).key; };
+}
+
+// PROTOTYPE walkthroughs and findings (issue #83). Seeds were picked so each story plays out as described.
+
+const WALKS = [
+  {
+    title: 'Scholar vs Grey Wolf: an attack race',
+    char: 'scholar', enc: 'hollow-wolf', preset: 'accepted', seed: 2,
+    text: [
+      'The Scholar (Might 0, staff 2 Damage) needs 9+ to hit the wolf, and the wolf needs 7+ to hit back for 2. Round 1 is free: the wolf only closes in.',
+      'Watch for: Defend no longer earns Damage (the counterattack needs the same 9+ roll for 1 Damage), and Distract only delays, so the solver simply Attacks and heals. With perfect play the Scholar wins about half the time; under the old rules it was 96%, mostly through the free counterattack.',
+    ],
+    steps: ['defend', 'attack:grey-wolf', 'attack:grey-wolf', 'consume', 'attack:grey-wolf', 'attack:grey-wolf', 'attack:grey-wolf', 'attack:grey-wolf', 'attack:grey-wolf', 'consume'].map((a) => ({ action: a, label: a.split(':')[0] })),
+  },
+  {
+    title: 'Same fight with off-balance +2',
+    char: 'scholar', enc: 'hollow-wolf', preset: 'offbalance', seed: 2,
+    text: [
+      'Experiment: a Wary Enemy is off-balance, so your Attacks against it get +2. A successful Distract (5+ for the Scholar) cancels the bite and the next Round\'s Attack needs 7+ instead of 9+.',
+      'Watch for: the win chance rises from about 51% to 91%, and Distract becomes the Scholar\'s signature move. The cost: a fixed two-Round rhythm (Distract, Attack, Distract, Attack) that the solver repeats almost every time.',
+    ],
+    steps: ['defend', 'distract:grey-wolf', 'attack:grey-wolf', 'distract:grey-wolf', 'attack:grey-wolf', 'distract:grey-wolf', 'attack:grey-wolf', 'consume', 'distract:grey-wolf', 'attack:grey-wolf'].map((a) => ({ action: a, label: a.split(':')[0] })),
+  },
+  {
+    title: 'Soldier vs Barrow Wight: the wind-up window',
+    char: 'soldier', enc: 'wight-fight', preset: 'accepted', seed: 2,
+    text: [
+      'The wight is a <code>heavy</code> Enemy. In Round 2 it winds up (no attack); in Round 3 its slow Heavy blow deals 3 + 3 = 6.',
+      'Watch for: the solver answers the wind-up with Fall back. In Round 2 the roll fails, but in Round 3 the slow Fall back comes before the slow blow (Agility tie, the Character first) and succeeds: the blow is cancelled out of Reach, and the wight spends Round 4 closing in while the Soldier heals. With Heavy +2 attacking straight through the blow was best; at +3 the wind-up is a real decision. Soldier vs wight: 47% under the old rules, 86% at +2, 75% at +3.',
+    ],
+    steps: ['attack:barrow-wight', 'fallback', 'fallback', 'consume', 'attack:barrow-wight', 'attack:barrow-wight'].map((a) => ({ action: a, label: a.split(':')[0] })),
+  },
+  {
+    title: 'Hunter vs wolf + archer: ignoring the aimed shot',
+    char: 'hunter', enc: 'ref-wolf-archer', preset: 'accepted', seed: 2,
+    text: [
+      'The archer takes aim in Round 2 and shoots in Round 3 (slow, 2 + 3 = 5 Damage). The Hunter (Agility 4) is hit only on 11+, or 13+ when Defending.',
+      'Watch for: with Agility 4 the aimed shot is a 1-in-6 threat, so the solver keeps shooting the wolf and the Distract option rarely matters. High Agility makes most Intents irrelevant.',
+    ],
+    steps: ['attack:grey-wolf', 'attack:grey-wolf', 'attack:grey-wolf', 'attack:grey-wolf', 'consume', 'attack:bandit-archer'].map((a) => ({ action: a, label: a.split(':')[0] })),
+  },
+  {
+    title: 'Soldier vs two wolves: staggering their arrival',
+    char: 'soldier', enc: 'ref-two-wolves', preset: 'accepted', seed: 2,
+    text: [
+      'Both wolves start Far and close in during Round 1. The solver Distracts wolf B\'s Close in: if it works, wolf B arrives a Round later, so for one Round only wolf A bites.',
+      'Watch for: the Soldier acts after both wolves (Agility 1 vs 2), so every Round starts with up to 4 Damage. Focus fire on wolf A, then the Health race against wolf B. With perfect play the Soldier wins only about 36%.',
+    ],
+    steps: ['distract:grey-wolf-b', 'attack:grey-wolf-a', 'attack:grey-wolf-a', 'attack:grey-wolf-a', 'defend', 'defend'].map((a) => ({ action: a, label: a.replace('grey-wolf-', 'wolf ') })),
+  },
+  {
+    title: 'Crew Advocate vs two wolves: getting out',
+    char: 'advocate', enc: 'ref-two-wolves', preset: 'accepted', seed: 4,
+    text: [
+      'The Advocate (Agility 0) cannot win this fight (about 2% with perfect play). In Round 1 nothing is Near when the Advocate chooses Escape, so the +2 holds even though both wolves close in first: 7+. After that it needs 9+.',
+      'Watch for: every failed Escape costs up to 4 Health. Even a player who only tries to survive dies about 15% of the time: the accepted cost of Agility 0. This seed is one of the bad runs.',
+    ],
+    steps: ['escape', 'escape', 'consume', 'escape', 'consume', 'escape', 'escape'].map((a) => ({ action: a, label: a })),
+  },
+];
+
+const FINDINGS = `<p class="muted small">The summary tables tab recomputes everything for any preset. Figures are for full Health with perfect play.</p>
+<h2>Accepted in review</h2>
+<ul>
+  <li><b>Heavy attack: Enemy Damage +3</b> (was +2). The barrow wight is a boss again (Soldier 75%), and the largest possible blow stays at 9.</li>
+  <li><b>Escape's +2 comes from the state shown on commitment.</b> If nothing was Near when the Character chose Escape, a faster Enemy closing in first no longer removes the bonus. Crew Advocate's minimum death risk against two Enemies falls from 24–26% to 14–15%.</li>
+  <li><b>No rule change for low-Might Templates.</b> Scholar vs Grey Wolf stays at 51%; the Scholar's strength lies outside Combat. The off-balance experiment stays here as a preset.</li>
+  <li><b>Two participants = the hard tier.</b> The reference is Grey Wolf + Bandit Archer: fighting Templates win 68–98%, the others must be able to Escape (minimum death ≤ 4%, or ≤ 15% at Agility 0). Two Grey Wolves are beyond the hard tier (Soldier 36%), recorded as the same-kind fixture.</li>
+</ul>
+<h2>What the spec did before review</h2>
+<ul>
+  <li><b>Duels mostly keep the old balance.</b> Of the 25 shipped duels, 20 stay within 5 points of the old rules. No Template can die before its first useful action at full Health.</li>
+  <li><b>The Scholar lost its way to win.</b> Grey Wolf: 96% → 51%. Under the old rules the free counterattack was the Scholar's Damage source. The rolled counterattack (decided in #78) removed it, and Distract gives nothing back.</li>
+  <li><b>A <code>heavy</code> Enemy is weaker than a <code>steady</code> one.</b> A wind-up costs a whole attack and buys +2 Damage on one slow, answerable blow. Barrow Wight vs Soldier: 46% (old) → 86%. Every heavy Enemy loses strength, Bandit Archer and Channel Watchman included.</li>
+  <li><b>Two Enemies double the pressure without a matching answer.</b> Two Grey Wolves: Hunter 89%, Runner 92%, Warden 63%, Soldier 36%, Scholar 0%, Engineer 0%, Advocate 2%. Wolf + archer is similar. The pressure is not instant: Round 1 is always a closing Round. The losing Templates can still leave (survival-first death 0–9%, except the Advocate at 24–26%).</li>
+  <li><b>Agility is the master Attribute.</b> Agility 4 Templates win almost everything and ignore most Intents (hit on 11+). Initiative itself is cheap: making the Character act last within each Speed costs at most 15 points (Soldier vs wight) and usually 0–5.</li>
+  <li><b>No dominant fast-action loop.</b> With a slight preference for shorter fights, the solver Defends or Distracts in 0–45% of Rounds, depending on the matchup. A Defend/counterattack grind appears only without any time preference (Hunter: 13 to 27 Rounds), and only in fights that are already won.</li>
+</ul>`;
+
+// PROTOTYPE page shell (issue #83). Thin layer over rules.mjs / fixtures.mjs / solver.mjs.
+
+const PRESETS = {
+  accepted: { label: 'Accepted (Heavy +3, Escape bonus on commit)', knobs: { heavyBonus: 3, escapeBonusAt: 'commit' } },
+  spec: { label: 'Spec before review (Heavy +2)', knobs: {} },
+  offbalance: { label: 'Off-balance +2', knobs: { offBalance: 2 } },
+  proposal: { label: 'Off-balance +2, Heavy +3', knobs: { offBalance: 2, heavyBonus: 3 } },
+  legacy: { label: 'Old rules (one Enemy only)', knobs: { legacy: true, prepareFaces: 0 } },
+};
+const KNOBS = [
+  ['offBalance', 'Off-balance: your hit bonus vs a Wary Enemy'],
+  ['heavyBonus', 'Heavy attack: Damage bonus'],
+  ['prepareFaces', 'heavy Behaviour prepares on 1..N'],
+  ['guardBonus', 'Guarded: Enemy target +N'],
+  ['counterDamage', 'Counterattack Damage'],
+  ['distractBase', 'Distract target base'],
+  ['waryRounds', 'Wary lasts N more Rounds'],
+  ['escapeFarBonus', 'Escape bonus when nothing is Near'],
+];
+const FIGHT = { hpWeight: 0.25, escapeValue: 0, discount: 0.98 };
+const SURVIVE = { hpWeight: 0.25, escapeValue: 0.8, discount: 0.98 };
+
+const ACTION_NAMES = { defend: 'Defend', distract: 'Distract', attack: 'Attack', advance: 'Advance', consume: 'Use a Consumable', escape: 'Escape', fallback: 'Fall back' };
+const ENC_NAMES = {
+  'hollow-wolf': 'Hollow wolf (Grey Wolf, Far)', 'camp-bandit': 'Camp bandit (Bandit Archer, Far)', 'wight-fight': 'Wight (Barrow Wight, Near)',
+  'porter-fight': 'Porter (Drowned Porter, Near)', 'foundry-fight': 'Foundry (Iron Foreman, Near)', 'tower-fight': 'Tower (Channel Watchman, Far)', 'auditor-fight': 'Auditor (Brass Auditor, Near)',
+  'ref-wolf-archer': 'Reference: Grey Wolf + Bandit Archer (Far)', 'ref-two-wolves': 'Reference: two Grey Wolves (Far)',
+};
+
+const UI = { tab: 'play', preset: 'accepted', knobs: { ...DEFAULTS }, char: 'scholar', enc: 'hollow-wolf', seed: 7, hp: 12, hints: true, game: null, prev: null, lastLog: null, history: [], walk: null, summary: {} };
+const cache = new Map();
+const $ = (sel) => document.querySelector(sel);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const pct = (x) => Math.round(100 * x) + '%';
+
+function params() { return { ...UI.knobs }; }
+function presetParams(id) { return { ...DEFAULTS, ...PRESETS[id].knobs }; }
+function fx() { return fixture(UI.char, UI.enc); }
+function solved() {
+  const k = JSON.stringify([params(), UI.char, UI.enc, UI.hp]);
+  if (!cache.has(k)) { const f = fx(); f.char.hp = UI.hp; cache.set(k, solveFrom(f)); }
+  return cache.get(k);
+}
+function solveFrom(f) { return solve(f, params(), FIGHT, UI.hp); }
+
+function newGame() {
+  UI.game = startCombat(fx(), seededDice(UI.seed), params(), { hp: UI.hp });
+  UI.dice = seededDice(UI.seed * 7919 + 1);
+  UI.dice.draw(); // keep the start draw separate from round dice
+  UI.prev = null; UI.lastLog = null; UI.history = [];
+}
+
+function nameOf(s, id) { const p = s.parts.find((q) => q.id === id); if (!p) return id; const same = s.parts.filter((q) => q.kind === p.kind); return p.name + (same.length > 1 ? ' ' + 'AB'[same.indexOf(p)] : ''); }
+const alive2 = (p) => p.taken < p.maxHp;
+const need = (target, mod) => Math.max(2, target - mod);
+function intentText(s, p) {
+  const word = { strike: p.reach === 'ranged' ? 'Shoot' : 'Strike', close: 'Close in', prepare: p.reach === 'ranged' ? 'Take aim' : 'Wind up', heavy: p.reach === 'ranged' ? 'Aimed shot' : 'Heavy blow' }[p.intent];
+  const k = UI.knobs;
+  const dmg = p.intent === 'heavy' ? (k.heavyDouble ? 2 * p.dmg : p.dmg + k.heavyBonus) : p.dmg;
+  let t = `${word} · ${INTENT_SPEED[p.intent]}`;
+  if (p.intent === 'strike' || p.intent === 'heavy') t += ` · ${dmg} Damage · hits you on ${need(k.hitBase + s.char.A, p.M)}+ (${need(k.hitBase + k.guardBonus + s.char.A, p.M)}+ if you Defend)`;
+  if (p.intent === 'prepare') t += ` · next Round: slow ${p.reach === 'ranged' ? 'Aimed shot' : 'Heavy blow'}, ${k.heavyDouble ? 2 * p.dmg : p.dmg + k.heavyBonus} Damage`;
+  return t;
+}
+function actionThreshold(s, a) {
+  const k = UI.knobs, c = s.char, t = a.target && s.parts.find((p) => p.id === a.target);
+  const live = s.parts.filter(alive2);
+  switch (a.kind) {
+    case 'attack': return `needs ${need(k.hitBase + t.A, c.M + (t.waryUntil >= s.round ? k.offBalance : 0))}+` + (t.waryUntil >= s.round && k.offBalance ? ' (off-balance)' : '');
+    case 'distract': return `needs ${need(k.distractBase + t.W, c.W)}+`;
+    case 'escape': { const near = live.some((p) => p.range === 'near'); /* shown state = commit state */ return `needs ${need(7 + Math.max(...live.map((p) => p.A)), c.A + (near ? 0 : k.escapeFarBonus))}+`; }
+    case 'fallback': return `needs ${need(7 + Math.max(...live.filter((p) => p.range === 'near').map((p) => p.A)), c.A)}+`;
+    case 'consume': return `+${c.heal} Health (${c.items} left)`;
+    default: return 'no roll';
+  }
+}
+function orderText(s, a) {
+  const o = roundOrder(s, a); const i = o.findIndex((e) => e.actor === 'char');
+  return `acts ${i + 1} of ${o.length}`;
+}
+
+function logText(s, L) {
+  const who = L.actor === 'char' ? 'You' : nameOf(s, L.actor);
+  const rollT = (r) => r.d1 ? `${r.d1}+${r.d2}${r.mod >= 0 ? '+' : ''}${r.mod} = ${r.d1 + r.d2 + r.mod} vs ${r.target}` : '';
+  let what = L.actor === 'char' ? ACTION_NAMES[L.kind] + (L.target ? ' → ' + nameOf(s, L.target) : '') : ({ strike: 'Strike', close: 'Close in', prepare: 'Prepare', heavy: 'Heavy attack' }[L.kind]);
+  if (L.dropped) return `${who}: ${what} — did not act (defeated earlier this Round)`;
+  if (L.cancelled) return `${who}: ${what} — cancelled (${L.cancelled})`;
+  let t = `${who}: ${what}`;
+  if (L.roll) t += ` <span class="chip">${rollT(L.roll)}</span> ${L.roll.ok ? 'success' : 'failure'}`;
+  if (L.damage) t += ` — ${L.damage} Damage to you`;
+  if (L.counter) t += `<br>&nbsp;&nbsp;↳ Counterattack <span class="chip">${rollT(L.counter)}</span> ${L.counter.ok ? 'hits for ' + UI.knobs.counterDamage : 'misses'}`;
+  return t;
+}
+
+function act(a) {
+  if (!UI.game || UI.game.over) return;
+  const legal = legalActions(UI.game).some((x) => actionKey(x) === actionKey(a));
+  if (!legal) { UI.notice = `Rejected: ${ACTION_NAMES[a.kind]} is not available now.`; render(); return; }
+  UI.prev = UI.game;
+  const before = UI.game;
+  let best = null;
+  if (UI.hints) { const qs = solved().policy.get(keyOf(before)); if (qs) best = { best: qs[0], chosen: qs.find((q) => q.key === actionKey(a)) }; }
+  const r = resolveRound(UI.game, a, UI.dice, params());
+  UI.game = r.state; UI.lastLog = { log: r.log, state: r.state, round: before.round };
+  UI.history.push({ round: before.round, action: actionKey(a), hp: r.state.char.hp, best });
+  UI.notice = null;
+  render();
+}
+
+// ---------------------------------------------------------------- tabs
+const TABS = { play: 'Play', walk: 'Walkthroughs', summary: 'Summary tables', findings: 'Findings' };
+function renderTabs() {
+  $('#tabs').innerHTML = Object.entries(TABS).map(([k, v]) => `<button role="tab" aria-selected="${UI.tab === k}" data-tab="${k}">${v}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach((b) => b.onclick = () => { UI.tab = b.dataset.tab; render(); });
+}
+
+function controls() {
+  const opt = (obj, cur, lab) => Object.keys(obj).map((k) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(lab(k))}</option>`).join('');
+  return `<div class="row">
+    <label>Character Template<select id="c-char">${opt(CHARS, UI.char, (k) => CHARS[k].name + ` (M${CHARS[k].M} A${CHARS[k].A} W${CHARS[k].W}, ${CHARS[k].dmg} ${CHARS[k].reach})`)}</select></label>
+    <label>Encounter<select id="c-enc">${opt(ENCOUNTERS, UI.enc, (k) => ENC_NAMES[k])}</select></label>
+    <label>Tuning<select id="c-preset">${opt(PRESETS, UI.preset, (k) => PRESETS[k].label)}</select></label>
+    <label>Seed<input type="number" id="c-seed" value="${UI.seed}"></label>
+    <label>Start Health<input type="number" id="c-hp" min="1" max="12" value="${UI.hp}"></label>
+    <label><span><input type="checkbox" id="c-hints" ${UI.hints ? 'checked' : ''}> solver hints</span></label>
+    <button class="plain primary" id="c-new">New fight</button>
+  </div>
+  <details class="small" style="margin-top:8px"><summary>Tuning knobs</summary><div class="row" style="margin-top:6px">${KNOBS.map(([k, l]) => `<label>${l}<input type="number" data-knob="${k}" value="${UI.knobs[k]}"></label>`).join('')}
+  <label><span><input type="checkbox" data-knob="heavyDouble" ${UI.knobs.heavyDouble ? 'checked' : ''}> Heavy = double Damage</span></label>
+  <label><span><input type="checkbox" data-knob="escapeBonusAt" ${UI.knobs.escapeBonusAt === 'commit' ? 'checked' : ''}> Escape bonus read on commit</span></label></div></details>`;
+}
+function bindControls() {
+  const on = (id, f) => { const el = $(id); if (el) el.onchange = f; };
+  on('#c-char', (e) => { UI.char = e.target.value; newGame(); render(); });
+  on('#c-enc', (e) => { UI.enc = e.target.value; newGame(); render(); });
+  on('#c-preset', (e) => { UI.preset = e.target.value; UI.knobs = presetParams(UI.preset); newGame(); render(); });
+  on('#c-seed', (e) => { UI.seed = Number(e.target.value) || 1; newGame(); render(); });
+  on('#c-hp', (e) => { UI.hp = Math.max(1, Math.min(12, Number(e.target.value) || 12)); newGame(); render(); });
+  on('#c-hints', (e) => { UI.hints = e.target.checked; render(); });
+  const nb = $('#c-new'); if (nb) nb.onclick = () => { UI.seed += 1; newGame(); render(); };
+  document.querySelectorAll('[data-knob]').forEach((el) => el.onchange = () => { UI.knobs[el.dataset.knob] = el.dataset.knob === 'escapeBonusAt' ? (el.checked ? 'commit' : 'resolution') : el.type === 'checkbox' ? el.checked : Number(el.value); if (el.dataset.knob === 'prepareFaces' || el.dataset.knob === 'heavyDouble' || true) { newGame(); } render(); });
+}
+
+function arena() {
+  const s = UI.game, prev = UI.prev;
+  const c = s.char, pc = prev && prev.char;
+  const ch = (a, b) => (prev && a !== b ? ' class="changed"' : '');
+  let h = `<div class="grid">`;
+  h += `<div class="card"><h3>${esc(c.name)} — Round ${s.round}</h3><div class="bar"><i style="width:${100 * c.hp / c.maxHp}%"></i></div>
+    <dl class="kv"><dt>Health</dt><dd${ch(c.hp, pc && pc.hp)}>${c.hp} / ${c.maxHp}</dd><dt>Consumables</dt><dd${ch(c.items, pc && pc.items)}>${c.items} × +${c.heal}</dd>
+    <dt>Attributes</dt><dd>Might ${c.M} · Agility ${c.A} · Wits ${c.W}</dd><dt>Weapon</dt><dd>${c.dmg} Damage, ${c.reach}</dd></dl></div>`;
+  for (const p of s.parts) {
+    const pp = prev && prev.parts.find((q) => q.id === p.id);
+    const hp = p.maxHp - p.taken;
+    h += `<div class="card" style="${alive2(p) ? '' : 'opacity:.5'}"><h3>${esc(nameOf(s, p.id))}${alive2(p) ? '' : ' — Defeated'}</h3><div class="bar"><i style="width:${100 * hp / p.maxHp}%;background:var(--bad)"></i></div>
+      <dl class="kv"><dt>Health</dt><dd${ch(p.taken, pp && pp.taken)}>${hp} / ${p.maxHp}</dd><dt>Range</dt><dd${ch(p.range, pp && pp.range)}>${p.range === 'near' ? 'Near' : 'Far'}</dd>
+      <dt>Attributes</dt><dd>Might ${p.M} · Agility ${p.A} · Wits ${p.W}</dd><dt>Kind</dt><dd>${p.dmg} Damage, ${p.reach}, ${p.behaviour}</dd>
+      ${alive2(p) && !s.over ? `<dt>Intent</dt><dd><b>${esc(intentText(s, p))}</b></dd>` : ''}
+      ${p.prepared ? `<dt>State</dt><dd>${p.reach === 'ranged' ? 'Aiming' : 'Wound up'}</dd>` : ''}
+      ${p.waryUntil >= s.round ? `<dt>Wary</dt><dd>through Round ${p.waryUntil}${UI.knobs.offBalance ? ` (off-balance: +${UI.knobs.offBalance} to hit it)` : ''}</dd>` : ''}</dl></div>`;
+  }
+  return h + `</div>`;
+}
+
+function actionsPanel() {
+  const s = UI.game;
+  if (s.over) return `<div class="over">${{ victory: 'Victory', death: 'The Character died', escape: 'Escaped' }[s.over]} after ${s.round} Round${s.round > 1 ? 's' : ''} — Health ${s.char.hp}, Consumables left ${s.char.items}.</div>`;
+  const acts = legalActions(s);
+  let qs = null;
+  if (UI.hints) qs = solved().policy.get(keyOf(s));
+  const bestKey = qs && qs[0].key;
+  return `<h3>Your action ${UI.hints && qs ? `<span class="small muted">— solver: win chance with perfect play from here ${pct(Math.min(1, qs[0].q))}</span>` : ''}</h3><div class="actions">${acts.map((a) => {
+    const k = actionKey(a); const q = qs && qs.find((x) => x.key === k);
+    return `<button class="act ${k === bestKey ? 'best' : ''}" data-act="${k}"><b>${ACTION_NAMES[a.kind]}${a.target ? ' → ' + esc(nameOf(s, a.target)) : ''}</b>
+      <span class="sub">${ACTION_SPEED[a.kind]} · ${orderText(s, a)} · ${actionThreshold(s, a)}</span>
+      ${q ? `<span class="sub">solver value ${q.q.toFixed(3)}${k === bestKey ? ' · best' : ` · ${(qs[0].q - q.q).toFixed(3)} worse`}</span>` : ''}</button>`;
+  }).join('')}</div>`;
+}
+
+function logPanel() {
+  let h = '';
+  if (UI.lastLog) h += `<div class="card log" style="margin-top:12px"><b>Round ${UI.lastLog.round}</b><ol>${UI.lastLog.log.map((L) => `<li>${logText(UI.lastLog.state, L)}</li>`).join('')}</ol></div>`;
+  if (UI.history.length) h += `<p class="small muted" style="margin-top:8px">History: ${UI.history.map((x) => `R${x.round} ${x.action}${x.best && x.best.best.key !== x.action ? ` <span title="solver preferred ${x.best.best.key}">(best: ${x.best.best.key})</span>` : ''} → ${x.hp} HP`).join(' · ')}</p>`;
+  return h;
+}
+
+function bindActions() {
+  document.querySelectorAll('[data-act]').forEach((b) => b.onclick = () => { const [kind, target] = b.dataset.act.split(':'); act(target ? { kind, target } : { kind }); });
+}
+
+function renderPlay() {
+  if (!UI.game) newGame();
+  return controls() + (UI.notice ? `<p class="over">${esc(UI.notice)}</p>` : '') + arena() + actionsPanel() + logPanel();
+}
+
+// ---------------------------------------------------------------- walkthroughs
+function renderWalk() {
+  let h = `<p class="muted small">Each walkthrough resets to a fixed seed, so it plays out the same every time. Press the steps in order; the Play view below follows along. Solver hints stay on, so you can compare the scripted choice with the best one.</p>`;
+  h += `<div class="steps">${WALKS.map((w, i) => `<button class="plain ${UI.walk === i ? 'primary' : ''}" data-walk="${i}">${i + 1}. ${esc(w.title)}</button>`).join('')}</div>`;
+  if (UI.walk != null) {
+    const w = WALKS[UI.walk];
+    h += `<div class="card"><h3>${esc(w.title)}</h3>${w.text.map((p) => `<p>${p}</p>`).join('')}
+      <div class="steps">${w.steps.map((st, i) => `<button class="plain ${i < UI.walkStep ? 'done' : ''} ${i === UI.walkStep ? 'primary' : ''}" data-step="${i}">${i + 1}. ${esc(st.label)}</button>`).join('')}</div></div>`;
+    h += arena() + actionsPanel() + logPanel();
+  }
+  return h;
+}
+function startWalk(i) {
+  const w = WALKS[i]; UI.walk = i; UI.walkStep = 0;
+  UI.char = w.char; UI.enc = w.enc; UI.preset = w.preset; UI.knobs = presetParams(w.preset); UI.seed = w.seed; UI.hp = w.hp ?? 12; UI.hints = true;
+  newGame();
+}
+function bindWalk() {
+  document.querySelectorAll('[data-walk]').forEach((b) => b.onclick = () => { startWalk(Number(b.dataset.walk)); render(); });
+  document.querySelectorAll('[data-step]').forEach((b) => b.onclick = () => {
+    const i = Number(b.dataset.step); if (i !== UI.walkStep) return;
+    const [kind, target] = WALKS[UI.walk].steps[i].action.split(':'); UI.walkStep++; act(target ? { kind, target } : { kind });
+  });
+}
+
+// ---------------------------------------------------------------- summary
+async function computeSummary(presetId) {
+  const p = presetParams(presetId); const rows = [];
+  const encs = Object.keys(ENCOUNTERS).filter((e) => !(p.legacy && ENCOUNTERS[e].parts.length > 1));
+  const total = encs.reduce((n, e) => n + (ENCOUNTERS[e].scenario === 'ref' ? Object.keys(CHARS).length : SCENARIO_CHARS[ENCOUNTERS[e].scenario].length), 0);
+  for (const e of encs) {
+    const chars = ENCOUNTERS[e].scenario === 'ref' ? Object.keys(CHARS) : SCENARIO_CHARS[ENCOUNTERS[e].scenario];
+    for (const c of chars) {
+      const f = fixture(c, e);
+      const so = solve(f, p, FIGHT); const o = evaluate(f, so, optimalChooser(so), p);
+      const n = evaluate(f, so, naiveChooser(), p);
+      const sv = solve(f, p, SURVIVE); const s = evaluate(f, sv, optimalChooser(sv), p);
+      rows.push({ e, c, o, n, s });
+      UI.summary[presetId] = { rows, done: rows.length, total };
+      if ($('#sum-progress')) $('#sum-progress').textContent = `${rows.length} / ${total}`;
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+  UI.summary[presetId].finished = true; render();
+}
+function renderSummary() {
+  const opt = Object.keys(PRESETS).map((k) => `<option value="${k}" ${k === UI.preset ? 'selected' : ''}>${PRESETS[k].label}</option>`).join('');
+  let h = `<div class="row"><label>Tuning<select id="s-preset">${opt}</select></label><button class="plain primary" id="s-go">Compute</button><span class="small muted" id="sum-progress"></span></div>
+  <p class="small muted">Full Health start. <b>Win</b>, <b>Rounds</b>, <b>Health left</b> and the <b>action mix</b> come from the solver fighting to the finish. <b>Naive win</b>: heal at 4 Health or less, otherwise Attack the weakest reachable Enemy (Advance when nothing is in Reach); never Defend, Distract or Escape. <b>Survival-first</b>: the solver values a successful Escape at 0.8 of a win; its death rate shows whether getting out is viable. <b>Tactical</b>: share of Rounds spent on Defend, Distract or Fall back.</p>`;
+  const S = UI.summary[UI.preset];
+  if (S) {
+    h += `<div class="scroll"><table><thead><tr><th>Encounter</th><th>Template</th><th>Win</th><th>Naive win</th><th>Rounds</th><th>Health left</th><th>Dead by R3</th><th>Survival-first: death</th><th>escape</th><th>Tactical</th><th>Action mix</th></tr></thead><tbody>`;
+    for (const r of S.rows) {
+      const tac = (r.o.actions.defend || 0) + (r.o.actions.distract || 0) + (r.o.actions.fallback || 0);
+      const mix = Object.entries(r.o.actions).filter(([, v]) => v >= 0.02).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${pct(v)}`).join(', ');
+      h += `<tr><td>${ENC_NAMES[r.e]}</td><td>${CHARS[r.c].name}</td><td class="${r.o.win < 0.5 ? 'lo' : r.o.win > 0.95 ? 'hi' : ''}">${pct(r.o.win)}</td><td>${pct(r.n.win)}</td><td>${r.o.rounds.toFixed(1)}</td><td>${r.o.hpLeftWin.toFixed(1)}</td><td>${pct(r.o.deathBy[2])}</td><td class="${r.s.death > 0.15 ? 'lo' : ''}">${pct(r.s.death)}</td><td>${pct(r.s.escape)}</td><td>${pct(tac)}</td><td style="text-align:left">${mix}</td></tr>`;
+    }
+    h += `</tbody></table></div>`;
+  }
+  return h;
+}
+function bindSummary() {
+  const sel = $('#s-preset'); if (sel) sel.onchange = (e) => { UI.preset = e.target.value; UI.knobs = presetParams(UI.preset); render(); };
+  const go = $('#s-go'); if (go) go.onclick = () => computeSummary(UI.preset);
+}
+
+function render() {
+  renderTabs();
+  const panel = $('#panel');
+  if (UI.tab === 'play') { panel.innerHTML = renderPlay(); bindControls(); bindActions(); }
+  if (UI.tab === 'walk') { panel.innerHTML = renderWalk(); bindWalk(); bindActions(); }
+  if (UI.tab === 'summary') { panel.innerHTML = renderSummary(); bindSummary(); }
+  if (UI.tab === 'findings') { panel.innerHTML = FINDINGS; }
+}
+UI.knobs = presetParams(UI.preset);
+render();
+
+</script>
+</body>
+</html>
