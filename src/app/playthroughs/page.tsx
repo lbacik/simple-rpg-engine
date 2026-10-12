@@ -1,11 +1,23 @@
+import type { Metadata } from 'next';
 import { getScenario } from '@/content/registry';
+import { getCatalogue } from '@/i18n/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
+import { getInterfaceLanguage } from '@/app/lib/language';
 import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { getSessionHash } from '@/app/lib/session';
 
 export const dynamic = 'force-dynamic';
 
+export async function generateMetadata(): Promise<Metadata> {
+  const catalogue = getCatalogue(await getInterfaceLanguage());
+  return {
+    title: catalogue.playthroughs.title,
+    description: catalogue.playthroughs.description,
+  };
+}
+
 export default async function PlaythroughsPage() {
+  const catalogue = getCatalogue(await getInterfaceLanguage());
   const sessionHash = await getSessionHash();
   const db = getDatabase();
   const stored = sessionHash
@@ -27,50 +39,57 @@ export default async function PlaythroughsPage() {
   const viewable = entries.filter(
     (entry) => !entry.compatible || entry.playthrough.status !== 'active',
   );
+  const statusOf = (entry: (typeof entries)[number]): string => {
+    if (!entry.compatible) return catalogue.playthroughs.statusIncompatible;
+    return entry.playthrough.status === 'active'
+      ? catalogue.playthroughs.statusActive
+      : catalogue.playthroughs.statusEnded;
+  };
   return (
     <main>
-      <h1>My Playthroughs</h1>
+      <h1>{catalogue.playthroughs.title}</h1>
       {entries.length === 0 ? (
         <p>
-          No Playthroughs yet. <a href="/">Choose a Scenario</a> to begin.
+          {catalogue.playthroughs.empty}{' '}
+          <a href="/">{catalogue.playthroughs.emptyLink}</a>
+          {catalogue.playthroughs.emptySuffix}
         </p>
       ) : (
         <>
-          <h2>Active</h2>
+          <h2>{catalogue.playthroughs.activeHeading}</h2>
           {resumable.length === 0 ? (
-            <p>No active Playthroughs.</p>
+            <p>{catalogue.playthroughs.noActive}</p>
           ) : (
             <ul className="cards">
               {resumable.map((entry) => (
                 <li key={entry.playthrough.id} className="card">
                   <h3>{entry.playthrough.state.character.name}</h3>
                   <p className="meta">
-                    {entry.playthrough.scenarioId} · Active
+                    {entry.playthrough.scenarioId} · {statusOf(entry)}
                   </p>
                   <p>
                     <a className="button secondary" href={`/play/${entry.playthrough.id}`}>
-                      Resume
+                      {catalogue.playthroughs.resume}
                     </a>
                   </p>
                 </li>
               ))}
             </ul>
           )}
-          <h2>Ended or read-only</h2>
+          <h2>{catalogue.playthroughs.endedHeading}</h2>
           {viewable.length === 0 ? (
-            <p>No ended or read-only Playthroughs.</p>
+            <p>{catalogue.playthroughs.noEnded}</p>
           ) : (
             <ul className="cards">
               {viewable.map((entry) => (
                 <li key={entry.playthrough.id} className="card">
                   <h3>{entry.playthrough.state.character.name}</h3>
                   <p className="meta">
-                    {entry.playthrough.scenarioId} ·{' '}
-                    {entry.compatible ? 'Ended' : 'Incompatible'}
+                    {entry.playthrough.scenarioId} · {statusOf(entry)}
                   </p>
                   <p>
                     <a className="button secondary" href={`/play/${entry.playthrough.id}`}>
-                      View
+                      {catalogue.playthroughs.view}
                     </a>
                   </p>
                 </li>

@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { getCatalogue } from '@/i18n/index';
+import { InterfaceLanguageProvider } from './language-context';
 import { getInterfaceLanguage } from './lib/language';
 import { TopNavigation } from './top-navigation';
 
-export const metadata: Metadata = {
-  title: 'Simple RPG Engine',
-  description: 'Single-player RPG adventures in the browser.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const catalogue = getCatalogue(await getInterfaceLanguage());
+  return { title: catalogue.app.title, description: catalogue.app.description };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const language = await getInterfaceLanguage();
@@ -18,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="topnav">
           <TopNavigation language={language} catalogue={catalogue} />
         </header>
-        {children}
+        <InterfaceLanguageProvider language={language}>{children}</InterfaceLanguageProvider>
       </body>
     </html>
   );

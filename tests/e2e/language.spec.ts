@@ -49,6 +49,45 @@ test('a switch in the language menu survives a reload', async ({ page }) => {
   );
 });
 
+test('the collection and character creation are in Polish', async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: BASE_URL, locale: 'pl-PL' });
+  const page = await context.newPage();
+  try {
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
+    await expect(page).toHaveTitle('Scenariusze');
+    await expect(page.getByRole('heading', { name: 'Scenariusze' })).toBeVisible();
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'The Whispering Woods' })
+      .getByRole('link', { name: 'Nowa rozgrywka' })
+      .click();
+    await expect(page).toHaveTitle('Nowa rozgrywka: The Whispering Woods');
+    await expect(page.getByRole('heading', { name: 'The Whispering Woods' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Szablony postaci' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Rozpocznij' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Rozpocznij rozgrywkę' })).toBeVisible();
+    // Scenario text is unchanged: the English description keeps its `lang`.
+    await expect(page.locator('main > p[lang="en"]')).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test('the not-found page is in the Interface Language', async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: BASE_URL, locale: 'pl-PL' });
+  const page = await context.newPage();
+  try {
+    await page.goto('/no-such-page');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
+    await expect(page.getByRole('heading', { name: 'Nie znaleziono strony' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Wróć do scenariuszy' })).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
 test('a switch works with JavaScript disabled', async ({ browser }) => {
   const context = await browser.newContext({ baseURL: BASE_URL, javaScriptEnabled: false });
   const page = await context.newPage();

@@ -1,6 +1,9 @@
 // The start action: creates the Playthrough and, if needed, the Session.
 // Validation runs before anything is created: an empty or over-long name or
 // an unknown Template rejects without creating a Playthrough or a Session.
+// Rejections return errors rendered in the language current when they are
+// shown (docs/spec/architecture.md, interface text): the catalogue of the
+// request's Interface Language.
 
 'use server';
 
@@ -8,7 +11,9 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import { startPlaythrough } from '@/engine/index';
+import { getCatalogue } from '@/i18n/index';
 import { getDatabase, PlaythroughStore, SessionStore } from '@/persistence/index';
+import { getInterfaceLanguage } from './language';
 import { ensureSessionId, hashSessionId } from './session';
 
 export type StartState = { error?: string };
@@ -19,16 +24,17 @@ export async function startPlaythroughAction(
   formData: FormData,
 ): Promise<StartState> {
   const scenario = getScenario(scenarioId);
-  if (!scenario) return { error: 'That Scenario is no longer available.' };
+  const catalogue = getCatalogue(await getInterfaceLanguage());
+  if (!scenario) return { error: catalogue.startForm.unknownScenario };
   const templateId = String(formData.get('templateId') ?? '');
   const name = String(formData.get('name') ?? '');
 
   const engineResult = startPlaythrough(scenario, templateId, name, randomInt);
   if (!engineResult.ok) {
     if (engineResult.reason === 'invalid-name') {
-      return { error: 'Enter a name of 1–40 characters.' };
+      return { error: catalogue.startForm.invalidName() };
     }
-    return { error: 'Choose one of the Character Templates.' };
+    return { error: catalogue.startForm.unknownTemplate };
   }
 
   const { id: sessionId } = await ensureSessionId();
