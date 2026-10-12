@@ -160,16 +160,8 @@ fieldset {
   margin-top: 0;
 }
 
-.compact-summary {
-  display: none;
-  border: 1px solid var(--rule);
-  border-radius: 0.5rem;
-  background: var(--card);
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-}
-
-/* Phone: a single reading column with a compact summary. */
+/* Phone: a single reading column; the inline map moves behind the Map
+ * launcher, which opens it in a modal. */
 @media (max-width: 46rem) {
   .game {
     grid-template-columns: minmax(0, 1fr);
@@ -179,18 +171,14 @@ fieldset {
     position: static;
   }
 
-  .side .full {
+  .side .map-inline {
     display: none;
-  }
-
-  .compact-summary {
-    display: block;
   }
 }
 
 @media (min-width: 46.01rem) {
-  .side .full {
-    display: block;
+  .launcher.map-only {
+    display: none;
   }
 }
 
@@ -203,28 +191,217 @@ fieldset {
   border-radius: 0 0.35rem 0.35rem 0;
 }
 
-/* Character and inventory panel tabs. */
-.tabs {
+/* Side panel: status card, launchers and modals. */
+.status-card {
   display: flex;
-  gap: 0.25rem;
-  margin: 0.75rem 0 0.5rem;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 0.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
 }
 
-.tab {
-  padding: 0.25rem 0.75rem;
-  border: 1px solid transparent;
-  border-radius: 0.35rem;
-  text-decoration: none;
-  color: var(--muted);
+.status-medal {
+  --status-ring-color: #4f7a3a;
+  position: relative;
+  width: 3.2rem;
+  height: 3.2rem;
+  flex: none;
+  border-radius: 50%;
+  background: conic-gradient(var(--status-ring-color) var(--status-health), var(--rule) 0);
+  display: grid;
+  place-items: center;
 }
 
-.tab.active {
-  color: var(--ink);
+.status-medal.low {
+  --status-ring-color: #a8321f;
+}
+
+.status-face {
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
   font-weight: bold;
-  border-color: var(--rule);
+  color: #fff;
+  background: var(--accent);
+}
+
+.status-text {
+  min-width: 0;
+}
+
+.status-text p {
+  margin: 0;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+.status-name {
+  font-size: 1.05rem;
+}
+
+.status-template {
+  margin-bottom: 0.25rem;
+}
+
+/* The 12-segment Health bar: one segment per point of Health. */
+.health-segments {
+  display: flex;
+  gap: 2px;
+  margin-top: 0.3rem;
+}
+
+.health-segments span {
+  width: 0.85rem;
+  height: 0.5rem;
+  border-radius: 1px;
+  background: var(--rule);
+}
+
+.health-segments span.on {
+  background: #4f7a3a;
+}
+
+.health-segments.low span.on {
+  background: #a8321f;
+}
+
+/* Launchers: Character, Inventory, Journal (and Map on phones). */
+.launchers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.launcher {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.6rem 0.25rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: var(--paper);
+  text-decoration: none;
+  color: var(--ink);
+  text-align: center;
+}
+
+.launcher:hover {
+  border-color: var(--accent);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.launcher-icon {
+  color: var(--accent);
+}
+
+.launcher-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.launcher-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+/* Phone: the launchers become a 2x2 grid with the Map launcher. */
+@media (max-width: 46rem) {
+  .launchers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Panel modals: Character, Inventory and (on phones) the map. */
+.panel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem 1rem;
+  background: rgb(42 37 29 / 0.45);
+}
+
+.panel-modal {
+  position: relative;
+  width: min(36rem, 100%);
+  max-height: min(85dvh, 60rem);
+  overflow: auto;
   background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+  padding: 1rem 1.1rem 1.25rem;
+}
+
+.panel-modal:focus {
+  outline: none;
+}
+
+.panel-modal-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panel-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.panel-modal-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  background: var(--card);
+}
+
+.panel-modal-close:hover {
+  border-color: var(--accent);
+}
+
+.panel-modal-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.panel-modal h2:not(.panel-modal-title) {
+  font-size: 1.05rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+/* Phone: modals are full-screen. */
+@media (max-width: 46rem) {
+  .panel-modal-backdrop {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .panel-modal {
+    width: 100%;
+    max-height: none;
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+  }
 }
 
 /* Inventory items. */
@@ -265,10 +442,6 @@ form.inline {
 button[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.compact-summary summary {
-  cursor: pointer;
 }
 
 /* Location map: a plain surface with a fixed aspect ratio (set by the engine),
