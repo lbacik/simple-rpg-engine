@@ -82,6 +82,7 @@ function SlotIcon({ slot }: { slot: EquipmentSlot }) {
  */
 function AttributeRow({
   catalogue,
+  language,
   label,
   base,
   effective,
@@ -89,6 +90,7 @@ function AttributeRow({
   ignored,
 }: {
   catalogue: Catalogue;
+  language: InterfaceLanguage;
   label: string;
   base: number;
   effective: number;
@@ -108,7 +110,7 @@ function AttributeRow({
           />
         ))}
       </span>
-      <span className="sheet-attr-total">{effective}</span>
+      <span className="sheet-attr-total">{formatNumber(language, effective)}</span>
       {counted.length > 0 || ignored.length > 0 ? (
         <span className="sheet-attr-src">
           {catalogue.character.bonusBase(base)}
@@ -182,6 +184,7 @@ export function CharacterSheet({
                 <AttributeRow
                   key={name}
                   catalogue={catalogue}
+                  language={language}
                   label={catalogue.attributes[name]}
                   base={state.character.baseAttributes[name]}
                   effective={effective[name]}

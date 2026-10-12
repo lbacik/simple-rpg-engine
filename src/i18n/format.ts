@@ -1,4 +1,4 @@
-// Number (and date) formatting in the Interface Language
+// Number formatting in the Interface Language
 // (docs/spec/architecture.md, interface text; docs/spec/ui.md, interface text).
 // Framework-free: this module imports no Next.js, React, persistence,
 // content or engine runtime code (types from the engine excepted).
