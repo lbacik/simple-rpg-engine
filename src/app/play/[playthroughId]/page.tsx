@@ -10,9 +10,6 @@ import {
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
   view,
-  type CombatAction,
-  type CombatAvailability,
-  type CombatRoundView,
   type GameView,
 } from '@/engine/index';
 import { equipmentBonusSources, EQUIPMENT_SLOTS } from '@/engine/inventory';
@@ -24,6 +21,7 @@ import { latestJournalEnding, renderJournalEntry } from '@/app/lib/journal';
 import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
 import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { LocationMap } from './map';
+import { CombatPanel } from './combat-panel';
 import { SceneIllustration } from './scene-illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
@@ -380,221 +378,6 @@ function ItemActions({
     );
   }
   return null;
-}
-
-type CombatView = Extract<GameView, { kind: 'combat' }>;
-
-function combatActionById(
-  actions: CombatAvailability[],
-  id: CombatAction,
-): CombatAvailability {
-  const found = actions.find((action) => action.id === id);
-  if (found !== undefined) return found;
-  // The engine always returns every action; this fallback only keeps the
-  // panel rendering if that ever changes.
-  const group =
-    id === 'advance' || id === 'fall-back'
-      ? 'Position'
-      : id === 'attack' || id === 'defend'
-        ? 'Fight'
-        : id === 'use-item'
-          ? 'Items'
-          : 'Leave';
-  return { id, group, label: id, enabled: false };
-}
-
-function CombatActionButton({
-  availability,
-  playthroughId,
-  step,
-}: {
-  availability: CombatAvailability;
-  playthroughId: string;
-  step: number;
-}) {
-  if (!availability.enabled) {
-    return (
-      <p>
-        <button className="button" type="button" disabled>
-          {availability.label}
-        </button>{' '}
-        {availability.reason ? <span className="reason">{availability.reason}</span> : null}
-      </p>
-    );
-  }
-  return (
-    <form action={combatAction} className="inline">
-      <input type="hidden" name="playthroughId" value={playthroughId} />
-      <input type="hidden" name="expectedStep" value={step} />
-      <input type="hidden" name="combat" value={availability.id} />
-      {availability.itemId !== undefined ? (
-        <input type="hidden" name="item" value={availability.itemId} />
-      ) : null}
-      <p>
-        <button className="button" type="submit">
-          {availability.label}
-        </button>
-      </p>
-    </form>
-  );
-}
-
-/**
- * The Combat panel (docs/spec/ui.md, Combat panel): the Encounter's opening
- * narration, the Range strip with both tokens (Health, weapon, Reach, the
- * Enemy's name) and the "guard up" marker, actions grouped as Position,
- * Fight, Items and Leave with unavailable ones disabled and the reason, and a
- * log of the current Combat's rolls.
- */
-function CombatPanel({
-  combat,
-  playthroughId,
-  step,
-  guardUp,
-  rounds,
-  consumables,
-}: {
-  combat: CombatView;
-  playthroughId: string;
-  step: number;
-  /** Derived from the latest round's Journal entry; never stored. */
-  guardUp: boolean;
-  /** The rolls of the current Combat, since its opening narration. */
-  rounds: CombatRoundView[];
-  consumables: { itemId: string; name: string }[];
-}) {
-  return (
-    <>
-      <h1>{combat.encounterName}</h1>
-      <div
-        dangerouslySetInnerHTML={{
-          __html: renderNarration(combat.text, combat.characterName),
-        }}
-      />
-      <section aria-label="Range">
-        <h2>Range: {combat.range === 'near' ? 'Near' : 'Far'}</h2>
-        <p className="meta">Round {combat.round}</p>
-        <div className="range-strip">
-          {(['near', 'far'] as const).map((zone) => (
-            <div
-              key={zone}
-              className={zone === combat.range ? 'zone current' : 'zone'}
-              aria-label={zone === 'near' ? 'Near' : 'Far'}
-            >
-              <h3>{zone === 'near' ? 'Near' : 'Far'}</h3>
-              {zone === combat.range ? (
-                <>
-                  <div className="token" aria-label={combat.characterName}>
-                    <p>
-                      <strong>{combat.characterName}</strong> · Health {combat.character.health}/
-                      {combat.character.maxHealth}
-                    </p>
-                    <p className="meta">
-                      {combat.character.weaponName} · {combat.character.reach} · Damage{' '}
-                      {combat.character.damage}
-                    </p>
-                    {guardUp ? <p className="guard">Guard up</p> : null}
-                  </div>
-                  <div className="token" aria-label={combat.enemy.name}>
-                    <p>
-                      <strong>{combat.enemy.name}</strong> · Health {combat.enemy.health}/
-                      {combat.enemy.maxHealth}
-                    </p>
-                    <p className="meta">
-                      {combat.enemy.reach} · Damage {combat.enemy.damage}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <p className="meta">—</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-      <section aria-label="Position">
-        <h2>Position</h2>
-        <CombatActionButton
-          availability={combatActionById(combat.actions, 'advance')}
-          playthroughId={playthroughId}
-          step={step}
-        />
-        <CombatActionButton
-          availability={combatActionById(combat.actions, 'fall-back')}
-          playthroughId={playthroughId}
-          step={step}
-        />
-      </section>
-      <section aria-label="Fight">
-        <h2>Fight</h2>
-        <CombatActionButton
-          availability={combatActionById(combat.actions, 'attack')}
-          playthroughId={playthroughId}
-          step={step}
-        />
-        <CombatActionButton
-          availability={combatActionById(combat.actions, 'defend')}
-          playthroughId={playthroughId}
-          step={step}
-        />
-      </section>
-      <section aria-label="Items">
-        <h2>Items</h2>
-        {consumables.length === 0 ? (
-          <p className="meta">No Consumables held.</p>
-        ) : (
-          consumables.map((consumable) => {
-            const availability = combat.actions.find(
-              (action) => action.id === 'use-item' && action.itemId === consumable.itemId,
-            ) ?? {
-              id: 'use-item' as const,
-              group: 'Items' as const,
-              label: `Use ${consumable.name}`,
-              enabled: false,
-              itemId: consumable.itemId,
-            };
-            return (
-              <CombatActionButton
-                key={consumable.itemId}
-                availability={availability}
-                playthroughId={playthroughId}
-                step={step}
-              />
-            );
-          })
-        )}
-      </section>
-      <section aria-label="Leave">
-        <h2>Leave</h2>
-        <CombatActionButton
-          availability={combatActionById(combat.actions, 'escape')}
-          playthroughId={playthroughId}
-          step={step}
-        />
-      </section>
-      <section aria-label="Combat log">
-        <h2>Log</h2>
-        {rounds.length === 0 ? (
-          <p className="meta">No rolls yet.</p>
-        ) : (
-          rounds.map((round) => (
-            <div key={round.round}>
-              <p>
-                Round {round.round}: {round.text}
-              </p>
-              {round.rolls.map((roll, index) => (
-                <p key={index} className="meta">
-                  {roll.side === 'character' ? combat.characterName : combat.enemy.name}:{' '}
-                  {roll.die1}+{roll.die2}+{roll.modifier}={roll.total} vs {roll.target} —{' '}
-                  {roll.hit ? `hit, ${roll.damage} Damage` : 'miss'}
-                </p>
-              ))}
-            </div>
-          ))
-        )}
-      </section>
-    </>
-  );
 }
 
 /** Query helpers shared by the compatible and incompatible game screens. */
@@ -1000,6 +783,7 @@ export default async function PlayPage({
               guardUp={guardUp}
               rounds={combatLog}
               consumables={combatConsumables}
+              formAction={combatAction}
             />
           ) : (
             <>

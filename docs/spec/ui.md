@@ -73,11 +73,12 @@ The order within the column is always:
 
 ### Combat panel
 
-During Combat, the reading column shows the Encounter's opening narration and the Combat panel (mockup variant B):
+During Combat, the reading column shows the Combat panel, while the side panel (map, Character and Inventory) stays visible:
 
-- a **Range strip** with the two combatants' tokens at Near or Far, each with Health, weapon and Reach (the Enemy's `name`), and a "guard up" marker on the Character's token when the latest round was a Defend. The marker is derived from that round's Journal entry: the Defend bonus is never stored, because it expires within the turn it was chosen, so the marker shows the guard that was in effect during the Enemy's response just resolved;
-- actions grouped as **Position** (Advance, Fall back), **Fight** (Attack, Defend), **Items** (Consumables) and **Leave** (Escape), with unavailable ones disabled and the reason given (for example "Your sword needs Near Range");
-- a log of the rolls of the current Combat.
+- a **header**: a small uppercase kicker (`Combat · <Location name> · Round <n>`), the Encounter name as `h1`, then the opening narration (muted italic) and a bottom rule;
+- a one-line **Range arena**: a bordered card with a ground line and the Range label (`NEAR` / `FAR`) at the bottom. Character and Enemy sit on one line as medallions (an initial in a coloured disc surrounded by a Health ring, red at low Health; name, `health/max` and the weapon/Reach/Damage line below, the Enemy's Reach and Damage). At **Near** the medallions stand side by side in the centre with a crossed-swords mark between them; at **Far** they sit at opposite edges with a `‹ — — Far — — ›` marker in the middle. A small "guard up" badge on the Character's ring shows when the latest round was a Defend. The marker is derived from that round's Journal entry: the Defend bonus is never stored, because it expires within the turn it was chosen, so the marker shows the guard that was in effect during the Enemy's response just resolved. Medallions animate on a Range change, honouring `prefers-reduced-motion`;
+- actions in four columns: **Position** (Advance, Fall back), **Fight** (Attack, Defend), **Items** (one button per held Consumable, or "No Consumables held.") and **Leave** (Escape), with unavailable ones disabled and the reason given (for example "Your sword needs Near Range"). On phone width the columns become a 2×2 grid;
+- a log of the rolls of the current Combat, newest first: a "Last round · `<n>`" callout holding that round's text and its rolls as chips, then the older rounds as a compact muted list ("No rolls yet." before the first roll). A roll reads `<name>: d1+d2+mod = total vs target — hit, N Damage | success | miss`; a hit that deals no Damage (Fall back, Escape) reads "success".
 
 After Combat, the victory or escape Outcome is shown as a result panel, or the brief Enemy-defeated notice when the Encounter has no victory Outcome.
 
