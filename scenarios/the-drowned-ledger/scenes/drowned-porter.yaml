@@ -1,4 +1,5 @@
 id: drowned-porter
+illustration: drowned-porter
 title: The Porter Who Still Checks Tickets
 trigger: on-demand
 repeatable: true

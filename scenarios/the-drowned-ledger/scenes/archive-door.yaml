@@ -1,4 +1,5 @@
 id: archive-door
+illustration: archive-door
 title: The Clerk Behind the Lattice
 trigger: on-demand
 repeatable: true

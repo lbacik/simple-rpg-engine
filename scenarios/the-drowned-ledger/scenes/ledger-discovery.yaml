@@ -1,4 +1,5 @@
 id: ledger-discovery
+illustration: ledger-discovery
 title: The Ledger That Never Balanced
 trigger: on-demand
 repeatable: true

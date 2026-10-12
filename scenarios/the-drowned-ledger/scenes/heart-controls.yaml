@@ -1,4 +1,5 @@
 id: heart-controls
+illustration: heart-controls
 title: The Account Desk
 trigger: on-demand
 repeatable: true

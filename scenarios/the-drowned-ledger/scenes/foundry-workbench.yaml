@@ -1,4 +1,5 @@
 id: foundry-workbench
+illustration: foundry-workbench
 title: Cast the Replacement Weight
 trigger: on-demand
 repeatable: true

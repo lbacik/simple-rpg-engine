@@ -1,4 +1,5 @@
 id: relief-table
+illustration: relief-table
 title: Supplies at the Well
 trigger: on-demand
 when:

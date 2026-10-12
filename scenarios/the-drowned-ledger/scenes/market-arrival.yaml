@@ -1,4 +1,5 @@
 id: market-arrival
+illustration: market-arrival
 title: A Tide That Has Forgotten Its Hour
 trigger: on-enter
 text: |

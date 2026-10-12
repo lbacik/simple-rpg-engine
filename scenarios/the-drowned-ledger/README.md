@@ -4,7 +4,9 @@ An English Scenario about a failing harbour wall, a submerged district, and the 
 
 The package contains 16 Locations, 43 Scenes, four Character Templates, four optional Encounters, 20 items and seven Endings. For comparison, The Whispering Woods contains seven Locations and 14 Scenes. This Scenario adds an investigation, three maintenance tasks, rescue work, a witnessed agreement and a finale with four possible approaches.
 
-All content is text. Illustrations and image catalogs are deliberately omitted; no missing assets or placeholder image references are needed to play. Map coordinates describe the Location graph and are not image assets.
+The package includes 59 sketch Illustrations: one for each of its 16 Locations and 43 Scenes. Broken ink and graphite lines, selective crosshatching and warm ivory paper follow the sketch references supplied in `tmp/`. Each Illustration is optional and has English alternative text in `images.yaml`. Map coordinates describe the Location graph and are not image assets.
+
+Browse the complete set in [the illustration gallery](images/index.html). The images are 1536 × 1024 WebP files in `images/`, each below the engine's 2 MiB limit. The [prompt set](images/prompts.json) records the prompts used with the built-in image generation tool, including the two final corrections. Scene compositions show the narrated moment before the player's decision; the four resolution Scenes do not depict their completed Endings.
 
 ## Story and pacing
 

@@ -1,0 +1,236 @@
+# Package-local illustrations. Alternative text follows the Scenario's language.
+- id: loc-archive-vault
+  path: images/loc-archive-vault.webp
+  alt: "Shelves of dry books surround a register under a glass paperweight in the protected reading room."
+
+- id: loc-archive
+  path: images/loc-archive.webp
+  alt: "Salted archive steps lead to a bronze entrance lattice decorated with ribbon and folded paper boats."
+
+- id: loc-bell-chamber
+  path: images/loc-bell-chamber.webp
+  alt: "A tidal bell hangs mouth-down over a dark well, beside a restrained clapper and the seated keeper."
+
+- id: loc-causeway
+  path: images/loc-causeway.webp
+  alt: "A narrow stone causeway runs between walls of held water toward a signal tower and a bronze door."
+
+- id: loc-cistern
+  path: images/loc-cistern.webp
+  alt: "Grating islands cross the overflow cistern toward a tool cage and a diving cradle beside a flooded glass duct."
+
+- id: loc-foundry
+  path: images/loc-foundry.webp
+  alt: "Tram rails enter a foundry filled with furnaces and casting moulds, where a ghostly smith works at an anvil."
+
+- id: loc-greyhaven
+  path: images/loc-greyhaven.webp
+  alt: "Fish stalls and sandbags surround Greyhaven's market well above a basin of submerged rooftops."
+
+- id: loc-heart-vault
+  path: images/loc-heart-vault.webp
+  alt: "A brass cylinder turns beneath a stylus inside a beam cage, surrounded by the engine controls and ledger desk."
+
+- id: loc-lockhouse
+  path: images/loc-lockhouse.webp
+  alt: "Three pressure gauges and a barred inspection stair inside the northern lockhouse."
+
+- id: loc-pump-hall
+  path: images/loc-pump-hall.webp
+  alt: "Three enormous pistons, a maintenance board and a handwheel stand beneath a ceiling of suspended water."
+
+- id: loc-quay
+  path: images/loc-quay.webp
+  alt: "A fallen loading crane traps a ferry beside a warehouse with people stranded on its roof."
+
+- id: loc-refuge
+  path: images/loc-refuge.webp
+  alt: "A long table and drying blankets fill the island refuge, with both harbour districts visible through a window."
+
+- id: loc-signal-tower
+  path: images/loc-signal-tower.webp
+  alt: "A six-shutter lantern crowns the signal tower above the sea, with a speaking pipe beside the platform."
+
+- id: loc-stairwell
+  path: images/loc-stairwell.webp
+  alt: "An iron inspection stair coils down a deep shaft toward a dry tunnel and a hovering porter."
+
+- id: loc-sunken-square
+  path: images/loc-sunken-square.webp
+  alt: "A dry square with a fountain and overturned memorial lies beneath a vault of seawater and swimming fish."
+
+- id: loc-watch-house
+  path: images/loc-watch-house.webp
+  alt: "Wet coats dry above a stove in the watch house, beside maps, a desk and a locked cupboard."
+
+- id: archive-door
+  path: images/archive-door.webp
+  alt: "Paper boats hang from the archive lattice, with an empty clerk's chair visible beyond."
+
+- id: beacon-lighting
+  path: images/beacon-lighting.webp
+  alt: "An oil flask and emergency locker sit beside the signal lantern's open reservoir."
+
+- id: captain-confession
+  path: images/captain-confession.webp
+  alt: "Mara places an old evacuation order with a blank passenger list beside the ledger."
+
+- id: causeway-crossing
+  path: images/causeway-crossing.webp
+  alt: "The replacement weight waits below an empty socket in the causeway door's brake linkage."
+
+- id: cistern-arrival
+  path: images/cistern-arrival.webp
+  alt: "Tamsin signals through the flooded inspection duct beside an intact air hose and speaking tube."
+
+- id: cistern-cache
+  path: images/cistern-cache.webp
+  alt: "A bronze locking pin, two medical tins and clean cord wait inside the unlocked tool cage."
+
+- id: cistern-diver
+  path: images/cistern-diver.webp
+  alt: "The trapped diver watches from behind glass as a hand steadies the drain lever beside the pressure gauge."
+
+- id: descent-preparations
+  path: images/descent-preparations.webp
+  alt: "A seal socket, pressure wheel and manual release guard the inspection stair door."
+
+- id: drowned-porter
+  path: images/drowned-porter.webp
+  alt: "The hovering porter presents a dry visitors book and ticket punch as bubbles rise from his mouth."
+
+- id: ferry-crossing
+  path: images/ferry-crossing.webp
+  alt: "Bram stands beside the freed ferry at a floating pontoon, with passengers waiting to board."
+
+- id: ferry-rescue
+  path: images/ferry-rescue.webp
+  alt: "Bram holds the winch brake while a mother and child watch the rescue lines from the warehouse roof."
+
+- id: foundry-sentinel
+  path: images/foundry-sentinel.webp
+  alt: "An iron-masked foreman in a leather apron stands between the furnace and the workbench."
+
+- id: foundry-workbench
+  path: images/foundry-workbench.webp
+  alt: "Nera stands beside the prepared counterweight mould and casting frame in the salt foundry."
+
+- id: heart-controls
+  path: images/heart-controls.webp
+  alt: "The open ledger waits beside the stylus, steady pressure gauge and engine control levers."
+
+- id: heart-threshold
+  path: images/heart-threshold.webp
+  alt: "A faceless auditor made of tally sticks extends a hand before the turning brass cylinder."
+
+- id: keeper-answer
+  path: images/keeper-answer.webp
+  alt: "Hester offers her brass authority plate beside the hatch to the heart vault."
+
+- id: keeper-audience
+  path: images/keeper-audience.webp
+  alt: "Hester turns from the bell chain, her human hands resting over a water-stained engineer's coat."
+
+- id: keeper-truth
+  path: images/keeper-truth.webp
+  alt: "Hester touches the restrained clapper while recalling the engine's history."
+
+- id: ledger-account
+  path: images/ledger-account.webp
+  alt: "Open maintenance notes connect the pumps, counterweight and sea wall beside the original account."
+
+- id: ledger-discovery
+  path: images/ledger-discovery.webp
+  alt: "The original ledger lies open, its accounts turning into lists of names and crossed-out margin notes."
+
+- id: lockhouse-arrival
+  path: images/lockhouse-arrival.webp
+  alt: "A maintenance apprentice stands beside pressure gauges and a stool propping up the alarm lever."
+
+- id: market-arrival
+  path: images/market-arrival.webp
+  alt: "Ivo approaches the market well carrying a rolled chart and tea while a mother holds her child close."
+
+- id: progress-report
+  path: images/progress-report.webp
+  alt: "Ivo compares observations on a survey chart pinned to the market well shelter."
+
+- id: pump-arrival
+  path: images/pump-arrival.webp
+  alt: "A shadowy worker repeats a wrenching motion behind the only working piston."
+
+- id: pump-calibration
+  path: images/pump-calibration.webp
+  alt: "A bronze locking pin is poised beside the handwheel and three bypass valves."
+
+- id: quay-arrival
+  path: images/quay-arrival.webp
+  alt: "Bram reaches from the quay for a loose rope while his ferry remains trapped beneath the crane."
+
+- id: refuge-arrival
+  path: images/refuge-arrival.webp
+  alt: "Sella sets out more cups as translucent visitors hesitate at the island cottage doorway."
+
+- id: refuge-rest
+  path: images/refuge-rest.webp
+  alt: "A bowl of hot broth and a dry blanket wait beside the refuge kitchen stove."
+
+- id: relief-table
+  path: images/relief-table.webp
+  alt: "Ada cuts linen into bandages on boards across the market well as a small queue waits."
+
+- id: resolution-break
+  path: images/resolution-break.webp
+  alt: "Two hands rest beside the destructive lever while the engine's retaining cage remains intact."
+
+- id: resolution-covenant
+  path: images/resolution-covenant.webp
+  alt: "A witness ribbon crosses the ledger as Hester reviews the correction before it is signed."
+
+- id: resolution-evacuation
+  path: images/resolution-evacuation.webp
+  alt: "Hester checks the ferry report beside the controls for the south spillway."
+
+- id: resolution-keeper
+  path: images/resolution-keeper.webp
+  alt: "Hester places a blank page beneath the stylus for a willing keeper's name."
+
+- id: smith-memory
+  path: images/smith-memory.webp
+  alt: "Nera offers the counterweight in wet sacking, showing the imprint of a ring on her open hand."
+
+- id: square-arrival
+  path: images/square-arrival.webp
+  alt: "A ghostly woman washes a cup in the dry fountain while pale passengers watch from an old tram."
+
+- id: stairwell-descent
+  path: images/stairwell-descent.webp
+  alt: "Lamplight reveals a corroded gap in the iron stair, with a sound handrail beside it."
+
+- id: street-memorial
+  path: images/street-memorial.webp
+  alt: "A tram rail levers the memorial face up, revealing rows of names beside a small brass house plate."
+
+- id: tower-arrival
+  path: images/tower-arrival.webp
+  alt: "A ghostly archer guards the tower lantern above a harbour of boats, rooftops and washing lines."
+
+- id: tower-watch
+  path: images/tower-watch.webp
+  alt: "The tower watchman holds his bow low while a survey chart directs attention toward the rising tide."
+
+- id: town-briefing
+  path: images/town-briefing.webp
+  alt: "Ivo spreads a harbour chart across an empty fish stall and points toward the lockhouse."
+
+- id: watch-captain
+  path: images/watch-captain.webp
+  alt: "Captain Venn rests her hand on a brass survey seal beside the watch-house stove."
+
+- id: watch-stores
+  path: images/watch-stores.webp
+  alt: "A harbour blade, padded coat and shuttered lamp lie ready on the watch-house table."
+
+- id: witness-council
+  path: images/witness-council.webp
+  alt: "Living residents and translucent witnesses gather around the open ledger at the refuge table."

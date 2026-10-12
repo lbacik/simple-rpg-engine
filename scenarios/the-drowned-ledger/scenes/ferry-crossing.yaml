@@ -1,4 +1,5 @@
 id: ferry-crossing
+illustration: ferry-crossing
 title: A Place for Every Passenger
 trigger: on-demand
 repeatable: true

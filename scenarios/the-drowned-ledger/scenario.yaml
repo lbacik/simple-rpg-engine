@@ -106,3 +106,5 @@ templates:
   - templates.yaml
 endings:
   - endings.yaml
+images:
+  - images.yaml

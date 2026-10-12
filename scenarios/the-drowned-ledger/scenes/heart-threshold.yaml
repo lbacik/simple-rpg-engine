@@ -1,4 +1,5 @@
 id: heart-threshold
+illustration: heart-threshold
 title: The Auditor of Borrowed Hours
 trigger: on-enter
 repeatable: true

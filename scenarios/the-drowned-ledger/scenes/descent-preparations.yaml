@@ -1,4 +1,5 @@
 id: descent-preparations
+illustration: descent-preparations
 title: Open the Inspection Stair
 trigger: on-demand
 repeatable: true

@@ -1,4 +1,5 @@
 id: pump-calibration
+illustration: pump-calibration
 title: Reset the Bypass Circuit
 trigger: on-demand
 repeatable: true

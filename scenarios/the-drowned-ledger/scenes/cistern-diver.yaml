@@ -1,4 +1,5 @@
 id: cistern-diver
+illustration: cistern-diver
 title: Release the Diving Cradle
 trigger: on-demand
 repeatable: true

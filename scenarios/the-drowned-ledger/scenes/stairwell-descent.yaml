@@ -1,4 +1,5 @@
 id: stairwell-descent
+illustration: stairwell-descent
 title: The Missing Tread
 trigger: on-enter
 text: |

@@ -1,4 +1,5 @@
 id: tower-arrival
+illustration: tower-arrival
 title: The Harbour in Miniature
 trigger: on-enter
 text: |

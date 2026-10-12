@@ -1,4 +1,5 @@
 id: ferry-rescue
+illustration: ferry-rescue
 title: Free Mercy and Rescue the Roof
 trigger: on-demand
 repeatable: true

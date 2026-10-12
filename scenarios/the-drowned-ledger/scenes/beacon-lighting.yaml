@@ -1,4 +1,5 @@
 id: beacon-lighting
+illustration: beacon-lighting
 title: Prepare the Three-Flash Signal
 trigger: on-demand
 repeatable: true
