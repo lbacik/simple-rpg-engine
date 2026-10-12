@@ -73,8 +73,12 @@ An anonymous browser session created automatically; it owns any number of Playth
 _Avoid_: User, account
 
 **Interface Language**:
-The language a player has chosen for the engine's own text; it also selects which Translation of a Scenario is shown, falling back to the Base Language.
+The language a player has chosen for the Interface Text; it also selects which Translation of a Scenario is shown, falling back to the Base Language.
 _Avoid_: Locale, UI locale
+
+**Interface Text**:
+Everything a player reads that does not come from a Scenario: the engine's labels, messages and names for its own vocabulary; always shown in the Interface Language.
+_Avoid_: UI strings, chrome, messages
 
 **Playthrough**:
 One run of a Scenario by a player, with its own Character and state.

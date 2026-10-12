@@ -110,7 +110,7 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
    | `damage` | Health − n; at ≤ 0, set Health to 0, skip the remaining Effects and the transition, and end on the death Ending (appending the Ending entry) |
    | `reveal` | add the Location to `revealed` (a no-op if visited) |
 
-   Each state change is appended to the Journal (for example "received: rope", "−3 Health").
+   Each state change is appended to the Journal (for example "received: rope", "−3 Health"), except a Flag change: Flags are the author's internal memory, their ids are not text, and they are never presented to the player. The engine reports every state change as a structured value (kind, content ids, numbers), and its wording comes from the Interface Text catalogue ([architecture.md](architecture.md#interface-text)).
 3. Apply the transition:
 
    | Transition | Result |
@@ -141,7 +141,7 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
   - Choice taken;
   - Test (Attribute, Difficulty, both dice, modifier, total, success or failure);
   - Outcome narration;
-  - state change from an Effect;
+  - state change from an Effect, other than a Flag change;
   - travel;
   - Combat start (opening narration);
   - Combat round (actions, rolls, Damage, Range change);

@@ -1,6 +1,6 @@
 # Architecture
 
-How the prototype is built: hosting, repository shape, the engine contract, turn handling, Sessions, persistence and asset serving. Background research: [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
+How the prototype is built: hosting, repository shape, the engine contract, turn handling, Sessions, the Interface Language, persistence and asset serving. Background research: [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
 
 ## Hosting and stack
 
@@ -15,13 +15,14 @@ A single npm package (no workspaces):
 
 | Directory | Contents | May not import |
 |---|---|---|
-| `src/engine` | pure rules: `startPlaythrough`, `applyAction`, `view` | `next/*`, `server-only`, `react`, `src/persistence` |
+| `src/engine` | pure rules: `startPlaythrough`, `applyAction`, `view` | `next/*`, `server-only`, `react`, `src/persistence`, `src/i18n` |
 | `src/content` | the YAML loader, Zod definitions, validator, content hash | `next/*`, `server-only`, `react`, `src/persistence` |
+| `src/i18n` | the Interface Language list, the Interface Text catalogues, the plural helper, the `Accept-Language` matcher ([Interface Text](#interface-text)) | `next/*`, `server-only`, `react`, `src/persistence`, `src/engine` (types excepted), `src/content` |
 | `src/persistence` | the store ports and their Kysely implementation, migrations | |
 | `src/app` | the Next.js App Router application | |
 | `src/cli` | the validation CLI (`npm run validate <dir>`, run with `tsx`) | |
 
-An ESLint `no-restricted-imports` rule enforces the import boundaries, so the CLI can reuse `src/content` and `src/engine` unchanged.
+An ESLint `no-restricted-imports` rule enforces the import boundaries, so the CLI can reuse `src/content` and `src/engine` unchanged. `src/i18n` may import types from `src/engine` (for example the Attribute ids its catalogues name), but no runtime code.
 
 Scenario packages live in `scenarios/` at the repository root (the server-side Scenario directory).
 
@@ -43,6 +44,7 @@ view(scenario, state): GameView
 - `loadScenario` runs the four validation phases and each Translation's own pipeline ([validation.md](validation.md)) and returns either an **immutable, compiled model** with references resolved and only the Translations that passed, together with its warnings and the diagnostics of every rejected Translation, or all the diagnostics of the run that rejected it. It also computes the **content hash** and reads each image's dimensions and hash. Shared by the CLI and the app.
 - `applyAction` is synchronous, deterministic for a given `rng`, and does no I/O. It checks `action.expectedStep === state.step` as a domain rule, then legality against the current position ([playthrough-state.md](playthrough-state.md#actions-and-the-step-guard)). It returns only the **new** Journal entries.
 - `view` is the derived projection the UI renders: the current narration, visible Choices, visible Connections, on-demand Scenes on offer, map nodes and lines, effective Attributes, inventory with available item actions, Combat state and available Combat actions (with reasons for unavailable ones), and the latest result entries.
+- **The engine produces no Interface Text** ([ADR 0003](../adr/0003-interface-text-from-a-typed-catalogue.md)). Everything it would say in its own words is a structured value: a kind plus content ids and numbers. This covers Test results, Combat rounds (each action and roll), state changes from Effects, inventory actions, Combat end and the Enemy-defeated notice, available and unavailable actions with a reason code, and the names of its own vocabulary (Attribute, Difficulty, Range, Reach, slot ids). Each event carries every id and number its message needs, for example the item id and quantity of a `give-item`, the item id and Health restored by a Consumable, the Enemy id of a defeat. The app renders these through the catalogue, resolving names from the Scenario text in the language shown ([Interface Text](#interface-text)). Scenario text itself (narration, titles, names) keeps flowing through the engine as content, with `{name}` substituted.
 - `rng` is injected. Production uses `crypto.randomInt(1, 7)` per die and stores no seed. Tests use a deterministic RNG.
 - The `state` document carries a `stateVersion` and is validated with Zod when read.
 
@@ -58,6 +60,27 @@ view(scenario, state): GameView
 - Cookie value: a random 256-bit id, base64url-encoded. Attributes: `HttpOnly`, `SameSite=Lax`, `Secure` in production, `Path=/`, `Max-Age` 400 days, refreshed on every action (sliding).
 - The database stores only a **hash** of the id (`sessions(id_hash, created_at, last_seen_at)`), never the raw value.
 - Losing the cookie loses access to its Playthroughs. This is accepted because accounts are out of scope. No expiry or cleanup.
+
+## Interface Language
+
+- The Interface Languages are `en` and `pl`, defined once in `src/i18n` as `INTERFACE_LANGUAGES` with the type `InterfaceLanguage`. The validator's `translation/not-interface-language` rule and the app import that list.
+- A server-only `getInterfaceLanguage()` in `src/app/lib` resolves the language on every request: the language cookie when its value is an Interface Language (any other value is ignored, since cookies are client-controlled), else the [RFC 4647 Lookup](https://www.rfc-editor.org/rfc/rfc4647#section-3.4) match of `Accept-Language` against the Interface Languages by primary language subtag (`q` honoured, `q=0` and `*` skipped, malformed tags skipped), else `en`.
+- The negotiated default is **not** written to a cookie: the cookie is set only when the player switches. There is still no Proxy and no `Set-Cookie` on a plain GET. The language is not stored with the Session or the Playthrough.
+- Switching is a Server Action that sets the cookie (`HttpOnly`, `SameSite=Lax`, `Secure` in production, `Path=/`, `Max-Age` 400 days) and refreshes the current page, without JavaScript too. Where the switcher sits is in [ui.md](ui.md).
+- Every page is already dynamic, so reading the cookie and `Accept-Language` costs nothing in rendering or caching. A `use cache` function, if one is ever added, takes the language as an argument.
+
+## Interface Text
+
+Recorded in [ADR 0003](../adr/0003-interface-text-from-a-typed-catalogue.md).
+
+- **One catalogue per Interface Language** in `src/i18n` (`en.ts`, `pl.ts`): a typed TypeScript object, not JSON. The `en` object's shape defines the `Catalogue` type, and `pl` is declared as a `Catalogue`. Messages with arguments are functions with typed parameters.
+- **Completeness is checked at compile time.** A missing message or a wrong signature in either catalogue fails `tsc`, and so the build. There is no runtime fallback from one catalogue to another. A unit test also checks that both catalogues have the same set of keys at run time, for code that slips past the types.
+- **Plurals** use a small helper over `Intl.PluralRules`, cached per language, with the categories typed per language: `one | other` for `en`, `one | few | many | other` for `pl`. A missing category is a type error.
+- **Scenario names in messages.** A message places a Scenario-provided name (item, Enemy, Location, Character, Scenario title) only where its language needs no inflection: as a label, after a colon, or in the nominative. Polish messages are therefore label-shaped where a name is involved ("Atak: Miecz (4+3+1=8 vs 7) — trafienie, 3 obrażenia", "Pokonano: Wilk"). English messages may be sentences. Scenario text is never case-transformed.
+- **Rendering happens in `src/app`.** Server Components and Server Actions call `getCatalogue(await getInterfaceLanguage())` and render the engine's structured values with it. Client Components receive rendered strings as props. No catalogue is shipped to the browser.
+- Notices after a rejected action are rendered from their codes on the page the action redirects to, so they appear in the language current at that moment.
+- Numbers (and any dates) are formatted with `Intl`, using the Interface Language.
+- **Out of the catalogue**: validation diagnostics and the CLI's own output stay in English ([validation.md](validation.md#diagnostic-format)), because they are read by Scenario authors, not players. So do server logs and the asset route's plain `Not found`.
 
 ## Scenario collection
 
@@ -131,7 +154,8 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 
 ## Testing strategy
 
-- **Engine**: unit tests of the pure functions with a deterministic RNG. The example Scenario is a fixture.
+- **Engine**: unit tests of the pure functions with a deterministic RNG. The example Scenario is a fixture. Tests assert structured events, not wording.
+- **Interface Text**: the catalogue key-parity test, the plural helper (Polish `one`/`few`/`many`/`other` boundaries such as 1, 2, 5, 12, 22, 25, 112), and the `Accept-Language` matcher (`pl-PL,pl;q=0.9,en;q=0.8` → `pl`, `de-DE,pl;q=0.5` → `pl`, `pl;q=0,en;q=0.1` → `en`, `*`, malformed and missing headers → `en`).
 - **Loader and validator**: valid and invalid fixture packages; the example Scenario must produce no diagnostics.
 - **Persistence**: port tests against in-memory SQLite, including a race test: two actions with the same `step`, exactly one succeeds.
 - **End to end**: one Playwright smoke test: start a Playthrough, take one Choice, reload.
@@ -143,3 +167,6 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (asset route, content hash coverage)
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109) (`Diagnostic[]` from `loadScenario`)
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md)
+- [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (catalogue, Interface Language resolution, the engine's structured output)
+- [i18n approach for the Next.js 16 App Router](https://github.com/lbacik/simple-rpg-engine/issues/59) (research)
+- [ADR 0003: the engine emits no Interface Text](../adr/0003-interface-text-from-a-typed-catalogue.md)
