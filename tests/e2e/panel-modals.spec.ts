@@ -124,9 +124,12 @@ test('the phone Map launcher opens the map and travels from it', async ({ page }
     .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(page.url()).not.toMatch(/panel=/);
+  // Travelling to Forest Edge opens its arrival scene ("The Whispering
+  // Trees") instead of the bare Location view.
   await expect(
     page
       .getByRole('heading', { name: 'Forest Edge' })
-      .or(page.getByRole('link', { name: 'Continue' })),
+      .or(page.getByRole('link', { name: 'Continue' }))
+      .or(page.getByRole('heading', { name: 'The Whispering Trees' })),
   ).toBeVisible();
 });
