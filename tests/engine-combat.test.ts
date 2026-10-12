@@ -320,7 +320,7 @@ describe('start-combat', () => {
     expect(result.state.activeSceneId).toBeNull();
     expect(result.state.encounterDamage['arena-melee']).toBe(0);
     const start = result.journal.find((entry) => entry.type === 'combat-start');
-    expect(start).toMatchObject({ encounterId: 'arena-melee' });
+    expect(start).toMatchObject({ encounterId: 'arena-melee', enemyName: 'Training Dummy' });
     expect((start as Extract<NewJournalEntry, { type: 'combat-start' }>).text).toContain(
       'The arena-melee begins.',
     );
@@ -370,6 +370,11 @@ describe('the hit formula', () => {
       target: 8,
       hit: true,
       damage: 3,
+    });
+    expect(roundsOf(result.journal)[0]).toMatchObject({
+      action: 'attack',
+      enemyName: 'Training Dummy',
+      weaponName: 'Sword',
     });
     expect(result.state.encounterDamage['arena-near']).toBe(3);
   });
@@ -428,7 +433,14 @@ describe('the Enemy response', () => {
     expect(round?.rolls).toHaveLength(0);
     expect(round?.rangeBefore).toBe('far');
     expect(round?.rangeAfter).toBe('near');
-    expect(round?.text).toContain('closes in to Near Range instead of attacking');
+    // No Enemy roll and the Range closed: the melee Enemy closed in instead of
+    // attacking. The wording lives in the catalogue, not the entry.
+    expect(round).toMatchObject({
+      action: 'defend',
+      encounterId: 'arena-melee',
+      guard: true,
+      enemyName: 'Training Dummy',
+    });
   });
 
   it('a ranged Enemy attacks from Far and never moves', () => {
@@ -453,7 +465,12 @@ describe('Advance and Reach', () => {
     expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
     const [round] = roundsOf(result.journal);
     expect(round?.rolls).toHaveLength(1);
-    expect(round?.text).toContain('advance to Near Range');
+    expect(round).toMatchObject({
+      action: 'advance',
+      rangeBefore: 'far',
+      rangeAfter: 'near',
+      enemyName: 'Sling Dummy',
+    });
   });
 
   it('a melee Attack at Far is disabled with a reason, and rejected if submitted', () => {
@@ -462,7 +479,12 @@ describe('Advance and Reach', () => {
     const actions = combatActions(scenario, started.state);
     const attack = actions.find((action) => action.id === 'attack');
     expect(attack?.enabled).toBe(false);
-    expect(attack?.reason).toBe('Your sword needs Near Range.');
+    expect(attack).toMatchObject({
+      group: 'fight',
+      reason: 'needs-near',
+      weaponId: 'sword',
+      weaponName: 'Sword',
+    });
     const step = started.state.step;
     const result = applyAction(
       scenario,
@@ -487,6 +509,11 @@ describe('victory and death', () => {
     expect(result.state.encounterDamage['arena-counter']).toBe(1);
     const types = result.journal.map((entry) => entry.type);
     expect(types).toEqual(['combat-round', 'combat-end', 'outcome']);
+    expect(result.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
+      encounterId: 'arena-counter',
+      enemyName: 'Weakling',
+      howEnded: 'victory',
+    });
     expect(result.journal.find((entry) => entry.type === 'outcome')).toMatchObject({
       text: 'The weakling falls.',
     });
@@ -505,7 +532,13 @@ describe('victory and death', () => {
     const types = second.journal.map((entry) => entry.type);
     expect(types).toEqual(['combat-round', 'combat-end', 'enemy-defeated']);
     expect(second.journal.find((entry) => entry.type === 'enemy-defeated')).toMatchObject({
-      text: 'The Training Dummy is defeated.',
+      encounterId: 'arena-no-victory',
+      enemyName: 'Training Dummy',
+    });
+    expect(second.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
+      encounterId: 'arena-no-victory',
+      enemyName: 'Training Dummy',
+      howEnded: 'victory',
     });
   });
 
@@ -560,7 +593,9 @@ describe('the Combat panel data', () => {
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({ round: 1, action: 'defend', guard: true });
     expect(log[0]?.rolls).toHaveLength(1);
-    expect(log[0]?.text).toContain('counterattack');
+    // The dummy's attack missed into the guard: the counterattack's 1 Damage
+    // is recorded on the Enemy roll's miss, not in stored text.
+    expect(log[0]?.rolls[0]).toMatchObject({ side: 'enemy', hit: false });
   });
 
   it('shows the Combat view with tokens and actions', () => {
@@ -610,8 +645,9 @@ describe('Fall back', () => {
     expect(round?.rangeBefore).toBe('near');
     // The fall back reached Far, then the melee dummy closed back to Near.
     expect(round?.rangeAfter).toBe('near');
-    expect(round?.text).toContain('success, now at Far Range');
-    expect(round?.text).toContain('closes in to Near Range instead of attacking');
+    // One roll, the successful manoeuvre, and no Enemy attack: the dummy
+    // closed back in instead.
+    expect(round).toMatchObject({ action: 'fall-back', enemyName: 'Training Dummy' });
     expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
     expect(result.state.character.health).toBe(12);
   });
@@ -628,7 +664,7 @@ describe('Fall back', () => {
     expect(round?.rolls[1]).toMatchObject({ side: 'enemy', hit: true, damage: 1 });
     expect(round?.rangeBefore).toBe('near');
     expect(round?.rangeAfter).toBe('near');
-    expect(round?.text).toContain('failure, staying at Near Range');
+    expect(round).toMatchObject({ action: 'fall-back', enemyName: 'Training Dummy' });
     expect(result.state.character.health).toBe(11);
     expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
   });
@@ -639,7 +675,7 @@ describe('Fall back', () => {
     const actions = combatActions(scenario, started.state);
     const fallBack = actions.find((action) => action.id === 'fall-back');
     expect(fallBack?.enabled).toBe(false);
-    expect(fallBack?.reason).toBe('Already at Far Range.');
+    expect(fallBack).toMatchObject({ group: 'position', reason: 'already-far' });
     const step = started.state.step;
     const result = applyAction(
       scenario,
@@ -681,8 +717,7 @@ describe('Escape', () => {
     expect(round?.rolls).toHaveLength(2);
     expect(round?.rolls[0]).toMatchObject({ total: 6, target: 8, hit: false });
     expect(round?.rolls[1]).toMatchObject({ side: 'enemy', hit: false });
-    expect(round?.text).toContain('try to escape');
-    expect(round?.text).toContain('failure');
+    expect(round).toMatchObject({ action: 'escape', enemyName: 'Training Dummy' });
     expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 2 });
     expect(result.state.character.health).toBe(12);
   });
@@ -707,6 +742,8 @@ describe('Escape', () => {
     expect(types).toEqual(['combat-round', 'combat-end', 'outcome']);
     expect(result.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
       encounterId: 'arena-near',
+      enemyName: 'Training Dummy',
+      howEnded: 'escape',
     });
     expect(result.journal.find((entry) => entry.type === 'outcome')).toMatchObject({
       text: 'You step out of the yard.',
@@ -735,10 +772,11 @@ describe('Consumables in Combat', () => {
     const actions = combatActions(scenario, started.state);
     const use = actions.find((action) => action.id === 'use-item' && action.itemId === 'herbs');
     expect(use).toMatchObject({
-      group: 'Items',
-      label: 'Use Healing Herbs',
+      group: 'items',
       enabled: false,
-      reason: 'Already at full Health.',
+      reason: 'full-health',
+      itemId: 'herbs',
+      itemName: 'Healing Herbs',
     });
     const step = started.state.step;
     const before = started.state;
@@ -765,8 +803,12 @@ describe('Consumables in Combat', () => {
     expect(result.state.inventory['herbs']).toBeUndefined();
     expect(result.state.activeCombat).toMatchObject({ range: 'near', round: 3 });
     const [round] = roundsOf(result.journal);
-    expect(round?.action).toBe('use-item');
-    expect(round?.text).toContain('You use Healing Herbs, restored 1 Health.');
+    expect(round).toMatchObject({
+      action: 'use-item',
+      itemName: 'Healing Herbs',
+      healed: 1,
+      enemyName: 'Training Dummy',
+    });
   });
 
   it('two Encounters with the same Enemy track Damage independently', () => {
@@ -951,7 +993,7 @@ describe('whispering-woods: the wolf fight', () => {
     });
     expect(reentered.state.encounterDamage['hollow-wolf']).toBe(3);
     const start = reentered.journal.find((entry) => entry.type === 'combat-start');
-    expect(start).toMatchObject({ encounterId: 'hollow-wolf' });
+    expect(start).toMatchObject({ encounterId: 'hollow-wolf', enemyName: 'Grey Wolf' });
     expect((start as Extract<NewJournalEntry, { type: 'combat-start' }>).text).toContain(
       'lowers its head',
     );

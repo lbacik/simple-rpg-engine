@@ -174,7 +174,6 @@ export function renderJournalEntries(
 
 /**
  * Render one journal entry to HTML through the catalogue of the Interface
-<<<<<<< HEAD
  * Language current when the Journal is read. Structured entries (intro, Scene
  * narration, Choice taken, Outcome narration, travel, Combat start, rounds
  * and end, the Enemy-defeated notice, Ending, Test, state changes, inventory

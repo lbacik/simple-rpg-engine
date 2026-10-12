@@ -196,6 +196,11 @@ export function CombatPanel({
   const enemyNameOf = (round: CombatRoundView): string => round.enemyName ?? combat.enemy.name;
   const roundLines = (round: CombatRoundView): string[] =>
     round.enemyName === undefined ? [round.text ?? ''] : combatRoundLines(round, catalogue);
+  // Legacy rows (stored English text, no event) render as their stored text
+  // verbatim, one line per round (docs/spec/ui.md, Combat panel): no roll
+  // chips, which would resolve the Enemy's name from the live Scenario instead
+  // of the entry (ADR 0004).
+  const showChips = (round: CombatRoundView): boolean => round.enemyName !== undefined;
   const itemActions = consumables.map(
     (consumable) =>
       combat.actions.find(
@@ -331,7 +336,7 @@ export function CombatPanel({
               {roundLines(latest).map((line, index) => (
                 <p key={index}>{line}</p>
               ))}
-              {latest.rolls.length > 0 ? (
+              {showChips(latest) && latest.rolls.length > 0 ? (
                 <ul className="combat-rolls">
                   <RollChips
                     rolls={latest.rolls}
@@ -347,7 +352,7 @@ export function CombatPanel({
                 {older.map((round) => (
                   <li key={round.round}>
                     <strong>{round.round}.</strong> {roundLines(round).join(' · ')}
-                    {round.rolls.length > 0 ? (
+                    {showChips(round) && round.rolls.length > 0 ? (
                       <span className="combat-reason">
                         {' '}
                         ·{' '}

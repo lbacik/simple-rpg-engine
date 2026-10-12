@@ -16,8 +16,8 @@ const catalogues = { en, pl };
 
 // One example of every structured event kind the engine emits today: intro,
 // Scene narration, Choice taken, Outcome narration, travel, Ending, Test,
-// state changes and inventory actions. Combat entries still carry English text
-// and join this table when they move to structured events.
+// state changes, inventory actions, and the Combat entries (start, round, end
+// and the Enemy-defeated notice).
 const STRUCTURED_CASES: ReadonlyArray<{ kind: string; entry: JournalEntryView }> = [
   {
     kind: 'intro',
@@ -141,6 +141,73 @@ const STRUCTURED_CASES: ReadonlyArray<{ kind: string; entry: JournalEntryView }>
       payload: { action: 'used', itemId: 'herbs', name: 'Herbs', healed: 3 },
     },
   },
+  {
+    kind: 'combat-start',
+    entry: {
+      type: 'combat-start',
+      lang: 'en',
+      payload: {
+        encounterId: 'wolf',
+        enemyName: 'Grey Wolf',
+        text: 'A wolf **lunges** from the mist.',
+      },
+    },
+  },
+  {
+    kind: 'combat-round',
+    entry: {
+      type: 'combat-round',
+      lang: 'en',
+      payload: {
+        encounterId: 'wolf',
+        round: 1,
+        action: 'attack',
+        rangeBefore: 'far',
+        rangeAfter: 'near',
+        guard: false,
+        enemyName: 'Grey Wolf',
+        weaponName: 'Hunting Knife',
+        rolls: [
+          {
+            side: 'character',
+            die1: 4,
+            die2: 3,
+            modifier: 2,
+            total: 9,
+            target: 8,
+            hit: true,
+            damage: 3,
+          },
+          {
+            side: 'enemy',
+            die1: 1,
+            die2: 2,
+            modifier: 1,
+            total: 4,
+            target: 8,
+            hit: false,
+            damage: 0,
+          },
+        ],
+      },
+    },
+  },
+  {
+    kind: 'combat-end',
+    entry: {
+      type: 'combat-end',
+      lang: 'en',
+      payload: { encounterId: 'wolf', enemyName: 'Grey Wolf', howEnded: 'victory' },
+    },
+  },
+  {
+    kind: 'enemy-defeated',
+    entry: {
+      type: 'enemy-defeated',
+      lang: 'en',
+      payload: { encounterId: 'wolf', enemyName: 'Grey Wolf' },
+    },
+  },
 ];
 
 describe('structured journal entries in both catalogues', () => {
@@ -173,5 +240,105 @@ describe('structured journal entries in both catalogues', () => {
     const polish = renderJournalEntry(STRUCTURED_CASES[4]?.entry as JournalEntryView, pl, 'Robin');
     expect(english.html).not.toEqual(polish.html);
     expect(polish.label).toBe('Podróż');
+  });
+
+  it('labels Combat entries in Polish with the Scenario names marked', () => {
+    const start = renderJournalEntry(
+      {
+        type: 'combat-start',
+        lang: 'pl',
+        payload: { encounterId: 'wilk', enemyName: 'Szary Wilk', text: 'Wilk **atakuje**.' },
+      },
+      pl,
+      'Robin',
+    );
+    expect(start.label).toBe('Początek walki');
+    expect(start.html).toContain('Przeciwnik: <span lang="pl">Szary Wilk</span>.');
+
+    const end = renderJournalEntry(
+      {
+        type: 'combat-end',
+        lang: 'pl',
+        payload: { encounterId: 'wilk', enemyName: 'Szary Wilk', howEnded: 'victory' },
+      },
+      pl,
+      'Robin',
+    );
+    expect(end.label).toBe('Koniec walki');
+    expect(end.html).toContain('Pokonano: <span lang="pl">Szary Wilk</span>.');
+
+    const defeated = renderJournalEntry(
+      {
+        type: 'enemy-defeated',
+        lang: 'pl',
+        payload: { encounterId: 'wilk', enemyName: 'Szary Wilk' },
+      },
+      pl,
+      'Robin',
+    );
+    expect(defeated.label).toBe('Pokonany przeciwnik');
+    expect(defeated.html).toContain('Pokonany: <span lang="pl">Szary Wilk</span>.');
+  });
+
+  it('keeps a Polish Combat round label-shaped with untransformed names', () => {
+    const rendered = renderJournalEntry(
+      {
+        type: 'combat-round',
+        lang: 'pl',
+        payload: {
+          encounterId: 'wilk',
+          round: 1,
+          action: 'attack',
+          rangeBefore: 'near',
+          rangeAfter: 'near',
+          guard: false,
+          enemyName: 'Szary Wilk',
+          weaponName: 'Miecz',
+          rolls: [
+            {
+              side: 'character',
+              die1: 4,
+              die2: 3,
+              modifier: 1,
+              total: 8,
+              target: 7,
+              hit: true,
+              damage: 3,
+            },
+          ],
+        },
+      },
+      pl,
+      'Robin',
+    );
+    expect(rendered.label).toBe('Runda walki');
+    // Label-shaped: the weapon name as presented, never case-transformed.
+    expect(rendered.html).toContain(
+      'Atak: <span lang="pl">Miecz</span> (4+3+1=8 vs 7) — trafienie, 3 obrażenia.',
+    );
+    expect(rendered.html).not.toContain('miecz');
+  });
+
+  it('uses Polish plural forms for Damage in Combat rounds', () => {
+    const roundWith = (damage: number): JournalEntryView => ({
+      type: 'combat-round',
+      lang: 'pl',
+      payload: {
+        encounterId: 'wilk',
+        round: 1,
+        action: 'attack',
+        rangeBefore: 'near',
+        rangeAfter: 'near',
+        guard: false,
+        enemyName: 'Szary Wilk',
+        weaponName: 'Miecz',
+        rolls: [
+          { side: 'enemy', die1: 6, die2: 6, modifier: 2, total: 14, target: 8, hit: true, damage },
+        ],
+      },
+    });
+    expect(renderJournalEntry(roundWith(1), pl, 'Robin').html).toContain('1 obrażenie');
+    expect(renderJournalEntry(roundWith(3), pl, 'Robin').html).toContain('3 obrażenia');
+    expect(renderJournalEntry(roundWith(5), pl, 'Robin').html).toContain('5 obrażeń');
   });
 });
