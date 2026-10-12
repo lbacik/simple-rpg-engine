@@ -159,9 +159,6 @@ export default async function PlayPage({
     const incompatibleView = view(incompatibleScenario, incompatibleState, {
       includeUnknownExits: showUnknownExits,
     });
-    // The modal over the read-only screen reuses the Journal already read
-    // above: the newest batch, newest first, with the sequence cursor.
-    const incompatibleModalJournal = modalJournalBatch(journal, incompatibleName);
     return (
       <main>
         <div className="game">
