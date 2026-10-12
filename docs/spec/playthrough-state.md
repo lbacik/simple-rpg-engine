@@ -28,14 +28,14 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 | Exploration | `visited` Location set; `revealed` Location set | map nodes, drawn Connections, highlighted travel targets |
 | Scenes and Choices | set of fired Scene ids; set of taken `once` Choices as (Scene id, Choice id) | on-demand Scenes on offer; visible Choices |
 | Flags | set of Flags currently true | |
-| Encounters | per Encounter id, created on its first `start-combat`: **Damage taken** | remaining Enemy Health (maximum − taken); defeated (remaining ≤ 0). An Encounter without a record is at full Health. |
-| Active Combat | Encounter id, the Range to each Enemy participant, round number, the current Round's committed Intents, each participant's prepared state, temporary effects that outlast the step (a Wary participant and the Round its Wary ends) | Enemy Health (from the Encounter record); the Round's order; available Character actions with their Speed |
+| Encounters | per Encounter id, created on its first `start-combat`: **Damage taken per participant id** | each participant's remaining Health (its Enemy's maximum − taken) and defeated (remaining ≤ 0); the Encounter is defeated when every participant is. An Encounter or participant without a record is at full Health. |
+| Active Combat | Encounter id, the Range to each Enemy participant, round number, the current Round's committed Intents, each participant's prepared state, temporary effects that outlast the step (a Wary participant and the Round its Wary ends) | each participant's Health (from the Encounter record); the Round's order; available Character actions with their Speed |
 | Journal | append-only entries: Scenario text as presented, engine events, and the language of each | the result panel; the intro display; all Interface Text in it |
 
 Notes:
 
 - **Equipment is a pointer, not a copy.** An equipped item counts towards its held quantity. Removing one of two copies leaves it equipped; removing the last copy unequips it first.
-- **Encounter identity is the Encounter id.** Two Encounters with the same Enemy are independent. Storing only Damage taken makes "defeated" impossible to desynchronise.
+- **Participant identity is (Encounter id, participant id).** Two Encounters with the same Enemy are independent, and so are two participants of the same Enemy kind in one Encounter. Storing only Damage taken makes "defeated" impossible to desynchronise, for a participant and for the Encounter.
 - **Round-scoped effects are never stored** (for example Guarded, and the once-per-Round counterattack). A whole Round resolves in one step, so an effect that expires at the end of its own Round never outlives it. The committed Intents, prepared states and effects lasting into the next Round are stored, so reading or reloading never re-selects or changes them. Their exact shape is set with the tactical Combat state migration.
 - **Flags all start false.** There are no counters.
 - The base Attributes are copied so that later Template edits do not change an existing Character.
@@ -127,11 +127,11 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 
 - **`start-combat: E`**:
   - if E is defeated, it is a no-op: no fight, no victory Outcome, Location view;
-  - otherwise create E's record if absent, set the position to Combat {E, E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
+  - otherwise create E's record if absent, set the position to Combat {E, each surviving participant at E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
 - **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round and stores the next Round's Intents. It appends one Combat round entry, which records the actions in resolved order, including dropped and cancelled ones.
 - A **rejected** Combat action changes nothing: the round, the Intents and `step` stay as they were.
-- **Victory** (Damage taken ≥ the Enemy's maximum Health): the Combat ends and a Combat end entry is appended. Then the `victory` Outcome is applied, or, when there is none, an Enemy-defeated notice is appended and the position becomes Location view in the Location where the fight happened.
-- **Escape**: the Combat ends, the Ranges and temporary effects are discarded, the Encounter record keeps its Damage taken, and the `escape` Outcome is applied.
+- **Victory** (every participant's Damage taken ≥ its Enemy's maximum Health): the Combat ends and a Combat end entry is appended. Then the `victory` Outcome is applied, or, when there is none, an Enemy-defeated notice is appended and the position becomes Location view in the Location where the fight happened.
+- **Escape**: the Combat ends, the Ranges and temporary effects are discarded, the Encounter record keeps each participant's Damage taken, including defeated participants, and the `escape` Outcome is applied.
 - **Character death**: Health 0, then `ended(death Ending)`, appending the Ending entry.
 
 ## Journal
@@ -194,3 +194,4 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)
 - [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
 - [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (action targets, per-participant Range, stored Wary)
+- [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (per-participant Damage taken, Encounter defeat)

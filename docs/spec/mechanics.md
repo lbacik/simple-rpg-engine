@@ -101,7 +101,13 @@ These limits keep content valid; they do not guarantee that a fight can be won.
 
 ## Combat
 
-A Combat is a fight between the Character and **one** Enemy, placed by an Encounter. A Scenario arranges successive fights through content.
+A Combat is a fight between the Character and the **participants** of one Encounter: one or two Enemies. A Scenario arranges successive fights through content.
+
+### Participants
+
+- A **participant** is one placement of an Enemy in an Encounter. Its identity is the pair (Encounter id, participant id). The participant id is unique within its Encounter and defaults to its Enemy id. Two participants of the same Enemy kind therefore need explicit participant ids. The Enemy id alone, or a position in a list, is never an identity.
+- The **participant order** is the order in which the Encounter lists its participants. It breaks Agility ties and orders Intent selection. Targets, wounds and stored Combat state refer to participants by id, never by position.
+- Each participant has its own Health, Range, Intent, prepared state and effects. The Enemy kind supplies only its Attributes, maximum Health, Damage, Reach and Behaviour.
 
 ### Range and Reach
 
@@ -116,8 +122,6 @@ Both sides hit when **2d6 + attacker's Might ≥ 7 + defender's Agility** (effec
 ### Rounds
 
 A Combat proceeds in **Rounds**. In each Round the Character takes exactly one action and every surviving Enemy participant carries out exactly one **Intent**. A Round is one player action and one `step` (see [playthrough-state.md](playthrough-state.md#combat)). There is no initiative roll.
-
-> **Transition note.** This Round contract replaces the earlier "the Character always acts first" turn. The Character actions and Enemy Intents below use it. The single-Enemy wording of the Combat, End of Combat and Persistence of wounds sections still describes the earlier rules until [Encounter participants](https://github.com/lbacik/simple-rpg-engine/issues/80) is resolved; that decision assigns the participants that use this contract.
 
 #### Speed and order
 
@@ -264,17 +268,18 @@ So at most one Heavy attack is ever in preparation, and a second participant nev
 
 ### End of Combat
 
-- **Victory**: the Enemy's Health reaches 0, including from a counterattack. The Enemy does not respond.
-- **Escape**: a successful Escape ends the Combat; the Enemy does not respond.
+- **Victory**: the last surviving participant is defeated (its Health reaches 0), including by a counterattack. The rest of the Round does not resolve.
+- **Escape**: a successful Escape ends the Combat; participants later in the order do not act.
 - **Death**: the Character's Health reaches 0, and the Playthrough ends on the death Ending.
 
 What follows a victory or an escape is authored on the Encounter (see [content-semantics.md](content-semantics.md#encounters-and-combat)).
 
 ### Persistence of wounds
 
-- Damage dealt to an Enemy belongs to its **Encounter**. If the Character escapes and later fights the same Encounter again, the Enemy keeps its remaining Health, and the Combat starts again at `startRange`.
-- A defeated Encounter stays defeated.
-- A different Encounter with the same Enemy is independent and starts at full Health.
+- Damage belongs to the **participant** that took it, within its Encounter. A participant is **defeated** when its Damage taken reaches its Enemy's maximum Health; an Encounter is defeated when **every** participant is.
+- A defeated participant stays defeated. If the Character escapes and later fights the same Encounter again, only the surviving participants take part, each keeping its remaining Health. The Combat starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects. The opening narration is shown as authored; there is no separate narration after a partial victory.
+- A defeated Encounter stays defeated, and its `victory` Outcome applies once, when its last participant falls.
+- A different Encounter with the same Enemy kind is independent and starts at full Health.
 
 ### Tactical notes (consequences, not extra rules)
 
@@ -296,3 +301,4 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
 - [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (Character actions, per-participant Range, Guarded and Wary)
 - [Enemy intent profiles for tactical one- and two-Enemy Combat](https://github.com/lbacik/simple-rpg-engine/issues/79) (Behaviours, Intent vocabulary, selection)
+- [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, individual wounds, partial victory)
