@@ -76,11 +76,12 @@ describe('narrative tests', () => {
     // Soldier: Might 3 base + 1 chain shirt = 4 effective; very-hard targets 13.
     const { scenario, state } = atBarrowDoor();
     const resolved = choose(scenario, state, 'force-door', dealing([4, 5]));
+    // The success Outcome sets a flag, which is never presented: no
+    // state-change entry joins the Test, Outcome and Scene narration.
     expect(resolved.journal.map((entry) => entry.type)).toEqual([
       'choice',
       'test',
       'outcome',
-      'state-change',
       'scene',
     ]);
     const test = resolved.journal[1];
