@@ -1,4 +1,4 @@
-// Query helpers for the Character/Inventory/Map panel tab, the transient
+// Query helpers for the side-panel modal (`?panel=`), the transient
 // rejection notice, the app-level "?" map setting and the client-side Continue
 // acknowledgement, shared by the play page and the inventory server actions
 // so both build the same URLs.
@@ -9,10 +9,16 @@
 // current `step` the server skips the result panel and renders the position; a
 // value that does not match is ignored and the result panel is shown again.
 
-export type PanelTab = 'character' | 'inventory' | 'map';
+/**
+ * The side-panel modal open on the game screen: the Character sheet, the
+ * inventory, or (on phones) the Location map. Anything else renders no modal.
+ */
+export type PanelId = 'character' | 'inventory' | 'map';
 
-export function parsePanelTab(value: string | undefined): PanelTab {
-  return value === 'inventory' || value === 'map' ? value : 'character';
+export function parsePanel(value: string | undefined): PanelId | null {
+  return value === 'character' || value === 'inventory' || value === 'map'
+    ? value
+    : null;
 }
 
 /**
@@ -44,7 +50,7 @@ export function shouldShowResultPanel(
 
 /** The query parameters the game page preserves across navigation. */
 export type PlayQuery = {
-  tab?: string;
+  panel?: string | null;
   notice?: string;
   seen?: number;
   showUnknownExits?: boolean;
@@ -52,7 +58,9 @@ export type PlayQuery = {
 
 function playQueryString(query: PlayQuery): string {
   const params = new URLSearchParams();
-  if (query.tab === 'inventory' || query.tab === 'map') params.set('tab', query.tab);
+  if (query.panel === 'character' || query.panel === 'inventory' || query.panel === 'map') {
+    params.set('panel', query.panel);
+  }
   if (query.notice === 'stale' || query.notice === 'unavailable') params.set('notice', query.notice);
   if (query.showUnknownExits === true) params.set('unknown', '1');
   if (query.seen !== undefined && Number.isInteger(query.seen) && query.seen >= 0) {
@@ -61,30 +69,30 @@ function playQueryString(query: PlayQuery): string {
   return params.toString();
 }
 
-/** `/play/[id]` with the panel tab preserved, plus a rejection notice when given. */
+/** `/play/[id]` with the open panel modal preserved, plus a rejection notice when given. */
 export function playHref(
   playthroughId: string,
-  tab: string | undefined,
+  panel: string | null | undefined,
   notice?: string,
   seen?: number,
   showUnknownExits?: boolean,
 ): string {
-  const query = playQueryString({ tab, notice, seen, showUnknownExits });
+  const query = playQueryString({ panel, notice, seen, showUnknownExits });
   return query === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${query}`;
 }
 
 /**
  * The Continue link after a result panel: the same game page carrying the
- * current `step` as `?seen=`, preserving the panel tab, the transient notice
- * and the "?" map setting. Following it changes no game state and does not
- * advance `step`; the Outcome was already applied when the Choice was made.
+ * current `step` as `?seen=`, preserving the open panel modal, the transient
+ * notice and the "?" map setting. Following it changes no game state and does
+ * not advance `step`; the Outcome was already applied when the Choice was made.
  */
 export function continueHref(
   playthroughId: string,
   step: number,
-  tab?: string,
+  panel?: string | null,
   notice?: string,
   showUnknownExits?: boolean,
 ): string {
-  return playHref(playthroughId, tab, notice, step, showUnknownExits);
+  return playHref(playthroughId, panel, notice, step, showUnknownExits);
 }

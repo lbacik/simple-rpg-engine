@@ -24,8 +24,8 @@ The screens, layout and interaction model. This document is normative; the [mock
 
 Layout **A, "Book & character"**:
 
-- **Desktop**: a reading column with the current narration and its actions, beside a side panel. The side panel holds the **map** at the top, always visible, and below it the **Character** and **Inventory** tabs.
-- **Phone**: a single reading column, with a compact Character/Health summary that opens a panel with three tabs: **Character**, **Inventory** and **Map**.
+- **Desktop**: a reading column with the current narration and its actions, beside a side panel. The side panel holds the **map** at the top (always visible), a **status card**, and the **Character**, **Inventory** and **Journal** launchers.
+- **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind a fourth **Map** launcher.
 
 ### Reading column
 
@@ -43,7 +43,7 @@ The order within the column is always:
 ### Tests and results
 
 - A Choice with a Test shows the tested Attribute and the Difficulty, by name and number, before it is taken.
-- After a Choice, the result panel shows the Test (both dice, the modifier, the total, success or failure) when there was one, the Outcome narration and the state changes. While it is shown, the reading column shows **only** the result panel and its client-side **Continue**: the Location view, Scene, Combat panel and the "View journal" link are not rendered until the player continues. Continue then "returns" the player to the current position, for example the Location card they are standing in. The side panel (map, Character, Inventory) and any transient notice stay visible throughout. Which Journal entries make up the panel, and when there is none, is defined in [playthrough-state.md](playthrough-state.md#result-panel); after a reload it may appear again.
+- After a Choice, the result panel shows the Test (both dice, the modifier, the total, success or failure) when there was one, the Outcome narration and the state changes. While it is shown, the reading column shows **only** the result panel and its client-side **Continue**: the Location view, Scene and Combat panel are not rendered until the player continues. Continue then "returns" the player to the current position, for example the Location card they are standing in. The side panel (map, status card, launchers) and any transient notice stay visible throughout. Which Journal entries make up the panel, and when there is none, is defined in [playthrough-state.md](playthrough-state.md#result-panel); after a reload it may appear again.
 - Continue is a plain link to the same game page carrying the current `step` (for example `?seen=<step>`). When the parameter equals the Playthrough's current `step`, the server skips the result panel and renders the position; a value that does not match is ignored, so the result panel of the actual latest step is shown. With JavaScript it is a soft navigation with no full page reload; without JavaScript it is a plain link navigation, and nothing that should be hidden flashes on screen. Continue changes no game state and does not advance `step`.
 - The Scenario intro is shown the same way at the start of a Playthrough, and the victory or escape Outcome (or the brief Enemy-defeated notice) the same way after Combat ends.
 
@@ -57,10 +57,20 @@ The order within the column is always:
 
 ### Character and inventory panel
 
-- **Character** tab: name, Template, Health out of 12, and the four **effective** Attributes, explaining Equipment bonuses (for example "Agility 3 (2 + 1 Hunter's Cloak)").
-- **Inventory** tab: held items with quantities, inline item information (name, description, kind, slot, bonus, Damage and Reach for weapons, healing for Consumables) and the available actions: equip, unequip, use.
+The side panel holds, top to bottom: the Location map (as above), a status card, and three launchers in a row.
+
+- **Status card**: a medal with the Character's initial inside a ring that fills with the Health fraction (as in the Combat arena; red when Health is low), the Character's name, the Template, and a 12-segment Health bar.
+- **Launchers**: **Character** (sublabel "Health 9/12"), **Inventory** (sublabel "3 items") and **Journal** (sublabel "34 entries"), each with an icon, a label and a sublabel. The Journal launcher goes to the full Journal page. (Once the Journal modal lands, it opens that modal instead; its trigger is this launcher.)
+- **Character** modal: name, Template, Health out of 12, and the four **effective** Attributes, explaining Equipment bonuses (for example "Agility 3 (2 + 1 Hunter's Cloak)").
+- **Inventory** modal: held items with quantities, inline item information (name, description, kind, slot, bonus, Damage and Reach for weapons, healing for Consumables) and the available actions: equip, unequip, use.
 - **Magic** items carry a visual marker. It is not a separate kind or category.
 - Equip and unequip are available in the Location view and during a Scene, never in Combat. Using a Consumable outside Combat is available below full Health.
+
+The Character and Inventory modals open over the game screen. Each closes with a close button, Escape or a backdrop click; focus is trapped while open, returns to its launcher on close, and the background does not scroll. The open modal is part of the URL (for example `?panel=character|inventory`), replacing the previous `?tab=`: Equip, Unequip and Use, and their rejection notices, land back on the game screen with the Inventory modal still open and the notice visible. Without JavaScript the launchers are plain links and the requested panel renders open from the URL.
+
+On phones the status card and the launchers replace the compact summary, and a fourth **Map** launcher (phone only) opens the map in a modal. Map travel from that modal works as from the inline map. Modals are full-screen on phones.
+
+There is no "View journal" link above the narration in the reading column; the Ending screen keeps its "View journal" button.
 
 ### Location map
 
@@ -74,7 +84,7 @@ The order within the column is always:
 
 ### Combat panel
 
-During Combat, the reading column shows the Combat panel, while the side panel (map, Character and Inventory) stays visible:
+During Combat, the reading column shows the Combat panel, while the side panel (map, status card, launchers) stays visible:
 
 - a **header**: a small uppercase kicker (`Combat · <Location name> · Round <n>`), the Encounter name as `h1`, then the opening narration (muted italic) and a bottom rule;
 - a one-line **Range arena**: a bordered card with a ground line and the Range label (`NEAR` / `FAR`) at the bottom. Character and Enemy sit on one line as medallions (an initial in a coloured disc surrounded by a Health ring, red at low Health; name, `health/max` and the weapon/Reach/Damage line below, the Enemy's Reach and Damage). At **Near** the medallions stand side by side in the centre with a crossed-swords mark between them; at **Far** they sit at opposite edges with a `‹ — — Far — — ›` marker in the middle. A small "guard up" badge on the Character's ring shows when the latest round was a Defend. The marker is derived from that round's Journal entry: the Defend bonus is never stored, because it expires within the turn it was chosen, so the marker shows the guard that was in effect during the Enemy's response just resolved. Medallions animate on a Range change, honouring `prefers-reduced-motion`;

@@ -8,7 +8,11 @@ test('a playthrough survives choices, Continue and a reload', async ({ page }) =
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Scenarios' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'The Whispering Woods' })).toBeVisible();
-  await page.getByRole('link', { name: 'New Playthrough' }).click();
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'The Whispering Woods' })
+    .getByRole('link', { name: 'New Playthrough' })
+    .click();
 
   await expect(page.getByRole('heading', { name: 'The Whispering Woods' })).toBeVisible();
   await page.locator('#name').fill('Smoke');
@@ -16,20 +20,19 @@ test('a playthrough survives choices, Continue and a reload', async ({ page }) =
 
   await expect(page).toHaveURL(/\/play\/[^/]+$/);
   // The intro is a result panel: the reading column shows only the panel and
-  // its Continue. The position and the "View journal" link wait for Continue,
-  // while the side panel stays visible.
+  // its Continue. The position waits for Continue, while the side panel (map,
+  // status card, launchers) stays visible and no modal is open.
   await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'View journal' })).toHaveCount(0);
-  await expect(
-    page.getByLabel('Character and inventory').getByRole('heading', { name: 'Character' }).first(),
-  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Character, Health 12/12' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // Continue carries the current step and renders the position. It changes no
-  // game state: the URL only gains `?seen=`.
+  // game state: the URL only gains `?seen=`. The reading column holds no
+  // "View journal" link; the Journal launcher reaches the Journal instead.
   await page.getByRole('link', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'View journal' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Journal, \d+ entr/ })).toBeVisible();
   await expect(page).toHaveURL(/seen=0/);
 
   // A mismatched step is ignored: the result panel of the actual latest step

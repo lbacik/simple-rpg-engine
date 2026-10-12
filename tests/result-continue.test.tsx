@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   continueHref,
+  parsePanel,
   parseSeenStep,
   playHref,
   shouldShowResultPanel,
@@ -28,6 +29,31 @@ describe('parseSeenStep', () => {
     expect(parseSeenStep('-1')).toBeUndefined();
     expect(parseSeenStep('3abc')).toBeUndefined();
     expect(parseSeenStep('3.5')).toBeUndefined();
+  });
+});
+
+describe('parsePanel', () => {
+  it('opens the Character, Inventory and map modals from the URL', () => {
+    expect(parsePanel('character')).toBe('character');
+    expect(parsePanel('inventory')).toBe('inventory');
+    expect(parsePanel('map')).toBe('map');
+  });
+
+  it('renders no modal without the parameter or with an unknown value', () => {
+    expect(parsePanel(undefined)).toBeNull();
+    expect(parsePanel('')).toBeNull();
+    expect(parsePanel('journal')).toBeNull();
+  });
+});
+
+describe('panel hrefs', () => {
+  it('reflects the open modal in the URL', () => {
+    expect(playHref('pt-1', 'character')).toBe('/play/pt-1?panel=character');
+    expect(playHref('pt-1', 'inventory')).toBe('/play/pt-1?panel=inventory');
+    expect(playHref('pt-1', null)).toBe('/play/pt-1');
+    expect(playHref('pt-1', undefined)).toBe('/play/pt-1');
+    // Unknown values render no modal and leave the URL clean.
+    expect(playHref('pt-1', 'journal')).toBe('/play/pt-1');
   });
 });
 
@@ -87,16 +113,16 @@ describe('Continue href', () => {
     expect(continueHref('pt-1', 4)).toBe('/play/pt-1?seen=4');
   });
 
-  it('preserves the panel tab, notice and "?" map setting', () => {
+  it('preserves the open panel modal, notice and "?" map setting', () => {
     expect(continueHref('pt-1', 4, 'inventory', undefined, false)).toBe(
-      '/play/pt-1?tab=inventory&seen=4',
+      '/play/pt-1?panel=inventory&seen=4',
     );
     expect(continueHref('pt-1', 4, 'map', 'stale', true)).toBe(
-      '/play/pt-1?tab=map&notice=stale&unknown=1&seen=4',
+      '/play/pt-1?panel=map&notice=stale&unknown=1&seen=4',
     );
   });
 
-  it('keeps the acknowledgement on tab and map-toggle links after Continue', () => {
+  it('keeps the acknowledgement on panel and map-toggle links after Continue', () => {
     expect(playHref('pt-1', 'inventory', undefined, 4, false)).toContain('seen=4');
     expect(playHref('pt-1', 'inventory', undefined, 4, true)).toContain('seen=4');
     expect(playHref('pt-1', 'inventory', undefined, 4, true)).toContain('unknown=1');
