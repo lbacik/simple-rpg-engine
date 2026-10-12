@@ -3,7 +3,7 @@
 // flag of Poland. A language with no flag is marked by its primary subtag in
 // capitals, in a box of the flag's size.
 
-import { primaryLanguageSubtag } from '@/i18n/index';
+import { primaryLanguageSubtag, type Catalogue } from '@/i18n/index';
 
 function UnitedKingdomFlag(): React.ReactNode {
   return (
@@ -33,11 +33,15 @@ export function flagPrimarySubtag(language: string): string {
 export function LanguageFlag({
   language,
   label,
+  current,
 }: {
   language: string;
   label?: string;
+  /** The language the Scenario text is shown in now: ringed, the others dimmed. */
+  current?: boolean;
 }): React.ReactNode {
   const primary = flagPrimarySubtag(language);
+  const className = `flag${current === true ? ' current' : ''}`;
   const graphic =
     primary === 'en' ? (
       <UnitedKingdomFlag />
@@ -47,7 +51,7 @@ export function LanguageFlag({
   if (graphic === null) {
     return (
       <span
-        className="flag flag-fallback"
+        className={`${className} flag-fallback`}
         role="img"
         aria-label={label ?? primary.toUpperCase()}
       >
@@ -57,14 +61,69 @@ export function LanguageFlag({
   }
   if (label === undefined) {
     return (
-      <span className="flag" aria-hidden="true">
+      <span className={className} aria-hidden="true">
         {graphic}
       </span>
     );
   }
   return (
-    <span className="flag" role="img" aria-label={label}>
+    <span className={className} role="img" aria-label={label}>
       {graphic}
+    </span>
+  );
+}
+
+/**
+ * One flag per language a Scenario can be shown in (docs/spec/ui.md, scenario
+ * language flags): its Base Language first, then its Translations into
+ * Interface Languages. The flag of the language the text is shown in now is
+ * ringed; the others are dimmed. Every standalone flag carries an accessible
+ * name, with "(original)" for the Base Language.
+ */
+export function ScenarioLanguageFlags({
+  languages,
+  shownLanguage,
+  baseLanguage,
+  catalogue,
+}: {
+  languages: string[];
+  shownLanguage: string;
+  baseLanguage: string;
+  catalogue: Catalogue;
+}): React.ReactNode {
+  return (
+    <span className="flags">
+      {languages.map((language) => (
+        <LanguageFlag
+          key={language}
+          language={language}
+          label={catalogue.scenarioLanguage.flagName(language, language === baseLanguage)}
+          current={language === shownLanguage}
+        />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * The fallback badge after the reading column's title (docs/spec/ui.md,
+ * language fallback on the game screen): the Base Language's flag and
+ * "Text: <language>". Shown for as long as the Scenario falls back.
+ */
+export function ScenarioFallbackBadge({
+  baseLanguage,
+  catalogue,
+}: {
+  baseLanguage: string;
+  catalogue: Catalogue;
+}): React.ReactNode {
+  return (
+    <span className="badge lang-chip">
+      <LanguageFlag
+        language={baseLanguage}
+        label={catalogue.scenarioLanguage.flagName(baseLanguage, true)}
+      />{' '}
+      {catalogue.scenarioLanguage.textBadge(baseLanguage)}
     </span>
   );
 }
