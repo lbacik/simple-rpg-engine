@@ -67,8 +67,8 @@ Every item is held in a quantity. Inventory has no capacity limit. There are thr
 ### Consumables
 
 - A Consumable restores its declared Health (1–12), capped at maximum Health, and one copy is consumed.
-- It can be used inside or outside Combat. In Combat, using it consumes the Character's turn.
-- Using a Consumable at **full Health** is rejected: no item is consumed, no turn passes, the Enemy does not attack. Using one at partial Health consumes the whole item even if part of the healing is wasted.
+- It can be used inside or outside Combat. In Combat, using it is the Character's action for the Round, with Speed `normal` (see [Character actions](#character-actions)). If that action is dropped because the Character died earlier in the Round, no copy is consumed.
+- Using a Consumable at **full Health** is rejected: no item is consumed and, in Combat, no Round resolves. Using one at partial Health consumes the whole item even if part of the healing is wasted.
 - Using an item the Character does not hold is likewise rejected. The UI disables unavailable actions, and the server validates them independently.
 
 ### Key Items
@@ -104,18 +104,19 @@ A Combat is a fight between the Character and **one** Enemy, placed by an Encoun
 
 ### Range and Reach
 
-- Every Combat has a **Range**: **Near** or **Far**. It starts at the Encounter's `startRange` (default `far`) and exists only during Combat.
-- A `melee` attack requires Near. A `ranged` attack works at either Range, with no penalty at Near.
+- The Character has a **Range** to each Enemy participant: **Near** or **Far**. Each starts at the Encounter's `startRange` (default `far`) and exists only during Combat. With two Enemy participants the two Ranges are independent: the Character can be Near one and Far from the other.
+- An attack's Reach is checked against the Range to its target. A `melee` attack requires Near. A `ranged` attack works at either Range, with no penalty at Near.
+- A Range changes only through a Character action (Advance, Fall back) or an Enemy's own Intent. A change to one Range never moves the other participant.
 
 ### Hitting
 
-Both sides hit when **2d6 + attacker's Might ≥ 7 + defender's Agility** (effective values for the Character). Ranged attacks also use Might; Agility is never the attack Attribute. A miss deals no Damage. A hit deals the attacker's Damage.
+Both sides hit when **2d6 + attacker's Might ≥ 7 + defender's Agility** (effective values for the Character). Ranged attacks also use Might; Agility is never the attack Attribute. A miss deals no Damage. A hit deals the attacker's Damage. While the Character is **Guarded** (see [Temporary effects](#temporary-effects)), attacks against the Character need **≥ 9 + the Character's Agility** instead.
 
 ### Rounds
 
 A Combat proceeds in **Rounds**. In each Round the Character takes exactly one action and every surviving Enemy participant carries out exactly one **Intent**. A Round is one player action and one `step` (see [playthrough-state.md](playthrough-state.md#combat)). There is no initiative roll.
 
-> **Transition note.** This Round contract replaces the earlier "the Character always acts first" turn. The action table, the Enemy response and the single-Enemy wording below still describe the earlier rules until [Tactical Character actions](https://github.com/lbacik/simple-rpg-engine/issues/78), [Enemy intent profiles](https://github.com/lbacik/simple-rpg-engine/issues/79) and [Encounter participants](https://github.com/lbacik/simple-rpg-engine/issues/80) are resolved; those decisions assign the concrete Speeds, Intents, effects and participants that use this contract.
+> **Transition note.** This Round contract replaces the earlier "the Character always acts first" turn. The Character actions below use it. The Enemy response and the single-Enemy wording of the Combat, End of Combat and Persistence of wounds sections still describe the earlier rules until [Enemy intent profiles](https://github.com/lbacik/simple-rpg-engine/issues/79) and [Encounter participants](https://github.com/lbacik/simple-rpg-engine/issues/80) are resolved; those decisions assign the concrete Intents and participants that use this contract.
 
 #### Speed and order
 
@@ -186,16 +187,42 @@ Temporary effects:
 
 ### Character actions
 
-| Group | Action | Available when | Effect |
-|---|---|---|---|
-| Position | **Advance** | Range is Far | Range becomes Near. No roll. |
-| Position | **Fall back** | Range is Near | Roll 2d6 + Character's Agility ≥ 7 + Enemy's Agility. Success: Range becomes Far. Failure: stays Near. |
-| Fight | **Attack** | the Character's Reach allows it at the current Range | Hit roll as above. |
-| Fight | **Defend** | always | For the rest of this turn the Enemy needs **2d6 + its Might ≥ 9 + the Character's Agility** to hit (+2). If the Enemy actually attacks and misses, it takes **1 Damage** from a counterattack. The bonus expires at the end of this Enemy turn, even if the Enemy only moved. |
-| Items | **Use a Consumable** | a held Consumable, Character below full Health | Heals as described under Consumables. |
-| Leave | **Escape** | always | Roll 2d6 + Character's Agility ≥ 7 + Enemy's Agility, with **+2 to the roll at Far**. Success ends the Combat. |
+The Character takes exactly one action per Round. An action that names a target names one surviving Enemy participant; with a single participant the target is implicit.
 
-Every action except a successful Escape, or one that kills the Enemy, is followed by the Enemy's response. A rejected action (for example a Consumable at full Health) consumes nothing.
+| Group | Action | Speed | Available when (checked on submission) | Resolution |
+|---|---|---|---|---|
+| Fight | **Defend** | `fast` | always | The Character becomes **Guarded** until the end of the Round. No roll. |
+| Fight | **Distract** (target) | `fast` | the target is not **Wary**, and its Intent comes later in the Round's order than this action | Roll 2d6 + Character's Wits ≥ 7 + target's Wits. Success: the target's Intent is **interrupted** (cancelled when its turn comes), its prepared state clears, and the target becomes **Wary** until the end of the next Round. Failure: no effect. |
+| Fight | **Attack** (target) | `normal` | the Character's Reach allows it at the Range to the target | Hit roll as above; a hit deals the Character's Damage to the target. |
+| Position | **Advance** (target) | `normal` | the Range to the target is Far | The Range to the target becomes Near. No roll. |
+| Items | **Use a Consumable** | `normal` | a held Consumable, Character below full Health | Heals as described under Consumables. |
+| Leave | **Escape** | `normal` | always | Roll 2d6 + Character's Agility ≥ 7 + the highest Agility among surviving Enemy participants, with **+2 to the roll when no surviving participant is Near**. Success ends the Combat. Failure: no effect. |
+| Position | **Fall back** | `slow` | at least one surviving Enemy participant is Near | Roll 2d6 + Character's Agility ≥ 7 + the highest Agility among the Near participants. Success: every Near Range becomes Far. Failure: no change. |
+
+There is a single Attack: no fast or heavy variant. The Character has no preparation actions.
+
+#### Validity when the action's turn comes
+
+An action legal on submission is **cancelled** (see [Rejected versus cancelled](#rejected-versus-cancelled)) when, at its place in the order:
+
+| Action | Cancelled when |
+|---|---|
+| Attack | the target has been defeated, or the Character's Reach no longer allows it at the Range to the target |
+| Distract | the target has been defeated |
+| Advance | the target has been defeated, or the Range to it is already Near |
+| Fall back | no surviving Enemy participant is Near |
+| Defend, Use a Consumable, Escape | never: Health only falls and items cannot be lost during a Round |
+
+The Escape bonus and the opposing Agility of Escape and Fall back are read when the action resolves, not on submission. A cancelled Consumable is not consumed.
+
+#### Temporary effects
+
+These are the only temporary effects. Each follows the rules under [Timing hooks](#timing-hooks).
+
+- **Guarded** (the Character, from Defend): from the moment Defend resolves until the end of the Round, every attack against the Character, by any participant, needs 2d6 + attacker's Might ≥ **9** + the Character's Agility. The first `melee` attack in the Round that misses the Guarded Character triggers a **counterattack** reaction: the Character's hit roll against that attacker, dealing **1 Damage** on a hit, whatever the weapon. At most one counterattack per Round; later misses trigger none. Guarded is round-scoped and never stored.
+- **Wary** (an Enemy participant, from a successful Distract): until the end of the next Round the participant cannot be the target of Distract. Wary outlasts the step and is stored with the Combat.
+
+A counterattack can defeat its target. Like any defeat during a Round, the participant loses its pending action, and defeating the last participant is a victory.
 
 ### Enemy response
 
@@ -219,8 +246,11 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 
 ### Tactical notes (consequences, not extra rules)
 
-- Against a `melee` Enemy, Advancing is never better than waiting, because the Enemy closes in by itself. Advance matters against `ranged` Enemies, which get free shots while the Character approaches.
-- A successful Fall back against a `melee` Enemy costs the Enemy one attack, but also costs the Character's action.
+- Fast actions protect but deal no Damage. Defend weakens every attack in the Round; Distract stops one announced Intent outright, including a prepared strike, but not the same participant two Rounds running.
+- The counterattack uses the ordinary hit roll, deals 1 Damage and happens at most once per Round, so Defend is protection, never a better source of Damage than Attack.
+- Fall back is `slow`: it does not dodge an ordinary `normal` attack in the same Round. It does step out of a `slow` melee attack from a participant acting after the Character, it makes `melee` participants spend an Intent closing in again, and it gives the next Escape its +2 while nothing is Near.
+- Against a `melee` Enemy, Advancing gains little, because the Enemy closes in by itself. Advance matters against `ranged` Enemies, which get free shots while the Character approaches.
+- Healing is `normal`: a faster Enemy's attack resolves before it, so drinking at very low Health can come too late.
 - No fight is unwinnable by construction: the worst hit chance (Might 0 against Agility 3) is 1/6, Damage is at least 2, Enemy Health is at most 30, a `melee` Character can always Advance without a roll, and Escape is always available.
 
 ## Sources
@@ -231,3 +261,4 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - [Playthrough state: exploration, inventory, persistent encounters and endings](https://github.com/lbacik/simple-rpg-engine/issues/13#issuecomment-6099619014) (effective Attributes everywhere)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (`very-hard`)
 - [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
+- [Tactical Character actions: defence, Wits disruption, Range and Escape](https://github.com/lbacik/simple-rpg-engine/issues/78) (Character actions, per-participant Range, Guarded and Wary)
