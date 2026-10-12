@@ -1,0 +1,21 @@
+id: lockhouse
+name: The Northern Lockhouse
+description: |
+  The sea wall thickens here into a squat lockhouse. Its public door opens onto a dry
+  inspection gallery; a barred stair descends below the tide line.
+
+  Three pressure needles shiver behind cracked glass. Two are labelled PUMP and WEIGHT.
+  The third reads ACCOUNT, a word scratched into the brass by hand.
+map:
+  x: 26
+  y: 46
+scenes:
+  - lockhouse-arrival
+  - descent-preparations
+connections:
+  - to: greyhaven
+    label: Walk back along the sea wall
+  - to: stairwell
+    label: Descend the inspection stair
+    when:
+      flag: lock-open

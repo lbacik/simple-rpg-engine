@@ -1,0 +1,36 @@
+id: ledger-account
+title: What It Means to Close an Account
+repeatable: true
+text: |
+  Hester's notes describe an older agreement. The wall was sustained by voluntary work:
+  watchkeepers, repairs, shared stores. The emergency council replaced those
+  contributions with the names of people it had failed to evacuate. The engine cannot
+  distinguish a promise from a debt entered in an official ledger.
+
+  To release the dead without dropping the wall, someone must stabilise the pumps, fit a
+  new weight and carry a witnessed correction into the heart vault. The correction must
+  name the people removed from the public account. The people above must accept the work
+  that was stolen from them.
+
+  The refuge holds survivors and descendants. The memorial supplies the names. The
+  keeper at the tidal bell can open the heart vault, but Hester warned against accepting
+  her office before understanding its price.
+choices:
+  - id: keep-notes
+    text: Keep the notes and seek witnesses at Lantern Island.
+    outcome:
+      text: |
+        You mark the maintenance steps with scraps of clean paper. For the first time, the
+        route below is more than a list of repairs.
+      effects:
+        - reveal: refuge
+        - reveal: causeway
+        - reveal: bell-chamber
+  - id: consider-other-way
+    text: Consider evacuation or taking the keeper's place.
+    outcome:
+      text: |
+        The notes also describe two hard alternatives. A willing keeper can hold the existing
+        account alone. Or, with Mercy operating and the signal lit, the city can abandon the
+        wall through the controlled south spillway. Breaking the engine outright requires that
+        same evacuation preparation.

@@ -1,0 +1,26 @@
+id: watch-stores
+title: Open the Watch Stores
+trigger: on-demand
+when:
+  flag: watch-cooperates
+text: |
+  Venn sets out a harbour blade, a padded coat and a shuttered lamp. The lamp is
+  ordinary; the tide cannot tell the difference between courage and a well-covered
+  flame.
+
+  "Choose your equipment before you go below," she says. "Nothing in the cupboard will
+  help while it stays in your pack."
+choices:
+  - id: take
+    text: Take the spare equipment and a medical draught.
+    outcome:
+      text: |
+        The captain records the supplies under emergency relief instead of your name. For
+        once, the paperwork makes something easier.
+      effects:
+        - give-item:
+            item: harbour-blade
+        - give-item:
+            item: watch-coat
+        - give-item:
+            item: salt-tonic

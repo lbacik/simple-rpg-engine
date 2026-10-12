@@ -1,0 +1,56 @@
+- id: harbour-warden
+  name: Harbour Warden
+  description: You have spent years keeping strangers safe on dangerous quays. You know that
+    an order and a duty are not always the same.
+  attributes:
+    might: 3
+    agility: 1
+    wits: 0
+    presence: 2
+  items:
+    - item: harbour-blade
+    - item: watch-coat
+    - item: salt-tonic
+      quantity: 2
+- id: canal-runner
+  name: Canal Runner
+  description: You carry messages across roofs and ropes. There is always a way through a
+    city, if you are willing to look below its maps.
+  attributes:
+    might: 1
+    agility: 3
+    wits: 2
+    presence: 0
+  items:
+    - item: signal-crossbow
+    - item: deck-coat
+    - item: salt-tonic
+      quantity: 2
+- id: tide-engineer
+  name: Tide Engineer
+  description: You came to study an impossible sea wall. Repairs make sense to you; the
+    people who commission them are harder to measure.
+  attributes:
+    might: 1
+    agility: 1
+    wits: 3
+    presence: 1
+  items:
+    - item: survey-staff
+    - item: engineers-lens
+    - item: salt-tonic
+      quantity: 2
+- id: crew-advocate
+  name: Crew Advocate
+  description: You settle disputes between workers and shipowners. You know how to make a
+    room listen, and when listening matters more than winning.
+  attributes:
+    might: 1
+    agility: 0
+    wits: 2
+    presence: 3
+  items:
+    - item: boat-hook
+    - item: union-badge
+    - item: salt-tonic
+      quantity: 2

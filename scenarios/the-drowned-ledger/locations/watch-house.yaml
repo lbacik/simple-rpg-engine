@@ -1,0 +1,18 @@
+id: watch-house
+name: Harbour Watch House
+description: |
+  A narrow building leans against the sea wall. Inside, wet coats hang above a stove,
+  and a map of the submerged district has been nailed over an older map with different
+  street names.
+
+  A locked cupboard bears the city seal. Captain Mara Venn has placed her chair in front
+  of it as though a chair could hold back a tide.
+map:
+  x: 9
+  y: 20
+scenes:
+  - watch-captain
+  - watch-stores
+connections:
+  - to: greyhaven
+    label: Return to the market

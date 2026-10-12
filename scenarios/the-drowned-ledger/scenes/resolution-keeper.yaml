@@ -1,0 +1,24 @@
+id: resolution-keeper
+title: One Willing Name
+repeatable: true
+text: |
+  Hester places a blank page beneath the stylus. "The engine will accept a willing name.
+  It will let me go, and it will hold the wall as long as you remain. The other names
+  will stay bound until someone corrects the account."
+
+  She does not disguise the loneliness. The office has no holidays and no certainty that
+  another inspector will come. Greyhaven will have time, but time can become another
+  excuse for the people above.
+
+  "If you choose this, choose it for what it is. You are saving living people now. You
+  are also leaving work unfinished."
+choices:
+  - id: take-watch
+    text: Write your name and freely accept the keeper's watch.
+    outcome:
+      text: |
+        The stylus pauses above the blank page. You take the chain from Hester's hands before
+        you sign.
+      end: new-keeper
+  - id: reconsider
+    text: Close the blank page and return to the desk.

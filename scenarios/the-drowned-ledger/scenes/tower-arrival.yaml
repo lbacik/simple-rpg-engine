@@ -1,0 +1,18 @@
+id: tower-arrival
+title: The Harbour in Miniature
+trigger: on-enter
+text: |
+  From the platform you can see people waiting on the wall, the stranded boats, the
+  island refuge. The market well is a pinprick of light. It is difficult to hate a city
+  when you can see its washing lines.
+
+  An archer in a sodden watch coat guards the lantern. "No signal without authority," he
+  says. He died maintaining a clear channel. He has not noticed that his orders have
+  become the obstruction.
+choices:
+  - id: observe
+    text: Learn the warning signal and the approach to the lantern.
+    outcome:
+      text: |
+        Three long flashes will start an evacuation. Before that, you must persuade the
+        watchman to allow the lamp to be prepared.

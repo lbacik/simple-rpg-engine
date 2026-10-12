@@ -1,0 +1,18 @@
+id: cistern
+name: The Overflow Cistern
+description: |
+  A shallow sheet of black water covers the floor of this chamber. Islands of grating
+  lead to a tool cage and a diving cradle. The cradle's signal cord is drawn taut.
+
+  A helmeted figure is visible beyond the glass of the flooded inspection duct. Beside
+  the cradle, an unattended speaking tube gives an occasional, very human cough.
+map:
+  x: 70
+  y: 83
+scenes:
+  - cistern-arrival
+  - cistern-diver
+  - cistern-cache
+connections:
+  - to: pump-hall
+    label: Return to the piston hall

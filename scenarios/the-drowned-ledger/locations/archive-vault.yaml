@@ -1,0 +1,17 @@
+id: archive-vault
+name: The Protected Reading Room
+description: |
+  Books stand in shelves of pitch-black oak. The high-water mark passes across their
+  spines without staining a page. A register lies beneath a glass weight on the central
+  desk.
+
+  There is no clerk, but the room has the expectant silence of a place where someone has
+  just asked a question.
+map:
+  x: 66
+  y: 14
+scenes:
+  - ledger-discovery
+connections:
+  - to: archive
+    label: Return to the archive steps

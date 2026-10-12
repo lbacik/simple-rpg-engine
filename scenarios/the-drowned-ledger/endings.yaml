@@ -1,0 +1,99 @@
+- id: death
+  kind: defeat
+  title: Another Name Beneath the Tide
+  text: |
+    Your journey ends before the account is settled. The city below receives you without
+    surprise, which is worse than cruelty.
+
+    At the market well, Ivo leaves a space beside your name for a report that never
+    arrives. Beneath the sea wall, the cylinder continues its slow turn. There was a way
+    to change what held Greyhaven together. Someone else will have to find it.
+- id: abandoned
+  kind: defeat
+  title: The Road Above the Water
+  text: |
+    You leave Greyhaven by the dry road. By evening, the sea mist hides the city behind
+    you. For a time, it is possible to believe that distance is the same as safety.
+
+    Weeks later, a traveller describes an empty harbour and a bell heard far out at sea.
+    You do not ask whose name the people there had written beneath the surveyor's
+    commission.
+- id: covenant-renewed
+  kind: victory
+  title: The Wall That Belongs to Everyone
+  text: |
+    The bell rings once for every name entered without consent. With each note, a face
+    below the water becomes less pale. Hester climbs the service passage and finds Sella
+    waiting with two cups of tea. Neither tries to recover sixty years in the first
+    sentence.
+
+    The sea returns to its ordinary tide. Lowwater remains a place of mud, broken houses
+    and difficult repairs; Greyhaven remains a city capable of forgetting. The ledger is
+    placed in the market where anyone can read it. The new maintenance roster is posted
+    beside it, along with the right to refuse unsafe work.
+
+    Your name is recorded as a witness, not an owner. Tomorrow the wall will need hands,
+    tools and arguments conducted in daylight. Tonight both shores eat at one table, and
+    nobody's empty chair is counted as a source of power.
+- id: new-keeper
+  kind: victory
+  title: A Watch Freely Taken
+  text: |
+    Hester carries the corrected inspection report up to her daughter, but the account
+    itself remains unfinished. Your willing name takes her place beneath the stylus. Above
+    you, the tide gauge returns to the black.
+
+    Greyhaven survives. Ivo posts your terms at the market and promises to organise a new
+    expedition with witnesses rather than another solitary keeper. Some people listen.
+    Some are grateful enough to stop listening.
+
+    You hold the chain in a chamber full of borrowed hours. You chose this freely, and
+    that matters. It does not release the others. Whenever the bell moves, you remember
+    the difference and hope the city above remembers it too.
+- id: city-evacuated
+  kind: victory
+  title: A Harbour Carried Elsewhere
+  text: |
+    Mercy keeps crossing the south channel until the last person reaches high ground. The
+    watch clears homes in order of need rather than property value. From Lantern Island,
+    people see the sea wall settle into the tide without the great breaking wave they
+    feared.
+
+    Hester leaves her chain when the pressure falls away. The dead lose the account that
+    trapped them; the living lose streets, shops and rooms whose doorframes carried
+    generations of height marks. Those are different losses, and nobody tries to make them
+    equal.
+
+    Sella keeps the ledger dry while Ivo begins a map of the next settlement. On its first
+    page he writes the names of the people it must hold. You leave only when Mercy is tied
+    safely beside a new landing, her name freshly repainted.
+- id: engine-broken
+  kind: victory
+  title: Freedom in the Breaking Water
+  text: |
+    The cage snaps, and the held sea falls. Three long flashes give the upper city its
+    warning. Mercy carries the people from the quay into the clear channel while the watch
+    drives everyone else towards the road. Houses vanish behind them in a roar too large
+    to be mistaken for weather.
+
+    The engine's names are released all at once. Hester rises through the water with the
+    people whose last hours she tried to preserve. There is no city beneath them now, only
+    wreckage and the difficult freedom of having nowhere to return.
+
+    On high ground, survivors begin counting one another. They have their lives because
+    you prepared a way out; their belongings and harbour are gone because you chose the
+    sudden end. The ledger survives in your hands. It will have to tell both truths.
+- id: flood-unleashed
+  kind: defeat
+  title: An Unwarned Shore
+  text: |
+    The cage breaks before the harbour is ready. Hester's last effort buys seconds, not a
+    crossing. The water reaches the quay while people are still waiting for instructions
+    that never came.
+
+    You escape through the inspection shaft with the ledger pressed against your chest.
+    Its dry pages do not excuse what happened outside them. The dead beneath the wall are
+    free; the people you might have carried to safety have joined them.
+
+    Far up the road, you write the final entry yourself. You do not call it an accident.
+    There is nobody left who should be made to carry that lie.

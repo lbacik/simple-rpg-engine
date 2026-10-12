@@ -1,0 +1,33 @@
+id: ledger-discovery
+title: The Ledger That Never Balanced
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: ledger-read
+text: |
+  The register records the price of the sea wall: timber, stone, brass, wages. Then the
+  handwriting changes. Below the last sum are the names of Lowwater's residents, each
+  assigned to an hour of protection for Greyhaven.
+
+  In the margin, engineer Hester Marr wrote: LIFE IS NOT A MEASURE OF PRESSURE. Someone
+  crossed out her sentence and substituted: EMERGENCY AUTHORITY.
+
+  The last page bears a maintenance instruction. A broken weight and failing pumps
+  explain the immediate danger. The ledger explains why repairing them alone will never
+  settle it.
+choices:
+  - id: read-account
+    text: Read Hester's marginal notes and take the original ledger.
+    outcome:
+      text: |
+        The glass weight lifts as you touch it. You wrap the ledger in its dry cover; the
+        shelf behind it exhales.
+      effects:
+        - give-item:
+            item: original-ledger
+        - set-flag: ledger-read
+        - set-flag: knows-coverup
+      next: ledger-account
+  - id: leave
+    text: Leave the register untouched for now.

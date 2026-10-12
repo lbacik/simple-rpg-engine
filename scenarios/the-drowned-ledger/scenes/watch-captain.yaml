@@ -1,0 +1,60 @@
+id: watch-captain
+title: Captain Venn's Closed Cupboard
+trigger: on-demand
+repeatable: true
+when:
+  flag: commissioned
+text: |
+  Mara Venn looks older than the portrait hanging above her desk. She listens without
+  interrupting, then lays a brass survey seal beside the stove.
+
+  "The old district is city property. Anything you recover comes back here." Her hand
+  stays on the seal. "Those are my orders. I have followed them for twenty years. Today
+  I am less certain that makes them good orders."
+choices:
+  - id: take-seal
+    text: Ask for access and promise an honest report.
+    when:
+      not:
+        flag: watch-cooperates
+    outcome:
+      text: |
+        Venn releases the seal. "An honest report. I will hold you to that, and you may hold
+        me to it." She opens the supply cupboard.
+      effects:
+        - give-item:
+            item: survey-seal
+        - set-flag: watch-cooperates
+  - id: ask-history
+    text: Ask why the official account omits the drowned names.
+    when:
+      flag: knows-coverup
+    outcome:
+      next: captain-confession
+  - id: press-captain
+    text: Ask her to help before another order arrives.
+    when:
+      not:
+        flag: watch-cooperates
+    once: true
+    test:
+      attribute: presence
+      difficulty: ordinary
+      success:
+        text: |
+          "Enough waiting," Venn says. She passes over the seal and orders her remaining watch
+          to assist the relief table.
+        effects:
+          - give-item:
+              item: survey-seal
+          - set-flag: watch-cooperates
+      failure:
+        text: |
+          She shakes her head at your urgency, but hands you the seal anyway. "Go carefully. My
+          doubt is no reason to make the stair harder for you."
+        effects:
+          - give-item:
+              item: survey-seal
+          - set-flag: watch-cooperates
+  - id: leave
+    text: Leave her to the harbour reports.

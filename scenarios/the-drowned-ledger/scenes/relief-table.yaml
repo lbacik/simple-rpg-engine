@@ -1,0 +1,24 @@
+id: relief-table
+title: Supplies at the Well
+trigger: on-demand
+when:
+  flag: commissioned
+text: |
+  An apothecary named Ada has laid bandages on boards across the market well. She has
+  stopped charging. A short queue waits patiently while she cuts the last clean sheet
+  into strips.
+
+  "Take something for the descent," she tells you. "Bring back a name if you cannot
+  bring back a person. We have enough unknowns."
+choices:
+  - id: take-supplies
+    text: Take a draught and a roll of bandages.
+    outcome:
+      text: |
+        Ada presses the bundle into your hands, then turns to a fisherman with a broken wrist.
+        The work of saving a city has already begun here.
+      effects:
+        - give-item:
+            item: salt-tonic
+        - give-item:
+            item: field-dressings

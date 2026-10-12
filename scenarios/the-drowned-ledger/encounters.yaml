@@ -1,0 +1,69 @@
+- id: porter-fight
+  enemy: drowned-porter
+  startRange: near
+  text: |
+    Elias closes the visitors' book and raises his ticket punch as though it were a blade.
+    "You have not signed," he says, almost pleading.
+  victory:
+    text: |
+      The uniform collapses around the dry visitors' book. You place it on the landing
+      before passing into Lowwater.
+    effects:
+      - set-flag: porter-passed
+      - reveal: sunken-square
+  escape:
+    text: |
+      You climb out of reach. Below, the porter retrieves his book and returns to his
+      station; the entrance can still be approached peacefully.
+    move: lockhouse
+- id: foundry-fight
+  enemy: iron-foreman
+  startRange: near
+  text: |
+    The foreman brings its hammer up, carefully avoiding the unfinished moulds. Even now,
+    it is trying to preserve the workshop.
+  victory:
+    text: |
+      The mask splits and falls beside the furnace. Nera watches you put the hammer down
+      before she invites you to the workbench.
+    effects:
+      - set-flag: foundry-safe
+  escape:
+    text: |
+      You retreat along the tram rails. The foreman remains at the furnace, injured but
+      still willing to hear the name of a legitimate job.
+    move: sunken-square
+- id: tower-fight
+  enemy: channel-watchman
+  startRange: far
+  text: |
+    The watchman retreats to the lantern rail and draws. His arrowhead is a pale shape of
+    salt, sharp enough to be real.
+  victory:
+    text: |
+      The bow becomes a length of wet rope. You set it against the rail and turn to the
+      emergency lamp.
+    effects:
+      - set-flag: tower-safe
+  escape:
+    text: |
+      You descend below the firing angle. The watchman stays at his post, and you can still
+      return with the survey chart or an emergency report.
+    move: causeway
+- id: auditor-fight
+  enemy: brass-auditor
+  startRange: near
+  text: |
+    The auditor unfolds into a cage of tally sticks. Its brass clasps snap open and shut
+    in a rhythm copied from the engine.
+  victory:
+    text: |
+      The tally sticks scatter across the floor. None bears a name. You step past them to
+      the account desk.
+    effects:
+      - set-flag: heart-open
+  escape:
+    text: |
+      You back through the hatch. Hester holds the door until the auditor returns to its
+      register; either authority document will still admit you.
+    move: bell-chamber

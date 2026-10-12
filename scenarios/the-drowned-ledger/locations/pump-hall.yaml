@@ -1,0 +1,20 @@
+id: pump-hall
+name: The Three-Piston Hall
+description: |
+  Three great pistons rise and fall beneath a ceiling of water. One labours alone while
+  the other two knock uselessly against their housings. Their combined rhythm resembles
+  someone limping upstairs.
+
+  A maintenance board carries a diagram of the bypass circuit. Beside it hangs a
+  handwheel too heavy for one person to hold in place without a locking pin.
+map:
+  x: 51
+  y: 76
+scenes:
+  - pump-arrival
+  - pump-calibration
+connections:
+  - to: sunken-square
+    label: Return to the square
+  - to: cistern
+    label: Enter the overflow cistern

@@ -1,0 +1,39 @@
+id: descent-preparations
+title: Open the Inspection Stair
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: lock-open
+text: |
+  The stair door has a brass seal socket and a manual release. The instructions warn
+  against forcing it: pressure must first be equalised through the small wheel.
+
+  Ivo's chart shows three tasks below. Reset the pumps with a locking pin, cast a
+  replacement counterweight at the foundry, and read the maintenance ledger in the
+  archive. The dry service passage offers a way to Lantern Island if you need to
+  recover.
+choices:
+  - id: use-seal
+    text: Use the survey seal to unlock the stair.
+    when:
+      has:
+        item: survey-seal
+    outcome:
+      text: |
+        The seal turns, and the bolts withdraw in sequence. A current of cold air rises from
+        the dark.
+      effects:
+        - set-flag: lock-open
+        - reveal: stairwell
+  - id: manual-release
+    text: Equalise the pressure and operate the manual release.
+    outcome:
+      text: |
+        You turn the small wheel until the hissing stops, then pull the release. Nothing
+        resists a procedure followed in the right order.
+      effects:
+        - set-flag: lock-open
+        - reveal: stairwell
+  - id: return
+    text: Leave the door for now.

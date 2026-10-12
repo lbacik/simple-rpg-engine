@@ -1,0 +1,18 @@
+id: cistern-arrival
+title: A Living Voice in the Water
+trigger: on-enter
+text: |
+  Three sharp knocks come through the speaking tube. "Do not pull the cable," a woman
+  says. "The cradle is snagged, and my leg is under it. Tamsin Reed, harbour diver.
+  Still alive, despite the paperwork."
+
+  Her air hose is intact. The chamber has a marked drain lever that can lower the water
+  around the cradle. Tamsin talks you through the controls without pretending she is
+  unafraid.
+choices:
+  - id: answer
+    text: Tell Tamsin you will prepare the drain.
+    outcome:
+      text: |
+        "Good. There is a locking pin in the tool cage, too. Take it even if you cannot get me
+        out yet. The whole city is sitting on those pumps."

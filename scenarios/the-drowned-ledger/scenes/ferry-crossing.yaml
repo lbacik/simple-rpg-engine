@@ -1,0 +1,24 @@
+id: ferry-crossing
+title: A Place for Every Passenger
+trigger: on-demand
+repeatable: true
+when:
+  flag: ferry-rescued
+text: |
+  Mercy is tied safely to a floating pontoon. Bram has chalked a list on the cabin wall:
+  children, injured, anyone who cannot climb the service stair. There is space at the
+  bottom for more names.
+
+  "The refuge is on Lantern Island," he says. "There is an old service passage from the
+  lower city, too. If you find someone below, send them there. If the signal tower
+  flashes three times, I will clear the south channel and stay there."
+choices:
+  - id: ride
+    text: Ride with the next passengers to Lantern Island.
+    outcome:
+      text: |
+        You help an exhausted woman across the gangplank. Mercy pushes away from the quay,
+        carrying fewer belongings than memories.
+      move: refuge
+  - id: leave
+    text: Let Bram continue the crossings.

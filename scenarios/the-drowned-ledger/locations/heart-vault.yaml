@@ -1,0 +1,19 @@
+id: heart-vault
+name: The Heart of the Sea Wall
+description: |
+  A brass cylinder turns inside a cage of beams. Its engraved names pass beneath a
+  stylus that never lifts. With each revolution, the wall above receives another hour of
+  borrowed strength.
+
+  Three controls surround it: the counterweight linkage, a pressure lever and a desk
+  with a place for the ledger. Beyond a grille, the south spillway opens directly into
+  the tide.
+map:
+  x: 92
+  y: 67
+scenes:
+  - heart-threshold
+  - heart-controls
+connections:
+  - to: bell-chamber
+    label: Return to the keeper

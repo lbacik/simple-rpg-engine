@@ -1,0 +1,25 @@
+id: market-arrival
+title: A Tide That Has Forgotten Its Hour
+trigger: on-enter
+text: |
+  The tide gauge rings once, then falls silent with its pointer still climbing. A young
+  harbour surveyor pushes through the crowd, carrying a rolled chart and a cup of tea he
+  has forgotten to drink.
+
+  "You came in by the dry road," he says. "Then you can still choose to leave. My name
+  is Ivo Pell. We have a fault beneath the basin and nobody willing to go down to it."
+
+  A child at the well asks her mother why the drowned houses have windows full of light.
+  The mother answers by pulling the child closer.
+choices:
+  - id: hear-surveyor
+    text: Ask Ivo what is happening.
+    outcome:
+      next: town-briefing
+  - id: leave-city
+    text: Take the dry road out of Greyhaven.
+    outcome:
+      text: |
+        You put the falling road behind you. Ivo does not try to stop you; he has already
+        turned to the next stranger.
+      end: abandoned
