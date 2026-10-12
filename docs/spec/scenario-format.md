@@ -339,6 +339,7 @@ The base manifest lists each Translation's manifest under `translations`. A Tran
 
 ```yaml
 language: <BCP 47 tag>         # the language of this Translation's text
+baseVersion: <string>          # the base `version` this Translation was made from
 translator?: <string>          # credit, shown with the author
 title: <text>
 description: <text>
@@ -354,6 +355,10 @@ images?: [<path>]
 ```
 
 A Translation manifest has no `schemaVersion`, `id`, `author` or `version`; the base manifest's values apply. It is identified by its `language`.
+
+`baseVersion` records the base manifest's `version` the Translation was made from or last reviewed against. When the base's `version` moves on, the Translation is reported as stale, a warning ([validation.md](validation.md#staleness)). The translator clears it by reviewing the text and updating `baseVersion`.
+
+A Translation that breaks any rule in this section is rejected on its own: the Scenario stays in the collection and shows its Base Language instead ([validation.md](validation.md#translations)).
 
 ### Language tags
 
