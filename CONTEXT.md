@@ -58,11 +58,23 @@ _Avoid_: Game over, finale
 An item with no mechanical effect, used only to satisfy Conditions or be given and taken by Effects.
 _Avoid_: Quest item, plot item
 
+**Base Language**:
+The language a Scenario is written in, declared in its manifest; its text is what a player sees when no Translation applies.
+_Avoid_: Default language, source language
+
+**Translation**:
+A complete rendering of all of a Scenario's text into one other language, adding no content and changing no mechanics.
+_Avoid_: Localisation, locale pack, language version
+
 ### Play
 
 **Session**:
 An anonymous browser session created automatically; it owns any number of Playthroughs.
 _Avoid_: User, account
+
+**Interface Language**:
+The language a player has chosen for the engine's own text; it also selects which Translation of a Scenario is shown, falling back to the Base Language.
+_Avoid_: Locale, UI locale
 
 **Playthrough**:
 One run of a Scenario by a player, with its own Character and state.
