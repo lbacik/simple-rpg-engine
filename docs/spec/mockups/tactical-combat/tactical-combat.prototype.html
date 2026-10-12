@@ -1,0 +1,887 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. A spec mockup for docs/spec/ui.md; not application code, never import into src/.
+  Question (lbacik/simple-rpg-engine#82, "Prototype: readable intents, targets and action order for two Enemies"):
+    how should the compact Combat arena present one or two Enemy participants, their visible Intents,
+    target selection, Range and the Round's action order, so the player understands the consequences
+    before committing an action?
+  Three variants, switchable via `?variant=A|B|C`, the bottom bar or the arrow keys:
+    A  Lanes & target picker — the current compact arena split into one Range lane per participant, an Intent
+                               bubble over each Enemy, an order strip under the arena, the four action columns
+                               kept, and one "Target" radio group shared by Attack, Distract and Advance.
+    B  Round timeline        — the Round itself is the menu: Fast / Normal / Slow columns list the Intents in
+                               order, and the Character's actions sit in the slot where they would resolve,
+                               one button per action and target. A small roster table replaces the arena.
+    C  Opponent cards        — no arena drawing: a "You" card with the untargeted actions, one card per
+                               participant with its Intent banner, Range meter and its own targeted actions,
+                               roll targets and chances, and a numbered "This round" order list beside them.
+  VERDICT (review 2026-10-12, lbacik/simple-rpg-engine#82): variant A, with the target picker as links
+  (?target=<participant id>, server-rendered availability, works without JS), letters A/B for two participants
+  of one kind, 2d6 thresholds ("needs 9+") without percentages, and the shared report and Journal as shown.
+  docs/spec/ui.md is normative; the resolution comment on #82 records the decision.
+  Shared by all variants: the newest-round report (one line per action in Round order, with status and the
+  nested counterattack) and the text-only Journal (a legacy single-Enemy Combat shown verbatim first).
+  Fixtures (from the Whispering Woods content; the Encounters are illustrative): a duel, two melee Enemies,
+  the wolf + archer reference pair, and two Grey Wolves of one kind (equal Agility with the Scholar).
+  The rules engine follows docs/spec/mechanics.md (Rounds, Character actions, Enemy Intents). Dice come from a
+  seeded source; "Queue dice" forces the next values. "Plain forms" mode imitates a browser without client
+  JavaScript: no hover preview; every button still shows its place in the order. All state is in memory.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tactical Combat Prototype</title>
+<style>
+:root {
+  --paper: #faf7f0; --ink: #2a251d; --muted: #6f6455; --rule: #ddd2bd; --accent: #5a4a2f;
+  --card: #fffdf8; --enemy: #7d2420; --good: #4f7a3a; --bad: #a8321f; --gold: #d6b25e;
+  --fast: #2f6f8f; --normal: #5a4a2f; --slow: #8a4f8f;
+  --bar: #1f1f22; --bar-ink: #f4f4f5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e9e4d8; color: var(--ink); font-family: Georgia, 'Times New Roman', serif; line-height: 1.5; }
+button { font: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- the app frame (desktop or phone width) ---------- */
+.frame { margin: 0 auto 7rem; background: var(--paper); container: app / inline-size; min-height: 100vh; }
+.frame.desktop { max-width: 72rem; }
+.frame.phone { max-width: 390px; border-left: 1px solid #aaa; border-right: 1px solid #aaa; }
+.topnav { border-bottom: 1px solid var(--rule); background: var(--card); padding: .6rem 1rem; display: flex; gap: 1.25rem; font-size: .95rem; }
+.topnav a { color: var(--accent); }
+.topnav .lang { margin-left: auto; color: var(--muted); }
+.game { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 1.5rem; padding: 1.25rem 1rem 3rem; }
+@container app (max-width: 760px) { .game { grid-template-columns: minmax(0, 1fr); padding: 1rem .75rem 3rem; } }
+.side { display: flex; flex-direction: column; gap: .75rem; }
+.side .map { height: 9rem; border: 1px solid var(--rule); border-radius: .5rem; background: var(--card); display: grid; place-items: center; color: var(--muted); font-size: .8rem; }
+@container app (max-width: 760px) { .side .map { display: none; } }
+.status { border: 1px solid var(--rule); border-radius: .5rem; background: var(--card); padding: .6rem .75rem; display: flex; gap: .6rem; align-items: center; }
+.status small { color: var(--muted); display: block; }
+.launchers { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+.launchers button { border: 1px solid var(--rule); background: var(--card); border-radius: .4rem; padding: .4rem; font-size: .8rem; cursor: pointer; }
+.launchers small { display: block; color: var(--muted); font-size: .7rem; }
+
+/* ---------- shared Combat header and pieces ---------- */
+.kicker { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.c-header { border-bottom: 1px solid var(--rule); padding-bottom: .4rem; }
+.c-header h1 { margin: .1rem 0 .2rem; font-size: 1.7rem; }
+.c-header .narr { font-style: italic; color: var(--muted); margin: 0; }
+.ring { --c: var(--good); position: relative; width: 3.6rem; height: 3.6rem; border-radius: 50%; display: grid; place-items: center; margin: 0 auto;
+  background: conic-gradient(var(--c) var(--h), var(--rule) 0); }
+.ring.low { --c: var(--bad); }
+.ring.sm { width: 2.4rem; height: 2.4rem; }
+.ring.sm .face { width: 1.9rem; height: 1.9rem; font-size: .85rem; }
+.face { width: 2.9rem; height: 2.9rem; border-radius: 50%; display: grid; place-items: center; font-weight: bold; color: #fff; font-size: 1.2rem; background: var(--accent); }
+.enemyface { background: var(--enemy); }
+.dead .ring { background: var(--rule); filter: grayscale(1); opacity: .6; }
+.ord { position: absolute; right: -.3rem; top: -.2rem; background: var(--ink); color: #fff; border-radius: 999px; font-size: .65rem; padding: 0 .3rem; font-family: sans-serif; }
+.badge { display: inline-block; border-radius: 999px; padding: 0 .45rem; font-size: .68rem; font-weight: bold; font-family: sans-serif; line-height: 1.5; vertical-align: middle; }
+.badge.wary { background: #dfe9ef; color: #23465a; }
+.badge.prep { background: #f3dfc4; color: #6a3b06; }
+.badge.dead { background: #ddd; color: #555; }
+.badge.near { background: color-mix(in srgb, var(--enemy) 14%, white); color: var(--enemy); }
+.badge.far { background: #ece6d8; color: var(--muted); }
+.speed { display: inline-block; font-family: sans-serif; font-size: .66rem; font-weight: bold; text-transform: uppercase; letter-spacing: .06em; border-radius: .25rem; padding: 0 .3rem; color: #fff; vertical-align: middle; }
+.speed.fast { background: var(--fast); } .speed.normal { background: var(--normal); } .speed.slow { background: var(--slow); }
+.pos { display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; border-radius: 999px; background: var(--ink); color: #fff; font: bold .72rem sans-serif; padding: 0 .3rem; }
+.pos.you { background: var(--accent); outline: 2px solid var(--gold); }
+.btn { width: 100%; min-height: 2.3rem; border: 1px solid var(--accent); background: var(--card); color: var(--ink); border-radius: .4rem; padding: .3rem .5rem; cursor: pointer; text-align: left; }
+.btn:hover:not(:disabled), .btn:focus-visible { background: color-mix(in srgb, var(--accent) 10%, var(--card)); outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn:disabled { border-color: var(--rule); color: var(--muted); cursor: not-allowed; background: transparent; }
+.btn .sub { display: block; font-size: .72rem; color: var(--muted); font-family: sans-serif; }
+.reason { font-size: .74rem; color: var(--muted); margin: .15rem 0 0; font-style: italic; }
+.notice { border: 1px solid var(--bad); background: #fbeae6; padding: .4rem .7rem; border-radius: .4rem; margin: .6rem 0; font-size: .9rem; }
+
+/* ---------- order list (shared by A strip, C sidebar) ---------- */
+.order { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem .4rem; align-items: center; }
+.order li { display: flex; gap: .3rem; align-items: center; border: 1px solid var(--rule); background: var(--card); border-radius: 999px; padding: .1rem .5rem .1rem .15rem; font-size: .8rem; }
+.order li.you { border-color: var(--gold); background: #fbf3dc; }
+.order li.ghost { border-style: dashed; color: var(--muted); }
+.order .sep { border: 0; background: none; padding: 0; font: bold .65rem sans-serif; letter-spacing: .1em; color: var(--muted); }
+
+/* ---------- report + Journal ---------- */
+.log { margin-top: 1.1rem; }
+.log h2 { font-size: 1rem; margin: 0 0 .4rem; }
+.latest { border-left: 3px solid var(--accent); background: var(--card); padding: .5rem .8rem; border-radius: 0 .4rem .4rem 0; }
+.steps { margin: .3rem 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .3rem; }
+.steps li { display: grid; grid-template-columns: 1.6rem 1fr; gap: .3rem; font-size: .88rem; }
+.steps .what { font-weight: bold; }
+.steps .roll { font-family: ui-monospace, Menlo, monospace; font-size: .78rem; background: #f1ece0; border-radius: .25rem; padding: 0 .3rem; }
+.steps .roll.hit { background: #f6dcd6; } .steps .roll.ok { background: #dfeedd; }
+.steps .cancel { color: var(--muted); font-style: italic; }
+.steps .counter { margin-left: .8rem; display: block; font-size: .82rem; }
+.stopline { margin: .4rem 0 0; font-size: .85rem; font-weight: bold; }
+.older { list-style: none; padding: 0; margin: .6rem 0 0; font-size: .8rem; color: var(--muted); }
+.older li { border-top: 1px dashed var(--rule); padding: .25rem 0; }
+.journal { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 40; }
+.journal .box { background: var(--paper); width: min(46rem, 94vw); max-height: 86vh; overflow: auto; border-radius: .6rem; padding: 1rem 1.2rem; }
+.journal .entry { border-top: 1px solid var(--rule); padding: .5rem 0; font-size: .88rem; }
+.journal .entry .lab { font: bold .7rem sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.journal .legacy { background: #f3efe5; padding: .1rem .4rem; border-radius: .25rem; }
+
+/* ---------- Variant A: lanes ---------- */
+.a-arena { --med: 7.5rem; display: grid; grid-template-columns: 8rem minmax(0, 1fr); margin: 1rem 0 .6rem; border: 1px solid var(--rule); border-radius: .6rem;
+  background: radial-gradient(ellipse at 50% 130%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%), var(--card); }
+.a-char { display: grid; place-items: center; border-right: 1px dashed var(--rule); padding: .5rem .3rem; text-align: center; }
+.a-lane { position: relative; min-height: 12.2rem; }
+.a-lane + .a-lane { border-top: 1px dashed var(--rule); }
+.a-lane .ground { position: absolute; left: 0; right: 0; bottom: 1.5rem; border-top: 1px solid var(--rule); }
+.a-lane .rlabel { position: absolute; left: 0; right: 0; text-align: center; bottom: .15rem; font: bold .65rem sans-serif; letter-spacing: .25em; color: var(--muted); }
+.a-lane.near .rlabel { color: var(--enemy); }
+.a-lane .gap { position: absolute; top: 3.4rem; font-size: .72rem; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+.a-lane.near .gap { left: .4rem; font-size: 1.3rem; color: var(--enemy); letter-spacing: 0; }
+.a-lane.far .gap { left: 0; right: var(--med); text-align: center; }
+.a-enemy { position: absolute; top: .35rem; width: var(--med); text-align: center; transition: left .5s cubic-bezier(.3,.8,.3,1); }
+.a-lane.near .a-enemy { left: 2.2rem; }
+.a-lane.far .a-enemy { left: calc(100% - var(--med) - .3rem); }
+.a-bubble { display: inline-block; max-width: var(--med); background: #fff; border: 1px solid var(--enemy); border-radius: .5rem; padding: .1rem .35rem; font-size: .72rem; margin-bottom: .2rem; line-height: 1.35; }
+.a-bubble .pos { margin-right: .15rem; }
+.a-bubble.prepare { border-style: dashed; }
+.name { font-weight: bold; font-size: .8rem; margin: .2rem 0 0; line-height: 1.15; }
+.hp { font-size: .74rem; margin: 0; font-variant-numeric: tabular-nums; }
+.detail { font-size: .66rem; color: var(--muted); margin: 0; line-height: 1.2; }
+.a-next { display: block; font-size: .66rem; color: #6a3b06; }
+.a-orderbox { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin: 0 0 .8rem; }
+.a-orderbox .kicker { min-width: 6.5rem; }
+.a-target { border: 1px solid var(--rule); border-radius: .5rem; padding: .4rem .7rem; margin: 0 0 .7rem; background: var(--card); display: flex; flex-wrap: wrap; gap: .3rem 1rem; align-items: center; }
+.a-target .lab { font-weight: bold; font-size: .85rem; }
+.a-target a { font-size: .88rem; color: var(--ink); text-decoration: none; border: 1px solid var(--rule); border-radius: 999px; padding: .05rem .55rem; }
+.a-target a[aria-current] { border-color: var(--accent); background: #fbf3dc; font-weight: bold; }
+.a-target a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.a-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .7rem; }
+.a-group { border: 1px solid var(--rule); border-radius: .5rem; padding: .55rem .6rem .7rem; background: var(--card); display: flex; flex-direction: column; gap: .4rem; }
+.a-group h2 { margin: 0; font-size: .9rem; }
+@container app (max-width: 760px) {
+  .a-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .a-arena { --med: 6.2rem; grid-template-columns: 5.6rem minmax(0, 1fr); }
+  .a-lane.near .a-enemy { left: 1.7rem; }
+}
+
+/* ---------- Variant B: timeline ---------- */
+.b-roster { width: 100%; border-collapse: collapse; margin: 1rem 0 .8rem; font-size: .85rem; background: var(--card); border: 1px solid var(--rule); }
+.b-roster th, .b-roster td { padding: .3rem .5rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: middle; }
+.b-roster th { font: bold .68rem sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.b-roster tr.dead td { color: var(--muted); text-decoration: line-through; }
+.hbar { display: inline-block; width: 4.5rem; height: .45rem; background: var(--rule); border-radius: 999px; overflow: hidden; vertical-align: middle; margin-right: .3rem; }
+.hbar i { display: block; height: 100%; background: var(--good); }
+.hbar.low i { background: var(--bad); }
+.b-time { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.b-col { border: 1px solid var(--rule); border-radius: .5rem; background: var(--card); padding: .5rem; display: flex; flex-direction: column; gap: .45rem; }
+.b-col > h2 { margin: 0; font: bold .75rem sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.b-col.fast > h2 { color: var(--fast); } .b-col.normal > h2 { color: var(--normal); } .b-col.slow > h2 { color: var(--slow); }
+.b-col .hint { font-size: .7rem; color: var(--muted); margin: -.3rem 0 0; }
+.b-intent { border-left: 3px solid var(--enemy); background: #fbf1ee; padding: .3rem .45rem; border-radius: 0 .35rem .35rem 0; font-size: .82rem; }
+.b-intent .who { font-weight: bold; }
+.b-you { border: 2px dashed var(--gold); border-radius: .45rem; padding: .35rem .45rem; display: flex; flex-direction: column; gap: .3rem; }
+.b-you > p { margin: 0; font: bold .72rem sans-serif; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+.b-act { display: flex; flex-direction: column; gap: .2rem; }
+.b-act .btn { padding: .2rem .45rem; min-height: 2rem; }
+.b-empty { font-size: .75rem; color: var(--muted); font-style: italic; }
+@container app (max-width: 760px) { .b-time { grid-template-columns: minmax(0, 1fr); } .b-roster .hide-sm { display: none; } }
+
+/* ---------- Variant C: cards ---------- */
+.c-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 13rem; gap: .9rem; margin-top: 1rem; align-items: start; }
+.c-orderbar { position: sticky; top: .5rem; border: 1px solid var(--rule); border-radius: .5rem; background: var(--card); padding: .55rem .7rem; }
+.c-orderbar h2 { font-size: .9rem; margin: 0 0 .35rem; }
+.c-orderbar ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; }
+.c-orderbar li { display: grid; grid-template-columns: 1.6rem 1fr; gap: .3rem; align-items: start; }
+.c-orderbar li.you { background: #fbf3dc; border-radius: .3rem; }
+.c-orderbar li.ghost { color: var(--muted); font-style: italic; }
+.c-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.c-card { border: 1px solid var(--rule); border-radius: .6rem; background: var(--card); padding: .6rem .7rem; display: flex; flex-direction: column; gap: .45rem; }
+.c-card.you { grid-column: 1 / -1; border-color: var(--accent); }
+.c-card.dead { opacity: .55; }
+.c-head { display: flex; gap: .6rem; align-items: center; }
+.c-head .ring { margin: 0; flex: none; }
+.c-head h2 { margin: 0; font-size: 1rem; line-height: 1.2; }
+.c-intent { border: 1px solid var(--enemy); border-radius: .45rem; background: #fbf1ee; padding: .35rem .5rem; font-size: .84rem; display: grid; grid-template-columns: auto 1fr; gap: .45rem; align-items: center; }
+.c-intent.prepare { border-style: dashed; }
+.c-meter { display: flex; align-items: center; gap: .35rem; font-size: .75rem; color: var(--muted); }
+.c-meter .track { flex: 1; height: 0; border-top: 2px dotted var(--rule); position: relative; }
+.c-meter.near .track { border-top: 2px solid var(--enemy); flex: .25; }
+.c-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .4rem; }
+@container app (max-width: 760px) { .c-wrap { grid-template-columns: minmax(0, 1fr); } .c-orderbar { position: static; order: -1; } .c-cards { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- result panel ---------- */
+.result { border: 1px solid var(--rule); background: var(--card); border-radius: .6rem; padding: 1rem 1.2rem; margin-top: 1rem; }
+.result h1 { margin-top: 0; }
+
+/* ---------- prototype chrome (not part of the design) ---------- */
+.proto { font: 13px/1.4 system-ui, sans-serif; }
+.controls { position: fixed; top: 10px; right: 10px; z-index: 30; background: var(--bar); color: var(--bar-ink); border-radius: 10px; padding: 8px 10px; width: 300px; max-height: calc(100vh - 90px); overflow: auto; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.controls summary { cursor: pointer; font-weight: 600; }
+.controls label { display: block; margin: 6px 0 2px; color: #bbb; }
+.controls select, .controls input[type=text] { width: 100%; background: #2c2c30; color: #fff; border: 1px solid #444; border-radius: 4px; padding: 3px 5px; }
+.controls .row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.controls button { background: #3a3a3e; color: #fff; border: 0; border-radius: 4px; padding: 3px 7px; cursor: pointer; font-size: 12px; }
+.controls pre { font-size: 11px; background: #111; padding: 6px; border-radius: 4px; overflow: auto; max-height: 220px; }
+.controls .chk { display: flex; gap: 6px; align-items: center; color: #ddd; margin: 4px 0; }
+.switcher { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 30; display: flex; align-items: center; gap: 10px; background: var(--bar); color: var(--bar-ink); border-radius: 999px; padding: 6px 8px; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.switcher button { font: 16px/1 sans-serif; width: 32px; height: 32px; border-radius: 50%; border: 0; background: #3a3a3e; color: #fff; cursor: pointer; }
+.switcher span { min-width: 230px; text-align: center; }
+.reduce * { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .a-enemy { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="proto switcher" id="switcher"><button id="prev" aria-label="Previous variant">←</button><span id="vlabel"></span><button id="next" aria-label="Next variant">→</button></div>
+<details class="proto controls" id="controls" open></details>
+
+<script>
+'use strict';
+// ======================================================================
+// Content (Whispering Woods stats; Encounters are illustrative fixtures)
+// ======================================================================
+const ENEMIES = {
+  'grey-wolf':     { name: 'Grey Wolf', might: 2, agility: 2, wits: 1, health: 8, damage: 2, reach: 'melee', behaviour: 'steady' },
+  'bandit-archer': { name: 'Bandit Archer', might: 1, agility: 2, wits: 1, health: 6, damage: 2, reach: 'ranged', behaviour: 'heavy' },
+  'barrow-wight':  { name: 'Aldric, the Barrow Wight', might: 3, agility: 1, wits: 2, health: 14, damage: 3, reach: 'melee', behaviour: 'heavy' },
+};
+const CHARACTERS = {
+  soldier: { name: 'Mara', template: 'Soldier', might: 4, agility: 1, wits: 0, weapon: 'Sword', reach: 'melee', damage: 3, herbs: 1 },
+  hunter:  { name: 'Tamsin', template: 'Hunter', might: 1, agility: 4, wits: 2, weapon: 'Hunting Bow', reach: 'ranged', damage: 3, herbs: 2 },
+  scholar: { name: 'Idris', template: 'Scholar', might: 0, agility: 2, wits: 3, weapon: 'Walking Staff', reach: 'melee', damage: 2, herbs: 2 },
+};
+const FIXTURES = {
+  duel:  { label: 'Duel: Soldier vs Barrow Wight (Near)', char: 'soldier', encounter: 'Aldric of the Barrow', location: 'Barrow Mound', startRange: 'near',
+           text: 'Frost spreads across the stones as the dead lord rises.', participants: [{ id: 'barrow-wight', enemy: 'barrow-wight' }] },
+  melee: { label: 'Two melee: Scholar vs Wolf + Wight (Far)', char: 'scholar', encounter: 'The Wight’s Hound', location: 'Barrow Mound', startRange: 'far',
+           text: 'A wolf with frost in its fur pads ahead of its master.', participants: [{ id: 'grey-wolf', enemy: 'grey-wolf' }, { id: 'barrow-wight', enemy: 'barrow-wight' }] },
+  pair:  { label: 'Melee/ranged: Hunter vs Wolf + Archer (Far)', char: 'hunter', encounter: 'Ambush at the Ford', location: 'Old Ford', startRange: 'far',
+           text: 'A wolf breaks from the reeds while a bowstring creaks on the far bank.', participants: [{ id: 'grey-wolf', enemy: 'grey-wolf' }, { id: 'bandit-archer', enemy: 'bandit-archer' }] },
+  pack:  { label: 'Same kind: Scholar vs two Grey Wolves (equal Agility)', char: 'scholar', encounter: 'The Hollow Pack', location: 'Hollow Oak', startRange: 'far',
+           text: 'Two grey shapes circle out of the dusk, one on either side.', participants: [{ id: 'wolf-a', enemy: 'grey-wolf' }, { id: 'wolf-b', enemy: 'grey-wolf' }] },
+};
+const ACTIONS = {
+  defend:     { label: 'Defend', speed: 'fast', group: 'Fight' },
+  distract:   { label: 'Distract', speed: 'fast', group: 'Fight', targeted: true },
+  attack:     { label: 'Attack', speed: 'normal', group: 'Fight', targeted: true },
+  advance:    { label: 'Advance', speed: 'normal', group: 'Position', targeted: true },
+  item:       { label: 'Use Healing Herbs', speed: 'normal', group: 'Items' },
+  escape:     { label: 'Escape', speed: 'normal', group: 'Leave' },
+  'fall-back':{ label: 'Fall back', speed: 'slow', group: 'Position' },
+};
+const INTENT_SPEED = { strike: 'normal', 'close-in': 'normal', prepare: 'normal', heavy: 'slow' };
+const SPEED_RANK = { fast: 0, normal: 1, slow: 2 };
+const VARIANTS = { A: 'Lanes & target picker', B: 'Round timeline', C: 'Opponent cards' };
+
+// ======================================================================
+// State
+// ======================================================================
+const params = new URLSearchParams(location.search);
+const S = {
+  variant: VARIANTS[params.get('variant')] ? params.get('variant') : 'A',
+  fixture: 'pair', charKey: 'hunter', ordinal: 'letter', frame: 'desktop', plain: false, reduce: false,
+  seed: 7, rngCalls: 0, queue: [],
+  char: null, wounds: {}, combat: null, outcome: null, view: 'combat',
+  journal: [], target: null, preview: null, notice: null, journalOpen: false,
+};
+function rng() { // mulberry32 on (seed, call index): reproducible per seed
+  let t = (S.seed * 2654435761 + (S.rngCalls++) * 0x6D2B79F5) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function die() { return S.queue.length ? S.queue.shift() : 1 + Math.floor(rng() * 6); }
+const FX = () => FIXTURES[S.fixture];
+const C = () => CHARACTERS[S.charKey];
+const E = (p) => ENEMIES[p.enemy];
+const maxHealth = (p) => E(p).health;
+const healthOf = (p) => maxHealth(p) - (S.wounds[p.id] || 0);
+const alive = () => S.combat.participants.filter((p) => healthOf(p) > 0);
+const byId = (id) => S.combat.participants.find((p) => p.id === id);
+
+function ordinalOf(p) {
+  const same = FX().participants.filter((q) => q.enemy === p.enemy);
+  if (same.length < 2) return null;
+  const i = same.findIndex((q) => q.id === p.id);
+  return S.ordinal === 'number' ? String(i + 1) : 'AB'[i];
+}
+function nameOf(p) { const o = ordinalOf(p); return E(p).name + (o ? ' ' + o : ''); }
+function initialOf(p) { return E(p).name.charAt(0); }
+
+// Intent wording by Reach (presentation, docs/spec/mechanics.md "Intent vocabulary").
+function intentWords(p, kind = p.intent) {
+  const ranged = E(p).reach === 'ranged';
+  return {
+    strike: ranged ? 'Shoot' : 'Strike',
+    'close-in': 'Close in',
+    prepare: ranged ? 'Take aim' : 'Wind up',
+    heavy: ranged ? 'Aimed shot' : 'Heavy blow',
+  }[kind];
+}
+function intentDamage(p, kind = p.intent) { return kind === 'strike' ? E(p).damage : kind === 'heavy' ? E(p).damage + 2 : 0; }
+function intentEffect(p) {
+  switch (p.intent) {
+    case 'strike': case 'heavy': return `attacks you · ${intentDamage(p)} Damage`;
+    case 'close-in': return 'closes in to Near';
+    case 'prepare': return `next round: ${intentWords(p, 'heavy')}, slow, ${intentDamage(p, 'heavy')} Damage`;
+  }
+}
+
+function startCombat(reentry) {
+  const fx = FX();
+  if (!reentry) {
+    S.wounds = {}; S.char = { health: 12, herbs: C().herbs };
+    S.journal = legacyJournal();
+  }
+  const ps = fx.participants.filter((p) => !reentry || healthOf({ ...p }) > 0)
+    .map((p) => ({ id: p.id, enemy: p.enemy, range: fx.startRange, intent: null, prepared: false, waryUntil: 0 }));
+  fx.participants.forEach((p) => { if (S.wounds[p.id] === undefined) S.wounds[p.id] = 0; });
+  S.combat = { round: 1, participants: ps, last: null, rounds: [] };
+  S.outcome = null; S.view = 'combat'; S.notice = null; S.preview = null;
+  selectIntents();
+  S.target = alive()[0].id;
+  S.journal.push({ type: 'start', step: S.journal.length + 1, encounter: fx.encounter, participants: ps.map((p) => nameOf(p) + ` (${healthOf(p)}/${maxHealth(p)})`), reentry });
+}
+function legacyJournal() {
+  // Entries stored before the tactical rules: text, one Range, a guard marker. Shown verbatim.
+  return [
+    { type: 'legacy', step: 1, label: 'Combat start', text: 'Combat: Hollow Wolf. A grey wolf blocks the path.' },
+    { type: 'legacy', step: 2, label: 'Combat round', text: 'Round 1. You defend; the Grey Wolf bites and misses (guard up). Range: Near.' },
+    { type: 'legacy', step: 3, label: 'Combat round', text: 'Round 2. You attack the Grey Wolf: hit, 3 Damage. The Grey Wolf bites: hit, 2 Damage.' },
+    { type: 'legacy', step: 4, label: 'Combat end', text: 'You escaped from the Grey Wolf.' },
+  ];
+}
+
+// Intent selection, in participant order (mechanics.md "Selecting Intents").
+function selectIntents() {
+  let preparing = false;
+  for (const p of alive()) {
+    if (p.prepared) {
+      if (inReach(p)) { p.intent = 'heavy'; preparing = true; continue; }
+      p.prepared = false;
+    }
+    if (E(p).reach === 'melee' && p.range === 'far') { p.intent = 'close-in'; continue; }
+    if (E(p).behaviour === 'heavy' && !preparing && !alive().some((q) => q !== p && q.prepared)) {
+      const d = die();
+      if (d <= 2) { p.intent = 'prepare'; preparing = true; continue; }
+    }
+    p.intent = 'strike';
+  }
+}
+const inReach = (p) => E(p).reach === 'ranged' || p.range === 'near';
+
+// ======================================================================
+// Order and availability (what the view contract exposes before commit)
+// ======================================================================
+function roundOrder(action) {
+  const list = alive().map((p) => ({ actor: p.id, speed: INTENT_SPEED[p.intent], agi: E(p).agility, tie: FX().participants.findIndex((q) => q.id === p.id) + 1 }));
+  if (action) list.push({ actor: 'char', speed: ACTIONS[action].speed, agi: C().agility, tie: 0, action });
+  return list.sort((a, b) => SPEED_RANK[a.speed] - SPEED_RANK[b.speed] || b.agi - a.agi || a.tie - b.tie);
+}
+function positionOf(action) { const o = roundOrder(action); return { pos: o.findIndex((e) => e.actor === 'char') + 1, of: o.length }; }
+function nth(n) { return n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'); }
+const isWary = (p) => p.waryUntil >= S.combat.round;
+
+function availability(action, pid) {
+  const c = C();
+  const p = pid ? byId(pid) : null;
+  switch (action) {
+    case 'defend': case 'escape': return { ok: true };
+    case 'distract': {
+      if (isWary(p)) return { ok: false, reason: `${nameOf(p)} is wary of tricks until the end of round ${p.waryUntil}.` };
+      const o = roundOrder('distract');
+      if (o.findIndex((e) => e.actor === p.id) < o.findIndex((e) => e.actor === 'char')) return { ok: false, reason: `${nameOf(p)} acts before you could distract it.` };
+      return { ok: true };
+    }
+    case 'attack':
+      if (c.reach === 'melee' && p.range === 'far') return { ok: false, reason: `Your ${c.weapon} needs Near Range; ${nameOf(p)} is Far.` };
+      return { ok: true };
+    case 'advance':
+      if (p.range === 'near') return { ok: false, reason: `You are already Near ${nameOf(p)}.` };
+      return { ok: true };
+    case 'item':
+      if (S.char.herbs === 0) return { ok: false, reason: 'No Consumables held.' };
+      if (S.char.health >= 12) return { ok: false, reason: 'You are at full Health.' };
+      return { ok: true };
+    case 'fall-back':
+      if (!alive().some((q) => q.range === 'near')) return { ok: false, reason: 'Nothing is Near you.' };
+      return { ok: true };
+  }
+}
+// Hit target and chance, for the variants that show odds.
+function p2d6(n) { let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b >= n) c++; return c / 36; }
+function odds(action, pid) {
+  const c = C(); const p = pid ? byId(pid) : null;
+  let need;
+  if (action === 'attack') need = 7 + E(p).agility - c.might;
+  else if (action === 'distract') need = 7 + E(p).wits - c.wits;
+  else if (action === 'escape') need = 7 + Math.max(...alive().map((q) => E(q).agility)) - c.agility - (alive().some((q) => q.range === 'near') ? 0 : 2);
+  else if (action === 'fall-back') { const near = alive().filter((q) => q.range === 'near'); if (!near.length) return null; need = 7 + Math.max(...near.map((q) => E(q).agility)) - c.agility; }
+  else return null;
+  return { need: Math.max(2, need), pct: Math.round(p2d6(need) * 100) };
+}
+function enemyOdds(p, guarded) { const need = (guarded ? 9 : 7) + C().agility - E(p).might; return { need, pct: Math.round(p2d6(need) * 100) }; }
+
+// ======================================================================
+// Resolving a Round (one atomic step)
+// ======================================================================
+function roll(mod, target) { const d1 = die(), d2 = die(); const total = d1 + d2 + mod; return { d1, d2, mod, total, target, success: total >= target }; }
+
+function submit(action, pid) {
+  // Server-side validation: an illegal submission is rejected and nothing changes.
+  if (ACTIONS[action].targeted) {
+    if (!pid || !byId(pid) || healthOf(byId(pid)) <= 0) return reject();
+  }
+  const av = availability(action, pid);
+  if (!av.ok) return reject(av.reason);
+  resolveRound(action, pid);
+}
+function reject(reason) { S.notice = 'That action is no longer available' + (reason ? ': ' + reason : '.'); render(); }
+
+function resolveRound(action, pid) {
+  const c = C(); const round = S.combat.round;
+  const order = roundOrder(action);
+  const ev = { round, steps: [], stop: null };
+  let guarded = false, counterUsed = false; const interrupted = new Set();
+  for (const entry of order) {
+    const step = { actor: entry.actor, speed: entry.speed };
+    ev.steps.push(step);
+    if (entry.actor === 'char') {
+      step.action = action; step.target = pid || null;
+      if (ev.stop) { step.status = 'not-reached'; continue; }
+      const t = pid ? byId(pid) : null;
+      if (t && healthOf(t) <= 0) { step.status = 'cancelled'; step.reason = 'target-defeated'; continue; }
+      if (action === 'attack' && c.reach === 'melee' && t.range === 'far') { step.status = 'cancelled'; step.reason = 'out-of-reach'; continue; }
+      if (action === 'advance' && t.range === 'near') { step.status = 'cancelled'; step.reason = 'already-near'; continue; }
+      if (action === 'fall-back' && !alive().some((q) => q.range === 'near')) { step.status = 'cancelled'; step.reason = 'none-near'; continue; }
+      step.status = 'executed';
+      if (action === 'defend') { guarded = true; step.effect = 'guarded'; }
+      else if (action === 'distract') {
+        step.roll = roll(c.wits, 7 + E(t).wits);
+        if (step.roll.success) { interrupted.add(t.id); t.prepared = false; t.waryUntil = round + 1; step.effect = 'interrupted'; }
+      } else if (action === 'attack') {
+        step.roll = roll(c.might, 7 + E(t).agility);
+        if (step.roll.success) { step.damage = c.damage; S.wounds[t.id] = Math.min(maxHealth(t), S.wounds[t.id] + c.damage); if (healthOf(t) <= 0) step.defeated = t.id; }
+      } else if (action === 'advance') { step.range = { pid: t.id, from: 'far', to: 'near' }; t.range = 'near'; }
+      else if (action === 'item') { const h = Math.min(3, 12 - S.char.health); S.char.health += h; S.char.herbs--; step.heal = h; }
+      else if (action === 'escape') {
+        const bonus = alive().some((q) => q.range === 'near') ? 0 : 2;
+        step.roll = roll(c.agility + bonus, 7 + Math.max(...alive().map((q) => E(q).agility))); step.bonus = bonus;
+        if (step.roll.success) ev.stop = 'escape';
+      } else if (action === 'fall-back') {
+        const near = alive().filter((q) => q.range === 'near');
+        step.roll = roll(c.agility, 7 + Math.max(...near.map((q) => E(q).agility)));
+        if (step.roll.success) { step.ranges = near.map((q) => q.id); near.forEach((q) => { q.range = 'far'; }); }
+      }
+      if (alive().length === 0) ev.stop = 'victory';
+      continue;
+    }
+    // An Enemy participant's Intent.
+    const p = byId(entry.actor);
+    step.intent = p.intent;
+    if (ev.stop) { step.status = 'not-reached'; continue; }
+    if (healthOf(p) <= 0) { step.status = 'dropped'; continue; }
+    if (interrupted.has(p.id)) { step.status = 'cancelled'; step.reason = 'interrupted'; p.prepared = false; continue; }
+    if ((p.intent === 'strike' || p.intent === 'heavy') && !inReach(p)) { step.status = 'cancelled'; step.reason = 'out-of-reach'; p.prepared = false; continue; }
+    if (p.intent === 'close-in' && p.range === 'near') { step.status = 'cancelled'; step.reason = 'already-near'; continue; }
+    step.status = 'executed';
+    if (p.intent === 'close-in') { step.range = { pid: p.id, from: 'far', to: 'near' }; p.range = 'near'; }
+    else if (p.intent === 'prepare') { p.prepared = true; step.effect = 'prepared'; }
+    else {
+      step.roll = roll(E(p).might, (guarded ? 9 : 7) + c.agility); step.guarded = guarded;
+      if (p.intent === 'heavy') p.prepared = false;
+      if (step.roll.success) { step.damage = intentDamage(p); S.char.health = Math.max(0, S.char.health - step.damage); if (S.char.health === 0) ev.stop = 'death'; }
+      else if (guarded && E(p).reach === 'melee' && !counterUsed) {
+        counterUsed = true;
+        const r = roll(c.might, 7 + E(p).agility); step.counter = { roll: r };
+        if (r.success) { step.counter.damage = 1; S.wounds[p.id] = Math.min(maxHealth(p), S.wounds[p.id] + 1); if (healthOf(p) <= 0) { step.counter.defeated = p.id; if (alive().length === 0) ev.stop = 'victory'; } }
+      }
+    }
+  }
+  S.combat.last = ev; S.combat.rounds.push(ev);
+  S.journal.push({ type: 'round', step: S.journal.length + 1, ev, names: Object.fromEntries(S.combat.participants.map((p) => [p.id, nameOf(p)])) });
+  S.notice = null; S.preview = null;
+  if (ev.stop) {
+    S.outcome = ev.stop; S.view = 'result';
+    S.journal.push({ type: 'end', step: S.journal.length + 1, outcome: ev.stop, participants: S.combat.participants.map((p) => `${nameOf(p)} ${healthOf(p) <= 0 ? 'defeated' : healthOf(p) + '/' + maxHealth(p)}`) });
+  } else {
+    S.combat.round++;
+    selectIntents();
+  }
+  if (!byId(S.target) || healthOf(byId(S.target)) <= 0) S.target = alive()[0] && alive()[0].id;
+  render();
+}
+
+// ======================================================================
+// Rendering helpers
+// ======================================================================
+const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const pct = (h, m) => Math.max(0, Math.min(100, Math.round(h / m * 100)));
+function ring(h, m, face, cls = '', ord = null, sm = false) {
+  const p = pct(h, m);
+  return `<div class="ring ${p <= 34 ? 'low' : ''} ${sm ? 'sm' : ''}" style="--h:${p}%" aria-hidden="true"><span class="face ${cls}">${esc(face)}</span>${ord ? `<span class="ord">${esc(ord)}</span>` : ''}</div>`;
+}
+const speedTag = (s) => `<span class="speed ${s}">${s}</span>`;
+const charName = () => C().name;
+function actorName(id, names) { return id === 'char' ? charName() : (names ? names[id] : nameOf(byId(id))); }
+function badges(p) {
+  let out = '';
+  if (healthOf(p) <= 0) return '<span class="badge dead">Defeated</span>';
+  if (p.prepared) out += ` <span class="badge prep">${E(p).reach === 'ranged' ? 'Aiming' : 'Wound up'}</span>`;
+  if (isWary(p)) out += ` <span class="badge wary" title="Cannot be distracted until the end of round ${p.waryUntil}">Wary · to round ${p.waryUntil}</span>`;
+  return out;
+}
+function rollText(r) { return `${r.d1}+${r.d2}${r.mod >= 0 ? '+' : ''}${r.mod} = ${r.total} vs ${r.target}`; }
+
+// The predicted order as a list of entries with labels, for the strip (A) and sidebar (C).
+function orderEntries(action) {
+  return roundOrder(action).map((e, i) => {
+    if (e.actor === 'char') return { you: true, pos: i + 1, speed: e.speed, label: `${charName()}: ${ACTIONS[action].label}${ACTIONS[action].targeted && S.target ? ' → ' + nameOf(byId(S.target)) : ''}` };
+    const p = byId(e.actor);
+    return { pos: i + 1, speed: e.speed, label: `${nameOf(p)}: ${intentWords(p)}`, sub: intentEffect(p) };
+  });
+}
+
+// ---------- the newest-round report and older rounds (shared) ----------
+const CANCEL = {
+  'target-defeated': (s, n) => `Cancelled: ${n(s.target)} had already fallen.`,
+  'out-of-reach': (s) => s.actor === 'char' ? 'Cancelled: the target was out of Reach.' : 'Cancelled: you were out of its Reach.',
+  'already-near': () => 'Cancelled: already Near.',
+  'none-near': () => 'Cancelled: nothing was Near any more.',
+  interrupted: () => 'Cancelled: interrupted by your distraction.',
+};
+function stepLine(s, i, names) {
+  const n = (id) => actorName(id, names);
+  const who = n(s.actor);
+  const what = s.actor === 'char'
+    ? `${ACTIONS[s.action].label}${s.target ? ' → ' + n(s.target) : ''}`
+    : intentWordsByKind(s.actor, s.intent, names);
+  let body = '';
+  if (s.status === 'dropped') body = '<span class="cancel">Did not act: defeated earlier this round.</span>';
+  else if (s.status === 'not-reached') body = '<span class="cancel">Did not happen: the fight was already over.</span>';
+  else if (s.status === 'cancelled') body = `<span class="cancel">${CANCEL[s.reason](s, n)}</span>`;
+  else {
+    if (s.roll) body += `<span class="roll ${s.roll.success ? (s.actor === 'char' ? 'ok' : 'hit') : ''}">${rollText(s.roll)}</span> `;
+    if (s.actor === 'char') {
+      if (s.effect === 'guarded') body += 'Guarded until the end of the round (enemies need 9+ instead of 7+).';
+      else if (s.action === 'distract') body += s.roll.success ? `success — ${n(s.target)}’s action is interrupted; it is Wary until the end of round ${s.round}.` : 'failure — no effect.';
+      else if (s.action === 'attack') body += s.roll.success ? `hit, ${s.damage} Damage${s.defeated ? ` — ${n(s.defeated)} falls.` : '.'}` : 'miss.';
+      else if (s.action === 'advance') body += `now Near ${n(s.target)}.`;
+      else if (s.action === 'item') body += `+${s.heal} Health.`;
+      else if (s.action === 'escape') body += (s.roll.success ? 'success — you get away.' : 'failure — you are still in the fight.') + (s.bonus ? ' (+2: nothing was Near)' : '');
+      else if (s.action === 'fall-back') body += s.roll.success ? `success — now Far from ${s.ranges.map(n).join(' and ')}.` : 'failure — still Near.';
+    } else {
+      if (s.intent === 'close-in') body += 'now Near you.';
+      else if (s.intent === 'prepare') body += 'prepares; its heavy attack comes next round.';
+      else body += s.roll.success ? `hit, ${s.damage} Damage${s.guarded ? ' (through your guard)' : ''}.` : `miss${s.guarded ? ' (your guard held)' : ''}.`;
+      if (s.counter) body += `<span class="counter">↳ Counterattack: <span class="roll ${s.counter.roll.success ? 'ok' : ''}">${rollText(s.counter.roll)}</span> ${s.counter.roll.success ? `hit, 1 Damage${s.counter.defeated ? ` — ${n(s.counter.defeated)} falls.` : '.'}` : 'miss.'}</span>`;
+    }
+  }
+  return `<li><span class="pos ${s.actor === 'char' ? 'you' : ''}">${i + 1}</span><span><span class="what">${esc(who)}</span> · ${esc(what)} ${speedTag(s.speed)}<br>${body}</span></li>`;
+}
+function intentWordsByKind(id, kind, names) { const p = byId(id) || S.combat.participants.find((q) => q.id === id); return p ? intentWords(p, kind) : kind; }
+const STOP = { escape: 'The fight ended: you escaped. Later actions did not happen.', victory: 'The fight ended: every enemy has fallen.', death: 'The fight ended: you fell.' };
+function report() {
+  const rounds = S.combat.rounds;
+  if (!rounds.length) return `<section class="log" aria-label="Combat log"><h2>Log</h2><p class="reason">No rolls yet. Every action of a round is listed here in the order it resolved.</p></section>`;
+  const last = rounds[rounds.length - 1];
+  const older = rounds.slice(0, -1).reverse();
+  const steps = last.steps.map((s) => ({ ...s, round: last.round + 1 }));
+  return `<section class="log" aria-label="Combat log"><h2>Log</h2>
+    <div class="latest"><p class="kicker">Last round · ${last.round}</p>
+      <ol class="steps">${steps.map((s, i) => stepLine(s, i)).join('')}</ol>
+      ${last.stop ? `<p class="stopline">${STOP[last.stop]}</p>` : ''}
+    </div>
+    ${older.length ? `<ol class="older">${older.map((r) => `<li><strong>${r.round}.</strong> ${r.steps.map((s) => summary(s)).join(' · ')}</li>`).join('')}</ol>` : ''}
+  </section>`;
+}
+function summary(s, names) {
+  const who = actorName(s.actor, names);
+  const what = s.actor === 'char' ? ACTIONS[s.action].label + (s.target ? ' ' + actorName(s.target, names) : '') : intentWordsByKind(s.actor, s.intent, names);
+  let res = s.status === 'executed' ? (s.roll ? (s.roll.success ? (s.damage ? `hit ${s.damage}` : 'success') : 'miss') : 'done') : s.status === 'cancelled' ? 'cancelled' : s.status === 'dropped' ? 'fell first' : 'not reached';
+  if (s.counter) res += `, counter ${s.counter.roll.success ? 'hit 1' : 'miss'}`;
+  return `${esc(who)}: ${esc(what)} — ${res}`;
+}
+
+// ---------- action buttons ----------
+// data-act/data-pid/data-preview are what a plain form would post (combat, target).
+function actionButton(action, pid, opts = {}) {
+  const av = availability(action, pid);
+  const { pos, of } = positionOf(action);
+  const label = opts.label || ACTIONS[action].label;
+  const o = opts.odds ? odds(action, pid) : null;
+  const n = opts.need ? odds(action, pid) : null;
+  const sub = `${ACTIONS[action].speed} · acts ${nth(pos)} of ${of}${o ? ` · ${o.need}+ (${o.pct}%)` : ''}${n ? ` · needs ${n.need}+` : ''}${opts.sub ? ' · ' + opts.sub : ''}`;
+  if (!av.ok) return `<div><button class="btn" type="button" disabled>${esc(label)}<span class="sub">${esc(sub)}</span></button><p class="reason">${esc(av.reason)}</p></div>`;
+  return `<div><button class="btn" type="submit" data-act="${action}" ${pid ? `data-pid="${pid}"` : ''} data-preview="${action}">${esc(label)}<span class="sub">${esc(sub)}</span></button>${opts.after || ''}</div>`;
+}
+
+// ---------- header, side panel, shell ----------
+function header() {
+  const fx = FX();
+  return `<header class="c-header"><p class="kicker">Combat · ${esc(fx.location)} · Round ${S.combat.round}</p><h1>${esc(fx.encounter)}</h1><p class="narr">${esc(fx.text)}</p></header>`;
+}
+function side() {
+  const c = C(); const h = S.char.health;
+  return `<aside class="side" aria-label="Side panel">
+    <div class="map">Location map</div>
+    <div class="status">${ring(h, 12, c.name.charAt(0))}<div><strong>${esc(c.name)}</strong><small>${esc(c.template)} · Health ${h}/12</small></div></div>
+    <div class="launchers"><button type="button">Character<small>Health ${h}/12</small></button><button type="button">Inventory<small>${S.char.herbs} Herbs</small></button><button type="button" id="openJournal">Journal<small>${S.journal.length} entries</small></button></div>
+  </aside>`;
+}
+function charMedallion(extra = '') {
+  const c = C();
+  return `<div>${ring(S.char.health, 12, c.name.charAt(0))}<p class="name">${esc(c.name)}</p><p class="hp">${S.char.health}/12</p><p class="detail">${esc(c.weapon)} · Reach ${c.reach} · Damage ${c.damage}</p>${extra}</div>`;
+}
+function srSummary() {
+  return `<p class="sr">${alive().map((p) => { const i = roundOrder(null).findIndex((e) => e.actor === p.id) + 1; return `${nameOf(p)}: ${p.range === 'near' ? 'Near' : 'Far'}, Health ${healthOf(p)} of ${maxHealth(p)}, intends ${intentWords(p)}, ${INTENT_SPEED[p.intent]}, ${intentEffect(p)}. Acts ${nth(i)} among the enemies.`; }).join(' ')}</p>`;
+}
+
+// ======================================================================
+// Variant A — Lanes & target picker
+// ======================================================================
+function variantA() {
+  const ps = S.combat.participants;
+  const two = alive().length > 1;
+  const lanes = ps.map((p) => {
+    const dead = healthOf(p) <= 0;
+    const o = roundOrder(S.preview).findIndex((e) => e.actor === p.id) + 1;
+    return `<div class="a-lane ${p.range} ${dead ? 'dead' : ''}">
+      <div class="ground" aria-hidden="true"></div>
+      <div class="gap" aria-hidden="true">${dead ? '' : p.range === 'near' ? '⚔' : '‹ — — Far — — ›'}</div>
+      <div class="a-enemy">
+        ${dead ? '' : `<div class="a-bubble ${p.intent === 'prepare' ? 'prepare' : ''}"><span class="pos" data-pos-for="${p.id}">${o}</span>${speedTag(INTENT_SPEED[p.intent])} ${esc(intentWords(p))}${intentDamage(p) ? ` · ${intentDamage(p)} Dmg<span class="a-next" style="color:var(--muted)">hits you on ${enemyOdds(p, false).need}+, ${enemyOdds(p, true).need}+ if you Defend</span>` : ''}${p.intent === 'prepare' ? `<span class="a-next">next round: ${esc(intentWords(p, 'heavy'))}, slow, ${intentDamage(p, 'heavy')} Dmg</span>` : ''}</div>`}
+        ${ring(healthOf(p), maxHealth(p), initialOf(p), 'enemyface', ordinalOf(p))}
+        <p class="name">${esc(nameOf(p))}</p><p class="hp">${Math.max(0, healthOf(p))}/${maxHealth(p)} ${badges(p)}</p>
+        <p class="detail">Reach ${E(p).reach} · Damage ${E(p).damage}</p>
+      </div>
+      <div class="rlabel">${dead ? '' : p.range.toUpperCase()}</div>
+    </div>`;
+  }).join('');
+  const t = S.target;
+  const targeted = (action) => actionButton(action, two ? t : alive()[0].id, { need: true, sub: two ? '→ ' + nameOf(byId(t)) : '' });
+  // The picker is a set of links (?target=<participant id>), like ?panel=: the server renders availability
+  // for that target and posts it as a hidden input. Works without JS; the server still validates on submit.
+  const picker = two ? `<nav class="a-target" aria-label="Target"><span class="lab">Target</span>${alive().map((p) => `<a href="?variant=A&amp;target=${p.id}" data-target="${p.id}" ${p.id === t ? 'aria-current="true"' : ''}>${p.id === t ? '◉' : '○'} ${esc(nameOf(p))} <span class="badge ${p.range}">${p.range === 'near' ? 'Near' : 'Far'}</span></a>`).join('')}<span class="reason">Used by Attack, Distract and Advance.</span></nav>` : '';
+  return `${header()}
+    <section class="a-arena" aria-label="Arena">${srSummary()}<div class="a-char">${charMedallion()}</div><div class="a-lanes">${lanes}</div></section>
+    <div class="a-orderbox"><p class="kicker">This round</p><ol class="order" id="order-strip" aria-label="Order of this round">${stripA()}</ol></div>
+    ${S.notice ? `<p class="notice" role="status">${esc(S.notice)}</p>` : ''}
+    ${picker}
+    <div class="a-actions">
+      <section class="a-group" aria-label="Position"><h2>Position</h2>${targeted('advance')}${actionButton('fall-back', null, { need: true })}</section>
+      <section class="a-group" aria-label="Fight"><h2>Fight</h2>${targeted('attack')}${actionButton('defend')}${targeted('distract')}</section>
+      <section class="a-group" aria-label="Items"><h2>Items</h2>${S.char.herbs ? actionButton('item', null, { label: `Use Healing Herbs (${S.char.herbs})` }) : '<p class="reason">No Consumables held.</p>'}</section>
+      <section class="a-group" aria-label="Leave"><h2>Leave</h2>${actionButton('escape', null, { need: true })}</section>
+    </div>
+    ${report()}`;
+}
+
+function stripA() {
+  let strip = '', lastSpeed = null;
+  for (const e of orderEntries(S.preview)) {
+    if (e.speed !== lastSpeed) { strip += `<li class="sep">${e.speed.toUpperCase()}</li>`; lastSpeed = e.speed; }
+    strip += `<li class="${e.you ? 'you' : ''}"><span class="pos ${e.you ? 'you' : ''}">${e.pos}</span>${esc(e.label)}</li>`;
+  }
+  if (!S.preview) strip += `<li class="ghost">${S.plain ? 'Each action shows where you act' : 'Point at an action to see where you act'}</li>`;
+  return strip;
+}
+
+// ======================================================================
+// Variant B — Round timeline
+// ======================================================================
+function variantB() {
+  const ps = S.combat.participants;
+  const roster = `<table class="b-roster"><caption class="sr">Combatants</caption><thead><tr><th>Who</th><th>Health</th><th>Range</th><th class="hide-sm">Reach · Damage</th><th>State</th></tr></thead><tbody>
+    <tr><td><strong>${esc(charName())}</strong> (you)</td><td><span class="hbar ${S.char.health <= 4 ? 'low' : ''}"><i style="width:${pct(S.char.health, 12)}%"></i></span>${S.char.health}/12</td><td>—</td><td class="hide-sm">${C().reach} · ${C().damage}</td><td></td></tr>
+    ${ps.map((p) => `<tr class="${healthOf(p) <= 0 ? 'dead' : ''}"><td><strong>${esc(nameOf(p))}</strong></td><td><span class="hbar ${pct(healthOf(p), maxHealth(p)) <= 34 ? 'low' : ''}"><i style="width:${pct(healthOf(p), maxHealth(p))}%"></i></span>${Math.max(0, healthOf(p))}/${maxHealth(p)}</td><td>${healthOf(p) > 0 ? `<span class="badge ${p.range}">${p.range === 'near' ? 'Near' : 'Far'}</span>` : ''}</td><td class="hide-sm">${E(p).reach} · ${E(p).damage}</td><td>${badges(p)}</td></tr>`).join('')}
+  </tbody></table>`;
+  const cols = ['fast', 'normal', 'slow'].map((speed) => {
+    // Enemy entries of this Speed in order, and where the Character's actions of this Speed fall among them.
+    const enemies = roundOrder(null).filter((e) => e.speed === speed);
+    const mine = Object.keys(ACTIONS).filter((a) => ACTIONS[a].speed === speed);
+    const youBefore = enemies.filter((e) => e.agi > C().agility).length; // ties: the Character first
+    const slot = mine.length ? youSlot(mine) : '';
+    const items = enemies.map((e) => intentCard(byId(e.actor)));
+    items.splice(youBefore, 0, slot);
+    const content = items.join('') || '<p class="b-empty">Nothing at this speed.</p>';
+    return `<section class="b-col ${speed}" aria-label="${speed} actions"><h2>${speed}</h2><p class="hint">${speed === 'fast' ? 'resolves first' : speed === 'normal' ? 'then' : 'last'}</p>${content}</section>`;
+  }).join('');
+  return `${header()}${srSummary()}${roster}
+    ${S.notice ? `<p class="notice" role="status">${esc(S.notice)}</p>` : ''}
+    <p class="kicker" style="margin-bottom:.4rem">This round, in order — choose your action where it would happen</p>
+    <div class="b-time">${cols}</div>
+    ${report()}`;
+}
+function intentCard(p) {
+  return `<div class="b-intent"><span class="who">${esc(nameOf(p))}</span>: ${esc(intentWords(p))}<br><span class="reason" style="font-style:normal">${esc(intentEffect(p))}${p.intent === 'strike' || p.intent === 'heavy' ? '' : ''}</span></div>`;
+}
+function youSlot(actions) {
+  const blocks = actions.map((a) => {
+    if (a === 'item' && !S.char.herbs) return `<p class="b-empty">No Consumables held.</p>`;
+    if (!ACTIONS[a].targeted) return `<div class="b-act">${bAction(a, null, a === 'item' ? `Use Healing Herbs (${S.char.herbs})` : ACTIONS[a].label)}</div>`;
+    return `<div class="b-act">${alive().map((p) => bAction(a, p.id, `${ACTIONS[a].label} · ${nameOf(p)}`)).join('')}</div>`;
+  }).join('');
+  return `<div class="b-you"><p>You (${esc(charName())})</p>${blocks}</div>`;
+}
+function bAction(a, pid, label) {
+  const av = availability(a, pid);
+  if (!av.ok) return `<div><button class="btn" disabled>${esc(label)}</button><p class="reason">${esc(av.reason)}</p></div>`;
+  return `<button class="btn" type="submit" data-act="${a}" ${pid ? `data-pid="${pid}"` : ''}>${esc(label)}</button>`;
+}
+
+// ======================================================================
+// Variant C — Opponent cards
+// ======================================================================
+function variantC() {
+  const ps = S.combat.participants;
+  const you = `<article class="c-card you"><div class="c-head">${ring(S.char.health, 12, C().name.charAt(0))}<div><h2>${esc(charName())} <small style="font-weight:normal;color:var(--muted)">you</small></h2><p class="hp">Health ${S.char.health}/12 · ${esc(C().weapon)}, Reach ${C().reach}, Damage ${C().damage}</p></div></div>
+    <div class="c-acts">${actionButton('defend', null, { odds: true })}${actionButton('fall-back', null, { odds: true })}${S.char.herbs ? actionButton('item', null, { label: `Use Healing Herbs (${S.char.herbs})` }) : '<p class="reason">No Consumables held.</p>'}${actionButton('escape', null, { odds: true })}</div></article>`;
+  const cards = ps.map((p) => {
+    if (healthOf(p) <= 0) return `<article class="c-card dead"><div class="c-head">${ring(0, 1, initialOf(p), 'enemyface', ordinalOf(p))}<div><h2>${esc(nameOf(p))}</h2><p class="hp"><span class="badge dead">Defeated</span></p></div></div></article>`;
+    const o = roundOrder(S.preview).findIndex((e) => e.actor === p.id) + 1;
+    const eo = (p.intent === 'strike' || p.intent === 'heavy') ? enemyOdds(p, false) : null;
+    return `<article class="c-card" aria-label="${esc(nameOf(p))}"><div class="c-head">${ring(healthOf(p), maxHealth(p), initialOf(p), 'enemyface', ordinalOf(p))}<div><h2>${esc(nameOf(p))}</h2><p class="hp">Health ${healthOf(p)}/${maxHealth(p)} · Reach ${E(p).reach} · Damage ${E(p).damage} ${badges(p)}</p></div></div>
+      <div class="c-meter ${p.range}" aria-label="Range ${p.range}"><span>You</span><span class="track"></span><span>${p.range === 'near' ? '<strong style="color:var(--enemy)">Near</strong>' : 'Far'}</span><span class="track"></span><span>${esc(initialOf(p))}${ordinalOf(p) || ''}</span></div>
+      <div class="c-intent ${p.intent === 'prepare' ? 'prepare' : ''}"><span class="pos" data-pos-for="${p.id}">${o}</span><span><strong>${esc(intentWords(p))}</strong> ${speedTag(INTENT_SPEED[p.intent])}<br><span style="font-size:.78rem">${esc(intentEffect(p))}${eo ? ` · hits on ${eo.need}+ (${eo.pct}%), ${enemyOdds(p, true).need}+ if you Defend` : ''}</span></span></div>
+      <div class="c-acts">${actionButton('attack', p.id, { odds: true })}${actionButton('distract', p.id, { odds: true })}${actionButton('advance', p.id)}</div></article>`;
+  }).join('');
+  return `${header()}${srSummary()}
+    ${S.notice ? `<p class="notice" role="status">${esc(S.notice)}</p>` : ''}
+    <div class="c-wrap"><div class="c-cards">${you}${cards}</div>
+      <aside class="c-orderbar" aria-label="Order of this round"><h2>This round</h2><ol id="order-list">${listC()}</ol></aside></div>
+    ${report()}`;
+}
+
+function listC() {
+  let list = orderEntries(S.preview).map((e) => `<li class="${e.you ? 'you' : ''}"><span class="pos ${e.you ? 'you' : ''}">${e.pos}</span><span>${esc(e.label)} ${speedTag(e.speed)}${e.sub ? `<br><span class="reason" style="font-style:normal">${esc(e.sub)}</span>` : ''}</span></li>`).join('');
+  if (!S.preview) list += `<li class="ghost"><span></span><span>${S.plain ? 'Each action shows where you act.' : 'Point at an action to place yourself.'}</span></li>`;
+  return list;
+}
+
+// ======================================================================
+// Result panel and Journal
+// ======================================================================
+function resultPanel() {
+  const fx = FX();
+  const survivors = S.combat.participants.filter((p) => healthOf(p) > 0);
+  const title = { victory: 'Victory', escape: 'You got away', death: 'You have fallen' }[S.outcome];
+  const text = {
+    victory: `Every enemy of ${fx.encounter} has fallen.`,
+    escape: `You slip away. ${survivors.map((p) => `${nameOf(p)} keeps its wounds (${healthOf(p)}/${maxHealth(p)})`).join('; ')}.`,
+    death: 'The Playthrough ends on the death Ending.',
+  }[S.outcome];
+  const last = S.combat.last;
+  return `<section class="result"><p class="kicker">Combat · ${esc(fx.location)}</p><h1>${title}</h1><p>${esc(text)}</p>
+    <div class="latest"><p class="kicker">Last round · ${last.round}</p><ol class="steps">${last.steps.map((s, i) => stepLine(s, i)).join('')}</ol><p class="stopline">${STOP[S.outcome]}</p></div>
+    <p style="margin-top:1rem">${S.outcome === 'escape' && survivors.length ? '<button class="btn" style="width:auto" id="reenter">Fight again later (re-entry: survivors only)</button> ' : ''}<button class="btn" style="width:auto" id="restart">Restart fixture</button></p></section>`;
+}
+function journalModal() {
+  const entries = [...S.journal].reverse();
+  const render1 = (j) => {
+    if (j.type === 'legacy') return `<div class="entry"><span class="lab">${esc(j.label)} · step ${j.step} · legacy, verbatim</span><p class="legacy">${esc(j.text)}</p></div>`;
+    if (j.type === 'start') return `<div class="entry"><span class="lab">Combat start · step ${j.step}</span><p>Combat: ${esc(j.encounter)}${j.reentry ? ' (again)' : ''}. Against: ${j.participants.map(esc).join(', ')}.</p></div>`;
+    if (j.type === 'end') return `<div class="entry"><span class="lab">Combat end · step ${j.step}</span><p>${{ victory: 'Victory.', escape: 'You escaped.', death: 'You fell.' }[j.outcome]} ${j.participants.map(esc).join(', ')}.</p></div>`;
+    const r = j.ev;
+    return `<div class="entry"><span class="lab">Combat round ${r.round} · step ${j.step}</span><ol class="steps">${r.steps.map((s, i) => stepLine({ ...s, round: r.round + 1 }, i, j.names)).join('')}</ol>${r.stop ? `<p class="stopline">${STOP[r.stop]}</p>` : ''}</div>`;
+  };
+  return `<div class="journal" id="journal" role="dialog" aria-modal="true" aria-label="Journal"><div class="box"><h2 style="margin-top:0">Journal <small style="font-weight:normal;color:var(--muted)">${S.journal.length} entries</small> <button class="btn" style="width:auto;float:right" id="closeJournal">Close</button></h2>${entries.map(render1).join('')}</div></div>`;
+}
+
+// ======================================================================
+// Render + prototype chrome
+// ======================================================================
+function render() {
+  const app = document.getElementById('app');
+  let reading;
+  if (S.view === 'result') reading = resultPanel();
+  else reading = { A: variantA, B: variantB, C: variantC }[S.variant]();
+  app.innerHTML = `<div class="frame ${S.frame} ${S.reduce ? 'reduce' : ''}"><nav class="topnav"><a href="#">Collection</a><a href="#">Playthroughs</a><span class="lang">English ▾</span></nav>
+    <div class="game"><main aria-label="Reading column">${reading}</main>${side()}</div></div>${S.journalOpen ? journalModal() : ''}`;
+  document.getElementById('vlabel').textContent = `${S.variant} (${VARIANTS[S.variant]})`;
+  renderControls();
+}
+function renderControls() {
+  const el = document.getElementById('controls');
+  const wasOpen = el.open;
+  const ps = S.combat.participants;
+  el.innerHTML = `<summary>Prototype controls</summary>
+    <label>Fixture</label><select id="fx">${Object.entries(FIXTURES).map(([k, f]) => `<option value="${k}" ${k === S.fixture ? 'selected' : ''}>${esc(f.label)}</option>`).join('')}</select>
+    <label>Character</label><select id="ch">${Object.entries(CHARACTERS).map(([k, c]) => `<option value="${k}" ${k === S.charKey ? 'selected' : ''}>${c.template} (Might ${c.might}, Agility ${c.agility}, Wits ${c.wits}, ${c.reach})</option>`).join('')}</select>
+    <label>Ordinal for same-kind participants</label><select id="ordsel"><option value="number" ${S.ordinal === 'number' ? 'selected' : ''}>Grey Wolf 1 / 2</option><option value="letter" ${S.ordinal === 'letter' ? 'selected' : ''}>Grey Wolf A / B</option></select>
+    <div class="chk"><input type="checkbox" id="phone" ${S.frame === 'phone' ? 'checked' : ''}><span>Phone width (390px)</span></div>
+    <div class="chk"><input type="checkbox" id="plain" ${S.plain ? 'checked' : ''}><span>Plain forms (no client JS)</span></div>
+    <div class="chk"><input type="checkbox" id="reduce" ${S.reduce ? 'checked' : ''}><span>Reduced motion</span></div>
+    <label>Queue dice (next values, e.g. "1" forces a Prepare, "6 6" a hit)</label><input type="text" id="queue" value="${S.queue.join(' ')}">
+    <label>State tweaks (rules apply from now)</label>
+    <div class="row">${ps.map((p) => healthOf(p) > 0 ? `<button data-tw="prep" data-id="${p.id}">${esc(nameOf(p))}: prepare</button><button data-tw="wary" data-id="${p.id}">Wary</button><button data-tw="range" data-id="${p.id}">swap Range</button><button data-tw="kill" data-id="${p.id}">defeat</button>` : '').join('')}</div>
+    <div class="row"><button data-tw="low">You: 3 Health</button><button data-tw="restart">Restart</button><button data-tw="seed">New seed (${S.seed})</button></div>
+    <details><summary>Stored state (v2 shape)</summary><pre>${esc(JSON.stringify(storedState(), null, 1))}</pre></details>`;
+  el.open = wasOpen;
+}
+function storedState() {
+  const c = S.combat;
+  return { stateVersion: 2, encounters: { [FX().encounter]: { ...S.wounds } },
+    activeCombat: S.view === 'combat' ? { round: c.round, participants: Object.fromEntries(alive().map((p) => [p.id, { range: p.range, intent: p.intent, prepared: p.prepared, ...(p.waryUntil >= c.round ? { waryUntil: p.waryUntil } : {}) }])) } : null,
+    character: { health: S.char.health, herbs: S.char.herbs } };
+}
+
+document.addEventListener('click', (ev) => {
+  const link = ev.target.closest('a[data-target]');
+  if (link) { ev.preventDefault(); S.target = link.dataset.target; const u = new URL(location.href); u.searchParams.set('target', S.target); history.replaceState(null, '', u); render(); document.querySelector(`a[data-target="${S.target}"]`).focus(); return; }
+  const t = ev.target.closest('button, input');
+  if (!t) return;
+  if (t.dataset.act) {
+    const pid = t.dataset.pid || (ACTIONS[t.dataset.act].targeted ? alive()[0].id : null);
+    submit(t.dataset.act, pid); return;
+  }
+
+  if (t.id === 'openJournal') { S.journalOpen = true; render(); document.getElementById('closeJournal').focus(); return; }
+  if (t.id === 'closeJournal') { S.journalOpen = false; render(); document.getElementById('openJournal').focus(); return; }
+  if (t.id === 'reenter') { startCombat(true); render(); return; }
+  if (t.id === 'restart') { startCombat(false); render(); return; }
+  const tw = t.dataset.tw;
+  if (!tw) return;
+  const p = t.dataset.id ? byId(t.dataset.id) : null;
+  if (tw === 'prep') { p.prepared = true; p.intent = inReach(p) ? 'heavy' : p.intent; if (!inReach(p)) p.intent = 'prepare'; }
+  if (tw === 'wary') p.waryUntil = S.combat.round + 1;
+  if (tw === 'range') p.range = p.range === 'near' ? 'far' : 'near';
+  if (tw === 'kill') { S.wounds[p.id] = maxHealth(p); if (!alive().length) { S.outcome = 'victory'; } if (S.target === p.id && alive()[0]) S.target = alive()[0].id; }
+  if (tw === 'low') S.char.health = 3;
+  if (tw === 'restart') startCombat(false);
+  if (tw === 'seed') { S.seed = 1 + Math.floor(Math.random() * 9999); S.rngCalls = 0; startCombat(false); }
+  render();
+});
+document.addEventListener('change', (ev) => {
+  const t = ev.target;
+  if (t.id === 'fx') { S.fixture = t.value; S.charKey = FIXTURES[t.value].char; startCombat(false); }
+  else if (t.id === 'ch') { S.charKey = t.value; startCombat(false); }
+  else if (t.id === 'ordsel') S.ordinal = t.value;
+  else if (t.id === 'phone') S.frame = t.checked ? 'phone' : 'desktop';
+  else if (t.id === 'plain') { S.plain = t.checked; S.preview = null; }
+  else if (t.id === 'reduce') S.reduce = t.checked;
+  else if (t.id === 'queue') S.queue = t.value.split(/[\s,]+/).map(Number).filter((n) => n >= 1 && n <= 6);
+  else return;
+  render();
+});
+// Preview: client-only enhancement. It highlights where the action falls; the server never reads it.
+function setPreview(a) {
+  if (S.plain || S.view !== 'combat' || S.preview === a) return;
+  S.preview = a;
+  const strip = document.getElementById('order-strip'); if (strip) strip.innerHTML = stripA();
+  const list = document.getElementById('order-list'); if (list) list.innerHTML = listC();
+  const order = roundOrder(a);
+  document.querySelectorAll('[data-pos-for]').forEach((el) => { el.textContent = order.findIndex((e) => e.actor === el.dataset.posFor) + 1; });
+}
+document.addEventListener('mouseover', (ev) => { const b = ev.target.closest('[data-preview]'); if (b) setPreview(b.dataset.preview); });
+document.addEventListener('focusin', (ev) => { const b = ev.target.closest('[data-preview]'); if (b) setPreview(b.dataset.preview); });
+document.addEventListener('mouseout', (ev) => { const b = ev.target.closest('[data-preview]'); if (b && !ev.relatedTarget?.closest?.('[data-preview]') && S.preview) setPreview(null); });
+function cycle(d) { const keys = Object.keys(VARIANTS); S.variant = keys[(keys.indexOf(S.variant) + d + keys.length) % keys.length]; const u = new URL(location.href); u.searchParams.set('variant', S.variant); history.replaceState(null, '', u); S.preview = null; render(); }
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+  if (e.key === 'Escape' && S.journalOpen) { S.journalOpen = false; render(); }
+});
+
+startCombat(false);
+if (params.get('target') && byId(params.get('target'))) S.target = params.get('target');
+render();
+</script>
+</body>
+</html>

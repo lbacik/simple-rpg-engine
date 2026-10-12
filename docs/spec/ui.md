@@ -112,14 +112,61 @@ There is no "View journal" link above the narration in the reading column; the E
 
 ### Combat panel
 
-During Combat, the reading column shows the Combat panel, while the side panel (map, status card, launchers) stays visible:
+During Combat, the reading column shows the Combat panel, while the side panel (map, status card, launchers) stays visible. It works with one or two Enemy participants ([mechanics.md](mechanics.md#participants)); everything below that names "each participant" shows one lane, one bubble, one target when a single participant is left. Top to bottom:
 
 - a **header**: a small uppercase kicker (`Combat · <Location name> · Round <n>`), the Encounter name as `h1`, then the opening narration (muted italic) and a bottom rule;
-- a one-line **Range arena**: a bordered card with a ground line and the Range label (`NEAR` / `FAR`) at the bottom. Character and Enemy sit on one line as medallions (an initial in a coloured disc surrounded by a Health ring, red at low Health; name, `health/max` and the weapon/Reach/Damage line below, the Enemy's Reach and Damage). At **Near** the medallions stand side by side in the centre with a crossed-swords mark between them; at **Far** they sit at opposite edges with a `‹ — — Far — — ›` marker in the middle. A small "guard up" badge on the Character's ring shows when the latest round was a Defend. The marker is derived from that round's Journal entry: the Defend bonus is never stored, because it expires within the turn it was chosen, so the marker shows the guard that was in effect during the Enemy's response just resolved. Medallions animate on a Range change, honouring `prefers-reduced-motion`;
-- actions in four columns: **Position** (Advance, Fall back), **Fight** (Attack, Defend), **Items** (one button per held Consumable, or "No Consumables held.") and **Leave** (Escape), with unavailable ones disabled and the reason given (for example "Your sword needs Near Range"). On phone width the columns become a 2×2 grid;
-- a log of the rolls of the current Combat, newest first: a "Last round · `<n>`" callout holding that round's text and its rolls as chips, then the older rounds as a compact muted list ("No rolls yet." before the first roll). A roll reads `<name>: d1+d2+mod = total vs target — hit, N Damage | success | miss`; a hit that deals no Damage (Fall back, Escape) reads "success".
+- the **lane arena**;
+- the **order strip**;
+- the **target picker**, only while two participants survive;
+- the **actions** in four columns;
+- the **log**.
 
-After Combat, the victory or escape Outcome is shown as a result panel, or the brief Enemy-defeated notice when the Encounter has no victory Outcome.
+**Participant names.** A participant is shown by its Enemy's name. When its Encounter has two participants of the same Enemy kind, the name is followed by a capital letter from its ordinal ([playthrough-state.md](playthrough-state.md#combat-events)): "Grey Wolf A", "Grey Wolf B" ("Szary Wilk A" in Polish, with no inflection). Letters, not numbers, so they never read as places in the order. A participant whose kind is unique in the Encounter has no letter. Participant ids are author-internal and never shown.
+
+#### Lane arena
+
+- A bordered card. The Character's medallion stands in a left column spanning the whole height. To its right, **one lane per participant**, in participant order, separated by a dashed rule. Each lane has its own ground line and its own Range label (`NEAR` / `FAR`) at the bottom centre, because each participant has its own Range.
+- A medallion is an initial in a coloured disc inside a Health ring (red at low Health), with the name, `health/max` and a detail line below: the Character's weapon, Reach and Damage; the participant's Reach and Damage. A participant with a letter shows it as a small badge on its ring.
+- **Near**: the participant stands at the start of its lane, next to the Character's column, with a crossed-swords mark between them. **Far**: it stands at the far end of its lane, with a `‹ — — Far — — ›` marker in the middle. A Range change moves only that lane's medallion; the movement is animated, honouring `prefers-reduced-motion`.
+- **Intent bubble** above each surviving participant: its place in the Round's order (a numbered disc), its Speed tag, the Intent's name and, for an attack, its Damage and "hits you on N+, M+ if you Defend" (2d6 thresholds). A Prepare bubble has a dashed border and a second line naming what it prepares: "next round: Heavy blow, slow, 5 Damage".
+- **Intent names** depend on the Reach: Strike / Shoot, Close in, Wind up / Take aim, Heavy blow / Aimed shot (`melee` / `ranged`).
+- **State badges** next to the participant's Health: "Wound up" (`melee`) or "Aiming" (`ranged`) while it is prepared; "Wary · to round N" while it is Wary, N being the last round of the effect. Guarded is round-scoped and never shown on the arena: it appears only in the log of the round it applied to. Nothing in the arena is derived from the Journal.
+- A participant defeated during this Combat keeps its lane, with a grey medallion, a "Defeated" badge, no bubble and no Range label, until the Combat ends. On re-entry after an Escape the arena has lanes only for the surviving participants.
+- For screen readers the arena carries a text summary per surviving participant: name, Range, Health, Intent with its Speed and effect, and place among the Enemies' actions. The drawing itself is decorative.
+
+#### Order strip
+
+- One line under the arena, labelled "This round": the Round's actions as numbered chips, grouped by Speed (`FAST`, `NORMAL`, `SLOW`), each naming the actor and its Intent ("Grey Wolf A: Strike"). It is an ordered list.
+- Without a chosen action it lists the Intents only, followed by a dashed hint chip. Pointing at or focusing an action button inserts the Character's action at its place and renumbers the bubbles. This preview is a client-side enhancement only: it reads nothing the server did not render, sends nothing, and is never authoritative.
+- Every action button shows the same information as plain text (below), so the order is readable without JavaScript or a pointer.
+
+#### Target picker
+
+- Shown only while two participants survive. A row labelled "Target" with one link per surviving participant, in participant order, each showing its name and a Near/Far badge. The current target is marked (◉, `aria-current`); the others show ○. A note says it is used by Attack, Distract and Advance.
+- The picker is part of the URL, like the modals: `?target=<participant id>`. The server renders every targeted action's availability, reason and target name for that participant and posts it as the form's hidden `target`. Without the parameter, or when it names no surviving participant, the target is the first surviving participant. With JavaScript, choosing a target is a soft navigation; without it, a plain link. The parameter is not game state: it changes nothing and does not advance `step`, and the server validates the posted target independently ([playthrough-state.md](playthrough-state.md#actions-and-the-step-guard)).
+- With one surviving participant there is no picker and targeted actions post that participant.
+
+#### Actions
+
+- Four columns: **Position** (Advance, Fall back), **Fight** (Attack, Defend, Distract), **Items** (one button per held Consumable, or "No Consumables held.") and **Leave** (Escape). On phone width the columns become a 2×2 grid.
+- Each button is a plain form posting `combat`, `target` (targeted actions) and `item` (Consumables), with the `step`. Below its label it shows: the Speed; its place in the Round's order ("acts 2nd of 3"), which depends only on the Speed and so is exact before the target is chosen; for a rolled action, the 2d6 threshold ("needs 9+"); and for a targeted action, the target ("→ Grey Wolf B"). Thresholds read the current state; Escape's +2 and the opposing Agility of Escape and Fall back are re-read when the action resolves ([mechanics.md](mechanics.md#validity-when-the-actions-turn-comes)). No percentages are shown.
+- Unavailable actions are disabled with the reason in player language, from the engine's reason code: "Your Sword needs Near Range; Grey Wolf B is Far.", "You are already Near Grey Wolf A.", "Grey Wolf A is wary of tricks until the end of round 5.", "Nothing is Near you.", "You are at full Health.".
+
+#### Log
+
+The rolls of the current Combat, newest first:
+
+- a "Last round · `<n>`" callout listing **every action of that round in order**, one numbered line each (the Character's number ringed): the actor, the action or Intent with its target and Speed tag, then
+  - for an executed action, its roll as a chip (`d1+d2+mod = total vs target`) and its result: "hit, N Damage", "miss", "success", "failure", "+3 Health", "now Near Grey Wolf A", "Guarded until the end of the round", "prepares; its heavy attack comes next round", "success — Grey Wolf A's action is interrupted; it is Wary until the end of round 5", a defeat ("— Grey Wolf A falls."), and "(your guard held)" / "(through your guard)" on attacks against a Guarded Character;
+  - a counterattack as an indented "↳ Counterattack:" line inside the action it answers;
+  - a cancelled action as "Cancelled: …" with its reason (interrupted by your distraction, the target had already fallen, out of Reach, already Near, nothing was Near any more), a dropped one as "Did not act: defeated earlier this round.", one not reached as "Did not happen: the fight was already over.";
+  - when the sequence stopped, a closing line: escaped, every enemy has fallen, or you fell;
+- the older rounds as a compact muted list, one line per round: "`<n>`. Idris: Attack Grey Wolf A — miss · Grey Wolf A: Strike — hit 2 · Grey Wolf B: Close in — cancelled".
+- "No rolls yet." before the first round.
+
+After Combat, the victory or escape Outcome is shown as a result panel, or the brief Enemy-defeated notice when the Encounter has no victory Outcome. The last round's callout is part of that result panel, so the round that ended the fight is readable without opening the Journal.
+
+The Combat panel renders legacy single-Enemy rounds of an already-started Combat (migrated, [playthrough-state.md](playthrough-state.md#state-versions-and-migration)) in the log as their stored text, verbatim, one line per round; the legacy guard marker is not shown.
 
 ## Journal (`/play/[playthroughId]/journal`)
 
@@ -134,6 +181,7 @@ A sticky position indicator stays visible at the top of the list's scroll contai
 - Entry type labels and the wording of engine-generated entries come from the catalogue of the **current** Interface Language, so after a switch the whole Journal's Interface Text is in the new language ([playthrough-state.md](playthrough-state.md#journal)).
 - Scenario text (narration, Choice wording, Ending title and narration, and names inside engine messages) is shown as it was presented, so after a switch the Journal shows Scenario text in more than one language. Each element holding it carries the entry's recorded `lang`; a name inside an engine message is wrapped in its own element with that `lang`.
 - Entries stored before Interface Languages existed are shown verbatim, in English, with only their type label from the catalogue.
+- A **Combat round** entry reads like the Combat panel's "Last round" callout ([Log](#log)): one numbered line per action in Round order, with the actor, the action or Intent and its target, the Speed, the status, the roll and result and any nested counterattack, then how the sequence stopped. Participants are named as presented, with the letter from their ordinal. Combat start and Combat end list the participants in participant order. Single-Enemy Combat entries stored before the tactical rules (text, one Range, a guard marker) are shown verbatim, like the other legacy entries.
 - An entry holding Scenario text whose recorded `lang` (`en` for the entries above) differs from the Interface Language by primary language subtag has that language's [flag](#language-flags) after its type label, so the mixed languages are visibly marked. Engine-generated entries carry no flag; a name inside them only carries its `lang`.
 
 ## Endings
@@ -154,7 +202,7 @@ Everything the UI shows that does not come from a Scenario goes through the cata
 - notices after rejected actions;
 - Journal entry type labels and the wording of engine-generated entries;
 - Test descriptions (the Attribute, Difficulty, dice, modifier, total, success or failure) and the Test shown on a Choice;
-- Combat round messages, roll lines, the Combat panel's labels, and the Range arena;
+- Combat round messages, roll lines, the Combat panel's labels, the lane arena, Intent names and bubbles, Speeds, places in the order, target picker, state badges (prepared, Wary, Defeated), thresholds and cancellation reasons;
 - inventory and state-change wording ("received", "lost", Health gained or lost, …);
 - disabled-action reasons, in inventory and in Combat;
 - the names of the engine's own vocabulary: Attributes, Difficulty levels, Ranges, Reach, Equipment slots, Victory and Defeat. These are never shown as raw ids;
@@ -191,6 +239,8 @@ The Polish catalogue uses these terms for the engine's vocabulary. Scenario auth
 | Playthrough | Rozgrywka |
 | Scenario | Scenariusz |
 
+Polish terms for the tactical Combat vocabulary (Speed and its three values, the Intents, Guarded, Wary, participant) are still to be chosen with the Interface Language effort and will be added to this table.
+
 ## Notices
 
 Rejected actions refresh the current state and show a transient notice, such as "The game was advanced in another tab; this is its current state" or "That action is no longer available". There is no error page.
@@ -202,6 +252,7 @@ Rejected actions refresh the current state and show a transient notice, such as 
 | [Game screen layout](mockups/game-screen-layout/) | Collection, Character creation, play, inventory, Test feedback, Journal, Endings, Illustration on/off; variants A (selected), B, C | `python3 docs/spec/mockups/game-screen-layout/serve.py`, then open `http://127.0.0.1:4310/?variant=A` |
 | [Combat presentation](mockups/combat-presentation/combat-presentation.prototype.html) | three Combat presentations; **B** (Range zones) is selected; its `CombatCore` module implements the Combat rules | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Location map](mockups/location-map/location-map.prototype.html) | four map presentations; **B** (author coordinates) is selected | open the file; `?variant=A\|B\|C\|D` |
+| [Tactical Combat](mockups/tactical-combat/tactical-combat.prototype.html) | three tactical Combat presentations with one or two Enemies (duel, two melee, melee/ranged, same kind), a rules engine, the round report and Journal; **A** (lanes and target picker) is selected | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Language switcher](mockups/language-switcher/language-switcher.prototype.html) | three switcher and availability presentations; **B** (language menu, with flags) is selected | open the file; `?variant=A\|B\|C` or the arrow keys |
 
 The mockups are throwaway specification artifacts, not application code, and must not be imported into `src/`.
@@ -216,3 +267,4 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (Interface Text, `lang`, Polish terms)
 - [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (Journal rendering after a language switch)
 - [Language switcher and availability UX](https://github.com/lbacik/simple-rpg-engine/issues/62) (language menu, flags, collection groups, fallback badge)
+- [Prototype: readable intents, targets and action order for two Enemies](https://github.com/lbacik/simple-rpg-engine/issues/82) (lane arena, Intent bubbles, order strip, target picker, round report, Combat Journal entries)
