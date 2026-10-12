@@ -23,7 +23,7 @@ const enText: JournalModalText = {
 };
 
 function stored(seq: number) {
-  return { seq, step: seq - 1, type: 'travel', payload: { text: `entry ${seq}` } };
+  return { seq, step: seq - 1, type: 'travel', lang: 'en', payload: { text: `entry ${seq}` } };
 }
 
 describe('newestJournalBatch', () => {
@@ -56,7 +56,7 @@ describe('newestJournalBatch', () => {
 describe('modalJournalBatch', () => {
   it('renders the newest batch in one step for the modal', () => {
     const entries = Array.from({ length: 25 }, (_, index) => stored(index + 1));
-    const batch = modalJournalBatch(entries, 'Modal');
+    const batch = modalJournalBatch(entries, en, 'Modal');
     expect(batch.total).toBe(25);
     expect(batch.entries.map((entry) => entry.seq)).toEqual(
       Array.from({ length: 20 }, (_, index) => 25 - index),
@@ -65,7 +65,7 @@ describe('modalJournalBatch', () => {
   });
 
   it('ends the batch when everything fits', () => {
-    const batch = modalJournalBatch([stored(1)], 'Modal');
+    const batch = modalJournalBatch([stored(1)], en, 'Modal');
     expect(batch.total).toBe(1);
     expect(batch.entries.map((entry) => entry.seq)).toEqual([1]);
     expect(batch.nextCursor).toBeNull();

@@ -53,4 +53,15 @@ export const MIGRATIONS: Record<string, { up(db: Kysely<Database>): Promise<void
         .execute();
     },
   },
+  // ADR 0004, expand step: every Journal entry records the language of the
+  // Scenario text in effect when it was presented. Existing rows hold English
+  // text only, so the new column backfills them as `en`.
+  '002_journal_lang': {
+    async up(db: Kysely<Database>): Promise<void> {
+      await db.schema
+        .alterTable('journal_entries')
+        .addColumn('lang', 'text', (col) => col.notNull().defaultTo('en'))
+        .execute();
+    },
+  },
 };

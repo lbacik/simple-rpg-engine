@@ -86,8 +86,8 @@ export async function executeTurn(
   await store.appendJournal(
     playthroughId,
     applied.journal.map((entry) => {
-      const { type, ...payload } = entry;
-      return { step: applied.state.step, type, payload };
+      const { type, lang, ...payload } = entry;
+      return { step: applied.state.step, type, lang, payload };
     }),
   );
   return { ok: true, step: applied.state.step };

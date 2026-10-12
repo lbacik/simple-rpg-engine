@@ -41,7 +41,7 @@ describe('travel', () => {
     expect(result.state.currentLocationId).toBe('grove');
     expect(result.state.visited).toEqual(['glade', 'grove']);
     expect(result.state.step).toBe(1);
-    expect(result.journal).toEqual([{ type: 'travel', text: 'Travelled to Grove.', to: 'grove' }]);
+    expect(result.journal).toEqual([{ type: 'travel', lang: 'en', to: 'grove', name: 'Grove' }]);
     // Everything else is untouched.
     expect(result.state.character).toEqual(state.character);
     expect(result.state.inventory).toEqual(state.inventory);

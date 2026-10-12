@@ -374,14 +374,21 @@ describe('outcomes, effects and transitions', () => {
     expect(listened.state.activeSceneId).toBe('elder-plea');
     const accepted = choose(scenario, listened.state, 'accept');
     expect(accepted.journal).toEqual([
-      { type: 'choice', sceneId: 'elder-plea', choiceId: 'accept', text: 'Promise to find Mira.' },
+      {
+        type: 'choice',
+        lang: 'en',
+        sceneId: 'elder-plea',
+        choiceId: 'accept',
+        text: 'Promise to find Mira.',
+      },
       {
         type: 'outcome',
+        lang: 'en',
         text: 'Brenna presses a bundle of herbs into your hands. "The cart track\nleads to the forest edge. Go with the saints."\n',
       },
-      { type: 'state-change', text: 'flag set: quest-accepted' },
-      { type: 'state-change', text: 'received: Healing Herbs' },
-      { type: 'state-change', text: 'revealed: Forest Edge' },
+      { type: 'state-change', lang: 'en', text: 'flag set: quest-accepted' },
+      { type: 'state-change', lang: 'en', text: 'received: Healing Herbs' },
+      { type: 'state-change', lang: 'en', text: 'revealed: Forest Edge' },
     ]);
     expect(accepted.state.flags).toEqual(['quest-accepted']);
     expect(accepted.state.inventory['healing-herbs']).toBe(3);
@@ -410,8 +417,16 @@ describe('outcomes, effects and transitions', () => {
       'state-change',
       'scene',
     ]);
-    expect(turned.journal[2]).toEqual({ type: 'state-change', text: 'lost: Barrow Key' });
-    expect(turned.journal[3]).toEqual({ type: 'state-change', text: 'flag set: barrow-open' });
+    expect(turned.journal[2]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      text: 'lost: Barrow Key',
+    });
+    expect(turned.journal[3]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      text: 'flag set: barrow-open',
+    });
     expect(turned.state.inventory['barrow-key']).toBeUndefined();
     expect(turned.state.flags).toContain('barrow-open');
     // The move enters the tomb and fires the wight.
@@ -452,7 +467,7 @@ describe('outcomes, effects and transitions', () => {
       'outcome',
       'state-change',
     ]);
-    expect(prayed.journal[2]).toEqual({ type: 'state-change', text: '+2 Health' });
+    expect(prayed.journal[2]).toEqual({ type: 'state-change', lang: 'en', text: '+2 Health' });
   });
 
   it('gives the charm and reveals the mound at the chapel altar', () => {
@@ -474,8 +489,16 @@ describe('outcomes, effects and transitions', () => {
       'state-change',
       'state-change',
     ]);
-    expect(taken.journal[2]).toEqual({ type: 'state-change', text: 'received: Silver Charm' });
-    expect(taken.journal[3]).toEqual({ type: 'state-change', text: 'revealed: Barrow Mound' });
+    expect(taken.journal[2]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      text: 'received: Silver Charm',
+    });
+    expect(taken.journal[3]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      text: 'revealed: Barrow Mound',
+    });
   });
 
   it('treats `next` to an already fired non-repeatable Scene as a no-op', () => {
@@ -882,7 +905,9 @@ describe('synthetic package: remaining effects and transitions', () => {
     const scenario = loadSynthetic();
     const result = startPlaythrough(scenario, 'hero', 'Alex', rng);
     if (!result.ok) throw new Error(`start failed: ${result.reason}`);
-    expect(result.journal).toEqual([{ type: 'scene', sceneId: 'echo', text: 'An echo answers.' }]);
+    expect(result.journal).toEqual([
+      { type: 'scene', lang: 'en', sceneId: 'echo', text: 'An echo answers.' },
+    ]);
     return { scenario, state: result.state };
   }
 
@@ -896,8 +921,8 @@ describe('synthetic package: remaining effects and transitions', () => {
     const { scenario, state: started } = startSynthetic();
     const paced = choose(scenario, started, 'stay');
     expect(paced.journal).toEqual([
-      { type: 'choice', sceneId: 'echo', choiceId: 'stay', text: 'Pace in circles.' },
-      { type: 'outcome', text: 'You pace.' },
+      { type: 'choice', lang: 'en', sceneId: 'echo', choiceId: 'stay', text: 'Pace in circles.' },
+      { type: 'outcome', lang: 'en', text: 'You pace.' },
     ]);
     expect(paced.state.currentLocationId).toBe('hall');
     expect(paced.state.activeSceneId).toBe(null);
@@ -924,8 +949,8 @@ describe('synthetic package: remaining effects and transitions', () => {
     const { scenario, state } = atCounter();
     const marked = choose(scenario, state, 'mark');
     expect(marked.journal).toEqual([
-      { type: 'choice', sceneId: 'counter', choiceId: 'mark', text: 'Mark the wall.' },
-      { type: 'state-change', text: 'flag set: m' },
+      { type: 'choice', lang: 'en', sceneId: 'counter', choiceId: 'mark', text: 'Mark the wall.' },
+      { type: 'state-change', lang: 'en', text: 'flag set: m' },
     ]);
     expect(marked.state.flags).toEqual(['m']);
     expect(
@@ -960,19 +985,23 @@ describe('synthetic package: remaining effects and transitions', () => {
     const { scenario, state } = atCounter();
     const raised = choose(scenario, state, 'setf');
     expect(raised.state.flags).toEqual(['f']);
-    expect(raised.journal[1]).toEqual({ type: 'state-change', text: 'flag set: f' });
+    expect(raised.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'flag set: f' });
     // Raising the flag closed the Scene (no transition), so reopen the
     // repeatable counter before lowering the flag again.
     const lowered = choose(scenario, openScene(scenario, raised.state, 'counter').state, 'clearf');
     expect(lowered.state.flags).toEqual([]);
-    expect(lowered.journal[1]).toEqual({ type: 'state-change', text: 'flag cleared: f' });
+    expect(lowered.journal[1]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      text: 'flag cleared: f',
+    });
   });
 
   it('damages without killing, and lethal damage ends on the death Ending', () => {
     const { scenario, state } = atCounter();
     const hurt = choose(scenario, state, 'hurt');
     expect(hurt.state.character.health).toBe(10);
-    expect(hurt.journal[1]).toEqual({ type: 'state-change', text: '\u22122 Health' });
+    expect(hurt.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: '\u22122 Health' });
     // Taking hurt closed the Scene (no transition), so reopen the repeatable
     // counter before the lethal choice.
     const slain = choose(scenario, openScene(scenario, hurt.state, 'counter').state, 'kill');
@@ -994,7 +1023,7 @@ describe('synthetic package: remaining effects and transitions', () => {
     };
     const mended = choose(scenario, wounded, 'mend');
     expect(mended.state.character.health).toBe(12);
-    expect(mended.journal[1]).toEqual({ type: 'state-change', text: '+1 Health' });
+    expect(mended.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: '+1 Health' });
     // At full Health the heal is a silent no-op: only the Choice is recorded.
     const silent = choose(scenario, state, 'mend');
     expect(silent.state.character.health).toBe(12);
@@ -1008,12 +1037,12 @@ describe('synthetic package: remaining effects and transitions', () => {
     const dropped = choose(scenario, state, 'take-one');
     expect(dropped.state.inventory).toEqual({ sword: 1 });
     expect(dropped.state.equipment).toEqual({ weapon: 'sword' });
-    expect(dropped.journal[1]).toEqual({ type: 'state-change', text: 'lost: Sword' });
+    expect(dropped.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'lost: Sword' });
     const fresh = atCounter();
     const all = choose(fresh.scenario, fresh.state, 'take-all');
     expect(all.state.inventory).toEqual({});
     expect(all.state.equipment).toEqual({});
-    expect(all.journal[1]).toEqual({ type: 'state-change', text: 'lost: Sword ×2' });
+    expect(all.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'lost: Sword ×2' });
   });
 
   it('stays silent when take-item holds nothing and reveal targets a visited Location', () => {

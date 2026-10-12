@@ -113,8 +113,8 @@ describe('startPlaythrough', () => {
     expect(result.state.scenarioId).toBe(scenario.id);
     expect(result.state.contentHash).toBe(scenario.contentHash);
     expect(result.journal).toEqual([
-      { type: 'intro', text: scenario.intro },
-      { type: 'scene', sceneId: 'path', text: 'A path leads home.' },
+      { type: 'intro', lang: 'en', text: scenario.intro },
+      { type: 'scene', lang: 'en', sceneId: 'path', text: 'A path leads home.' },
     ]);
     // The opening on-enter Scene fired at activation: a reload cannot fire it twice.
     expect(result.state.activeSceneId).toBe('path');

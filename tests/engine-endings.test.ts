@@ -175,6 +175,7 @@ describe('end transition', () => {
     expect(refused.state.step).toBe(1);
     expect(refused.journal.at(-1)).toEqual({
       type: 'ending',
+      lang: 'en',
       endingId: 'walked-away',
       kind: 'defeat',
       title: 'The Road Goes On',
@@ -198,6 +199,7 @@ describe('end transition', () => {
     expect(won.state.character.health).toBe(12);
     expect(won.journal.at(-1)).toMatchObject({
       type: 'ending',
+      lang: 'en',
       endingId: 'home',
       kind: 'victory',
       title: 'Home',
@@ -228,9 +230,10 @@ describe('death by damage', () => {
       'state-change',
       'ending',
     ]);
-    expect(doomed.journal[2]).toEqual({ type: 'state-change', text: '−12 Health' });
+    expect(doomed.journal[2]).toEqual({ type: 'state-change', lang: 'en', text: '−12 Health' });
     expect(doomed.journal[3]).toMatchObject({
       type: 'ending',
+      lang: 'en',
       endingId: 'death',
       kind: 'defeat',
       title: 'Gone',
@@ -294,7 +297,10 @@ describe('ended Playthroughs are frozen', () => {
           step: started.state.step,
           state: started.state,
         },
-        started.journal.map((entry) => ({ step: 0, type: entry.type, payload: entry })),
+        started.journal.map((entry) => {
+          const { type, lang, ...payload } = entry;
+          return { step: 0, type, lang, payload };
+        }),
       );
       const result = await executeTurn(
         db,

@@ -55,8 +55,8 @@ export async function startPlaythroughAction(
       state: engineResult.state,
     },
     engineResult.journal.map((entry) => {
-      const { type, ...payload } = entry;
-      return { step: engineResult.state.step, type, payload };
+      const { type, lang, ...payload } = entry;
+      return { step: engineResult.state.step, type, lang, payload };
     }),
   );
   redirect(`/play/${playthroughId}`);

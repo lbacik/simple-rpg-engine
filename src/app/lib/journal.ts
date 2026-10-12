@@ -1,10 +1,19 @@
 // Journal rendering (docs/spec/playthrough-state.md, journal; docs/spec/ui.md,
-// journal): a read-only, text-only list of the entries, newest first, with
-// infinite scroll towards the first entry. Narration entries reuse the game
-// screen's Markdown subset on the stored text as presented, never re-read
-// from content. Every other entry is plain text.
+// journal; ADR 0004): a read-only, text-only list of the entries, newest
+// first, with infinite scroll towards the first entry.
+//
+// One renderer serves the Journal page, the modal batches and the result
+// panel. Entry type labels and the wording of structured engine events come
+// from the catalogue of the Interface Language current when the Journal is
+// read, so rendering needs only the entry and the catalogue, never the
+// Scenario content. Scenario text (narration, Choice wording, Ending titles
+// and names inside engine messages) is shown as presented, each element
+// carrying the entry's recorded `lang`. Rows stored before Interface
+// Languages existed hold English text and no event: they are shown verbatim,
+// with only their type label from the catalogue.
 
 import { escapeHtml, renderStoredText } from '../../engine/narration';
+import type { Catalogue } from '../../i18n/index';
 
 /** Entries per journal batch. */
 export const JOURNAL_BATCH_SIZE = 20 as const;
@@ -17,25 +26,56 @@ const NARRATION_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'combat-start',
 ]);
 
-/** Human labels per entry type, shown beside the step that produced the entry. */
-const ENTRY_LABELS: Record<string, string> = {
-  intro: 'Intro',
-  scene: 'Scene',
-  choice: 'Choice taken',
-  test: 'Test',
-  outcome: 'Outcome',
-  'state-change': 'State change',
-  travel: 'Travel',
-  'combat-start': 'Combat start',
-  'combat-round': 'Combat round',
-  'combat-end': 'Combat end',
-  'enemy-defeated': 'Enemy defeated',
-  inventory: 'Inventory',
-  ending: 'Ending',
+/** A Journal entry as the renderer reads it: stored rows and new engine entries alike. */
+export type JournalEntryView = {
+  type: string;
+  lang?: unknown;
+  payload: unknown;
 };
 
-export function journalEntryLabel(type: string): string {
-  return ENTRY_LABELS[type] ?? type;
+/** A stored Journal row as the batch renderers read it: the entry plus its sequence position. */
+export type StoredJournalEntry = JournalEntryView & {
+  seq: number;
+  step: number;
+};
+
+/** The entry's recorded language, defaulting to English for legacy rows. */
+function entryLang(lang: unknown): string {
+  return typeof lang === 'string' && lang !== '' ? lang : 'en';
+}
+
+/** Human labels per entry type from the catalogue, shown beside the step. */
+export function journalEntryLabel(type: string, catalogue: Catalogue): string {
+  switch (type) {
+    case 'intro':
+      return catalogue.journal.types.intro;
+    case 'scene':
+      return catalogue.journal.types.scene;
+    case 'choice':
+      return catalogue.journal.types.choice;
+    case 'test':
+      return catalogue.journal.types.test;
+    case 'outcome':
+      return catalogue.journal.types.outcome;
+    case 'state-change':
+      return catalogue.journal.types.stateChange;
+    case 'travel':
+      return catalogue.journal.types.travel;
+    case 'combat-start':
+      return catalogue.journal.types.combatStart;
+    case 'combat-round':
+      return catalogue.journal.types.combatRound;
+    case 'combat-end':
+      return catalogue.journal.types.combatEnd;
+    case 'enemy-defeated':
+      return catalogue.journal.types.enemyDefeated;
+    case 'inventory':
+      return catalogue.journal.types.inventory;
+    case 'ending':
+      return catalogue.journal.types.ending;
+    default:
+      return type;
+  }
 }
 
 /**
@@ -84,12 +124,13 @@ export function newestJournalBatch<T extends { seq: number }>(
  * screens, which all open the same modal.
  */
 export function modalJournalBatch(
-  entries: ReadonlyArray<{ seq: number; step: number; type: string; payload: unknown }>,
+  entries: ReadonlyArray<StoredJournalEntry>,
+  catalogue: Catalogue,
   characterName: string,
 ): { entries: RenderedJournalEntry[]; nextCursor: number | null; total: number } {
   const batch = newestJournalBatch(entries, JOURNAL_BATCH_SIZE);
   return {
-    entries: renderJournalEntries(batch.shown, characterName),
+    entries: renderJournalEntries(batch.shown, catalogue, characterName),
     nextCursor: batch.nextCursor,
     total: batch.total,
   };
@@ -117,49 +158,83 @@ export type JournalBatchResponse = {
  * appends what this returns, on first paint and for every older batch.
  */
 export function renderJournalEntries(
-  entries: ReadonlyArray<{ seq: number; step: number; type: string; payload: unknown }>,
+  entries: ReadonlyArray<StoredJournalEntry>,
+  catalogue: Catalogue,
   characterName: string,
 ): RenderedJournalEntry[] {
   return entries.map((entry) => {
-    const rendered = renderJournalEntry(entry.type, entry.payload, characterName);
+    const rendered = renderJournalEntry(entry, catalogue, characterName);
     return { seq: entry.seq, step: entry.step, label: rendered.label, html: rendered.html };
   });
 }
 
 /**
- * Render one journal entry to HTML. Narration entries (intro, Scene, Outcome,
- * Combat opening) render with the stored-text Markdown subset; the Ending
- * renders its kind, title and closing narration the same way. Everything else
- * is escaped plain text: the Choice wording, the Test as presented (Attribute,
- * Difficulty, both dice, modifier, total, result), state changes, travel,
- * Combat rounds/end, the Enemy-defeated notice and inventory actions.
+ * Render one journal entry to HTML through the catalogue of the Interface
+ * Language current when the Journal is read. Structured entries of this
+ * batch (intro, Scene narration, Choice taken, Outcome narration, travel,
+ * Ending) render their event data with the catalogue and their Scenario text
+ * as presented, each element carrying the entry's `lang`. Every other kind
+ * still stores English text and is shown verbatim, with only its type label
+ * from the catalogue; later tickets move those kinds to structured events.
  */
 export function renderJournalEntry(
-  type: string,
-  payload: unknown,
+  entry: JournalEntryView,
+  catalogue: Catalogue,
   characterName: string,
 ): { label: string; html: string } {
-  const label = journalEntryLabel(type);
-  const record = (payload ?? {}) as Record<string, unknown>;
+  const label = journalEntryLabel(entry.type, catalogue);
+  const lang = entryLang(entry.lang);
+  const record = (entry.payload ?? {}) as Record<string, unknown>;
   const text = String(record.text ?? '');
-  if (NARRATION_ENTRY_TYPES.has(type)) {
-    return { label, html: renderStoredText(text, characterName) };
+  if (NARRATION_ENTRY_TYPES.has(entry.type)) {
+    return { label, html: `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>` };
   }
-  if (type === 'ending') {
-    const kind = record.kind === 'victory' ? 'Victory' : 'Defeat';
+  if (entry.type === 'choice') {
+    return { label, html: `<div lang="${escapeHtml(lang)}"><p>${escapeHtml(text)}</p></div>` };
+  }
+  if (entry.type === 'travel') {
+    return { label, html: renderTravelEntry(record, catalogue, lang) };
+  }
+  if (entry.type === 'ending') {
+    const kind =
+      record.kind === 'victory' ? catalogue.journal.victory : catalogue.journal.defeat;
     const title = String(record.title ?? '');
     return {
       label,
-      html: `<p class="meta">${escapeHtml(kind)}</p><h3>${escapeHtml(title)}</h3>${renderStoredText(text, characterName)}`,
+      html: `<p class="meta">${escapeHtml(kind)}</p><h3 lang="${escapeHtml(lang)}">${escapeHtml(title)}</h3><div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`,
     };
   }
-  if (type === 'test') {
-    return { label, html: `<p>${escapeHtml(testText(record, text))}</p>` };
+  if (entry.type === 'test') {
+    return {
+      label,
+      html: `<p lang="${escapeHtml(lang)}">${escapeHtml(testText(record, text))}</p>`,
+    };
   }
-  if (type === 'choice') {
-    return { label, html: `<p>Chose: ${escapeHtml(text)}</p>` };
+  return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>` };
+}
+
+/**
+ * A travel entry: new rows carry the target Location's name and id as event
+ * data and render the catalogue's travel wording around the name (in its own
+ * `lang` element, since a name inside an engine message is Scenario text);
+ * legacy rows carry the English sentence and are shown verbatim.
+ */
+function renderTravelEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  const name = typeof record.name === 'string' ? record.name : undefined;
+  if (name === undefined) {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
   }
-  return { label, html: `<p>${escapeHtml(text)}</p>` };
+  const message = catalogue.journal.travel(name);
+  if (name === '') return `<p>${escapeHtml(message)}</p>`;
+  const at = message.lastIndexOf(name);
+  if (at === -1) return `<p>${escapeHtml(message)}</p>`;
+  const before = escapeHtml(message.slice(0, at));
+  const after = escapeHtml(message.slice(at + name.length));
+  return `<p>${before}<span lang="${escapeHtml(lang)}">${escapeHtml(name)}</span>${after}</p>`;
 }
 
 export type JournalEnding = {

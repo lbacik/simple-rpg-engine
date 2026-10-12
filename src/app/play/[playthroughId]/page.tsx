@@ -3,12 +3,13 @@ import { getScenario } from '@/content/registry';
 import {
   combatGuardUp,
   combatRounds,
-  escapeHtml,
   renderNarration,
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
   view,
 } from '@/engine/index';
+import { getCatalogue, type Catalogue } from '@/i18n/index';
+import { getInterfaceLanguage } from '@/app/lib/language';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import {
@@ -16,6 +17,7 @@ import {
   latestJournalEnding,
   modalJournalBatch,
   renderJournalEntries,
+  renderJournalEntry,
 } from '@/app/lib/journal';
 import { JournalEntries } from './journal/journal-entries';
 import { JournalModalLink } from './journal/journal-modal';
@@ -32,8 +34,6 @@ import { CombatPanel } from './combat-panel';
 import { SceneIllustration } from './scene-illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
-import { getInterfaceLanguage } from '@/app/lib/language';
-import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
@@ -78,14 +78,6 @@ function mapToggleHrefFor(
   );
 }
 
-/** Render one result-panel entry to HTML. Narration entries keep the name literal. */
-function renderResultEntry(type: string, payload: unknown, characterName: string): string {
-  const text = String((payload as { text?: unknown }).text ?? '');
-  if (type === 'intro' || type === 'outcome') {
-    return renderStoredText(text, characterName);
-  }
-  return `<p>${escapeHtml(text)}</p>`;
-}
 
 export default async function PlayPage({
   params,
@@ -120,6 +112,8 @@ export default async function PlayPage({
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
   const showUnknownExits = unknown === '1';
+  // The Journal's Interface Text follows the Interface Language current when
+  // it is read; Scenario text stays as presented with the entry's own `lang`.
   const language = await getInterfaceLanguage();
   const catalogue = getCatalogue(language);
   const noticeText = noticeTextFor(catalogue, notice);
@@ -144,7 +138,7 @@ export default async function PlayPage({
       });
       const journalTotal = await store.countJournal(resolved.playthrough.id);
       const recordedEnding = latestJournalEnding(batch.entries);
-      const rendered = renderJournalEntries(batch.entries, incompatibleName);
+      const rendered = renderJournalEntries(batch.entries, catalogue, incompatibleName);
       return (
         <main>
           <h1>{incompatibleName}</h1>
@@ -247,9 +241,10 @@ export default async function PlayPage({
   // "View journal" opens the Journal in a modal over the game screen instead
   // of navigating away. The modal reuses the Journal already read here: the
   // newest batch, newest first, with the sequence cursor for older batches.
-  const modalJournal = modalJournalBatch(journal, characterName);
+  const modalJournal = modalJournalBatch(journal, catalogue, characterName);
   // A step that ended the Playthrough shows the Ending screen instead of the
-  // result panel (docs/spec/playthrough-state.md, result panel).
+  // result panel (docs/spec/playthrough-state.md, result panel). The panel
+  // renders its entries with the same entry renderer as the Journal.
   const resultEntries =
     gameView.kind === 'ended'
       ? []
@@ -257,7 +252,7 @@ export default async function PlayPage({
           .filter(
             (entry) => entry.step === playthrough.step && RESULT_PANEL_ENTRY_TYPES.has(entry.type),
           )
-          .map((entry) => renderResultEntry(entry.type, entry.payload, characterName));
+          .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
   // The Combat panel reads the guard marker and the roll log from the
   // Journal, never from stored state (the Defend bonus expires within its
   // turn), so the marker survives a reload.
