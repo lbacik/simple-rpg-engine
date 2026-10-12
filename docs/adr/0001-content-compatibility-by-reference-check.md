@@ -10,6 +10,6 @@ The server only ever holds the current version of each Scenario, while Playthrou
 ## Consequences
 
 - The content hash, not the author's `version`, triggers the check, so silent edits are caught. `version` stays informational.
-- A Playthrough that passes the check can still see changed narration or rules mid-run. This is accepted, and the Journal keeps the text as it was presented.
+- A Playthrough that passes the check can still see changed narration or rules mid-run. This is accepted, and the Journal keeps the Scenario text as it was presented ([ADR 0004](0004-journal-stores-events-and-scenario-text-as-presented.md)).
 - Stored state must refer to content only by id. This invariant comes from the Playthrough state model and keeps the check mechanical.
 - Because stored state holds only ids, read-only views are best effort. Names, map coordinates and Ending titles come from the current content, and anything whose id is gone is left out. When the Scenario has left the collection, only the Journal remains, and the Ending is read from its Journal entry. Snapshotting display data into the state was rejected as too heavy for the prototype.

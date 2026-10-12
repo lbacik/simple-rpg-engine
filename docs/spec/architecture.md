@@ -105,14 +105,14 @@ Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
   - while the Scenario is in the collection, the Character sheet, inventory, map and Ending render from its current content, and anything whose ID no longer exists is left out;
   - when the Scenario is no longer in the collection, only the Journal is shown, and the Ending is read from its Journal entry.
 
-  The Journal always renders completely, because it stores the text as presented.
+  The Journal always renders completely, because it stores Scenario text as presented and engine events that the catalogue renders without the content ([ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)). Its Interface Text, and the Ending kind read from it, follow the current Interface Language.
 - Incompatibility is derived on read. It is not a stored status. The author's `version` is informational.
 
 ## Persistence
 
 - **Kysely** behind two async ports, `PlaythroughStore` and `SessionStore`. Now: `SqliteDialect` with `better-sqlite3`. Later: `PostgresDialect` or `MysqlDialect`. (Drizzle was rejected because its schema is defined per dialect.)
 - Table **`playthroughs`**: scalar columns for queries and guards (`id` UUID v4, `session_id`, `scenario_id`, `scenario_version`, `content_hash`, `status`, `ending_id`, `step`, `created_at`, `updated_at`) and a **`state` JSON document** owned by the engine, holding everything in the [Playthrough state model](playthrough-state.md#stored-and-derived-state).
-- Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `payload` JSON, `created_at`): append-only, paginated when read.
+- Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `lang`, `payload` JSON, `created_at`): append-only, paginated when read. `lang` is the language of the Scenario text in effect when the entry was presented. The migration that adds it sets it to `en` on existing rows, whose payload holds English text only ([playthrough-state.md](playthrough-state.md#journal)).
 - Table **`sessions`** (`id_hash`, `created_at`, `last_seen_at`).
 - JSON maps to `TEXT` (SQLite), `jsonb` (PostgreSQL) and `JSON` (MySQL).
 - **Migrations** are Kysely migrations run by a separate `npm run migrate` step. The Docker entrypoint runs `migrate`, then `start`; development uses the same script. They are not run in `register()`, so they stay safe with several instances later.
