@@ -716,3 +716,31 @@ form.map-node button.map-travel:focus-visible .dot {
     transition: none;
   }
 }
+
+/* Journal position indicator: sticky at the top of whatever scroll container
+ * hosts the list (the window on the journal page, the modal element later),
+ * naming the entry at the top of the viewport with a thin progress bar. */
+.journal-position {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.35rem 0 0.5rem;
+}
+
+.journal-position-text {
+  margin: 0 0 0.3rem;
+}
+
+.journal-progress {
+  height: 0.2rem;
+  border-radius: 999px;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.journal-progress-bar {
+  height: 100%;
+  background: var(--accent);
+}

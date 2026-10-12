@@ -63,6 +63,7 @@ export default async function JournalPage({
             playthroughId={playthrough.id}
             initialEntries={rendered}
             initialNextCursor={batch.nextCursor ?? null}
+            total={total}
           />
         </>
       )}

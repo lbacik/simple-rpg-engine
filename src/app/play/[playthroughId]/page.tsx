@@ -609,6 +609,7 @@ export default async function PlayPage({
       const batch = await store.listJournalBatch(resolved.playthrough.id, {
         limit: JOURNAL_BATCH_SIZE,
       });
+      const journalTotal = await store.countJournal(resolved.playthrough.id);
       const recordedEnding = latestJournalEnding(batch.entries);
       const rendered = renderJournalEntries(batch.entries, incompatibleName);
       return (
@@ -634,6 +635,7 @@ export default async function PlayPage({
               playthroughId={resolved.playthrough.id}
               initialEntries={rendered}
               initialNextCursor={batch.nextCursor ?? null}
+              total={journalTotal}
             />
           </section>
         </main>
