@@ -1,10 +1,12 @@
 // The journal entry list (docs/spec/ui.md, journal): entries newest first,
 // older batches appended below as the reader scrolls, until the first entry
-// is reached. A client component that works in any scroll container (the
-// journal page today, the journal modal later): an IntersectionObserver on a
-// sentinel loads the next older batch through the sequence cursor, so entries
-// appended during play never shift or duplicate what is on screen. Without
-// JavaScript the server-rendered "Older entries" link walks the same batches.
+// is reached, with a sticky position indicator naming the topmost entry and
+// its progress against the total. A client component that works in any scroll
+// container (the journal page today, the journal modal later): an
+// IntersectionObserver on a sentinel loads the next older batch through the
+// sequence cursor, so entries appended during play never shift or duplicate
+// what is on screen. Without JavaScript the server-rendered "Older entries"
+// link walks the same batches.
 //
 // Relative imports only: vitest has no `@/` alias, and tests drive this
 // module directly with react-dom/server.
@@ -29,14 +31,45 @@ function scrollContainerOf(element: HTMLElement): Element | null {
   return null;
 }
 
+/** Entry at the top of the viewport the position indicator names. */
+export type JournalPosition = { seq: number; step: number };
+
+/**
+ * Position of `topmost` against `total` as a scrolled fraction: 0 at the
+ * newest entry, 1 at the first entry. Counts from the newest entry, so the
+ * bar fills as the reader scrolls towards older entries, against the total
+ * entry count rather than the number loaded so far.
+ */
+export function journalProgress(topmost: JournalPosition, total: number): number {
+  if (total <= 0) return 0;
+  const position = total - topmost.seq + 1;
+  return Math.min(1, Math.max(0, position / total));
+}
+
+/** "Step 12 · entry 37 of 134" for the topmost visible entry. */
+export function journalPositionText(topmost: JournalPosition, total: number): string {
+  return `Step ${topmost.step} · entry ${topmost.seq} of ${total}`;
+}
+
+/** Read the entry position back off a list item. */
+function positionOf(item: Element): JournalPosition {
+  return {
+    seq: Number(item.getAttribute('data-seq')),
+    step: Number(item.getAttribute('data-step')),
+  };
+}
+
 export function JournalEntries({
   playthroughId,
   initialEntries,
   initialNextCursor,
+  total,
 }: {
   playthroughId: string;
   initialEntries: RenderedJournalEntry[];
   initialNextCursor: number | null;
+  /** Total entry count at open; the progress bar reads against this, not the loaded count. */
+  total: number;
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
@@ -45,6 +78,12 @@ export function JournalEntries({
   const [enhanced, setEnhanced] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
+  const positionRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLOListElement | null>(null);
+  const first = initialEntries[0];
+  const [topmost, setTopmost] = useState<JournalPosition | null>(
+    first ? { seq: first.seq, step: first.step } : null,
+  );
 
   const loadOlder = useCallback(
     async (cursor: number) => {
@@ -91,15 +130,75 @@ export function JournalEntries({
     return () => observer.disconnect();
   }, [enhanced, nextCursor, loadOlder]);
 
+  // The position indicator names the entry at the top of the viewport. It
+  // listens on whatever scroll container hosts the list (the window on the
+  // journal page, the modal element later), throttled to one update per
+  // frame, and re-reads the DOM so appended older batches stay correct.
+  useEffect(() => {
+    const position = positionRef.current;
+    const list = listRef.current;
+    if (!position || !list) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = position.getBoundingClientRect().bottom;
+      const items = list.querySelectorAll('li[data-seq]');
+      let current: JournalPosition | null = null;
+      for (const item of items) {
+        if (item.getBoundingClientRect().bottom > threshold + 1) {
+          current = positionOf(item);
+          break;
+        }
+      }
+      // Past the last entry (or nothing measured yet): name the oldest entry.
+      if (!current) {
+        const last = items[items.length - 1];
+        if (last) {
+          current = positionOf(last);
+        }
+      }
+      if (current && Number.isFinite(current.seq)) {
+        setTopmost((previous) =>
+          previous && previous.seq === current.seq ? previous : current,
+        );
+      }
+    };
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(update);
+    };
+    const scroller = scrollContainerOf(position);
+    const target: Element | Window = scroller ?? window;
+    update();
+    target.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      target.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [entries.length, enhanced]);
+
   if (entries.length === 0) {
     return <p>Nothing has happened yet.</p>;
   }
   const done = nextCursor === null;
+  const namedEntry = topmost ?? { seq: entries[0]!.seq, step: entries[0]!.step };
+  const progress = journalProgress(namedEntry, total);
   return (
     <>
-      <ol>
+      <div ref={positionRef} className="journal-position" aria-live="off">
+        <p className="meta journal-position-text">{journalPositionText(namedEntry, total)}</p>
+        <div className="journal-progress" aria-hidden="true">
+          <div
+            className="journal-progress-bar"
+            style={{ width: `${Math.round(progress * 100)}%` }}
+          />
+        </div>
+      </div>
+      <ol ref={listRef}>
         {entries.map((entry) => (
-          <li key={entry.seq}>
+          <li key={entry.seq} data-seq={entry.seq} data-step={entry.step}>
             <p className="meta">
               {entry.label} · step {entry.step}
             </p>

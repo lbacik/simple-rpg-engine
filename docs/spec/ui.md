@@ -89,6 +89,8 @@ A read-only list of the Journal entries, newest first: intro, narration, Choices
 
 Opening the Journal shows the newest batch of entries at the top. Scrolling towards the bottom loads older entries automatically and appends them below, with a visible loading state, until the very first entry (the intro) is reached; there loading stops and the list says the start of the Journal has been reached. Batches are addressed by a cursor on the entry sequence ("entries older than X"), not by page number or offset, so entries appended during play never shift or duplicate what is already on screen. Without JavaScript, an "Older entries" link at the bottom of the list walks the whole Journal batch by batch.
 
+A sticky position indicator stays visible at the top of the list's scroll container. It names the step and the sequence position (out of the total entry count) of the entry at the top of the viewport (for example "Step 12 · entry 37 of 134"), with a thin progress bar showing how far into the Journal the reader has scrolled by entry count against the total, not the number loaded so far. The indicator stays correct as older batches are appended; an empty Journal shows no indicator and reads "Nothing has happened yet.". The position is plain text (not a live region, so scrolling does not flood screen readers) and the bar is decorative. Without JavaScript the page still renders; the indicator keeps its server-rendered first entry.
+
 ## Endings
 
 - The Ending's kind (victory or defeat), `title` and closing narration.
