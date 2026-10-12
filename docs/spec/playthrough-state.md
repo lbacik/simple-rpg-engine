@@ -29,14 +29,14 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 | Scenes and Choices | set of fired Scene ids; set of taken `once` Choices as (Scene id, Choice id) | on-demand Scenes on offer; visible Choices |
 | Flags | set of Flags currently true | |
 | Encounters | per Encounter id, created on its first `start-combat`: **Damage taken** | remaining Enemy Health (maximum − taken); defeated (remaining ≤ 0). An Encounter without a record is at full Health. |
-| Active Combat | Encounter id, current Range, round number | Enemy Health (from the Encounter record) |
+| Active Combat | Encounter id, current Range, round number, the current Round's committed Intents, each participant's prepared state, temporary effects that outlast the step | Enemy Health (from the Encounter record); the Round's order; available Character actions with their Speed |
 | Journal | append-only entries: Scenario text as presented, engine events, and the language of each | the result panel; the intro display; all Interface Text in it |
 
 Notes:
 
 - **Equipment is a pointer, not a copy.** An equipped item counts towards its held quantity. Removing one of two copies leaves it equipped; removing the last copy unequips it first.
 - **Encounter identity is the Encounter id.** Two Encounters with the same Enemy are independent. Storing only Damage taken makes "defeated" impossible to desynchronise.
-- **The Defend bonus is never stored.** A Character action and the Enemy's response resolve in one step, and the bonus expires at the end of that Enemy turn.
+- **Round-scoped effects are never stored.** A whole Round resolves in one step, so an effect that expires at the end of its own Round never outlives it. The committed Intents, prepared states and effects lasting into the next Round are stored, so reading or reloading never re-selects or changes them. Their exact shape is set with the tactical Combat state migration.
 - **Flags all start false.** There are no counters.
 - The base Attributes are copied so that later Template edits do not change an existing Character.
 
@@ -57,7 +57,7 @@ Notes:
 | **Equip** (item id) | Location view or Scene active; the item is held Equipment | puts it in its slot, replacing whatever was there |
 | **Unequip** (slot) | Location view or Scene active; the slot is occupied | empties the slot |
 | **Use item** (item id) | Location view or Scene active; a held Consumable; Health below maximum | heals, consumes one copy; position unchanged |
-| **Combat action** (attack, defend, advance, fall back, use item, escape) | Combat; the action is available (see [mechanics.md](mechanics.md#character-actions)) | one Combat turn |
+| **Combat action** (attack, defend, advance, fall back, use item, escape) | Combat; the action is available in the current state (see [mechanics.md](mechanics.md#character-actions)) | one Combat Round (see [mechanics.md](mechanics.md#rounds)) |
 
 Travel identifies a Connection by its target: every visible Connection to the same target has the same effect. Equip, Unequip and Use item outside Combat each advance `step` and append an inventory Journal entry.
 
@@ -127,8 +127,9 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 
 - **`start-combat: E`**:
   - if E is defeated, it is a no-op: no fight, no victory Outcome, Location view;
-  - otherwise create E's record if absent, set the position to Combat {E, E's `startRange`, round 1}, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange`, shows the opening narration again, and keeps the Damage taken.
-- **Each Combat turn** (the Character action and the Enemy response, per [mechanics.md](mechanics.md#combat)) is one `step`, increments the round, and appends one Combat round entry.
+  - otherwise create E's record if absent, set the position to Combat {E, E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
+- **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round and stores the next Round's Intents. It appends one Combat round entry, which records the actions in resolved order, including dropped and cancelled ones.
+- A **rejected** Combat action changes nothing: the round, the Intents and `step` stay as they were.
 - **Victory** (Damage taken ≥ the Enemy's maximum Health): the Combat ends and a Combat end entry is appended. Then the `victory` Outcome is applied, or, when there is none, an Enemy-defeated notice is appended and the position becomes Location view in the Location where the fight happened.
 - **Escape**: the Combat ends, the Range is discarded, the Encounter record keeps its Damage taken, and the `escape` Outcome is applied.
 - **Character death**: Health 0, then `ended(death Ending)`, appending the Ending entry.
@@ -180,6 +181,7 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - A non-repeatable Scene activates at most once, and a `once` Choice is taken at most once.
 - An Outcome is applied once, by exactly one step-guarded action. A stale or duplicate submission is rejected.
 - Nothing changes after `ended`.
+- A committed Intent changes only by resolving or being cancelled within its Round; reading, reloading or a rejected action never re-selects it.
 
 ## Sources
 
@@ -190,3 +192,4 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md)
 - [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (events, names and `lang` per entry, legacy rows)
 - [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md)
+- [Combat round lifecycle: visible intents and action-speed initiative](https://github.com/lbacik/simple-rpg-engine/issues/77#issuecomment-6130653596) (Rounds, Speed, Intents)
