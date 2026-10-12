@@ -104,6 +104,10 @@ Opening the Journal (in the modal or on the standalone page) shows the newest ba
 
 A sticky position indicator stays visible at the top of the list's scroll container (the modal body in the modal, the window on the standalone page). It names the step and the sequence position (out of the total entry count) of the entry at the top of the viewport (for example "Step 12 · entry 37 of 134"), with a thin progress bar showing how far into the Journal the reader has scrolled by entry count against the total, not the number loaded so far. The indicator stays correct as older batches are appended; an empty Journal shows no indicator and reads "Nothing has happened yet.". The position is plain text (not a live region, so scrolling does not flood screen readers) and the bar is decorative. Without JavaScript the page still renders; the indicator keeps its server-rendered first entry.
 
+- Entry type labels and the wording of engine-generated entries come from the catalogue of the **current** Interface Language, so after a switch the whole Journal's Interface Text is in the new language ([playthrough-state.md](playthrough-state.md#journal)).
+- Scenario text (narration, Choice wording, Ending title and narration, and names inside engine messages) is shown as it was presented, so after a switch the Journal shows Scenario text in more than one language. Each element holding it carries the entry's recorded `lang`; a name inside an engine message is wrapped in its own element with that `lang`.
+- Entries stored before Interface Languages existed are shown verbatim, in English, with only their type label from the catalogue.
+
 ## Endings
 
 - The Ending's kind (victory or defeat), `title` and closing narration.
@@ -181,3 +185,4 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478)
 - [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575) (routes, rejection notices)
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (Interface Text, `lang`, Polish terms)
+- [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (Journal rendering after a language switch)

@@ -13,5 +13,5 @@ The Interface Text comes in two Interface Languages, English and Polish, and muc
 - A missing message or a wrong argument list in a language is a `tsc` error. There is no runtime fallback between catalogues.
 - Polish Interface Text reads like labels where a name is involved. English messages may still be sentences, since each language shapes its own messages.
 - Scenario text is never case-transformed (no lower-casing of a weapon name inside a message).
-- The events carry enough to render any message later, which leaves open whether the Journal stores events or rendered text.
+- The events carry enough to render any message later. The Journal stores them and renders them when read ([ADR 0004](0004-journal-stores-events-and-scenario-text-as-presented.md)).
 - Moving to a library later means rewriting function messages as ICU strings: mechanical, but it touches every message.
