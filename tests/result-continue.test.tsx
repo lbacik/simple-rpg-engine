@@ -13,6 +13,7 @@ import {
   shouldShowResultPanel,
 } from '../src/app/lib/panel';
 import { ResultPanel } from '../src/app/play/[playthroughId]/result-panel';
+import { RESULT_PANEL_ENTRY_TYPES } from '../src/engine/index';
 
 describe('parseSeenStep', () => {
   it('parses the current step', () => {
@@ -49,6 +50,35 @@ describe('shouldShowResultPanel', () => {
     expect(shouldShowResultPanel(false, 4, undefined)).toBe(false);
     expect(shouldShowResultPanel(false, 4, 4)).toBe(false);
     expect(shouldShowResultPanel(false, 4, 3)).toBe(false);
+  });
+});
+
+describe('result-panel entry types', () => {
+  it('gates every result panel behind Continue: Choice/Test, Combat end and intro', () => {
+    for (const type of [
+      'intro',
+      'test',
+      'outcome',
+      'state-change',
+      'combat-end',
+      'enemy-defeated',
+    ]) {
+      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(true);
+    }
+  });
+
+  it('leaves positions and the Ending out of the panel', () => {
+    for (const type of [
+      'scene',
+      'choice',
+      'travel',
+      'combat-start',
+      'combat-round',
+      'inventory',
+      'ending',
+    ]) {
+      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(false);
+    }
   });
 });
 

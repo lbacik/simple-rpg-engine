@@ -183,6 +183,30 @@ function itemDetails(item: CompiledItem): string[] {
   return ['Key item'];
 }
 
+/**
+ * The game-page query the inventory forms carry along: the panel tab, the
+ * Continue acknowledgement (`?seen=`) and the "?" map setting, so the
+ * redirect after the turn lands back on the same view instead of bouncing to
+ * the result panel or losing the map setting.
+ */
+function PreservedQueryInputs({
+  tab,
+  seen,
+  showUnknownExits,
+}: {
+  tab: PanelTab;
+  seen: number | undefined;
+  showUnknownExits: boolean;
+}) {
+  return (
+    <>
+      <input type="hidden" name="tab" value={tab} />
+      {seen !== undefined ? <input type="hidden" name="seen" value={seen} /> : null}
+      {showUnknownExits ? <input type="hidden" name="unknown" value="1" /> : null}
+    </>
+  );
+}
+
 function InventoryTab({
   scenario,
   state,
@@ -190,6 +214,8 @@ function InventoryTab({
   step,
   tab,
   forceReadOnly,
+  seen,
+  showUnknownExits,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -198,6 +224,8 @@ function InventoryTab({
   tab: PanelTab;
   /** Set for incompatible Playthroughs: no actions, whatever the status. */
   forceReadOnly?: boolean;
+  seen: number | undefined;
+  showUnknownExits: boolean;
 }) {
   const readOnly = forceReadOnly === true || state.status !== 'active';
   const inCombat = state.activeCombat != null;
@@ -236,7 +264,7 @@ function InventoryTab({
                 <input type="hidden" name="playthroughId" value={playthroughId} />
                 <input type="hidden" name="expectedStep" value={step} />
                 <input type="hidden" name="slot" value={slot} />
-                <input type="hidden" name="tab" value={tab} />
+                <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
                 <button className="button secondary" type="submit" disabled={disabled}>
                   Unequip
                 </button>{' '}
@@ -290,6 +318,8 @@ function InventoryTab({
                     playthroughId={playthroughId}
                     step={step}
                     tab={tab}
+                    seen={seen}
+                    showUnknownExits={showUnknownExits}
                   />
                 )}
               </li>
@@ -310,6 +340,8 @@ function ItemActions({
   playthroughId,
   step,
   tab,
+  seen,
+  showUnknownExits,
 }: {
   item: CompiledItem;
   itemId: string;
@@ -319,6 +351,8 @@ function ItemActions({
   playthroughId: string;
   step: number;
   tab: PanelTab;
+  seen: number | undefined;
+  showUnknownExits: boolean;
 }) {
   if (item.kind === 'equipment') {
     if (inCombat) {
@@ -346,7 +380,7 @@ function ItemActions({
         <input type="hidden" name="playthroughId" value={playthroughId} />
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="itemId" value={itemId} />
-        <input type="hidden" name="tab" value={tab} />
+        <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
         <p>
           <button className="button secondary" type="submit">
             Equip
@@ -381,7 +415,7 @@ function ItemActions({
         <input type="hidden" name="playthroughId" value={playthroughId} />
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="itemId" value={itemId} />
-        <input type="hidden" name="tab" value={tab} />
+        <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
         <p>
           <button className="button secondary" type="submit">
             Use
@@ -691,6 +725,8 @@ function SidePanel({
             step={step}
             tab={tab}
             forceReadOnly={forceReadOnly}
+            seen={seen}
+            showUnknownExits={showUnknownExits}
           />
         ) : tab === 'map' ? (
           <LocationMap
@@ -732,6 +768,8 @@ function SidePanel({
             step={step}
             tab={tab}
             forceReadOnly={forceReadOnly}
+            seen={seen}
+            showUnknownExits={showUnknownExits}
           />
         ) : (
           <CharacterTab scenario={scenario} state={state} />

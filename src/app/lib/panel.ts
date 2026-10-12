@@ -42,7 +42,8 @@ export function shouldShowResultPanel(
   return seenStep !== currentStep;
 }
 
-type PlayQuery = {
+/** The query parameters the game page preserves across navigation. */
+export type PlayQuery = {
   tab?: string;
   notice?: string;
   seen?: number;

@@ -18,7 +18,7 @@ import { getScenario } from '@/content/registry';
 import type { Action } from '@/engine/index';
 import { isEquipmentSlot } from '@/engine/inventory';
 import { getDatabase } from '@/persistence/index';
-import { playHref } from './panel';
+import { parseSeenStep, playHref } from './panel';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -27,6 +27,8 @@ type InventoryForm = {
   expectedStep: number;
   value: string;
   tab: string;
+  seen: number | undefined;
+  showUnknownExits: boolean;
 };
 
 function readForm(formData: FormData, field: string): InventoryForm | null {
@@ -36,7 +38,17 @@ function readForm(formData: FormData, field: string): InventoryForm | null {
   if (playthroughId === '' || !Number.isInteger(expectedStep) || value === '') {
     return null;
   }
-  return { playthroughId, expectedStep, value, tab: String(formData.get('tab') ?? '') };
+  const seenRaw = formData.get('seen');
+  return {
+    playthroughId,
+    expectedStep,
+    value,
+    tab: String(formData.get('tab') ?? ''),
+    // The Continue acknowledgement and the "?" map setting ride along so the
+    // redirect lands back on the same view.
+    seen: seenRaw === null ? undefined : parseSeenStep(String(seenRaw)),
+    showUnknownExits: String(formData.get('unknown') ?? '') === '1',
+  };
 }
 
 async function runInventoryTurn(form: InventoryForm, action: Action): Promise<never> {
@@ -55,14 +67,24 @@ async function runInventoryTurn(form: InventoryForm, action: Action): Promise<ne
   const path = `/play/${form.playthroughId}`;
   if (result.ok) {
     revalidatePath(path);
-    redirect(playHref(form.playthroughId, form.tab));
+    // The turn advanced `step`, so the old acknowledgement is stale and stays
+    // behind; the "?" map setting is preserved.
+    redirect(playHref(form.playthroughId, form.tab, undefined, undefined, form.showUnknownExits));
   }
   if (result.reason === 'not-found') {
     notFound();
   }
   revalidatePath(path);
+  // A rejection changes nothing and does not advance `step`, so the
+  // acknowledgement still matches and the acknowledged position stays visible.
   redirect(
-    playHref(form.playthroughId, form.tab, result.reason === 'stale' ? 'stale' : 'unavailable'),
+    playHref(
+      form.playthroughId,
+      form.tab,
+      result.reason === 'stale' ? 'stale' : 'unavailable',
+      form.seen,
+      form.showUnknownExits,
+    ),
   );
 }
 
@@ -87,7 +109,7 @@ export async function unequipAction(formData: FormData): Promise<never> {
     // re-validates real slots independently.
     await ensureSessionId();
     revalidatePath(`/play/${form.playthroughId}`);
-    redirect(playHref(form.playthroughId, form.tab, 'unavailable'));
+    redirect(playHref(form.playthroughId, form.tab, 'unavailable', form.seen, form.showUnknownExits));
   }
   return runInventoryTurn(
     form,
