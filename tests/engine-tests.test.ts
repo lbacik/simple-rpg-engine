@@ -76,11 +76,12 @@ describe('narrative tests', () => {
     // Soldier: Might 3 base + 1 chain shirt = 4 effective; very-hard targets 13.
     const { scenario, state } = atBarrowDoor();
     const resolved = choose(scenario, state, 'force-door', dealing([4, 5]));
+    // The success Outcome sets a flag, which is never presented: no
+    // state-change entry joins the Test, Outcome and Scene narration.
     expect(resolved.journal.map((entry) => entry.type)).toEqual([
       'choice',
       'test',
       'outcome',
-      'state-change',
       'scene',
     ]);
     const test = resolved.journal[1];
@@ -88,12 +89,14 @@ describe('narrative tests', () => {
       type: 'test',
       attribute: 'might',
       difficulty: 'very-hard',
+      target: 13,
       die1: 4,
       die2: 5,
       modifier: 4,
       total: 13,
       success: true,
     });
+    expect(test).not.toHaveProperty('text');
     // The success Outcome opens the barrow and moves into the tomb.
     expect(resolved.state.flags).toContain('barrow-open');
     expect(resolved.state.currentLocationId).toBe('barrow-tomb');
@@ -146,7 +149,8 @@ describe('narrative tests', () => {
     expect(test.success).toBe(false);
     expect(test.attribute).toBe('might');
     expect(test.difficulty).toBe('very-hard');
-    expect(typeof test.text).toBe('string');
+    // Structured events carry no English text.
+    expect(test).not.toHaveProperty('text');
   });
 
   it('shows the tested Attribute and Difficulty before the Choice is taken', () => {
@@ -156,10 +160,10 @@ describe('narrative tests', () => {
     if (gameView.kind !== 'scene') throw new Error('expected a Scene view');
     const force = gameView.choices.find((choice) => choice.id === 'force-door');
     expect(force).toBeDefined();
-    expect(force?.testLabel).toContain('Might');
-    expect(force?.testLabel).toContain('Very hard 13');
+    // The Test comes from the view as codes; the app renders it from the catalogue.
+    expect(force?.test).toEqual({ attribute: 'might', difficulty: 'very-hard', target: 13 });
     // A Choice without a Test carries no label.
     const stepAway = gameView.choices.find((choice) => choice.id === 'step-away');
-    expect(stepAway?.testLabel).toBeUndefined();
+    expect(stepAway?.test).toBeUndefined();
   });
 });

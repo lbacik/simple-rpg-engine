@@ -43,7 +43,16 @@ describe('equip', () => {
     expect(result.state.equipment).toEqual({ outfit: 'cloak' });
     expect(result.state.step).toBe(1);
     expect(result.state.currentLocationId).toBe(state.currentLocationId);
-    expect(result.journal).toEqual([{ type: 'inventory', lang: 'en', text: "Equipped Hunter's Cloak." }]);
+    expect(result.journal).toEqual([
+      {
+        type: 'inventory',
+        lang: 'en',
+        action: 'equipped',
+        itemId: 'cloak',
+        name: "Hunter's Cloak",
+      },
+    ]);
+    expect(result.journal[0]).not.toHaveProperty('text');
   });
 
   it('replaces the occupant of the slot', () => {
@@ -119,7 +128,15 @@ describe('unequip', () => {
     if (!result.ok) return;
     expect(result.state.equipment).toEqual({});
     expect(result.state.step).toBe(1);
-    expect(result.journal).toEqual([{ type: 'inventory', lang: 'en', text: "Unequipped Hunter's Cloak." }]);
+    expect(result.journal).toEqual([
+      {
+        type: 'inventory',
+        lang: 'en',
+        action: 'unequipped',
+        itemId: 'cloak',
+        name: "Hunter's Cloak",
+      },
+    ]);
   });
 
   it('rejects an empty slot and an unknown slot', () => {
@@ -163,7 +180,9 @@ describe('use item', () => {
     expect(result.state.step).toBe(1);
     expect(result.state.currentLocationId).toBe(state.currentLocationId);
     expect(result.state.activeSceneId).toBe('path');
-    expect(result.journal).toEqual([{ type: 'inventory', lang: 'en', text: 'Used Herbs, restored 3 Health.' }]);
+    expect(result.journal).toEqual([
+      { type: 'inventory', lang: 'en', action: 'used', itemId: 'herbs', name: 'Herbs', healed: 3 },
+    ]);
   });
 
   it('caps healing at 12 and reports only the Health restored', () => {
@@ -176,7 +195,9 @@ describe('use item', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.state.character.health).toBe(12);
-    expect(result.journal).toEqual([{ type: 'inventory', lang: 'en', text: 'Used Herbs, restored 2 Health.' }]);
+    expect(result.journal).toEqual([
+      { type: 'inventory', lang: 'en', action: 'used', itemId: 'herbs', name: 'Herbs', healed: 2 },
+    ]);
   });
 
   it('removes the entry when the last copy is consumed', () => {

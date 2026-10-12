@@ -56,27 +56,22 @@ export const DIFFICULTY_TARGETS = {
 
 export type Difficulty = keyof typeof DIFFICULTY_TARGETS;
 
-const DIFFICULTY_NAMES: Record<Difficulty, string> = {
-  easy: 'Easy',
-  ordinary: 'Ordinary',
-  hard: 'Hard',
-  'very-hard': 'Very hard',
-};
-
-const ATTRIBUTE_NAMES: Record<AttributeName, string> = {
-  might: 'Might',
-  agility: 'Agility',
-  wits: 'Wits',
-  presence: 'Presence',
-};
-
 /**
- * The Choice label shown before a Test is taken (docs/spec/ui.md, tests and
- * results): the Attribute and the Difficulty by name and number, for example
- * "Might, Very hard 13".
+ * Reason codes for unavailable inventory actions. The view returns these
+ * codes and the app renders them from the catalogue, so the engine produces
+ * no Interface Text (docs/spec/architecture.md, engine contract).
  */
-export function testLabel(attribute: AttributeName, difficulty: Difficulty): string {
-  return `${ATTRIBUTE_NAMES[attribute]}, ${DIFFICULTY_NAMES[difficulty]} ${DIFFICULTY_TARGETS[difficulty]}`;
+export type InventoryReason = 'in-combat' | 'full-health';
+
+/** Why Equip/Unequip is unavailable outside the Location/Scene position. */
+export function inventoryEquipReason(state: PlaythroughState): InventoryReason | undefined {
+  return state.activeCombat != null ? 'in-combat' : undefined;
+}
+
+/** Why Use item is unavailable: in Combat, or at full Health outside it. */
+export function inventoryUseReason(state: PlaythroughState): InventoryReason | undefined {
+  if (state.activeCombat != null) return 'in-combat';
+  return state.character.health >= MAX_HEALTH ? 'full-health' : undefined;
 }
 
 /**
@@ -128,7 +123,13 @@ export type NewJournalEntry =
   | {
       type: 'inventory';
       lang: string;
-      text: string;
+      /** Structured inventory action: equipped, unequipped or used. */
+      action: 'equipped' | 'unequipped' | 'used';
+      /** The item id and the name as presented. */
+      itemId: string;
+      name: string;
+      /** Health restored by a Use; absent on equip/unequip. */
+      healed?: number;
     }
   | {
       type: 'scene';
@@ -146,10 +147,10 @@ export type NewJournalEntry =
   | {
       type: 'test';
       lang: string;
-      /** The text as presented: both dice, the modifier, the total and the result. */
-      text: string;
       attribute: AttributeName;
       difficulty: Difficulty;
+      /** The Difficulty target the total was measured against. */
+      target: number;
       die1: number;
       die2: number;
       /** The effective Attribute the roll added. */
@@ -165,7 +166,14 @@ export type NewJournalEntry =
   | {
       type: 'state-change';
       lang: string;
-      text: string;
+      /** Structured state change; Flag changes are never emitted. */
+      change: 'item-received' | 'item-lost' | 'health-gained' | 'health-lost' | 'revealed';
+      /** Item id for item changes; Location id for a reveal. */
+      itemId?: string;
+      /** Item or Location name as presented; present on item and reveal changes. */
+      name?: string;
+      /** Item quantity, or Health gained/lost. */
+      amount?: number;
     }
   | {
       type: 'ending';
@@ -604,15 +612,15 @@ function resolveTest(
   const die2 = rng(1, 7);
   const modifier = effectiveAttributes(scenario, state)[test.attribute];
   const total = die1 + die2 + modifier;
-  const success = total >= DIFFICULTY_TARGETS[test.difficulty];
-  const signed = modifier >= 0 ? `+${modifier}` : `${modifier}`;
+  const target = DIFFICULTY_TARGETS[test.difficulty];
+  const success = total >= target;
   return {
     entry: {
       type: 'test',
       lang: scenario.language,
-      text: `${testLabel(test.attribute, test.difficulty)}: rolled ${die1} and ${die2}, modifier ${signed}, total ${total} — ${success ? 'success' : 'failure'}.`,
       attribute: test.attribute,
       difficulty: test.difficulty,
+      target,
       die1,
       die2,
       modifier,
@@ -787,7 +795,8 @@ function applyOutcome(
       journal.push({
         type: 'state-change',
         lang: scenario.language,
-        text: `−${effect.damage} Health`,
+        change: 'health-lost',
+        amount: effect.damage,
       });
       next = {
         ...next,
@@ -845,16 +854,15 @@ function applyEffect(
 ): { state: PlaythroughState; entry: NewJournalEntry | undefined } {
   if ('set-flag' in effect) {
     const flag = effect['set-flag'];
-    return {
-      state: { ...state, flags: pushUnique(state.flags, flag) },
-      entry: { type: 'state-change', lang: scenario.language, text: `flag set: ${flag}` },
-    };
+    // Flag changes are the author's internal memory and are never presented,
+    // neither on screen nor in the Journal.
+    return { state: { ...state, flags: pushUnique(state.flags, flag) }, entry: undefined };
   }
   if ('clear-flag' in effect) {
     const flag = effect['clear-flag'];
     return {
       state: { ...state, flags: state.flags.filter((held) => held !== flag) },
-      entry: { type: 'state-change', lang: scenario.language, text: `flag cleared: ${flag}` },
+      entry: undefined,
     };
   }
   if ('give-item' in effect) {
@@ -868,7 +876,10 @@ function applyEffect(
       entry: {
         type: 'state-change',
         lang: scenario.language,
-        text: quantity === 1 ? `received: ${name}` : `received: ${name} ×${quantity}`,
+        change: 'item-received',
+        itemId: item,
+        name,
+        amount: quantity,
       },
     };
   }
@@ -905,7 +916,10 @@ function applyEffect(
       entry: {
         type: 'state-change',
         lang: scenario.language,
-        text: actual === 1 ? `lost: ${name}` : `lost: ${name} ×${actual}`,
+        change: 'item-lost',
+        itemId: item,
+        name,
+        amount: actual,
       },
     };
   }
@@ -920,7 +934,12 @@ function applyEffect(
         ...state,
         character: { ...state.character, health: state.character.health + restored },
       },
-      entry: { type: 'state-change', lang: scenario.language, text: `+${restored} Health` },
+      entry: {
+        type: 'state-change',
+        lang: scenario.language,
+        change: 'health-gained',
+        amount: restored,
+      },
     };
   }
   if ('damage' in effect) {
@@ -931,7 +950,12 @@ function applyEffect(
         ...state,
         character: { ...state.character, health: state.character.health - effect.damage },
       },
-      entry: { type: 'state-change', lang: scenario.language, text: `−${effect.damage} Health` },
+      entry: {
+        type: 'state-change',
+        lang: scenario.language,
+        change: 'health-lost',
+        amount: effect.damage,
+      },
     };
   }
   const target = effect.reveal;
@@ -942,7 +966,13 @@ function applyEffect(
   }
   return {
     state: { ...state, revealed: pushUnique(state.revealed, target) },
-    entry: { type: 'state-change', lang: scenario.language, text: `revealed: ${name}` },
+    entry: {
+      type: 'state-change',
+      lang: scenario.language,
+      change: 'revealed',
+      itemId: target,
+      name,
+    },
   };
 }
 
@@ -977,7 +1007,15 @@ function applyEquip(
       step: state.step + 1,
       equipment: { ...state.equipment, [item.slot]: itemId },
     },
-    journal: [{ type: 'inventory', lang: scenario.language, text: `Equipped ${item.name}.` }],
+    journal: [
+      {
+        type: 'inventory',
+        lang: scenario.language,
+        action: 'equipped',
+        itemId,
+        name: item.name,
+      },
+    ],
   };
 }
 
@@ -1006,7 +1044,15 @@ function applyUnequip(
   return {
     ok: true,
     state: { ...state, step: state.step + 1, equipment },
-    journal: [{ type: 'inventory', lang: scenario.language, text: `Unequipped ${name}.` }],
+    journal: [
+      {
+        type: 'inventory',
+        lang: scenario.language,
+        action: 'unequipped',
+        itemId: equippedId,
+        name,
+      },
+    ],
   };
 }
 
@@ -1046,7 +1092,14 @@ function applyUseItem(
       equipment,
     },
     journal: [
-      { type: 'inventory', lang: scenario.language, text: `Used ${item.name}, restored ${restored} Health.` },
+      {
+        type: 'inventory',
+        lang: scenario.language,
+        action: 'used',
+        itemId,
+        name: item.name,
+        healed: restored,
+      },
     ],
   };
 }
@@ -1676,13 +1729,10 @@ export function visibleExits(scenario: Scenario, state: PlaythroughState): ExitV
 export type ChoiceView = {
   id: string;
   text: string;
-  /** The Test label shown before the Choice is taken, if the Choice has a Test. */
-  testLabel?: string;
   /**
    * The Test in structured form, if the Choice has one. The app renders the
-   * label from this through the Interface Text catalogue, so the Attribute
-   * and Difficulty names follow the Interface Language; `testLabel` keeps
-   * the English wording for the engine's own stored text.
+   * label from these codes through the Interface Text catalogue, so the
+   * Attribute and Difficulty names follow the Interface Language.
    */
   test?: {
     attribute: AttributeName;
@@ -1861,10 +1911,6 @@ export function view(
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
-          testLabel:
-            choice.test === undefined
-              ? undefined
-              : testLabel(choice.test.attribute, choice.test.difficulty),
           test:
             choice.test === undefined
               ? undefined

@@ -230,7 +230,12 @@ describe('death by damage', () => {
       'state-change',
       'ending',
     ]);
-    expect(doomed.journal[2]).toEqual({ type: 'state-change', lang: 'en', text: '−12 Health' });
+    expect(doomed.journal[2]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'health-lost',
+      amount: 12,
+    });
     expect(doomed.journal[3]).toMatchObject({
       type: 'ending',
       lang: 'en',

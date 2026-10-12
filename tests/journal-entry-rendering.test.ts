@@ -14,10 +14,10 @@ import { pl } from '../src/i18n/pl';
 
 const catalogues = { en, pl };
 
-// One example of every structured event kind of this batch: intro, Scene
-// narration, Choice taken, Outcome narration, travel and Ending. Later
-// tickets extend this table with their kinds (Test, state changes, Combat
-// events, inventory actions).
+// One example of every structured event kind the engine emits today: intro,
+// Scene narration, Choice taken, Outcome narration, travel, Ending, Test,
+// state changes and inventory actions. Combat entries still carry English text
+// and join this table when they move to structured events.
 const STRUCTURED_CASES: ReadonlyArray<{ kind: string; entry: JournalEntryView }> = [
   {
     kind: 'intro',
@@ -60,6 +60,87 @@ const STRUCTURED_CASES: ReadonlyArray<{ kind: string; entry: JournalEntryView }>
       },
     },
   },
+  {
+    kind: 'test',
+    entry: {
+      type: 'test',
+      lang: 'en',
+      payload: {
+        attribute: 'might',
+        difficulty: 'very-hard',
+        target: 13,
+        die1: 4,
+        die2: 5,
+        modifier: 4,
+        total: 13,
+        success: true,
+      },
+    },
+  },
+  {
+    kind: 'item-received',
+    entry: {
+      type: 'state-change',
+      lang: 'en',
+      payload: { change: 'item-received', itemId: 'rope', name: 'Rope', amount: 2 },
+    },
+  },
+  {
+    kind: 'item-lost',
+    entry: {
+      type: 'state-change',
+      lang: 'pl',
+      payload: { change: 'item-lost', itemId: 'sword', name: 'Miecz', amount: 1 },
+    },
+  },
+  {
+    kind: 'health-gained',
+    entry: {
+      type: 'state-change',
+      lang: 'en',
+      payload: { change: 'health-gained', amount: 2 },
+    },
+  },
+  {
+    kind: 'health-lost',
+    entry: {
+      type: 'state-change',
+      lang: 'pl',
+      payload: { change: 'health-lost', amount: 3 },
+    },
+  },
+  {
+    kind: 'revealed',
+    entry: {
+      type: 'state-change',
+      lang: 'en',
+      payload: { change: 'revealed', itemId: 'grove', name: 'Dark Grove' },
+    },
+  },
+  {
+    kind: 'equipped',
+    entry: {
+      type: 'inventory',
+      lang: 'en',
+      payload: { action: 'equipped', itemId: 'cloak', name: 'Hunter’s Cloak' },
+    },
+  },
+  {
+    kind: 'unequipped',
+    entry: {
+      type: 'inventory',
+      lang: 'pl',
+      payload: { action: 'unequipped', itemId: 'cloak', name: 'Płaszcz' },
+    },
+  },
+  {
+    kind: 'used',
+    entry: {
+      type: 'inventory',
+      lang: 'en',
+      payload: { action: 'used', itemId: 'herbs', name: 'Herbs', healed: 3 },
+    },
+  },
 ];
 
 describe('structured journal entries in both catalogues', () => {
@@ -75,8 +156,14 @@ describe('structured journal entries in both catalogues', () => {
           expect(result).not.toContain('NaN');
           expect(result).not.toContain('{');
         }
-        // Scenario text carries the entry's language.
-        expect(rendered.html).toContain(`lang="${String(entry.lang)}"`);
+        // Scenario text carries the entry's language: every name inside an
+        // engine message is wrapped in its own element with the entry's
+        // `lang`. Entries with no Scenario text inside (Test, Health
+        // gained/lost) carry Interface Text only and no `lang` element.
+        const payload = (entry.payload ?? {}) as Record<string, unknown>;
+        if (typeof payload.name === 'string' || typeof payload.text === 'string') {
+          expect(rendered.html).toContain(`lang="${String(entry.lang)}"`);
+        }
       });
     }
   }

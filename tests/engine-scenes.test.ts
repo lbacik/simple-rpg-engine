@@ -386,9 +386,21 @@ describe('outcomes, effects and transitions', () => {
         lang: 'en',
         text: 'Brenna presses a bundle of herbs into your hands. "The cart track\nleads to the forest edge. Go with the saints."\n',
       },
-      { type: 'state-change', lang: 'en', text: 'flag set: quest-accepted' },
-      { type: 'state-change', lang: 'en', text: 'received: Healing Herbs' },
-      { type: 'state-change', lang: 'en', text: 'revealed: Forest Edge' },
+      {
+        type: 'state-change',
+        lang: 'en',
+        change: 'item-received',
+        itemId: 'healing-herbs',
+        name: 'Healing Herbs',
+        amount: 1,
+      },
+      {
+        type: 'state-change',
+        lang: 'en',
+        change: 'revealed',
+        itemId: 'forest-edge',
+        name: 'Forest Edge',
+      },
     ]);
     expect(accepted.state.flags).toEqual(['quest-accepted']);
     expect(accepted.state.inventory['healing-herbs']).toBe(3);
@@ -414,18 +426,15 @@ describe('outcomes, effects and transitions', () => {
       'choice',
       'outcome',
       'state-change',
-      'state-change',
       'scene',
     ]);
     expect(turned.journal[2]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'lost: Barrow Key',
-    });
-    expect(turned.journal[3]).toEqual({
-      type: 'state-change',
-      lang: 'en',
-      text: 'flag set: barrow-open',
+      change: 'item-lost',
+      itemId: 'barrow-key',
+      name: 'Barrow Key',
+      amount: 1,
     });
     expect(turned.state.inventory['barrow-key']).toBeUndefined();
     expect(turned.state.flags).toContain('barrow-open');
@@ -467,7 +476,12 @@ describe('outcomes, effects and transitions', () => {
       'outcome',
       'state-change',
     ]);
-    expect(prayed.journal[2]).toEqual({ type: 'state-change', lang: 'en', text: '+2 Health' });
+    expect(prayed.journal[2]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'health-gained',
+      amount: 2,
+    });
   });
 
   it('gives the charm and reveals the mound at the chapel altar', () => {
@@ -492,12 +506,17 @@ describe('outcomes, effects and transitions', () => {
     expect(taken.journal[2]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'received: Silver Charm',
+      change: 'item-received',
+      itemId: 'silver-charm',
+      name: 'Silver Charm',
+      amount: 1,
     });
     expect(taken.journal[3]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'revealed: Barrow Mound',
+      change: 'revealed',
+      itemId: 'barrow-mound',
+      name: 'Barrow Mound',
     });
   });
 
@@ -948,9 +967,10 @@ describe('synthetic package: remaining effects and transitions', () => {
   it('hides a `once` Choice after taking it, also in the repeatable Scene', () => {
     const { scenario, state } = atCounter();
     const marked = choose(scenario, state, 'mark');
+    // Flag changes are the author's internal memory: the flag is set but no
+    // state-change entry is presented.
     expect(marked.journal).toEqual([
       { type: 'choice', lang: 'en', sceneId: 'counter', choiceId: 'mark', text: 'Mark the wall.' },
-      { type: 'state-change', lang: 'en', text: 'flag set: m' },
     ]);
     expect(marked.state.flags).toEqual(['m']);
     expect(
@@ -985,23 +1005,25 @@ describe('synthetic package: remaining effects and transitions', () => {
     const { scenario, state } = atCounter();
     const raised = choose(scenario, state, 'setf');
     expect(raised.state.flags).toEqual(['f']);
-    expect(raised.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'flag set: f' });
+    // Flag changes are never presented: only the Choice is recorded.
+    expect(raised.journal.map((entry) => entry.type)).toEqual(['choice']);
     // Raising the flag closed the Scene (no transition), so reopen the
     // repeatable counter before lowering the flag again.
     const lowered = choose(scenario, openScene(scenario, raised.state, 'counter').state, 'clearf');
     expect(lowered.state.flags).toEqual([]);
-    expect(lowered.journal[1]).toEqual({
-      type: 'state-change',
-      lang: 'en',
-      text: 'flag cleared: f',
-    });
+    expect(lowered.journal.map((entry) => entry.type)).toEqual(['choice']);
   });
 
   it('damages without killing, and lethal damage ends on the death Ending', () => {
     const { scenario, state } = atCounter();
     const hurt = choose(scenario, state, 'hurt');
     expect(hurt.state.character.health).toBe(10);
-    expect(hurt.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: '\u22122 Health' });
+    expect(hurt.journal[1]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'health-lost',
+      amount: 2,
+    });
     // Taking hurt closed the Scene (no transition), so reopen the repeatable
     // counter before the lethal choice.
     const slain = choose(scenario, openScene(scenario, hurt.state, 'counter').state, 'kill');
@@ -1023,7 +1045,12 @@ describe('synthetic package: remaining effects and transitions', () => {
     };
     const mended = choose(scenario, wounded, 'mend');
     expect(mended.state.character.health).toBe(12);
-    expect(mended.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: '+1 Health' });
+    expect(mended.journal[1]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'health-gained',
+      amount: 1,
+    });
     // At full Health the heal is a silent no-op: only the Choice is recorded.
     const silent = choose(scenario, state, 'mend');
     expect(silent.state.character.health).toBe(12);
@@ -1037,12 +1064,26 @@ describe('synthetic package: remaining effects and transitions', () => {
     const dropped = choose(scenario, state, 'take-one');
     expect(dropped.state.inventory).toEqual({ sword: 1 });
     expect(dropped.state.equipment).toEqual({ weapon: 'sword' });
-    expect(dropped.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'lost: Sword' });
+    expect(dropped.journal[1]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'item-lost',
+      itemId: 'sword',
+      name: 'Sword',
+      amount: 1,
+    });
     const fresh = atCounter();
     const all = choose(fresh.scenario, fresh.state, 'take-all');
     expect(all.state.inventory).toEqual({});
     expect(all.state.equipment).toEqual({});
-    expect(all.journal[1]).toEqual({ type: 'state-change', lang: 'en', text: 'lost: Sword ×2' });
+    expect(all.journal[1]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'item-lost',
+      itemId: 'sword',
+      name: 'Sword',
+      amount: 2,
+    });
   });
 
   it('stays silent when take-item holds nothing and reveal targets a visited Location', () => {

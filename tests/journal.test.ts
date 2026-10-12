@@ -96,15 +96,15 @@ describe('renderJournalEntry', () => {
     expect(rendered.html).toContain('lang="en"');
   });
 
-  it('renders the Test with dice, modifier, total and result', () => {
+  it('renders the structured Test through the catalogue', () => {
     const rendered = renderJournalEntry(
       {
         type: 'test',
         lang: 'en',
         payload: {
-          text: 'Might, Ordinary 9: rolled 3 and 4, modifier +2, total 9 — success.',
           attribute: 'might',
           difficulty: 'ordinary',
+          target: 9,
           die1: 3,
           die2: 4,
           modifier: 2,
@@ -116,9 +116,64 @@ describe('renderJournalEntry', () => {
       name,
     );
     expect(rendered.label).toBe('Test');
-    expect(rendered.html).toContain('rolled 3 and 4');
-    expect(rendered.html).toContain('total 9');
+    expect(rendered.html).toContain('Might');
+    expect(rendered.html).toContain('Ordinary');
+    expect(rendered.html).toContain('3+4+2=9');
     expect(rendered.html).toContain('success');
+    const polish = renderJournalEntry(
+      {
+        type: 'test',
+        lang: 'en',
+        payload: {
+          attribute: 'might',
+          difficulty: 'ordinary',
+          target: 9,
+          die1: 3,
+          die2: 4,
+          modifier: 2,
+          total: 9,
+          success: true,
+        },
+      },
+      pl,
+      name,
+    );
+    expect(polish.label).toBe('Test');
+    expect(polish.html).toContain('Krzepa');
+    expect(polish.html).toContain('sukces');
+  });
+
+  it('renders legacy Test rows verbatim in English with only the label translated', () => {
+    const legacy =
+      'Might, Ordinary 9: rolled 3 and 4, modifier +2, total 9 — success.';
+    for (const catalogue of [en, pl]) {
+      const rendered = renderJournalEntry(
+        {
+          type: 'test',
+          lang: 'en',
+          payload: {
+            text: legacy,
+            attribute: 'might',
+            difficulty: 'ordinary',
+            die1: 3,
+            die2: 4,
+            modifier: 2,
+            total: 9,
+            success: true,
+          },
+        },
+        catalogue,
+        name,
+      );
+      expect(rendered.html).toContain(legacy);
+    }
+    expect(
+      renderJournalEntry(
+        { type: 'test', lang: 'en', payload: { text: legacy } },
+        pl,
+        name,
+      ).label,
+    ).toBe('Test');
   });
 
   it('renders Outcome narration with the Markdown subset', () => {
@@ -132,14 +187,48 @@ describe('renderJournalEntry', () => {
     expect(rendered.html).toContain('lang="en"');
   });
 
-  it('renders state changes as plain text', () => {
-    const rendered = renderJournalEntry(
-      { type: 'state-change', lang: 'en', payload: { text: 'received: rope ×2' } },
+  it('renders structured state changes through the catalogue with the name in its lang', () => {
+    const received = renderJournalEntry(
+      {
+        type: 'state-change',
+        lang: 'en',
+        payload: { change: 'item-received', itemId: 'rope', name: 'rope', amount: 2 },
+      },
       en,
       name,
     );
-    expect(rendered.label).toBe('State change');
-    expect(rendered.html).toContain('received: rope ×2');
+    expect(received.label).toBe('State change');
+    expect(received.html).toContain('Received:');
+    expect(received.html).toContain('<span lang="en">rope</span>');
+    const lost = renderJournalEntry(
+      {
+        type: 'state-change',
+        lang: 'pl',
+        payload: { change: 'health-lost', amount: 2 },
+      },
+      pl,
+      name,
+    );
+    expect(lost.label).toBe('Zmiana stanu');
+    expect(lost.html).toContain('obrażenia');
+  });
+
+  it('renders legacy state-change rows verbatim in English with only the label translated', () => {
+    for (const catalogue of [en, pl]) {
+      const rendered = renderJournalEntry(
+        { type: 'state-change', lang: 'en', payload: { text: 'received: rope ×2' } },
+        catalogue,
+        name,
+      );
+      expect(rendered.html).toContain('received: rope ×2');
+    }
+    expect(
+      renderJournalEntry(
+        { type: 'state-change', lang: 'en', payload: { text: 'received: rope ×2' } },
+        pl,
+        name,
+      ).label,
+    ).toBe('Zmiana stanu');
   });
 
   it('renders structured travel through the catalogue with the name in its lang', () => {
@@ -224,16 +313,55 @@ describe('renderJournalEntry', () => {
     expect(rendered.html).toContain('The wolf is defeated.');
   });
 
-  it('renders inventory actions as plain text', () => {
+  it('renders structured inventory actions through the catalogue with the name in its lang', () => {
+    const equipped = renderJournalEntry(
+      {
+        type: 'inventory',
+        lang: 'en',
+        payload: { action: 'equipped', itemId: 'cloak', name: 'Hunter’s Cloak' },
+      },
+      en,
+      name,
+    );
+    expect(equipped.label).toBe('Inventory');
+    expect(equipped.html).toContain('Equipped:');
+    expect(equipped.html).toContain('<span lang="en">Hunter’s Cloak</span>');
+    const used = renderJournalEntry(
+      {
+        type: 'inventory',
+        lang: 'en',
+        payload: { action: 'used', itemId: 'herbs', name: 'Herbs', healed: 3 },
+      },
+      pl,
+      name,
+    );
+    expect(used.label).toBe('Inwentarz');
+    expect(used.html).toContain('Użyto:');
+    expect(used.html).toContain('<span lang="en">Herbs</span>');
+  });
+
+  it('renders legacy inventory rows verbatim in English with only the label translated', () => {
     for (const text of [
       'Equipped Hunter’s Cloak.',
       'Unequipped Hunter’s Cloak.',
       'Used Herbs, restored 3 Health.',
     ]) {
-      const rendered = renderJournalEntry({ type: 'inventory', lang: 'en', payload: { text } }, en, name);
-      expect(rendered.label).toBe('Inventory');
-      expect(rendered.html).toContain(text.split(',')[0] ?? text);
+      for (const catalogue of [en, pl]) {
+        const rendered = renderJournalEntry(
+          { type: 'inventory', lang: 'en', payload: { text } },
+          catalogue,
+          name,
+        );
+        expect(rendered.html).toContain(text.split(',')[0] ?? text);
+      }
     }
+    expect(
+      renderJournalEntry(
+        { type: 'inventory', lang: 'en', payload: { text: 'Equipped Hunter’s Cloak.' } },
+        pl,
+        name,
+      ).label,
+    ).toBe('Inwentarz');
   });
 
   it('renders the Ending kind from the catalogue with title and Markdown narration', () => {

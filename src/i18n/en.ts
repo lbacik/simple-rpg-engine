@@ -253,6 +253,34 @@ export const en = {
     travel: (name: string): string => `Travelled to ${name}.`,
     victory: 'Victory',
     defeat: 'Defeat',
+    test: (
+      attribute: string,
+      difficulty: string,
+      target: number,
+      die1: number,
+      die2: number,
+      modifier: number,
+      total: number,
+      success: boolean,
+    ): string => {
+      const signed = modifier >= 0 ? `+${whole(modifier)}` : `−${whole(Math.abs(modifier))}`;
+      const result = success ? 'success' : 'failure';
+      return (
+        `${attribute}, ${difficulty} ${whole(target)}: ` +
+        `${whole(die1)}+${whole(die2)}${signed}=${whole(total)} vs ${whole(target)} — ${result}.`
+      );
+    },
+    itemReceived: (name: string, count: number): string =>
+      count === 1 ? `Received: ${name}` : `Received: ${name} ×${whole(count)}`,
+    itemLost: (name: string, count: number): string =>
+      count === 1 ? `Lost: ${name}` : `Lost: ${name} ×${whole(count)}`,
+    healthGained: (amount: number): string => `+${whole(amount)} Health`,
+    healthLost: (amount: number): string => `−${whole(amount)} Health`,
+    revealed: (name: string): string => `Revealed: ${name}`,
+    equipped: (name: string): string => `Equipped: ${name}`,
+    unequipped: (name: string): string => `Unequipped: ${name}`,
+    used: (name: string, restored: number): string =>
+      `Used: ${name} (+${whole(restored)} Health)`,
   },
   readOnly: {
     combat: 'Combat',
