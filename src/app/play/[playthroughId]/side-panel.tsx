@@ -14,18 +14,14 @@ import type { Scenario } from '@/content/model';
 import type { GameView } from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
+import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { playHref, type PanelId } from '@/app/lib/panel';
-import {
-  ATTRIBUTE_LABELS,
-  CharacterSheet,
-  healthPercent,
-  initial,
-  isLowHealth,
-} from './character-sheet';
+import { CharacterSheet, healthPercent, initial, isLowHealth } from './character-sheet';
 import { LocationMap } from './map';
 import { PanelModal } from './panel-modal';
 import {
   InventoryBrowser,
+  type InventoryBrowserText,
   type InventorySlotData,
   type InventoryTileData,
 } from './inventory-browser';
@@ -77,19 +73,21 @@ function LauncherIcon({ name }: { name: 'character' | 'inventory' | 'journal' | 
 function StatusCard({
   scenario,
   state,
+  catalogue,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
+  catalogue: Catalogue;
 }) {
   const template = scenario.templatesById[state.character.templateId];
   const percent = healthPercent(state.character.health, MAX_HEALTH);
   const low = isLowHealth(state.character.health, MAX_HEALTH);
   return (
-    <section aria-label="Character status" className="status-card">
+    <section aria-label={catalogue.character.status} className="status-card">
       <span
         className={low ? 'status-medal low' : 'status-medal'}
         style={{ '--status-health': `${percent}%` } as React.CSSProperties}
-        title={`Health ${state.character.health}/${MAX_HEALTH}`}
+        title={catalogue.character.short(state.character.health, MAX_HEALTH)}
         aria-hidden="true"
       >
         <span className="status-face">{initial(state.character.name)}</span>
@@ -102,7 +100,7 @@ function StatusCard({
         <span
           className={low ? 'health-segments low' : 'health-segments'}
           role="img"
-          aria-label={`Health ${state.character.health} of ${MAX_HEALTH}`}
+          aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
         >
           {Array.from({ length: MAX_HEALTH }, (_, index) => (
             <span key={index} className={index < state.character.health ? 'on' : ''} />
@@ -113,43 +111,71 @@ function StatusCard({
   );
 }
 
-const SLOT_LABELS = {
-  weapon: 'Weapon',
-  outfit: 'Outfit',
-  talisman: 'Talisman',
-} as const;
-
 /**
  * The facts the inventory modal shows for an item: the stat lines (bonus,
  * and Damage and Reach for weapons) double as the filled-slot stats and,
- * prefixed with the kind chip, as the detail-pane chips.
+ * prefixed with the kind chip, as the detail-pane chips. Attribute, slot and
+ * Reach names come from the catalogue, never as raw ids.
  */
 function itemFacts(
   itemId: string,
   scenario: Scenario,
+  catalogue: Catalogue,
 ): { name: string; magic: boolean; stats: string[]; chips: InventoryTileData['chips'] } {
   const item = scenario.itemsById[itemId];
   if (item === undefined || item.kind === 'key') {
-    return { name: itemName(scenario, itemId), magic: item?.magic ?? false, stats: [], chips: ['Key item'] };
+    return {
+      name: itemName(scenario, itemId),
+      magic: item?.magic ?? false,
+      stats: [],
+      chips: [catalogue.inventory.keyChip],
+    };
   }
   if (item.kind === 'consumable') {
     return {
       name: item.name,
       magic: item.magic,
       stats: [],
-      chips: [`Consumable · restores ${item.heal} Health`],
+      chips: [catalogue.inventory.consumableChip(item.heal)],
     };
   }
   const stats: string[] = [];
   if (item.bonus !== undefined) {
-    stats.push(`+1 ${ATTRIBUTE_LABELS[item.bonus]}`);
+    stats.push(catalogue.inventory.bonusStat(catalogue.attributes[item.bonus]));
   }
   if (item.slot === 'weapon') {
     stats.push(
-      item.damage !== undefined ? `Damage ${item.damage} · Reach ${item.reach}` : `Reach ${item.reach}`,
+      catalogue.inventory.weaponStats(
+        item.damage,
+        catalogue.reach[item.reach ?? 'melee'],
+      ),
     );
   }
-  return { name: item.name, magic: item.magic, stats, chips: [`Equipment · ${item.slot}`, ...stats] };
+  return {
+    name: item.name,
+    magic: item.magic,
+    stats,
+    chips: [catalogue.inventory.equipmentChip(catalogue.slots[item.slot]), ...stats],
+  };
+}
+
+/** The rendered strings the client inventory browser shows. */
+function inventoryBrowserText(catalogue: Catalogue): InventoryBrowserText {
+  return {
+    equipped: catalogue.inventory.equipped,
+    carried: catalogue.inventory.carried,
+    carriedEmpty: catalogue.inventory.carriedEmpty,
+    emptySlot: catalogue.inventory.emptySlot,
+    ribbon: catalogue.inventory.ribbon,
+    magicTitle: catalogue.inventory.magicTitle,
+    magicLabel: catalogue.inventory.magicLabel,
+    equip: catalogue.inventory.equip,
+    unequip: catalogue.inventory.unequip,
+    use: catalogue.inventory.use,
+    noChangeInCombat: catalogue.inventory.noChangeInCombat,
+    noUseInCombat: catalogue.inventory.noUseInCombat,
+    fullHealth: catalogue.inventory.fullHealth,
+  };
 }
 
 /**
@@ -168,6 +194,8 @@ export function InventorySheet({
   seen,
   showUnknownExits,
   selectedItem,
+  catalogue,
+  language,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -179,6 +207,9 @@ export function InventorySheet({
   showUnknownExits: boolean;
   /** The `?item=` tile the detail pane selects; else the first carried item. */
   selectedItem: string | undefined;
+  /** Interface Text: the game screen passes the current catalogue. */
+  catalogue: Catalogue;
+  language: InterfaceLanguage;
 }) {
   const readOnly = forceReadOnly === true || state.status !== 'active';
   const inCombat = state.activeCombat != null;
@@ -186,22 +217,27 @@ export function InventorySheet({
     const equippedId = state.equipment[slot];
     // Best effort: an equipped id that is gone from the content reads as empty.
     if (equippedId === undefined || scenario.itemsById[equippedId] === undefined) {
-      return { slot, label: SLOT_LABELS[slot], item: undefined };
+      return { slot, label: catalogue.slots[slot], item: undefined };
     }
-    const { name, magic, stats } = itemFacts(equippedId, scenario);
-    return { slot, label: SLOT_LABELS[slot], item: { id: equippedId, name, magic, stats } };
+    const { name, magic, stats } = itemFacts(equippedId, scenario, catalogue);
+    return {
+      slot,
+      label: catalogue.slots[slot],
+      item: { id: equippedId, name, magic, stats },
+    };
   });
   // Best effort: anything whose id is gone from the content is left out.
   const items: InventoryTileData[] = Object.entries(state.inventory).flatMap(
     ([itemId, quantity]) => {
       const item = scenario.itemsById[itemId];
       if (item === undefined) return [];
-      const { name, magic, chips } = itemFacts(itemId, scenario);
+      const { name, magic, chips } = itemFacts(itemId, scenario, catalogue);
       return [
         {
           id: itemId,
           name,
-          quantity,
+          quantity: formatNumber(language, quantity),
+          stacked: quantity > 1,
           kind: item.kind,
           slot: item.kind === 'equipment' ? item.slot : undefined,
           magic,
@@ -221,9 +257,9 @@ export function InventorySheet({
       ? selectedItem
       : undefined;
   return (
-    <section aria-label="Inventory">
-      <h2>Inventory</h2>
-      {inCombat ? <p className="meta">Inventory actions are unavailable during Combat.</p> : null}
+    <section aria-label={catalogue.inventory.title}>
+      <h2>{catalogue.inventory.title}</h2>
+      {inCombat ? <p className="meta">{catalogue.inventory.combatNote}</p> : null}
       <InventoryBrowser
         // Remount when the `?item=` tile changes elsewhere (back/forward):
         // the browser owns the selection as client state seeded from this id.
@@ -238,6 +274,7 @@ export function InventorySheet({
         initialSelectedId={initialSelectedId}
         seen={seen}
         showUnknownExits={showUnknownExits}
+        text={inventoryBrowserText(catalogue)}
       />
     </section>
   );
@@ -246,11 +283,14 @@ export function InventorySheet({
 function ModalShell({
   title,
   closeHref,
+  closeLabel,
   noticeText,
   children,
 }: {
   title: string;
   closeHref: string;
+  /** Accessible name of the close control, rendered by the game screen. */
+  closeLabel: string;
   noticeText: string | undefined;
   children: React.ReactNode;
 }) {
@@ -261,7 +301,7 @@ function ModalShell({
         <Link
           href={closeHref}
           data-modal-close
-          aria-label={`Close ${title}`}
+          aria-label={closeLabel}
           className="panel-modal-close"
         >
           <span aria-hidden="true">×</span>
@@ -300,6 +340,8 @@ export function SidePanel({
   journalTotal,
   seen,
   selectedItem,
+  catalogue,
+  language,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -320,6 +362,9 @@ export function SidePanel({
   seen?: number;
   /** The `?item=` tile the inventory detail pane selects. */
   selectedItem?: string;
+  /** Interface Text: the game screen passes the current catalogue. */
+  catalogue: Catalogue;
+  language: InterfaceLanguage;
 }) {
   const closeHref = playHref(playthroughId, null, notice, seen, showUnknownExits);
   const characterHref = playHref(playthroughId, 'character', notice, seen, showUnknownExits);
@@ -347,13 +392,16 @@ export function SidePanel({
       : gameView.kind === 'scene' || gameView.kind === 'combat'
         ? gameView.locationName
         : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
+  const healthShort = catalogue.character.short(state.character.health, MAX_HEALTH);
+  const itemsCount = catalogue.inventory.count(itemCount);
+  const entriesCount = catalogue.journal.count(journalTotal);
   // The label and sublabel are separate inline spans, so the accessible name
   // is set explicitly instead of relying on their concatenation.
-  const characterName = `Character, Health ${state.character.health}/${MAX_HEALTH}`;
-  const inventoryName = `Inventory, ${itemCount === 1 ? '1 item' : `${itemCount} items`}`;
-  const journalName = `Journal, ${journalTotal === 1 ? '1 entry' : `${journalTotal} entries`}`;
+  const characterName = catalogue.character.name(healthShort);
+  const inventoryName = catalogue.inventory.name(itemsCount);
+  const journalName = catalogue.journal.name(entriesCount);
   return (
-    <aside className="side" aria-label="Character and inventory">
+    <aside className="side" aria-label={catalogue.character.panelLabel}>
       <div className="map-inline">
         <LocationMap
           map={gameView.map}
@@ -363,10 +411,11 @@ export function SidePanel({
           showUnknownExits={showUnknownExits}
           toggleHref={toggleHref}
           markerId="map-arrow-desktop"
+          catalogue={catalogue}
         />
       </div>
-      <StatusCard scenario={scenario} state={state} />
-      <nav aria-label="Character and inventory" className="launchers">
+      <StatusCard scenario={scenario} state={state} catalogue={catalogue} />
+      <nav aria-label={catalogue.character.panelLabel} className="launchers">
         <Link
           id="launcher-character"
           className="launcher"
@@ -374,10 +423,8 @@ export function SidePanel({
           aria-label={characterName}
         >
           <LauncherIcon name="character" />
-          <span className="launcher-label">Character</span>
-          <span className="launcher-sub">
-            Health {state.character.health}/{MAX_HEALTH}
-          </span>
+          <span className="launcher-label">{catalogue.character.title}</span>
+          <span className="launcher-sub">{healthShort}</span>
         </Link>
         <Link
           id="launcher-inventory"
@@ -386,10 +433,8 @@ export function SidePanel({
           aria-label={inventoryName}
         >
           <LauncherIcon name="inventory" />
-          <span className="launcher-label">Inventory</span>
-          <span className="launcher-sub">
-            {itemCount === 1 ? '1 item' : `${itemCount} items`}
-          </span>
+          <span className="launcher-label">{catalogue.inventory.title}</span>
+          <span className="launcher-sub">{itemsCount}</span>
         </Link>
         <Link
           id="launcher-journal"
@@ -398,27 +443,54 @@ export function SidePanel({
           aria-label={journalName}
         >
           <LauncherIcon name="journal" />
-          <span className="launcher-label">Journal</span>
-          <span className="launcher-sub">
-            {journalTotal === 1 ? '1 entry' : `${journalTotal} entries`}
-          </span>
+          <span className="launcher-label">{catalogue.journal.title}</span>
+          <span className="launcher-sub">{entriesCount}</span>
         </Link>
-        <Link id="launcher-map" className="launcher map-only" href={mapHref} aria-label="Map">
+        <Link
+          id="launcher-map"
+          className="launcher map-only"
+          href={mapHref}
+          aria-label={catalogue.map.title}
+        >
           <LauncherIcon name="map" />
-          <span className="launcher-label">Map</span>
-          <span className="launcher-sub">Travel</span>
+          <span className="launcher-label">{catalogue.map.title}</span>
+          <span className="launcher-sub">{catalogue.map.travelSub}</span>
         </Link>
       </nav>
       {panel === 'character' ? (
-        <PanelModal label="Character" closeHref={closeHref} launcherId="launcher-character">
-          <ModalShell title="Character" closeHref={closeHref} noticeText={noticeText}>
-            <CharacterSheet scenario={scenario} state={state} locationName={locationName} />
+        <PanelModal
+          label={catalogue.character.title}
+          closeHref={closeHref}
+          launcherId="launcher-character"
+        >
+          <ModalShell
+            title={catalogue.character.title}
+            closeHref={closeHref}
+            closeLabel={catalogue.closePanel(catalogue.character.title)}
+            noticeText={noticeText}
+          >
+            <CharacterSheet
+              scenario={scenario}
+              state={state}
+              locationName={locationName}
+              catalogue={catalogue}
+              language={language}
+            />
           </ModalShell>
         </PanelModal>
       ) : null}
       {panel === 'inventory' ? (
-        <PanelModal label="Inventory" closeHref={closeHref} launcherId="launcher-inventory">
-          <ModalShell title="Inventory" closeHref={closeHref} noticeText={noticeText}>
+        <PanelModal
+          label={catalogue.inventory.title}
+          closeHref={closeHref}
+          launcherId="launcher-inventory"
+        >
+          <ModalShell
+            title={catalogue.inventory.title}
+            closeHref={closeHref}
+            closeLabel={catalogue.closePanel(catalogue.inventory.title)}
+            noticeText={noticeText}
+          >
             <InventorySheet
               scenario={scenario}
               state={state}
@@ -428,13 +500,24 @@ export function SidePanel({
               seen={seen}
               showUnknownExits={showUnknownExits}
               selectedItem={selectedItem}
+              catalogue={catalogue}
+              language={language}
             />
           </ModalShell>
         </PanelModal>
       ) : null}
       {panel === 'map' ? (
-        <PanelModal label="Location map" closeHref={closeHref} launcherId="launcher-map">
-          <ModalShell title="Map" closeHref={closeHref} noticeText={noticeText}>
+        <PanelModal
+          label={catalogue.map.label}
+          closeHref={closeHref}
+          launcherId="launcher-map"
+        >
+          <ModalShell
+            title={catalogue.map.title}
+            closeHref={closeHref}
+            closeLabel={catalogue.closePanel(catalogue.map.title)}
+            noticeText={noticeText}
+          >
             <LocationMap
               map={gameView.map}
               playthroughId={playthroughId}
@@ -443,6 +526,7 @@ export function SidePanel({
               showUnknownExits={showUnknownExits}
               toggleHref={toggleHref}
               markerId="map-arrow-modal"
+              catalogue={catalogue}
             />
           </ModalShell>
         </PanelModal>

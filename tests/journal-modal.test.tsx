@@ -7,7 +7,20 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { modalJournalBatch, newestJournalBatch } from '../src/app/lib/journal';
-import { JournalModalLink } from '../src/app/play/[playthroughId]/journal/journal-modal';
+import {
+  JournalModalLink,
+  type JournalModalText,
+} from '../src/app/play/[playthroughId]/journal/journal-modal';
+import { en } from '../src/i18n/en';
+import { pl } from '../src/i18n/pl';
+
+const enText: JournalModalText = {
+  viewJournal: en.game.viewJournal,
+  title: en.journal.title,
+  total: en.journal.total(0),
+  openInNewTab: en.journal.openInNewTab,
+  close: en.journal.close,
+};
 
 function stored(seq: number) {
   return { seq, step: seq - 1, type: 'travel', payload: { text: `entry ${seq}` } };
@@ -62,7 +75,13 @@ describe('modalJournalBatch', () => {
 describe('JournalModalLink', () => {
   it('renders a plain journal link with no dialog before it opens', () => {
     const html = renderToStaticMarkup(
-      <JournalModalLink playthroughId="pt-1" initialEntries={[]} initialNextCursor={null} total={0} />,
+      <JournalModalLink
+        playthroughId="pt-1"
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={0}
+        text={enText}
+      />,
     );
     // Without JavaScript the control degrades to a plain navigation to the
     // full Journal page.
@@ -80,8 +99,29 @@ describe('JournalModalLink', () => {
         initialNextCursor={null}
         total={0}
         className="button secondary"
+        text={enText}
       />,
     );
     expect(html).toContain('class="button secondary"');
+  });
+
+  it('renders the trigger in Polish', () => {
+    const html = renderToStaticMarkup(
+      <JournalModalLink
+        playthroughId="pt-1"
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={0}
+        text={{
+          viewJournal: pl.game.viewJournal,
+          title: pl.journal.title,
+          total: pl.journal.total(0),
+          openInNewTab: pl.journal.openInNewTab,
+          close: pl.journal.close,
+        }}
+      />,
+    );
+    expect(html).toContain('Zobacz dziennik');
+    expect(html).not.toContain('View journal');
   });
 });

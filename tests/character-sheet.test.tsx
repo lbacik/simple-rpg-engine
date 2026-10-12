@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { Scenario } from '../src/content/model';
 import type { PlaythroughState } from '../src/engine/state';
 import { CharacterSheet } from '../src/app/play/[playthroughId]/character-sheet';
+import { pl } from '../src/i18n/pl';
 
 function testScenario(): Scenario {
   return {
@@ -129,6 +130,29 @@ describe('CharacterSheet', () => {
       <CharacterSheet scenario={testScenario()} state={testState()} locationName="Ashford" />,
     );
     expect(full).not.toContain('low');
+  });
+
+  it('renders Attribute names, slots and Health in Polish', () => {
+    const markup = renderToStaticMarkup(
+      <CharacterSheet
+        scenario={testScenario()}
+        state={testState()}
+        locationName="Ashford"
+        catalogue={pl}
+        language="pl"
+      />,
+    );
+    expect(markup).toContain('Krzepa');
+    expect(markup).toContain('Zręczność');
+    expect(markup).toContain('Broń');
+    expect(markup).toContain('Strój');
+    expect(markup).toContain('Talizman');
+    expect(markup).toContain('aria-label="Zdrowie 9 z 12"');
+    expect(markup).toContain('Atrybuty');
+    expect(markup).toContain('● podstawa ◆ bonus z ekwipunku (maks. +2)');
+    expect(markup).toContain('podstawa 2');
+    expect(markup).not.toContain('Might');
+    expect(markup).not.toContain('Weapon');
   });
 
   it('reads best effort when the Template is gone from the content', () => {

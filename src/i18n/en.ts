@@ -1,21 +1,34 @@
 // English Interface Text catalogue. Its shape defines the `Catalogue` type;
 // every other catalogue is declared as one, so a missing message or a wrong
-// signature fails `tsc` (docs/spec/architecture.md, interface text).
+// signature fails `tsc` (docs/spec/architecture.md, interface text). Messages
+// with arguments are functions with typed parameters; counts use the
+// language's plural forms and every number is formatted with `Intl`.
 //
-// Interface Text for every page other than the game screen lives here: the
-// Scenario collection, Character creation with the start form, the
-// Playthroughs list, and the app's own not-found and error pages, including
-// page titles and descriptions. Scenario text keeps flowing through
-// unchanged. Messages that
-// take a Scenario-provided name place it only where English needs no
-// inflection (as a label or after a colon), and numbers are formatted with
-// `Intl` in this catalogue's language.
+// Interface Text for every page other than the game screen lives here alongside
+// the game-screen chrome: the Scenario collection, Character creation with the
+// start form, the Playthroughs list, and the app's own not-found and error
+// pages, including page titles and descriptions. Scenario text keeps flowing
+// through unchanged. A message places a Scenario-provided name only where
+// English needs no inflection: as a label, after a colon, or in the nominative.
+// Scenario text is never case-transformed.
 
 import type { EquipmentSlot } from '../engine/inventory';
+import { formatNumber } from './format';
 import { selectPlural } from './plural';
 
-const number = new Intl.NumberFormat('en');
-const whole = (value: number): string => number.format(value);
+const whole = (value: number): string => formatNumber('en', value);
+
+const itemsCount = (count: number): string =>
+  selectPlural('en', count, {
+    one: '1 item',
+    other: `${formatNumber('en', count)} items`,
+  });
+
+const entriesCount = (count: number): string =>
+  selectPlural('en', count, {
+    one: '1 entry',
+    other: `${formatNumber('en', count)} entries`,
+  });
 
 export const en = {
   app: {
@@ -100,6 +113,145 @@ export const en = {
     retry: 'Try again',
     home: 'Back to the Scenarios',
   },
+  notices: {
+    stale: 'The game was advanced in another tab; this is its current state.',
+    unavailable: 'That action is no longer available.',
+  },
+  attributes: {
+    might: 'Might',
+    agility: 'Agility',
+    wits: 'Wits',
+    presence: 'Presence',
+  },
+  difficulty: {
+    easy: 'Easy',
+    ordinary: 'Ordinary',
+    hard: 'Hard',
+    'very-hard': 'Very hard',
+  },
+  range: {
+    near: 'Near',
+    far: 'Far',
+  },
+  reach: {
+    melee: 'melee',
+    ranged: 'ranged',
+  },
+  slots: {
+    weapon: 'Weapon',
+    outfit: 'Outfit',
+    talisman: 'Talisman',
+  },
+  itemKinds: {
+    equipment: 'Equipment',
+    consumable: 'Consumable',
+    key: 'Key item',
+  },
+  ending: {
+    title: 'Ending',
+    victory: 'Victory',
+    defeat: 'Defeat',
+  },
+  game: {
+    scenes: 'Scenes',
+    exits: 'Exits',
+    choices: 'Choices',
+    continue: 'Continue',
+    latestEvents: 'Latest events',
+    afterEnding: 'After the ending',
+    viewJournal: 'View journal',
+    startNew: (title: string) => `Start a new Playthrough of ${title}`,
+    returnToCollection: 'Return to the collection',
+    scenarioGone:
+      'This Scenario is no longer available, so this Playthrough is read-only.',
+    scenarioChanged:
+      'This Scenario has changed since it was played, so this Playthrough is read-only.',
+    locationGone:
+      'The Location this Playthrough stands in is no longer part of this Scenario.',
+    endingGone:
+      'The Ending this Playthrough reached is no longer part of this Scenario.',
+    testLabel: (attribute: string, difficulty: string, target: number) =>
+      `${attribute}, ${difficulty} ${formatNumber('en', target)}`,
+  },
+  character: {
+    title: 'Character',
+    panelLabel: 'Character and inventory',
+    status: 'Character status',
+    attributes: 'Attributes',
+    health: 'Health',
+    equipped: 'Equipped',
+    legend: '● base ◆ equipment bonus (max +2)',
+    short: (now: number, max: number) =>
+      `Health ${formatNumber('en', now)}/${formatNumber('en', max)}`,
+    label: (now: number, max: number) =>
+      `Health ${formatNumber('en', now)} of ${formatNumber('en', max)}`,
+    name: (health: string) => `Character, ${health}`,
+    bonusBase: (base: number) => `base ${formatNumber('en', base)}`,
+    bonusPoint: (item: string) => `+1 ${item}`,
+    bonusCapped: 'bonus capped at +2',
+  },
+  inventory: {
+    title: 'Inventory',
+    combatNote: 'Inventory actions are unavailable during Combat.',
+    equipped: 'Equipped',
+    emptySlot: 'Empty',
+    carried: 'Carried',
+    carriedEmpty: 'Empty.',
+    ribbon: 'equipped',
+    magicTitle: 'Magic item',
+    magicLabel: '✦ magic',
+    equip: 'Equip',
+    unequip: 'Unequip',
+    use: 'Use',
+    noChangeInCombat: 'Cannot change equipment during Combat.',
+    noUseInCombat: 'Cannot use items here during Combat.',
+    fullHealth: 'Already at full Health.',
+    name: (items: string) => `Inventory, ${items}`,
+    count: itemsCount,
+    keyChip: 'Key item',
+    consumableChip: (heal: number) =>
+      `Consumable · restores ${formatNumber('en', heal)} Health`,
+    equipmentChip: (slot: string) => `Equipment · ${slot}`,
+    bonusStat: (attribute: string) => `+1 ${attribute}`,
+    weaponStats: (damage: number | undefined, reach: string) =>
+      damage === undefined
+        ? `Reach ${reach}`
+        : `Damage ${formatNumber('en', damage)} · Reach ${reach}`,
+  },
+  map: {
+    title: 'Map',
+    label: 'Location map',
+    travelSub: 'Travel',
+    youAreHere: 'You are here',
+    travelTo: (name: string) => `Travel to ${name}`,
+    heardOf: (name: string) => `${name} (heard of)`,
+    showUnknown: 'Show unvisited exits as “?”',
+    hideUnknown: 'Hide unvisited exits',
+  },
+  journal: {
+    title: 'Journal',
+    name: (entries: string) => `Journal, ${entries}`,
+    count: entriesCount,
+    total: (count: number) => `${entriesCount(count)}.`,
+    openInNewTab: 'Open in new tab',
+    close: 'Close',
+  },
+  readOnly: {
+    combat: 'Combat',
+    roundRange: (round: number, range: string) =>
+      `Round ${formatNumber('en', round)} · Range: ${range}`,
+    health: (
+      character: string,
+      now: number,
+      max: number,
+      enemy: string,
+      enemyNow: number,
+      enemyMax: number,
+    ) =>
+      `${character}: Health ${formatNumber('en', now)}/${formatNumber('en', max)} · ` +
+      `${enemy}: Health ${formatNumber('en', enemyNow)}/${formatNumber('en', enemyMax)}`,
+  },
+  closePanel: (title: string) => `Close ${title}`,
 };
 
 export type Catalogue = typeof en;

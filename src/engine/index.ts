@@ -1627,6 +1627,17 @@ export type ChoiceView = {
   text: string;
   /** The Test label shown before the Choice is taken, if the Choice has a Test. */
   testLabel?: string;
+  /**
+   * The Test in structured form, if the Choice has one. The app renders the
+   * label from this through the Interface Text catalogue, so the Attribute
+   * and Difficulty names follow the Interface Language; `testLabel` keeps
+   * the English wording for the engine's own stored text.
+   */
+  test?: {
+    attribute: AttributeName;
+    difficulty: Difficulty;
+    target: number;
+  };
 };
 
 /**
@@ -1803,6 +1814,14 @@ export function view(
             choice.test === undefined
               ? undefined
               : testLabel(choice.test.attribute, choice.test.difficulty),
+          test:
+            choice.test === undefined
+              ? undefined
+              : {
+                  attribute: choice.test.attribute,
+                  difficulty: choice.test.difficulty,
+                  target: DIFFICULTY_TARGETS[choice.test.difficulty],
+                },
         })),
         map: deriveMap(scenario, state, options),
       };

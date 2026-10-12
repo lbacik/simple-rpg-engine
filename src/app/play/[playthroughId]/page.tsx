@@ -32,6 +32,8 @@ import { CombatPanel } from './combat-panel';
 import { SceneIllustration } from './scene-illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
+import { getInterfaceLanguage } from '@/app/lib/language';
+import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
@@ -40,10 +42,16 @@ import { SidePanel } from './side-panel';
 
 export const dynamic = 'force-dynamic';
 
-const NOTICES: Record<string, string> = {
-  stale: 'The game was advanced in another tab; this is its current state.',
-  unavailable: 'That action is no longer available.',
-};
+/**
+ * The transient rejection notice, rendered from its code on the page the
+ * action redirects to, in the language current at that moment. Anything else
+ * (a forged `notice` value) renders no notice.
+ */
+function noticeTextFor(catalogue: Catalogue, notice: string | undefined): string | undefined {
+  if (notice === 'stale') return catalogue.notices.stale;
+  if (notice === 'unavailable') return catalogue.notices.unavailable;
+  return undefined;
+}
 
 function itemName(scenario: Scenario, itemId: string): string {
   return scenario.itemsById[itemId]?.name ?? itemId;
@@ -112,7 +120,9 @@ export default async function PlayPage({
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
   const showUnknownExits = unknown === '1';
-  const noticeText = notice ? NOTICES[notice] : undefined;
+  const language = await getInterfaceLanguage();
+  const catalogue = getCatalogue(language);
+  const noticeText = noticeTextFor(catalogue, notice);
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
   const resolved = await resolvePlaythrough(getDatabase(), getScenario, playthroughId, sessionHash);
@@ -138,10 +148,10 @@ export default async function PlayPage({
       return (
         <main>
           <h1>{incompatibleName}</h1>
-          <p>This Scenario is no longer available, so this Playthrough is read-only.</p>
+          <p>{catalogue.game.scenarioGone}</p>
           {recordedEnding ? (
-            <section aria-label="Ending">
-              <p className="meta">{recordedEnding.kind === 'victory' ? 'Victory' : 'Defeat'}</p>
+            <section aria-label={catalogue.ending.title}>
+              <p className="meta">{catalogue.ending[recordedEnding.kind]}</p>
               <h2>{recordedEnding.title}</h2>
               <div
                 dangerouslySetInnerHTML={{
@@ -151,7 +161,7 @@ export default async function PlayPage({
             </section>
           ) : null}
           <p>
-            <a href={`/play/${resolved.playthrough.id}/journal`}>View journal</a>
+            <a href={`/play/${resolved.playthrough.id}/journal`}>{catalogue.game.viewJournal}</a>
           </p>
           <section aria-label="Journal">
             <JournalEntries
@@ -179,11 +189,11 @@ export default async function PlayPage({
         <div className="game">
           <article className="reading" lang={incompatibleScenario.language}>
             <p className="notice" role="status">
-              This Scenario has changed since it was played, so this Playthrough is read-only.
+              {catalogue.game.scenarioChanged}
             </p>
             <p>
               <a className="button" href={`/scenarios/${incompatibleScenario.id}`}>
-                Start a new Playthrough of {incompatibleScenario.title}
+                {catalogue.game.startNew(incompatibleScenario.title)}
               </a>
             </p>
             <ReadOnlyPosition
@@ -192,6 +202,7 @@ export default async function PlayPage({
               gameView={incompatibleView}
               characterName={incompatibleName}
               recordedEnding={recordedEnding}
+              catalogue={catalogue}
             />
           </article>
           <SidePanel
@@ -216,6 +227,8 @@ export default async function PlayPage({
             forceReadOnly
             journalTotal={journal.length}
             selectedItem={selectedItem}
+            catalogue={catalogue}
+            language={language}
           />
         </div>
       </main>
@@ -313,7 +326,12 @@ export default async function PlayPage({
                 {noticeText}
               </p>
             ) : null}
-            <ResultPanel entries={resultEntries} continueHref={continueTo} />
+            <ResultPanel
+              entries={resultEntries}
+              continueHref={continueTo}
+              continueLabel={catalogue.game.continue}
+              label={catalogue.game.latestEvents}
+            />
           </article>
           <SidePanel
             scenario={scenario}
@@ -330,6 +348,8 @@ export default async function PlayPage({
             journalTotal={journal.length}
             seen={preservedSeen}
             selectedItem={selectedItem}
+            catalogue={catalogue}
+            language={language}
           />
         </div>
       </main>
@@ -359,7 +379,7 @@ export default async function PlayPage({
               {/* Location description: rendered narration subset. */}
               <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }} />
               {gameView.onDemandScenes.length > 0 ? (
-                <section aria-label="Scenes">
+                <section aria-label={catalogue.game.scenes}>
                   {gameView.onDemandScenes.map((scene) => (
                     <form key={scene.sceneId} action={openSceneAction}>
                       <input type="hidden" name="playthroughId" value={playthrough.id} />
@@ -374,7 +394,7 @@ export default async function PlayPage({
                   ))}
                 </section>
               ) : null}
-              <section aria-label="Exits">
+              <section aria-label={catalogue.game.exits}>
                 {gameView.exits.map((exit) => (
                   <form key={exit.targetLocationId} action={travelAction}>
                     <input type="hidden" name="playthroughId" value={playthrough.id} />
@@ -402,7 +422,7 @@ export default async function PlayPage({
               ) : null}
               <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.text, gameView.characterName) }} />
               {gameView.choices.length > 0 ? (
-                <section aria-label="Choices">
+                <section aria-label={catalogue.game.choices}>
                   {gameView.choices.map((choice) => (
                     <form key={choice.id} action={chooseAction}>
                       <input type="hidden" name="playthroughId" value={playthrough.id} />
@@ -411,8 +431,15 @@ export default async function PlayPage({
                       <p>
                         <button className="button" type="submit">
                           {choice.text}
-                          {choice.testLabel ? (
-                            <span className="meta"> ({choice.testLabel})</span>
+                          {choice.test ? (
+                            <span className="meta">
+                              {' '}
+                              ({catalogue.game.testLabel(
+                                catalogue.attributes[choice.test.attribute],
+                                catalogue.difficulty[choice.test.difficulty],
+                                choice.test.target,
+                              )})
+                            </span>
                           ) : null}
                         </button>
                       </p>
@@ -420,13 +447,13 @@ export default async function PlayPage({
                   ))}
                 </section>
               ) : (
-                <section aria-label="Continue">
+                <section aria-label={catalogue.game.continue}>
                   <form action={continueAction}>
                     <input type="hidden" name="playthroughId" value={playthrough.id} />
                     <input type="hidden" name="expectedStep" value={playthrough.step} />
                     <p>
                       <button className="button" type="submit">
-                        Continue
+                        {catalogue.game.continue}
                       </button>
                     </p>
                   </form>
@@ -446,11 +473,11 @@ export default async function PlayPage({
           ) : (
             <>
               <EndingBlock
-                kindLabel={gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}
+                kindLabel={catalogue.ending[gameView.endingKind]}
                 title={gameView.title}
                 html={renderNarration(gameView.text, characterName)}
               />
-              <section aria-label="After the ending">
+              <section aria-label={catalogue.game.afterEnding}>
                 <p>
                   <JournalModalLink
                     playthroughId={playthrough.id}
@@ -458,16 +485,23 @@ export default async function PlayPage({
                     initialNextCursor={modalJournal.nextCursor}
                     total={modalJournal.total}
                     className="button secondary"
+                    text={{
+                      viewJournal: catalogue.game.viewJournal,
+                      title: catalogue.journal.title,
+                      total: catalogue.journal.total(modalJournal.total),
+                      openInNewTab: catalogue.journal.openInNewTab,
+                      close: catalogue.journal.close,
+                    }}
                   />
                 </p>
                 <p>
                   <a className="button" href={`/scenarios/${scenario.id}`}>
-                    Start a new Playthrough of {scenario.title}
+                    {catalogue.game.startNew(scenario.title)}
                   </a>
                 </p>
                 <p>
                   <a className="button secondary" href="/">
-                    Return to the collection
+                    {catalogue.game.returnToCollection}
                   </a>
                 </p>
               </section>
@@ -489,6 +523,8 @@ export default async function PlayPage({
           journalTotal={journal.length}
           seen={preservedSeen}
           selectedItem={selectedItem}
+          catalogue={catalogue}
+          language={language}
         />
       </div>
     </main>

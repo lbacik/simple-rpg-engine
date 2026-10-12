@@ -9,6 +9,7 @@ import type { Scenario } from '../src/content/model';
 import type { GameView } from '../src/engine/index';
 import type { PlaythroughState } from '../src/engine/state';
 import { ReadOnlyPosition } from '../src/app/play/[playthroughId]/read-only-position';
+import { pl } from '../src/i18n/pl';
 
 function stubScenario(): Scenario {
   return {
@@ -112,6 +113,39 @@ describe('ReadOnlyPosition', () => {
     );
     expect(html).toContain('Recorded Triumph');
     expect(html).not.toContain('Deathly End');
+  });
+
+  it('renders the gap notices and the Ending kind in Polish', () => {
+    const gap = renderToStaticMarkup(
+      <ReadOnlyPosition
+        scenario={stubScenario()}
+        state={{ ...baseState(), currentLocationId: 'renamed' }}
+        gameView={locationView()}
+        characterName="Robin"
+        recordedEnding={undefined}
+        catalogue={pl}
+      />,
+    );
+    expect(gap).toContain('nie jest już częścią tego scenariusza');
+    const ended = renderToStaticMarkup(
+      <ReadOnlyPosition
+        scenario={stubScenario()}
+        state={{ ...baseState(), status: 'ended', endingId: 'death' }}
+        gameView={{
+          kind: 'ended',
+          endingId: 'death',
+          endingKind: 'defeat',
+          title: 'Deathly End',
+          text: 'Gone.',
+          map: { nodes: [], edges: [] },
+        } as unknown as GameView}
+        characterName="Robin"
+        recordedEnding={undefined}
+        catalogue={pl}
+      />,
+    );
+    expect(ended).toContain('Porażka');
+    expect(ended).not.toContain('Defeat');
   });
 
   it('omits a gone Ending with no Journal entry instead of the death Ending', () => {

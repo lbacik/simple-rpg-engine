@@ -7,6 +7,7 @@
 // clickable while a Scene or Combat is active.
 
 import { MAP_ASPECT_RATIO, type MapNode, type MapView } from '@/engine/index';
+import type { Catalogue } from '@/i18n/index';
 import { travelAction } from '@/app/lib/travel';
 
 /** Trim a line end by `gap` map units so the endpoint sits outside the node. */
@@ -32,7 +33,7 @@ function trimmed(
   };
 }
 
-function NodeLabel({ node }: { node: MapNode }) {
+function NodeLabel({ node, catalogue }: { node: MapNode; catalogue: Catalogue }) {
   return (
     <>
       <span className="dot" aria-hidden="true">
@@ -40,8 +41,7 @@ function NodeLabel({ node }: { node: MapNode }) {
         {node.status === 'unknown' ? '?' : null}
       </span>
       <span className="label">
-        {node.name}
-        {node.status === 'revealed' ? ' (heard of)' : null}
+        {node.status === 'revealed' ? catalogue.map.heardOf(node.name) : node.name}
       </span>
     </>
   );
@@ -52,11 +52,13 @@ function PlacedNode({
   playthroughId,
   step,
   canTravel,
+  catalogue,
 }: {
   node: MapNode;
   playthroughId: string;
   step: number;
   canTravel: boolean;
+  catalogue: Catalogue;
 }) {
   const position = { left: `${node.x}%`, top: `${node.y}%` };
   const classes = [
@@ -74,8 +76,8 @@ function PlacedNode({
   if (node.isCurrent) {
     return (
       <div className={classes} style={position}>
-        <span className="here">You are here</span>
-        <NodeLabel node={node} />
+        <span className="here">{catalogue.map.youAreHere}</span>
+        <NodeLabel node={node} catalogue={catalogue} />
       </div>
     );
   }
@@ -85,15 +87,15 @@ function PlacedNode({
         <input type="hidden" name="playthroughId" value={playthroughId} />
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="target" value={node.id} />
-        <button className="map-travel" type="submit" aria-label={`Travel to ${node.name}`}>
-          <NodeLabel node={node} />
+        <button className="map-travel" type="submit" aria-label={catalogue.map.travelTo(node.name)}>
+          <NodeLabel node={node} catalogue={catalogue} />
         </button>
       </form>
     );
   }
   return (
     <div className={classes} style={position}>
-      <NodeLabel node={node} />
+      <NodeLabel node={node} catalogue={catalogue} />
     </div>
   );
 }
@@ -106,6 +108,7 @@ export function LocationMap({
   showUnknownExits,
   toggleHref,
   markerId,
+  catalogue,
 }: {
   map: MapView;
   playthroughId: string;
@@ -117,11 +120,13 @@ export function LocationMap({
   toggleHref: string;
   /** Unique SVG marker id: the map renders twice on the page (phone, desktop). */
   markerId: string;
+  /** Interface Text: the game screen passes the current catalogue. */
+  catalogue: Catalogue;
 }) {
   const byId = new Map(map.nodes.map((node) => [node.id, node]));
   return (
-    <section aria-label="Location map">
-      <h2>Map</h2>
+    <section aria-label={catalogue.map.label}>
+      <h2>{catalogue.map.title}</h2>
       <div className="map-area" style={{ aspectRatio: MAP_ASPECT_RATIO }} role="img">
         <svg
           className="map-lines"
@@ -167,14 +172,15 @@ export function LocationMap({
             playthroughId={playthroughId}
             step={step}
             canTravel={canTravel}
+            catalogue={catalogue}
           />
         ))}
       </div>
       <p className="map-toggle">
         {showUnknownExits ? (
-          <a href={toggleHref}>Hide unvisited exits</a>
+          <a href={toggleHref}>{catalogue.map.hideUnknown}</a>
         ) : (
-          <a href={toggleHref}>Show unvisited exits as “?”</a>
+          <a href={toggleHref}>{catalogue.map.showUnknown}</a>
         )}
       </p>
     </section>

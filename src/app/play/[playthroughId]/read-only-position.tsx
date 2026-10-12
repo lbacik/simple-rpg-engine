@@ -9,6 +9,7 @@
 import type { Scenario } from '../../../content/model';
 import { renderNarration, renderStoredText, type GameView } from '../../../engine/index';
 import type { PlaythroughState } from '../../../engine/state';
+import { en, type Catalogue } from '../../../i18n/en';
 import type { JournalEnding } from '../../lib/journal';
 import { readOnlyGap } from '../../lib/playthrough';
 
@@ -18,7 +19,8 @@ export function EndingBlock({
   title,
   html,
 }: {
-  kindLabel: 'Victory' | 'Defeat';
+  /** The Ending kind, already rendered through the catalogue. */
+  kindLabel: string;
   title: string;
   html: string;
 }) {
@@ -43,27 +45,22 @@ export function ReadOnlyPosition({
   gameView,
   characterName,
   recordedEnding,
+  catalogue = en,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
   gameView: GameView;
   characterName: string;
   recordedEnding: JournalEnding | undefined;
+  /** Interface Text: the game screen passes the current catalogue. */
+  catalogue?: Catalogue;
 }) {
   const gap = readOnlyGap(scenario, state, gameView.kind, recordedEnding !== undefined);
   if (gap === 'location') {
-    return (
-      <p className="meta">
-        The Location this Playthrough stands in is no longer part of this Scenario.
-      </p>
-    );
+    return <p className="meta">{catalogue.game.locationGone}</p>;
   }
   if (gap === 'ending') {
-    return (
-      <p className="meta">
-        The Ending this Playthrough reached is no longer part of this Scenario.
-      </p>
-    );
+    return <p className="meta">{catalogue.game.endingGone}</p>;
   }
   if (gameView.kind === 'location') {
     return (
@@ -97,13 +94,19 @@ export function ReadOnlyPosition({
             __html: renderNarration(gameView.text, gameView.characterName),
           }}
         />
-        <section aria-label="Combat">
+        <section aria-label={catalogue.readOnly.combat}>
           <p className="meta">
-            Round {gameView.round} · Range: {gameView.range === 'near' ? 'Near' : 'Far'}
+            {catalogue.readOnly.roundRange(gameView.round, catalogue.range[gameView.range])}
           </p>
           <p className="meta">
-            {characterName}: Health {gameView.character.health}/{gameView.character.maxHealth} ·{' '}
-            {gameView.enemy.name}: Health {gameView.enemy.health}/{gameView.enemy.maxHealth}
+            {catalogue.readOnly.health(
+              characterName,
+              gameView.character.health,
+              gameView.character.maxHealth,
+              gameView.enemy.name,
+              gameView.enemy.health,
+              gameView.enemy.maxHealth,
+            )}
           </p>
         </section>
       </>
@@ -115,7 +118,7 @@ export function ReadOnlyPosition({
   if (contentEndingGone && recordedEnding) {
     return (
       <EndingBlock
-        kindLabel={recordedEnding.kind === 'victory' ? 'Victory' : 'Defeat'}
+        kindLabel={catalogue.ending[recordedEnding.kind]}
         title={recordedEnding.title}
         html={renderStoredText(recordedEnding.text, characterName)}
       />
@@ -123,7 +126,7 @@ export function ReadOnlyPosition({
   }
   return (
     <EndingBlock
-      kindLabel={gameView.endingKind === 'victory' ? 'Victory' : 'Defeat'}
+      kindLabel={catalogue.ending[gameView.endingKind]}
       title={gameView.title}
       html={renderNarration(gameView.text, characterName)}
     />
