@@ -12,6 +12,7 @@ A Scenario is a directory under the server-side Scenario directory (`scenarios/`
 - Each **Location** and each **Scene** occupies its own file, whose root is one mapping with an explicit `id`.
 - **Items, Enemies, Encounters, Character Templates, Endings and images** live in **catalog** files, whose root is a sequence of mappings, each with an explicit `id`. Any catalog may be split across several files listed under the same type.
 - A file's content type is decided by the manifest section that lists it, never by its path or name. Entity and catalog files have no extra root wrapper.
+- **Translations** are optional text-only overlays, each with its own manifest listed under `translations` (see [Translations](#translations)).
 
 Recommended layout (names are conventions, not engine requirements; other paths and subdirectories work when listed):
 
@@ -32,6 +33,17 @@ scenarios/<id>/
   images.yaml
   images/
     village-gate.webp
+  translations/
+    pl/
+      translation.yaml
+      locations/
+        village.yaml
+        forest.yaml
+      scenes/
+        village-arrival.yaml
+        forest-ambush.yaml
+      items.yaml
+      …                        # the same catalogs as the base, text only
 ```
 
 ### Manifest file lists and paths
@@ -39,7 +51,7 @@ scenarios/<id>/
 - The manifest lists every content file explicitly. There is no glob expansion and no directory scanning. Files present in the directory but not listed are outside the package (unfinished content may stay there) and produce no diagnostic.
 - Paths are relative to the Scenario directory. Content files use the `.yaml` extension; image files use their own extensions (see [Images](#images)).
 - Absolute paths, `..` segments, URLs, and symlinks that resolve outside the Scenario directory are forbidden.
-- A file may be listed only once, across all sections.
+- A file may be listed only once, across all sections of the manifest and of every Translation manifest.
 - Manifest order has no meaning for play.
 
 ### Identity and references
@@ -95,7 +107,7 @@ Moving or renaming a file means editing the manifest only. Renaming an ID means 
 | `has.atLeast` | `1` |
 | `reach` | `melee` |
 | `startRange` | `far` |
-| `choices`, `effects`, `scenes`, `connections`, `flags` | `[]` |
+| `choices`, `effects`, `scenes`, `connections`, `flags`, `translations` | `[]` |
 
 ### Narration format
 
@@ -129,6 +141,7 @@ encounters?: [<path>]
 templates: [<path>]            # at least one Character Template in total
 endings: [<path>]
 images?: [<path>]
+translations?: [<path>]        # Translation manifests; see Translations
 ```
 
 ### Location file
@@ -141,7 +154,7 @@ map?: { x: 0-100, y: 0-100 }   # both keys; origin top-left, y down
 illustration?: <image-id>
 scenes?: [<scene-id>]          # ordered; on-enter and on-demand Scenes of this Location
 connections?:
-  - to: <location-id>
+  - to: <location-id>          # unique within the Location
     label?: <text>             # default: the target Location's name
     when?: <Condition>         # unmet: the Connection is hidden
 ```
@@ -297,7 +310,7 @@ At most one Equipment item per slot among a Template's items.
 ```yaml
 - id: <id>
   path: <path>                 # relative to the Scenario directory, not to this file
-  alt: <text>                  # required, in the Scenario's language
+  alt: <text>                  # required, in the Scenario's Base Language
 ```
 
 ## Images
@@ -311,6 +324,127 @@ Both **Locations** and **Scenes** may have Illustrations, and an Illustration is
 - `alt` is required and non-empty. There is no decorative option and no caption.
 
 Loading, serving and failed-load behaviour are in [architecture.md](architecture.md#scenario-assets) and [ui.md](ui.md#scene-illustration).
+
+## Translations
+
+A Scenario is written in its **Base Language**, the manifest's `language`. It may carry any number of **Translations**, each a complete rendering of all of its text into one other language. Recorded in [ADR 0002](../adr/0002-translation-as-text-only-overlay.md).
+
+- A Translation is a **text-only overlay** keyed by content IDs. It adds no content and changes no mechanics: IDs, references, Conditions, Effects, transitions, numbers, `map` coordinates, illustrations and every other non-text field exist only in the base files.
+- A Translation is **complete**. It provides exactly the translatable fields the base provides: a field present in the base is present in the Translation, and an optional field omitted in the base is omitted in the Translation. The engine never mixes the text of two languages within one Scenario.
+- Translation text follows the same value types as the base: `<text>` fields are shown literally, and narration fields follow the [narration format](#narration-format) (the Markdown subset and `{name}` only).
+
+### Translation manifest
+
+The base manifest lists each Translation's manifest under `translations`. A Translation manifest lists its own files by content type, mirroring the base manifest's sections. Its paths are relative to the **Scenario directory** (not to the Translation manifest) and follow the [path rules](#manifest-file-lists-and-paths). `translations/<language>/` with the base layout mirrored inside it is the recommended layout, not a requirement.
+
+```yaml
+language: <BCP 47 tag>         # the language of this Translation's text
+translator?: <string>          # credit, shown with the author
+title: <text>
+description: <text>
+intro?: <narration>            # present exactly when the base has intro
+locations: [<path>]
+scenes?: [<path>]
+items?: [<path>]
+enemies?: [<path>]
+encounters?: [<path>]
+templates: [<path>]
+endings: [<path>]
+images?: [<path>]
+```
+
+A Translation manifest has no `schemaVersion`, `id`, `author` or `version`; the base manifest's values apply. It is identified by its `language`.
+
+### Language tags
+
+- A Translation's `language` is a valid BCP 47 tag whose **primary language subtag** differs from the Base Language's (a Scenario in `en-GB` cannot have an `en-US` Translation).
+- A Scenario has at most one Translation per primary language subtag.
+- An Interface Language selects the Translation whose primary language subtag equals it. When the Base Language's primary subtag equals it, the base text is shown. Otherwise the base text is shown as the fallback.
+- A Translation into a language that is not an Interface Language (currently `en` and `pl`) is valid but never shown, and draws a warning.
+
+### Translation files
+
+Each Translation file is a **text-only projection** of the base file kind it stands for: the same shape, keeping only the translatable fields and the keys that identify where they belong. Location and Scene Translations are entity files (one mapping per file, with `id`); every other kind is a catalog (a sequence of mappings, each with `id`). The way the Translation splits a content type across files is independent of the base. Order within a file has no meaning: entries are matched by their keys, not by position.
+
+The keys are:
+
+- `id` for every entity and catalog entry, and for each Choice within its Scene;
+- `to` for a Connection, which is why `to` is unique within a Location;
+- the base's own nesting for Outcomes, which have no IDs: `outcome`, `test.success` and `test.failure` under a Choice; `victory` and `escape` under an Encounter.
+
+The translatable fields are:
+
+| Base | Fields |
+|---|---|
+| Manifest | `title`, `description`, `intro` |
+| Location | `name`, `description`; Connection `label` |
+| Scene | `title`, `text` |
+| Choice | `text` |
+| Outcome | `text` |
+| item (all kinds) | `name`, `description` |
+| Enemy | `name`, `description` |
+| Encounter | `text` |
+| Character Template | `name`, `description` |
+| Ending | `title`, `text` |
+| image | `alt` |
+
+Nothing else is translated. `author` is a name and stays as written.
+
+```yaml
+# translations/pl/locations/ashford.yaml
+id: ashford
+name: Ashford
+description: |
+  Garść krytych strzechą chat wokół błotnistej łąki i kamiennej studni.
+  Wieśniacy trzymają drzwi zamknięte, a wzrok wbity w ciemną linię lasu.
+connections:
+  - to: forest-edge
+    label: Idź wozową drogą w stronę lasu
+```
+
+```yaml
+# translations/pl/scenes/barrow-door.yaml
+id: barrow-door
+title: Zapieczętowane drzwi
+text: |
+  Szara płyta jest tak ciasno wpasowana w kurhan …
+choices:
+  - id: use-key
+    text: Przekręć brązowy klucz w wężowym zamku.
+    outcome:
+      text: |
+        Klucz obraca się ze zgrzytem …
+  - id: force-door
+    text: Naprzyj barkiem na płytę.
+    test:
+      success:
+        text: |
+          Kamień zgrzyta o kamień …
+      failure:
+        text: |
+          Płyta ani drgnie, za to coś w twoim barku tak.
+  - id: step-away
+    text: Odejdź od drzwi.
+```
+
+```yaml
+# translations/pl/encounters.yaml
+- id: wight-fight
+  text: |
+    Aldric podnosi się z marów, a chłód grobu przetacza się przez ciebie.
+  victory:
+    text: |
+      Upiór rozsypuje się w proch i rdzę. Mira otwiera oczy i sięga po
+      twoją dłoń.
+  escape:
+    text: |
+      Zataczając się, wracasz korytarzem w szare światło dnia. Upiór nie
+      idzie za tobą; nigdy nie opuszcza swojego grobowca.
+```
+
+### Illustrations in a Translation
+
+A Translation translates an image's `alt` only. It cannot replace the image file; every language shows the same Illustrations.
 
 ## Versioning
 
@@ -374,6 +508,8 @@ choices:
 ```
 
 ## Sources
+
+- [Translation package format](https://github.com/lbacik/simple-rpg-engine/issues/57) (Translations, Connection `to` uniqueness)
 
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (conventions, field reference, defaults, display text)
 - [Scenario package layout and reference convention](https://github.com/lbacik/simple-rpg-engine/issues/6#issuecomment-6099136128)

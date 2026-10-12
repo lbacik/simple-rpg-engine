@@ -70,7 +70,7 @@ view(scenario, state): GameView
 Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
 
 - Each Playthrough pins the Scenario id, the content `version` and the **content hash**.
-- The content hash covers every file the manifest lists, the manifest itself, and the bytes of every declared image, so any content change (including an image) changes it.
+- The content hash covers every file the manifest lists, the manifest itself, every listed Translation manifest and every file it lists, and the bytes of every declared image, so any content change (including an image or a Translation) changes it. A Translation-only change changes no ID, so the reference check it triggers passes.
 - When the hash differs from the loaded Scenario's, a **mechanical reference check** runs. It passes when every content ID in the stored state still exists with the right type (Location, Scene, (Scene, Choice), Encounter, item, slot, Flag, Character Template, Ending), and the stored state still satisfies the invariants that depend on content:
   - every equipped item is still Equipment of the slot it occupies;
   - during an active Combat, the Encounter's Enemy still has more maximum Health than the stored Damage taken.

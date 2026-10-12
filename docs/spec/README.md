@@ -18,6 +18,7 @@ This spec is **self-contained and normative**. It was assembled from the decisio
 Supporting material:
 
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md).
+- [ADR 0002: a Translation is a text-only overlay](../adr/0002-translation-as-text-only-overlay.md).
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
@@ -27,7 +28,7 @@ Supporting material:
 - The narrative model is a hybrid: a graph of Locations, within which conditional Scenes with Choices fire. NPC dialogue is Scenes with Choices.
 - All narration is pre-written in YAML. There is no LLM narrator.
 - Playthrough state is server-authoritative (dice are rolled on the server), persisted, and bound to an anonymous Session cookie. A Session has any number of Playthroughs, saved after every action.
-- One language per Scenario, declared in its manifest. The UI is in a single language, English.
+- Each Scenario is written in one Base Language, declared in its manifest, and may carry complete Translations as text-only overlays ([scenario-format.md](scenario-format.md#translations)). The UI is in a single language, English.
 - Mechanics are a closed vocabulary owned by the engine. Scenarios define items, Enemies and Tests only in terms of engine Attributes and Effects; they cannot add Attributes or change the dice.
 - Scenarios enter the collection as directories in a server-side Scenario directory, gated by validation (the CLI, and again at startup). Invalid Scenarios are left out.
 - Combat is abstract, with two Ranges (Near and Far) and no grid board.
@@ -62,7 +63,6 @@ These are intentionally left open. Choose freely within the constraints of the s
 - LLM-driven narration or improvisation.
 - Login and accounts; transferring a Character between Playthroughs.
 - A Scenario upload UI or admin panel.
-- Internationalisation beyond one language per Scenario.
 - Trading, shops and currency.
 - Character progression (experience, levels) during a Playthrough.
 - Spells, charges, temporary bonuses and other magic effects.
