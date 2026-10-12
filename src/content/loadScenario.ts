@@ -224,7 +224,10 @@ export function loadScenario(dir: string): LoadScenarioResult {
     rejected,
     acceptedWarnings,
     contents: translationContents,
-  } = runTranslationPipelines(scenarioDir, translationRefs, listed);
+  } = runTranslationPipelines(scenarioDir, translationRefs, listed, {
+    manifest: manifestParsed,
+    files: parsedFiles,
+  });
   const rejectedTranslations: RejectedTranslation[] = rejected;
   const acceptedPaths = new Set(accepted.map((loaded) => loaded.manifestPath));
 
