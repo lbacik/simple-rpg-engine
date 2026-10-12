@@ -17,7 +17,12 @@ import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
-import { latestJournalEnding, renderJournalEntry } from '@/app/lib/journal';
+import {
+  JOURNAL_BATCH_SIZE,
+  latestJournalEnding,
+  renderJournalEntries,
+} from '@/app/lib/journal';
+import { JournalEntries } from './journal/journal-entries';
 import {
   continueHref,
   parsePanelTab,
@@ -595,13 +600,17 @@ export default async function PlayPage({
   if (!resolved.compatible) {
     // Incompatible Playthroughs are read-only: derived on read, never stored.
     // Every action is rejected by executeTurn, so no forms are rendered here.
-    const journal = await store.listJournal(resolved.playthrough.id);
     const incompatibleName = resolved.playthrough.state.character.name;
-    const recordedEnding = latestJournalEnding(journal);
     if (resolved.scenario === undefined) {
       // The Scenario left the collection (or is no longer valid): only the
       // Journal remains, and the Ending is read from its Journal entry. The
       // Journal always renders completely because it stores the text as presented.
+      // The Ending is the newest entry, so the first batch always holds it.
+      const batch = await store.listJournalBatch(resolved.playthrough.id, {
+        limit: JOURNAL_BATCH_SIZE,
+      });
+      const recordedEnding = latestJournalEnding(batch.entries);
+      const rendered = renderJournalEntries(batch.entries, incompatibleName);
       return (
         <main>
           <h1>{incompatibleName}</h1>
@@ -621,23 +630,17 @@ export default async function PlayPage({
             <a href={`/play/${resolved.playthrough.id}/journal`}>View journal</a>
           </p>
           <section aria-label="Journal">
-            <ol>
-              {journal.map((entry) => {
-                const rendered = renderJournalEntry(entry.type, entry.payload, incompatibleName);
-                return (
-                  <li key={entry.seq}>
-                    <p className="meta">
-                      {rendered.label} · step {entry.step}
-                    </p>
-                    <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
-                  </li>
-                );
-              })}
-            </ol>
+            <JournalEntries
+              playthroughId={resolved.playthrough.id}
+              initialEntries={rendered}
+              initialNextCursor={batch.nextCursor ?? null}
+            />
           </section>
         </main>
       );
     }
+    const journal = await store.listJournal(resolved.playthrough.id);
+    const recordedEnding = latestJournalEnding(journal);
     // The Scenario is still in the collection but its content changed: the
     // Character sheet, inventory and map render best effort from the current
     // content, and a new Playthrough is on offer.

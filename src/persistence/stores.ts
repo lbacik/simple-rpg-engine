@@ -28,6 +28,16 @@ export type StoredJournalEntry = {
   createdAt: string;
 };
 
+export type JournalBatch = {
+  /** Entries newest first (descending `seq`). */
+  entries: StoredJournalEntry[];
+  /**
+   * The cursor for the next older batch: the `seq` everything older must
+   * fall below. Undefined when the start of the Journal has been reached.
+   */
+  nextCursor: number | undefined;
+};
+
 export type NewPlaythrough = {
   id: string;
   sessionId: string;
@@ -168,20 +178,33 @@ export class PlaythroughStore {
     return typeof count === 'string' ? Number.parseInt(count, 10) : Number(count ?? 0);
   }
 
-  /** One journal page in order, for the paginated journal route. */
-  async listJournalPage(
+  /**
+   * One journal batch, newest first, for the infinitely scrolling journal.
+   * Batches are addressed by a cursor on the entry sequence: `beforeSeq`
+   * keeps only entries with a lower `seq` ("entries older than X"), so
+   * entries appended after the Journal was opened never shift or duplicate
+   * what is already on screen. A missing or invalid cursor (not a positive
+   * integer) reads the newest batch.
+   */
+  async listJournalBatch(
     playthroughId: string,
-    options: { limit: number; offset: number },
-  ): Promise<StoredJournalEntry[]> {
-    const rows = await this.db
+    options: { limit: number; beforeSeq?: number },
+  ): Promise<JournalBatch> {
+    const before = options.beforeSeq;
+    const bounded = Number.isInteger(before) && (before as number) > 0;
+    let query = this.db
       .selectFrom('journal_entries')
       .selectAll()
-      .where('playthrough_id', '=', playthroughId)
-      .orderBy('seq', 'asc')
-      .limit(options.limit)
-      .offset(options.offset)
-      .execute();
-    return rows.map(toJournalEntry);
+      .where('playthrough_id', '=', playthroughId);
+    if (bounded) {
+      query = query.where('seq', '<', before as number);
+    }
+    // One extra row probes whether older entries remain, without a count.
+    const rows = await query.orderBy('seq', 'desc').limit(options.limit + 1).execute();
+    const shown = rows.slice(0, options.limit).map(toJournalEntry);
+    const nextCursor =
+      rows.length > options.limit ? shown[shown.length - 1]?.seq : undefined;
+    return { entries: shown, nextCursor };
   }
 
   /**

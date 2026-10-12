@@ -1,12 +1,13 @@
 // Journal rendering (docs/spec/playthrough-state.md, journal; docs/spec/ui.md,
-// journal): a paginated, read-only, text-only list of the entries in order.
-// Narration entries reuse the game screen's Markdown subset on the stored text
-// as presented, never re-read from content. Every other entry is plain text.
+// journal): a read-only, text-only list of the entries, newest first, with
+// infinite scroll towards the first entry. Narration entries reuse the game
+// screen's Markdown subset on the stored text as presented, never re-read
+// from content. Every other entry is plain text.
 
 import { escapeHtml, renderStoredText } from '../../engine/narration';
 
-/** Entries per journal page. */
-export const JOURNAL_PAGE_SIZE = 20 as const;
+/** Entries per journal batch. */
+export const JOURNAL_BATCH_SIZE = 20 as const;
 
 /** Journal entry types the engine produces today. */
 const NARRATION_ENTRY_TYPES: ReadonlySet<string> = new Set([
@@ -37,18 +38,55 @@ export function journalEntryLabel(type: string): string {
   return ENTRY_LABELS[type] ?? type;
 }
 
-/** Parse `?page=` (1-based). Anything missing or invalid becomes page 1. */
-export function parseJournalPage(value: string | undefined): number {
-  if (value === undefined) return 1;
+/**
+ * Parse `?before=`: the sequence cursor for "entries older than X". Missing
+ * or invalid values read the newest batch.
+ */
+export function parseJournalCursor(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
   const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed < 1) return 1;
+  if (!Number.isInteger(parsed) || parsed <= 0) return undefined;
   return parsed;
 }
 
-/** Journal page URL with the page preserved only when past the first. */
-export function journalHref(playthroughId: string, page: number): string {
-  if (page <= 1) return `/play/${playthroughId}/journal`;
-  return `/play/${playthroughId}/journal?page=${page}`;
+/**
+ * Journal URL starting at the cursor, for the no-JavaScript "Older entries"
+ * link. Without a cursor it opens the newest batch.
+ */
+export function journalHref(playthroughId: string, beforeSeq?: number | null): string {
+  if (beforeSeq === undefined || beforeSeq === null) return `/play/${playthroughId}/journal`;
+  return `/play/${playthroughId}/journal?before=${beforeSeq}`;
+}
+
+/** One journal entry rendered to HTML, ready to append to the list. */
+export type RenderedJournalEntry = {
+  seq: number;
+  step: number;
+  label: string;
+  html: string;
+};
+
+/**
+ * One batch over the wire: server-rendered entries plus the cursor for the
+ * next older batch (`null` when the start of the Journal has been reached).
+ */
+export type JournalBatchResponse = {
+  entries: RenderedJournalEntry[];
+  nextCursor: number | null;
+};
+
+/**
+ * Render a batch of journal entries (newest first) to HTML. The client only
+ * appends what this returns, on first paint and for every older batch.
+ */
+export function renderJournalEntries(
+  entries: ReadonlyArray<{ seq: number; step: number; type: string; payload: unknown }>,
+  characterName: string,
+): RenderedJournalEntry[] {
+  return entries.map((entry) => {
+    const rendered = renderJournalEntry(entry.type, entry.payload, characterName);
+    return { seq: entry.seq, step: entry.step, label: rendered.label, html: rendered.html };
+  });
 }
 
 /**

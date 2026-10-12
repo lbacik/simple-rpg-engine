@@ -85,7 +85,9 @@ After Combat, the victory or escape Outcome is shown as a result panel, or the b
 
 ## Journal (`/play/[playthroughId]/journal`)
 
-A paginated, read-only list of the Journal entries in order: intro, narration, Choices taken, Tests with dice, Outcomes, state changes, travel, Combat start, rounds and end, and the Ending. It is text-only. It is available during play and after the end.
+A read-only list of the Journal entries, newest first: intro, narration, Choices taken, Tests with dice, Outcomes, state changes, travel, Combat start, rounds and end, and the Ending. It is text-only. It is available during play and after the end. Each entry shows its label and the step that produced it, and the header shows the total entry count, or "Nothing has happened yet." for an empty Journal.
+
+Opening the Journal shows the newest batch of entries at the top. Scrolling towards the bottom loads older entries automatically and appends them below, with a visible loading state, until the very first entry (the intro) is reached; there loading stops and the list says the start of the Journal has been reached. Batches are addressed by a cursor on the entry sequence ("entries older than X"), not by page number or offset, so entries appended during play never shift or duplicate what is already on screen. Without JavaScript, an "Older entries" link at the bottom of the list walks the whole Journal batch by batch.
 
 ## Endings
 
