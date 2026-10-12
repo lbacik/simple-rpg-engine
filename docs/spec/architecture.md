@@ -43,10 +43,10 @@ view(scenario, state): GameView
 
 - `loadScenario` runs the four validation phases and each Translation's own pipeline ([validation.md](validation.md)) and returns either an **immutable, compiled model** with references resolved and only the Translations that passed, together with its warnings and the diagnostics of every rejected Translation, or all the diagnostics of the run that rejected it. It also computes the **content hash** and reads each image's dimensions and hash. Shared by the CLI and the app.
 - `applyAction` is synchronous, deterministic for a given `rng`, and does no I/O. It checks `action.expectedStep === state.step` as a domain rule, then legality against the current position ([playthrough-state.md](playthrough-state.md#actions-and-the-step-guard)). It returns only the **new** Journal entries.
-- `view` is the derived projection the UI renders: the current narration, visible Choices, visible Connections, on-demand Scenes on offer, map nodes and lines, effective Attributes, inventory with available item actions, Combat state and available Combat actions (with reasons for unavailable ones), and the latest result entries.
+- `view` is the derived projection the UI renders: the current narration, visible Choices, visible Connections, on-demand Scenes on offer, map nodes and lines, effective Attributes, inventory with available item actions, Combat state and available Combat actions (with reasons for unavailable ones), and the latest result entries. The Combat state lists the participants taking part in participant order, each with its id, Enemy id, ordinal among participants of its kind, Health, Range, Reach, committed Intent (kind, Speed, Damage, and for a Prepare what it prepares), prepared state, Wary and place in the Round's order. Each available action carries its Speed and, when it takes a target, its legal targets, each with the place the action would take in the order; an unavailable action or target carries a reason code.
 - **The engine produces no Interface Text** ([ADR 0003](../adr/0003-interface-text-from-a-typed-catalogue.md)). Everything it would say in its own words is a structured value: a kind plus content ids and numbers. This covers Test results, Combat rounds (each action and roll), state changes from Effects, inventory actions, Combat end and the Enemy-defeated notice, available and unavailable actions with a reason code, and the names of its own vocabulary (Attribute, Difficulty, Range, Reach, slot ids). Each event carries every id and number its message needs, for example the item id and quantity of a `give-item`, the item id and Health restored by a Consumable, the Enemy id of a defeat. The app renders these through the catalogue, resolving names from the Scenario text in the language shown ([Interface Text](#interface-text)). Scenario text itself (narration, titles, names) keeps flowing through the engine as content, with `{name}` substituted.
 - `rng` is injected. Production uses `crypto.randomInt(1, 7)` per die and stores no seed. Tests use a deterministic RNG.
-- The `state` document carries a `stateVersion` and is validated with Zod when read.
+- The `state` document carries a `stateVersion`. When read it is validated with Zod against the schema of its own version, migrated by the engine to the current version against the current Scenario, and validated again ([playthrough-state.md](playthrough-state.md#state-versions-and-migration)). Migration is synchronous, deterministic and draws no randomness.
 
 ## Turn transport
 
@@ -94,9 +94,13 @@ Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
 
 - Each Playthrough pins the Scenario id, the content `version` and the **content hash**.
 - The content hash covers every file the manifest lists, the manifest itself, every listed Translation manifest and every file it lists, and the bytes of every declared image, so any content change (including an image or a Translation) changes it. A Translation-only change changes no ID, so the reference check it triggers passes.
-- When the hash differs from the loaded Scenario's, a **mechanical reference check** runs. It passes when every content ID in the stored state still exists with the right type (Location, Scene, (Scene, Choice), Encounter, item, slot, Flag, Character Template, Ending), and the stored state still satisfies the invariants that depend on content:
+- When the hash differs from the loaded Scenario's, a **mechanical reference check** runs, on the state as migrated to the current version ([playthrough-state.md](playthrough-state.md#state-versions-and-migration)). It passes when every content ID in the stored state still exists with the right type (Location, Scene, (Scene, Choice), Encounter, (Encounter, participant), item, slot, Flag, Character Template, Ending), and the stored state still satisfies the invariants that depend on content:
   - every equipped item is still Equipment of the slot it occupies;
-  - during an active Combat, the Encounter's Enemy still has more maximum Health than the stored Damage taken.
+  - every participant in an Encounter record still exists in that Encounter;
+  - a participant the record does not list (added to the content later) is allowed only while the Encounter is neither defeated by its record nor in the active Combat;
+  - during an active Combat, every participant taking part still has an Enemy with more maximum Health than its stored Damage taken.
+
+  Participant order, `startRange`, an Enemy's Attributes, Damage, Reach and Behaviour, and a participant's Enemy kind may change without failing the check. Order and `startRange` matter only from the next Round or the next start. A committed Intent resolves as stored, with its validity checked at its turn and its Damage read from the current content. As before this change, raising an Enemy's maximum Health, or giving a defeated participant a sturdier kind, can leave it undefeated again; this is accepted.
 
   A changed trigger or Location membership of the active Scene does not fail the check; the Scene simply continues.
 - If the check passes, play continues and the pin is updated. If it fails, the Playthrough is **incompatible** and read-only.
@@ -115,6 +119,7 @@ Recorded in [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md).
 - Table **`journal_entries`** (`playthrough_id`, `seq`, `step`, `type`, `lang`, `payload` JSON, `created_at`): append-only, paginated when read. `lang` is the language of the Scenario text in effect when the entry was presented. The migration that adds it sets it to `en` on existing rows, whose payload holds English text only ([playthrough-state.md](playthrough-state.md#journal)).
 - Table **`sessions`** (`id_hash`, `created_at`, `last_seen_at`).
 - JSON maps to `TEXT` (SQLite), `jsonb` (PostgreSQL) and `JSON` (MySQL).
+- **State versions** are not database migrations. The `state` document is migrated by the engine when it is read, against the current Scenario, and written back with the pin ([ADR 0005](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md), [playthrough-state.md](playthrough-state.md#state-versions-and-migration)). The tactical Combat state needs no database migration.
 - **Migrations** are Kysely migrations run by a separate `npm run migrate` step. The Docker entrypoint runs `migrate`, then `start`; development uses the same script. They are not run in `register()`, so they stay safe with several instances later.
 
 ### Turn atomicity
@@ -182,3 +187,5 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
 - [i18n approach for the Next.js 16 App Router](https://github.com/lbacik/simple-rpg-engine/issues/59) (research)
 - [ADR 0003: the engine emits no Interface Text](../adr/0003-interface-text-from-a-typed-catalogue.md)
 - [Test strategy for two languages](https://github.com/lbacik/simple-rpg-engine/issues/91) (Translation fixtures, Interface Text rendering, language end-to-end tests)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (state migration on read, participant reference checks, the Combat view)
+- [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md)

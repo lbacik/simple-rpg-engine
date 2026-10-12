@@ -20,6 +20,8 @@ Supporting material:
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md).
 - [ADR 0002: a Translation is a text-only overlay](../adr/0002-translation-as-text-only-overlay.md).
 - [ADR 0003: the engine emits no Interface Text; a typed catalogue renders it](../adr/0003-interface-text-from-a-typed-catalogue.md).
+- [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md).
+- [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md).
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
