@@ -18,7 +18,14 @@ import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { equipAction, unequipAction, useItemAction } from '@/app/lib/inventory';
 import { latestJournalEnding, renderJournalEntry } from '@/app/lib/journal';
-import { parsePanelTab, playHref, type PanelTab } from '@/app/lib/panel';
+import {
+  continueHref,
+  parsePanelTab,
+  parseSeenStep,
+  playHref,
+  shouldShowResultPanel,
+  type PanelTab,
+} from '@/app/lib/panel';
 import { resolvePlaythrough } from '@/app/lib/playthrough';
 import { LocationMap } from './map';
 import { CombatPanel } from './combat-panel';
@@ -55,18 +62,22 @@ function TabNav({
   tab,
   notice,
   tabs,
+  seen,
+  showUnknownExits,
 }: {
   playthroughId: string;
   tab: PanelTab;
   notice: string | undefined;
   tabs: PanelTab[];
+  seen: number | undefined;
+  showUnknownExits: boolean;
 }) {
   return (
     <nav aria-label="Character and inventory tabs" className="tabs">
       {tabs.map((candidate) => (
         <a
           key={candidate}
-          href={playHref(playthroughId, candidate, notice)}
+          href={playHref(playthroughId, candidate, notice, seen, showUnknownExits)}
           aria-current={candidate === tab ? 'page' : undefined}
           className={candidate === tab ? 'tab active' : 'tab'}
         >
@@ -170,6 +181,30 @@ function itemDetails(item: CompiledItem): string[] {
   return ['Key item'];
 }
 
+/**
+ * The game-page query the inventory forms carry along: the panel tab, the
+ * Continue acknowledgement (`?seen=`) and the "?" map setting, so the
+ * redirect after the turn lands back on the same view instead of bouncing to
+ * the result panel or losing the map setting.
+ */
+function PreservedQueryInputs({
+  tab,
+  seen,
+  showUnknownExits,
+}: {
+  tab: PanelTab;
+  seen: number | undefined;
+  showUnknownExits: boolean;
+}) {
+  return (
+    <>
+      <input type="hidden" name="tab" value={tab} />
+      {seen !== undefined ? <input type="hidden" name="seen" value={seen} /> : null}
+      {showUnknownExits ? <input type="hidden" name="unknown" value="1" /> : null}
+    </>
+  );
+}
+
 function InventoryTab({
   scenario,
   state,
@@ -177,6 +212,8 @@ function InventoryTab({
   step,
   tab,
   forceReadOnly,
+  seen,
+  showUnknownExits,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -185,6 +222,8 @@ function InventoryTab({
   tab: PanelTab;
   /** Set for incompatible Playthroughs: no actions, whatever the status. */
   forceReadOnly?: boolean;
+  seen: number | undefined;
+  showUnknownExits: boolean;
 }) {
   const readOnly = forceReadOnly === true || state.status !== 'active';
   const inCombat = state.activeCombat != null;
@@ -223,7 +262,7 @@ function InventoryTab({
                 <input type="hidden" name="playthroughId" value={playthroughId} />
                 <input type="hidden" name="expectedStep" value={step} />
                 <input type="hidden" name="slot" value={slot} />
-                <input type="hidden" name="tab" value={tab} />
+                <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
                 <button className="button secondary" type="submit" disabled={disabled}>
                   Unequip
                 </button>{' '}
@@ -277,6 +316,8 @@ function InventoryTab({
                     playthroughId={playthroughId}
                     step={step}
                     tab={tab}
+                    seen={seen}
+                    showUnknownExits={showUnknownExits}
                   />
                 )}
               </li>
@@ -297,6 +338,8 @@ function ItemActions({
   playthroughId,
   step,
   tab,
+  seen,
+  showUnknownExits,
 }: {
   item: CompiledItem;
   itemId: string;
@@ -306,6 +349,8 @@ function ItemActions({
   playthroughId: string;
   step: number;
   tab: PanelTab;
+  seen: number | undefined;
+  showUnknownExits: boolean;
 }) {
   if (item.kind === 'equipment') {
     if (inCombat) {
@@ -333,7 +378,7 @@ function ItemActions({
         <input type="hidden" name="playthroughId" value={playthroughId} />
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="itemId" value={itemId} />
-        <input type="hidden" name="tab" value={tab} />
+        <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
         <p>
           <button className="button secondary" type="submit">
             Equip
@@ -368,7 +413,7 @@ function ItemActions({
         <input type="hidden" name="playthroughId" value={playthroughId} />
         <input type="hidden" name="expectedStep" value={step} />
         <input type="hidden" name="itemId" value={itemId} />
-        <input type="hidden" name="tab" value={tab} />
+        <PreservedQueryInputs tab={tab} seen={seen} showUnknownExits={showUnknownExits} />
         <p>
           <button className="button secondary" type="submit">
             Use
@@ -386,13 +431,16 @@ function mapToggleHrefFor(
   tab: PanelTab,
   notice: string | undefined,
   showUnknownExits: boolean,
+  seen?: number,
 ): string {
-  const toggleParams = new URLSearchParams();
-  if (tab === 'inventory' || tab === 'map') toggleParams.set('tab', tab);
-  if (notice === 'stale' || notice === 'unavailable') toggleParams.set('notice', notice);
-  if (!showUnknownExits) toggleParams.set('unknown', '1');
-  const toggleQuery = toggleParams.toString();
-  return toggleQuery === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${toggleQuery}`;
+  return playHref(
+    playthroughId,
+    tab,
+    notice,
+    seen,
+    // The toggle flips the setting, so it carries the opposite value.
+    !showUnknownExits,
+  );
 }
 
 function desktopTabFor(tab: PanelTab): 'character' | 'inventory' {
@@ -419,6 +467,7 @@ function SidePanel({
   forceReadOnly,
   detailsOpen,
   summarySuffix,
+  seen,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
@@ -434,6 +483,7 @@ function SidePanel({
   forceReadOnly?: boolean;
   detailsOpen?: boolean;
   summarySuffix?: string;
+  seen?: number;
 }) {
   return (
     <aside className="side" aria-label="Character and inventory">
@@ -447,6 +497,8 @@ function SidePanel({
           tab={tab}
           notice={notice}
           tabs={['character', 'inventory', 'map']}
+          seen={seen}
+          showUnknownExits={showUnknownExits}
         />
         {tab === 'inventory' ? (
           <InventoryTab
@@ -456,6 +508,8 @@ function SidePanel({
             step={step}
             tab={tab}
             forceReadOnly={forceReadOnly}
+            seen={seen}
+            showUnknownExits={showUnknownExits}
           />
         ) : tab === 'map' ? (
           <LocationMap
@@ -481,7 +535,14 @@ function SidePanel({
           toggleHref={toggleHref}
           markerId="map-arrow-desktop"
         />
-        <TabNav playthroughId={playthroughId} tab={desktopTab} notice={notice} tabs={['character', 'inventory']} />
+        <TabNav
+          playthroughId={playthroughId}
+          tab={desktopTab}
+          notice={notice}
+          tabs={['character', 'inventory']}
+          seen={seen}
+          showUnknownExits={showUnknownExits}
+        />
         {desktopTab === 'inventory' ? (
           <InventoryTab
             scenario={scenario}
@@ -490,6 +551,8 @@ function SidePanel({
             step={step}
             tab={tab}
             forceReadOnly={forceReadOnly}
+            seen={seen}
+            showUnknownExits={showUnknownExits}
           />
         ) : (
           <CharacterTab scenario={scenario} state={state} />
@@ -513,10 +576,10 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ playthroughId: string }>;
-  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string }>;
+  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string; seen?: string }>;
 }) {
   const { playthroughId } = await params;
-  const { notice, tab: tabParam, unknown } = await searchParams;
+  const { notice, tab: tabParam, unknown, seen: seenParam } = await searchParams;
   const tab = parsePanelTab(tabParam);
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
@@ -668,11 +731,74 @@ export default async function PlayPage({
     state.status === 'active' &&
     state.activeSceneId == null &&
     state.activeCombat == null;
+  // The Continue acknowledgement: `?seen=` equal to the current `step` skips
+  // the result panel and renders the position. Any other value is ignored, so
+  // the result panel of the actual latest step is shown again. Following
+  // Continue changes no game state and does not advance `step`.
+  const seenStep = parseSeenStep(seenParam);
+  const showResult = shouldShowResultPanel(
+    resultEntries.length > 0,
+    playthrough.step,
+    seenStep,
+  );
+  // Once acknowledged, the tab and "?" links keep `?seen=` so the position
+  // stays visible instead of bouncing back to the result panel.
+  const preservedSeen = seenStep === playthrough.step ? seenStep : undefined;
+  const continueTo = continueHref(playthrough.id, playthrough.step, tabParam, notice, showUnknownExits);
   // The desktop panel shows the map above the Character/Inventory tabs; the
   // phone panel holds all three tabs behind the compact summary.
-  const mapToggleHref = mapToggleHrefFor(playthrough.id, tab, notice, showUnknownExits);
+  const mapToggleHref = mapToggleHrefFor(
+    playthrough.id,
+    tab,
+    notice,
+    showUnknownExits,
+    preservedSeen,
+  );
   const desktopTab = desktopTabFor(tab);
   const panelOpen = tab !== 'character' || noticeText !== undefined;
+
+  // While the result panel is shown, the reading column holds only the panel
+  // (with Continue) and the transient notice: the Location view, Scene,
+  // Combat panel and the "View journal" link wait for Continue. The side
+  // panel (map, Character, Inventory) stays visible throughout.
+  if (showResult) {
+    return (
+      <main>
+        <div className="game">
+          <article className="reading" lang={scenario.language}>
+            {noticeText ? (
+              <p className="notice" role="status">
+                {noticeText}
+              </p>
+            ) : null}
+            <ResultPanel entries={resultEntries} continueHref={continueTo} />
+          </article>
+          <SidePanel
+            scenario={scenario}
+            state={state}
+            playthroughId={playthrough.id}
+            step={playthrough.step}
+            tab={tab}
+            notice={notice}
+            gameView={gameView}
+            showUnknownExits={showUnknownExits}
+            toggleHref={mapToggleHref}
+            desktopTab={desktopTab}
+            canTravel={canTravel}
+            detailsOpen={panelOpen}
+            summarySuffix={
+              gameView.kind === 'location'
+                ? gameView.name
+                : gameView.kind === 'scene' || gameView.kind === 'combat'
+                  ? gameView.locationName
+                  : 'Ended'
+            }
+            seen={preservedSeen}
+          />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -683,7 +809,6 @@ export default async function PlayPage({
               {noticeText}
             </p>
           ) : null}
-          <ResultPanel entries={resultEntries} />
           <p>
             <a href={`/play/${playthrough.id}/journal`}>View journal</a>
           </p>
@@ -832,6 +957,7 @@ export default async function PlayPage({
                 ? gameView.locationName
                 : 'Ended'
           }
+          seen={preservedSeen}
         />
       </div>
     </main>
