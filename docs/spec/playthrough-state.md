@@ -244,11 +244,11 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 
 ## Invariants
 
-- Health is always 0–12, and Health 0 always goes with `ended(death Ending)`.
+- Character Health is always 0–12, and Character Health 0 always goes with `ended(death Ending)`.
 - Every equipped item is held and fits its slot.
 - With unchanged content, a defeated Encounter never re-enters Combat and its `victory` Outcome applies at most once. Content-driven revival outside Combat follows the exception above.
 - A non-repeatable Scene activates at most once, and a `once` Choice is taken at most once.
-- An Outcome is applied once, by exactly one step-guarded action. A stale or duplicate submission is rejected.
+- Each Outcome application belongs to exactly one step-guarded action. A stale or duplicate submission cannot apply it twice; this does not prohibit a later victory after content-driven revival outside Combat.
 - Nothing changes after `ended`.
 - A committed Intent changes only by resolving or being cancelled within its Round; reading, reloading or a rejected action never re-selects it.
 - Migrating a stored state resolves nothing and never advances `step`; migrating it again gives the same state.
@@ -269,3 +269,4 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (stored tactical Combat, state versions and migration, action targets, Combat events)
 - [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md)
 - [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (starting membership, saved Round ties, active revival incompatibility and repeated victory after content changes)
+- [Tactical Combat specification and dependency-ordered implementation handoff](https://github.com/lbacik/simple-rpg-engine/issues/84) (Outcome application scope and final acceptance)

@@ -81,7 +81,7 @@ A Key Item has no mechanics. It exists to satisfy Conditions and to be given or 
 
 ## Health and death
 
-- Health is always 0–12. There is no automatic regeneration; content may heal explicitly (for example, a Scene where the Character rests).
+- Character Health is always 0–12. There is no automatic regeneration; content may heal explicitly (for example, a Scene where the Character rests).
 - Damage is a fixed amount; there is no Damage roll.
 - A combatant at 0 Health is dead. **Character death ends the Playthrough** on the Scenario's death Ending. There are no checkpoints, no resurrection and no rollback; the ended Playthrough stays viewable, and the player can start a new one.
 
@@ -216,7 +216,7 @@ An action legal on submission is **cancelled** (see [Rejected versus cancelled](
 | Distract | the target has been defeated |
 | Advance | the target has been defeated, or the Range to it is already Near |
 | Fall back | no surviving Enemy participant is Near |
-| Defend, Use a Consumable, Escape | never: Health only falls and items cannot be lost during a Round |
+| Defend, Use a Consumable, Escape | never: incoming actions cannot make these actions unavailable; Character death stops the sequence before the action instead |
 
 The Escape bonus comes from the Round as shown on submission: an Enemy that closes in earlier in the order does not remove it. The opposing Agility of Escape and Fall back is read when the action resolves, so a participant defeated earlier in the Round no longer opposes. A cancelled Consumable is not consumed.
 
@@ -231,7 +231,7 @@ A counterattack can defeat its target. Like any defeat during a Round, the parti
 
 ### Enemy Intents
 
-Every Enemy has a **Behaviour**, chosen by the author from an engine-owned list. An Enemy without one is `steady`, which reproduces the earlier response: close in when out of Reach, otherwise attack.
+Every Enemy has a **Behaviour**, chosen by the author from an engine-owned list. An Enemy without one is `steady`: select Close in when out of Reach, otherwise Strike, under the same Round ordering as every Intent.
 
 | Behaviour | Meant for | Prepares a heavy attack |
 |---|---|---|
@@ -323,3 +323,4 @@ These targets guide authors and reviewers when choosing Enemies and Encounters. 
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (migrated Combat's first Intents)
 - [Prototype: tactical Combat balance and meaningful action trade-offs](https://github.com/lbacik/simple-rpg-engine/issues/83) (Heavy attack +3, Escape bonus on commitment, balance targets)
 - [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (saved Round ties, revival boundaries and repeated victory under changed content)
+- [Tactical Combat specification and dependency-ordered implementation handoff](https://github.com/lbacik/simple-rpg-engine/issues/84) (final reconciliation and implementation acceptance)

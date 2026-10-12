@@ -24,6 +24,7 @@ Supporting material:
 - [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md).
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
+- [Tactical Combat implementation handoff](tactical-combat-handoff.md): the accepted package boundaries, dependencies, acceptance matrix and release verification for tactical Combat. It supplements the normative rules; production implementation is a subsequent effort.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
 
 ## Standing decisions
@@ -46,7 +47,7 @@ The spec is ready for implementation when all of these hold:
 4. The spec uses the vocabulary of [`CONTEXT.md`](../../CONTEXT.md).
 5. The driving developer has reviewed and accepted the spec.
 
-The spec does not include an implementation plan or a breakdown into implementation tickets.
+The original platform specification has no general implementation-ticket breakdown. The subsequent [Tactical Combat implementation handoff](tactical-combat-handoff.md) supplies the ordered plan for that change; its execution issues and production implementation remain outside the planning map.
 
 ## Implementer's discretion
 
@@ -55,7 +56,7 @@ These are intentionally left open. Choose freely within the constraints of the s
 - The TypeScript shapes of the compiled `Scenario` model, `GameView`, actions, Journal entry payloads, the engine's structured events and the internal layout of the `state` JSON document, as long as they carry what the spec requires and stored state refers to content only by ID.
 - The content hash and image hash algorithms (for example SHA-256), as long as they are deterministic and the content hash covers everything [architecture.md](architecture.md#content-compatibility) lists.
 - Diagnostic message wording, and any additional `schema/` codes for finer-grained Zod issues, as long as the codes in [validation.md](validation.md) keep their meaning.
-- UI copy in both Interface Languages (Polish copy uses the [Polish terms](ui.md#polish-terms) and the [Interface Text rules](ui.md#interface-text)), visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
+- UI copy in both Interface Languages (Polish copy uses the [Polish terms](ui.md#polish-terms) and the [Interface Text rules](ui.md#interface-text)), including exact Polish tactical wording where no canonical term has been settled by the separate language effort; visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
 - How the off-by-default "?" exit-stub map setting is configured.
 - The Session cookie name, the Interface Language cookie name, and the hash used to store the Session id (for example SHA-256).
 - How the Scenario directory is configured (default `scenarios/` at the repository root), and where the example VS Code schema configuration lives.
