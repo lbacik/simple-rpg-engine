@@ -155,7 +155,7 @@ Whether a Combat action or Intent resolves early, in the middle or late in a Rou
 _Avoid_: Initiative, tempo
 
 **Range**:
-The current distance between the Character and the Enemy during a Combat: either Near or Far.
+The current distance between the Character and one Enemy during a Combat: either Near or Far; with two Enemies, each has its own Range.
 _Avoid_: Zone, distance
 
 **Reach**:
