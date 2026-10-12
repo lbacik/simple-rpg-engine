@@ -347,6 +347,158 @@ fieldset {
   outline: none;
 }
 
+/* Character sheet: header with a large Health medal, Attributes with pips,
+   Health with a segment bar, and the equipped items. Two columns on desktop,
+   one on phones. */
+.sheet-hero {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.status-medal.sheet-medal {
+  width: 5rem;
+  height: 5rem;
+}
+
+.status-medal.sheet-medal .status-face {
+  width: 4.1rem;
+  height: 4.1rem;
+  font-size: 1.8rem;
+}
+
+.sheet-hero-text {
+  min-width: 0;
+}
+
+.sheet-name {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+}
+
+.sheet-hero-text .meta {
+  margin: 0.15rem 0 0;
+}
+
+.sheet-lede {
+  margin: 0.35rem 0 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.sheet-cols {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0 2rem;
+  margin-top: 0.5rem;
+}
+
+.sheet h3 {
+  font-size: 1rem;
+  margin: 0.9rem 0 0.25rem;
+}
+
+.sheet-attrs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sheet-attr {
+  display: grid;
+  grid-template-columns: 5.5rem auto 1fr;
+  align-items: center;
+  gap: 0.2rem 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.sheet-attr-name {
+  font-weight: bold;
+}
+
+.sheet-attr-total {
+  justify-self: end;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sheet-attr-src {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Attribute pips: filled circles for base, gold diamonds for counted
+   equipment bonuses, hollow circles for the rest. Decorative only. */
+.pips {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.pip {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule);
+}
+
+.pip.base {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.pip.bonus {
+  background: var(--gold, #b98a1c);
+  border-color: var(--gold, #b98a1c);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.sheet-legend {
+  margin: 0.6rem 0 0;
+}
+
+.sheet-health {
+  margin: 0.25rem 0;
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.sheet-slots {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+}
+
+.sheet-slots li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.sheet-slots li.empty {
+  color: var(--muted);
+}
+
+.sheet-slot-icon {
+  color: var(--accent);
+}
+
+@media (max-width: 46rem) {
+  .sheet-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 .panel-modal-head {
   display: flex;
   align-items: start;
