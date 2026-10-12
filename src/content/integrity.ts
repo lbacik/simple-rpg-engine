@@ -505,6 +505,17 @@ function checkManifestReferences(manifest: ParsedFile, index: Index, ctx: Ctx): 
 
 function checkLocationReferences(file: ParsedFile, index: Index, ctx: Ctx): void {
   if (!isRecord(file.value)) return;
+  if (file.value['illustration'] !== undefined) {
+    checkReference(
+      file,
+      ['illustration'],
+      file.value['illustration'],
+      'image',
+      index.images,
+      'ref/unknown-image',
+      ctx,
+    );
+  }
   if (Array.isArray(file.value['scenes'])) {
     file.value['scenes'].forEach((scene, sceneIndex) => {
       checkReference(file, ['scenes', sceneIndex], scene, 'scene', index.scenes, 'ref/unknown-scene', ctx);

@@ -4,6 +4,7 @@ description: |
   A huddle of thatched cottages around a muddy green and a stone well. The
   villagers keep their doors shut and their eyes on the dark line of the woods.
 map: { x: 15, y: 60 }
+illustration: loc-ashford
 scenes: [arrival, village-return, well-rumours]
 connections:
   - to: forest-edge

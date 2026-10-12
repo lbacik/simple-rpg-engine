@@ -31,6 +31,9 @@
       ],
       "additionalProperties": false
     },
+    "illustration": {
+      "type": "string"
+    },
     "scenes": {
       "default": [],
       "type": "array",

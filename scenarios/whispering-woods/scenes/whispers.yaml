@@ -1,6 +1,7 @@
 id: whispers
 title: The Whispering Trees
 trigger: on-enter
+illustration: whispers
 text: |
   As you step under the first oaks, the murmur of the leaves swells around
   you, rising and falling like a voice repeating the same word over and over.

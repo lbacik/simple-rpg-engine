@@ -1,6 +1,7 @@
 # Follow-on Scene: no trigger, reached only through `next` from arrival.
 id: elder-plea
 title: Brenna's Plea
+illustration: elder-plea
 text: |
   "Three nights ago my granddaughter Mira followed a voice into the woods.
   Since then the trees have been *whispering*. The hunters who might have

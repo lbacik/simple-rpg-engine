@@ -397,6 +397,15 @@ describe('integrity phase: references', () => {
     expect(diag.path).toEqual(['illustration']);
   });
 
+  it('ref/unknown-image for a location illustration that is not declared', () => {
+    const dir = freshValidDir('unknown-location-image');
+    mutate(dir, 'locations/home.yaml', 'map: { x: 10, y: 20 }', 'illustration: nowhere\nmap: { x: 10, y: 20 }');
+    const diags = fail(dir);
+    const diag = only(diags, 'ref/unknown-image');
+    expect(diag.file).toBe('locations/home.yaml');
+    expect(diag.path).toEqual(['illustration']);
+  });
+
   it('ref/undeclared-flag for a condition on a flag outside the manifest', () => {
     const dir = freshValidDir('undeclared-flag-condition');
     mutate(dir, 'scenes/gate.yaml', 'when: { flag: met-elder }', 'when: { flag: stranger }');
@@ -659,16 +668,19 @@ describe('compiled scenario model', () => {
     // Defaults applied: chapel-prayer omits repeatable, which resolves to false.
     expect(scenario.scenes.find((scene) => scene.id === 'chapel-prayer')?.repeatable).toBe(false);
 
-    expect(scenario.images).toHaveLength(1);
-    expect(scenario.images[0]).toMatchObject({
+    expect(scenario.images).toHaveLength(21);
+    const ashfordLoc = scenario.locations.find((loc) => loc.id === 'ashford');
+    expect(ashfordLoc?.illustration?.id).toBe('loc-ashford');
+    const chapelAltar = scenario.images.find((image) => image.id === 'chapel-altar');
+    expect(chapelAltar).toMatchObject({
       id: 'chapel-altar',
       path: 'images/chapel-altar.png',
       format: 'png',
       width: 640,
       height: 360,
     });
-    expect(scenario.images[0]?.hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(scenario.images[0]?.alt).toContain('chapel');
+    expect(chapelAltar?.hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(chapelAltar?.alt).toContain('chapel');
     expect(scenario.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 

@@ -4,6 +4,7 @@ description: |
   A damp hollow choked with ferns. Gnawed bones lie between the roots of a
   fallen beech.
 map: { x: 60, y: 72 }
+illustration: loc-wolf-hollow
 scenes: [wolf-den, wolf-again]
 connections:
   - to: forest-edge

@@ -2,6 +2,7 @@
 id: chapel-threshold
 title: The Sunken Floor
 trigger: on-enter
+illustration: chapel-threshold
 text: |
   The chapel floor has sagged into the crypt below. The flagstones between
   the door and the altar tilt and grind under the slightest weight.

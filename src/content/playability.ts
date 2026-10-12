@@ -955,12 +955,15 @@ function checkImageUnused(ctx: Ctx): void {
   for (const scene of ctx.scenario.scenes) {
     if (scene.illustration !== undefined) referenced.add(scene.illustration.id);
   }
+  for (const location of ctx.scenario.locations) {
+    if (location.illustration !== undefined) referenced.add(location.illustration.id);
+  }
   for (const image of ctx.scenario.images) {
     if (referenced.has(image.id)) continue;
     ctx.push({
       severity: 'warning',
       code: 'play/image-unused',
-      message: `image "${image.id}" is referenced by no scene`,
+      message: `image "${image.id}" is referenced by no scene or location`,
       file: ctx.fileOf('images', image.id),
       range: ctx.idRange('images', image.id),
       path: ['id'],

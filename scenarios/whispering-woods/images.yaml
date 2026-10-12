@@ -1,7 +1,128 @@
 # Image catalog. Paths are relative to the Scenario directory.
 
+- id: arrival
+  path: images/arrival.png
+  alt: >-
+    Brenna hurries across the Ashford village green with the bell tower rope
+    swinging behind her.
+
+- id: elder-plea
+  path: images/elder-plea.png
+  alt: >-
+    Elder Brenna pleading outside her cottage, offering a bundle of medicinal
+    herbs.
+
+- id: village-return
+  path: images/village-return.png
+  alt: >-
+    Elder Brenna watching solemnly from her open cottage doorway across the
+    misty green.
+
+- id: well-rumours
+  path: images/well-rumours.png
+  alt: >-
+    Two village elders leaning against the stone well in Ashford, murmuring in
+    low voices.
+
+- id: whispers
+  path: images/whispers.png
+  alt: >-
+    Ancient gnarled oak trees at the forest edge with leaves swirling in the
+    whispering breeze.
+
+- id: camp-standoff
+  path: images/camp-standoff.png
+  alt: >-
+    A hunter in a torn coat aiming a drawn bow from behind a woodland lean-to
+    shelter.
+
+- id: search-camp
+  path: images/search-camp.png
+  alt: >-
+    A woodsman's axe and herb pouches resting on an oilcloth inside the lean-to
+    camp.
+
+- id: wolf-den
+  path: images/wolf-den.png
+  alt: >-
+    A grey wolf watching alertly from dense ferns beside a fallen tree trunk.
+
+- id: wolf-again
+  path: images/wolf-again.png
+  alt: >-
+    A snarling grey wolf prowling through the ferns, barring the woodland
+    path.
+
+- id: chapel-threshold
+  path: images/chapel-threshold.png
+  alt: >-
+    The collapsed stone floor of a ruined chapel falling into a dark crypt with
+    tilting flagstones.
+
 - id: chapel-altar
   path: images/chapel-altar.png
   alt: >-
     A roofless stone chapel overgrown with ivy; on a cracked altar, a small
     silver disc catches a shaft of light.
+
+- id: chapel-prayer
+  path: images/chapel-prayer.png
+  alt: >-
+    An adventurer kneeling in quiet prayer before the stone altar in the ruined
+    chapel.
+
+- id: barrow-door
+  path: images/barrow-door.png
+  alt: >-
+    A massive stone slab door sealed into a grassy barrow mound with serpent
+    runes and a serpent keyhole.
+
+- id: wight-awakens
+  path: images/wight-awakens.png
+  alt: >-
+    An undead wight warrior rising from a stone tomb bier with glowing helm
+    hollows and a drawn rusted blade.
+
+- id: loc-ashford
+  path: images/loc-ashford.png
+  alt: >-
+    The village of Ashford: thatched cottages, muddy cart ruts, and an old
+    stone well under an overcast sky, with the dark woods brooding in the
+    distance.
+
+- id: loc-forest-edge
+  path: images/loc-forest-edge.png
+  alt: >-
+    The edge of the forest: ancient oak trees towering over the end of the cart
+    track, with leaves swirling in the murmuring wind.
+
+- id: loc-hunters-camp
+  path: images/loc-hunters-camp.png
+  alt: >-
+    An abandoned hunters' camp in a pine clearing, with a branch lean-to and a
+    ring of blackened hearth stones.
+
+- id: loc-wolf-hollow
+  path: images/loc-wolf-hollow.png
+  alt: >-
+    A damp woodland hollow choked with ferns, where a massive fallen beech tree
+    and its tangled roots conceal gnawed bones.
+
+- id: loc-ruined-chapel
+  path: images/loc-ruined-chapel.png
+  alt: >-
+    The exterior of a ruined roofless stone chapel with crumbling gothic
+    windows, ivy-strangled archways, and a distant view of the altar inside.
+
+- id: loc-barrow-mound
+  path: images/loc-barrow-mound.png
+  alt: >-
+    A high grassy burial mound crowned with weathered standing megaliths, with
+    a rune-carved stone slab door set into the hillside.
+
+- id: loc-barrow-tomb
+  path: images/loc-barrow-tomb.png
+  alt: >-
+    The interior of a low stone crypt lit by an ethereal cold glow, where an
+    armored wight rests upon a stone bier and a sleeping girl lies in grave-cloths.
+

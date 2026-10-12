@@ -1,6 +1,7 @@
 id: arrival
 title: The Bell of Ashford
 trigger: on-enter
+illustration: arrival
 text: |
   A grey-haired woman in a mud-spattered apron hurries across the green
   towards you, the bell rope still swinging behind her.

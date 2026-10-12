@@ -4,6 +4,7 @@ title: Kneel at the Altar
 trigger: on-demand
 when:
   health: { atMost: 11 }
+illustration: chapel-prayer
 text: |
   The stillness of the ruined chapel invites you to rest. Rain drips through
   the ivy, and for a moment the woods are silent.

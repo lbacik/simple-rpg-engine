@@ -5,6 +5,7 @@ trigger: on-enter
 repeatable: true
 when:
   not: { defeated: wight-fight }
+illustration: wight-awakens
 text: |
   The figure on the bier sits up. Blue light burns in the hollows of its helm.
   "Who comes to steal my bride?" it rasps, and its rusted blade scrapes free

@@ -1655,6 +1655,8 @@ export type GameView =
       locationId: string;
       name: string;
       description: string;
+      /** Present only when the Location declares an Illustration. */
+      illustration?: IllustrationView;
       exits: ExitView[];
       onDemandScenes: OnDemandSceneView[];
       map: MapView;
@@ -1813,6 +1815,15 @@ export function view(
     locationId: location.id,
     name: location.name,
     description: location.description,
+    illustration:
+      location.illustration === undefined
+        ? undefined
+        : {
+            src: sceneIllustrationUrl(scenario.id, location.illustration),
+            width: location.illustration.width,
+            height: location.illustration.height,
+            alt: location.illustration.alt,
+          },
     exits: visibleExits(scenario, state),
     onDemandScenes: onDemandScenes(scenario, state),
     map: deriveMap(scenario, state, options),

@@ -5,6 +5,7 @@ trigger: on-enter
 repeatable: true
 when:
   not: { flag: barrow-open }
+illustration: barrow-door
 text: |
   The grey slab is fitted so closely into the mound that a knife blade would
   not pass between the stones. A serpent-shaped keyhole sits beneath a band

@@ -3,6 +3,7 @@ id: village-return
 title: Watched from a Doorway
 trigger: on-enter
 when: { visited: forest-edge }
+illustration: village-return
 text: |
   Brenna watches you from her doorway as you cross the green. She does not
   ask. Your face tells her there is no news yet.

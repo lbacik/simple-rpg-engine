@@ -59,6 +59,7 @@ export type CompiledLocation = {
   name: string;
   description: string;
   map?: { x: number; y: number };
+  illustration?: CompiledImageEntry;
   /** The Location's Scenes in the listed (on-enter evaluation) order. */
   scenes: CompiledScene[];
   connections: CompiledConnection[];
@@ -276,6 +277,10 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     name: parsed.name,
     description: parsed.description,
     map: parsed.map,
+    illustration:
+      parsed.illustration === undefined
+        ? undefined
+        : required(imageById.get(parsed.illustration), `image "${parsed.illustration}"`),
     scenes: [],
     connections: [],
   }));

@@ -4,6 +4,7 @@ description: |
   A clearing with a lean-to of branches and a ring of blackened stones. The
   hunters who built it have not been seen since spring.
 map: { x: 42, y: 20 }
+illustration: loc-hunters-camp
 scenes: [camp-standoff, search-camp]
 connections:
   - to: forest-edge

@@ -1,6 +1,7 @@
 id: wolf-den
 title: Eyes in the Ferns
 trigger: on-enter
+illustration: wolf-den
 text: |
   Something moves among the ferns. A grey wolf rises from beside the fallen
   beech, between you and the far side of the hollow.

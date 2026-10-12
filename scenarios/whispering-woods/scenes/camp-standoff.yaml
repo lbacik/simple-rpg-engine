@@ -7,6 +7,7 @@ when:
   all:
     - not: { defeated: camp-bandit }
     - not: { flag: bandit-gone }
+illustration: camp-standoff
 text: |
   A man in a torn army coat rises from behind the lean-to, bow half drawn.
   "That's close enough. Whatever you're after, it's mine now."

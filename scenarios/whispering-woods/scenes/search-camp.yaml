@@ -5,6 +5,7 @@ when:
   any:
     - { defeated: camp-bandit }
     - { flag: bandit-gone }
+illustration: search-camp
 text: |
   Under the lean-to, wrapped in oilcloth, lie the hunters' things: a
   long-hafted axe and a pouch of dried herbs.

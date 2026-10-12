@@ -8,6 +8,7 @@ when:
     - { fired: wolf-den }
     - not: { defeated: hollow-wolf }
     - not: { flag: wolf-evaded }
+illustration: wolf-again
 text: |
   The wolf still prowls by the fallen beech, watching you.
 choices:

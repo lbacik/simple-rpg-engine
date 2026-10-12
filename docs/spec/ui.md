@@ -46,13 +46,13 @@ The order within the column is always:
 - After a Choice, the result panel shows the Test (both dice, the modifier, the total, success or failure) when there was one, the Outcome narration and the state changes. A client-side **Continue** then shows the new position. Which Journal entries make up the panel, and when there is none, is defined in [playthrough-state.md](playthrough-state.md#result-panel); after a reload it may appear again.
 - The Scenario intro is shown the same way at the start of a Playthrough.
 
-### Scene illustration
+### Scene and location illustration
 
-- An Illustration sits directly below the Scene title and before the narration. It fills the width of the reading column and scales proportionally without cropping.
+- An Illustration sits directly below the Scene title or Location name and before the narration/description. It fills the width of the reading column and scales proportionally without cropping.
 - It is rendered as a plain `<img>` with `width` and `height` from the registry (so the layout does not shift), `alt` from the image catalog, and CSS `max-width: 100%; height: auto`. Its URL is the hashed asset route.
-- A Scene without an Illustration renders **no image element and no reserved space**.
+- A Scene or Location without an Illustration renders **no image element and no reserved space**.
 - If the image fails to load in the browser, the element is removed: no frame, no alt-text box, no retry. Play continues.
-- Location views, Encounters and Endings have no images.
+- Encounters and Endings have no images.
 
 ### Character and inventory panel
 

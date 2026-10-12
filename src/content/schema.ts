@@ -213,6 +213,7 @@ export const LocationSchema = z.strictObject({
       y: z.number().min(0).max(100),
     })
     .optional(),
+  illustration: referenceSchema.optional(),
   scenes: z.array(referenceSchema).default([]),
   connections: z.array(connectionSchema).default([]),
 });

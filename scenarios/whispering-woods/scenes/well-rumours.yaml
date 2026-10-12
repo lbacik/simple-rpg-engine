@@ -2,6 +2,7 @@ id: well-rumours
 title: Gossip at the Well
 trigger: on-demand
 when: { flag: quest-accepted }
+illustration: well-rumours
 text: |
   Two old men lean on the well, arguing in low voices about the barrow on the
   far side of the woods, and about the lord who was buried there "with his

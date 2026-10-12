@@ -1,7 +1,7 @@
-// Scene illustration in `view` (docs/spec/ui.md, scene illustration;
-// docs/spec/architecture.md, scenario assets): the active Scene's Illustration
-// is exposed as the asset URL with the registry width, height and alt. Scenes
-// without one carry no illustration, and no other view does.
+// Scene and location illustration in `view` (docs/spec/ui.md, scene and location
+// illustration; docs/spec/architecture.md, scenario assets): the active Scene or
+// Location's Illustration is exposed as the asset URL with the registry width, height
+// and alt. Entities without one carry no illustration.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,18 +52,52 @@ describe('scene illustration in view', () => {
 
   it('carries no illustration on a Scene without one', () => {
     const { scenario, state } = startWoods();
-    const gameView = view(scenario, state);
+    const withoutIllustration: Scenario = {
+      ...scenario,
+      scenesById: {
+        ...scenario.scenesById,
+        arrival: { ...scenario.scenesById['arrival']!, illustration: undefined },
+      },
+    };
+    const gameView = view(withoutIllustration, state);
     expect(gameView.kind).toBe('scene');
     if (gameView.kind !== 'scene') throw new Error('expected a Scene view');
     expect(gameView.sceneId).toBe('arrival');
     expect(gameView.illustration).toBeUndefined();
   });
 
-  it('carries no illustration on Location, Combat and Ending views', () => {
+  it('exposes the Ashford Location Illustration with the registry dimensions and catalog alt', () => {
     const { scenario, state: started } = startWoods();
+    const registered = scenario.imagesById['loc-ashford'];
+    expect(registered).toBeDefined();
     const location = view(scenario, { ...started, activeSceneId: null });
     expect(location.kind).toBe('location');
-    expect('illustration' in location).toBe(false);
+    if (location.kind !== 'location') throw new Error('expected a Location view');
+    expect(location.illustration).toEqual({
+      src: `/scenarios/whispering-woods/assets/${registered?.hash}/images/loc-ashford.png`,
+      width: 640,
+      height: 360,
+      alt: registered?.alt,
+    });
+  });
+
+  it('carries no illustration on a Location without one', () => {
+    const { scenario, state: started } = startWoods();
+    const withoutIllustration: Scenario = {
+      ...scenario,
+      locationsById: {
+        ...scenario.locationsById,
+        ashford: { ...scenario.locationsById['ashford']!, illustration: undefined },
+      },
+    };
+    const location = view(withoutIllustration, { ...started, activeSceneId: null });
+    expect(location.kind).toBe('location');
+    if (location.kind !== 'location') throw new Error('expected a Location view');
+    expect(location.illustration).toBeUndefined();
+  });
+
+  it('carries no illustration on Combat and Ending views', () => {
+    const { scenario, state: started } = startWoods();
     const combat = view(scenario, {
       ...started,
       activeSceneId: null,

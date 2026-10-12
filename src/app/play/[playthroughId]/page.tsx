@@ -907,6 +907,14 @@ export default async function PlayPage({
           {gameView.kind === 'location' ? (
             <>
               <h1>{gameView.name}</h1>
+              {gameView.illustration ? (
+                <SceneIllustration
+                  src={gameView.illustration.src}
+                  width={gameView.illustration.width}
+                  height={gameView.illustration.height}
+                  alt={gameView.illustration.alt}
+                />
+              ) : null}
               {/* Location description: rendered narration subset. */}
               <div dangerouslySetInnerHTML={{ __html: renderNarration(gameView.description, characterName) }} />
               {gameView.onDemandScenes.length > 0 ? (

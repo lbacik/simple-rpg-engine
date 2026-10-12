@@ -4,6 +4,7 @@ description: |
   The fields end at a wall of old oaks. Even without wind, the leaves murmur,
   and the murmur almost sounds like words.
 map: { x: 38, y: 50 }
+illustration: loc-forest-edge
 scenes: [whispers]
 connections:
   - to: ashford

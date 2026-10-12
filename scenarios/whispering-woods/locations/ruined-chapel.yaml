@@ -4,6 +4,7 @@ description: |
   Four broken walls and a sky for a roof. Ivy has swallowed the saints carved
   over the door, but the altar still stands.
 map: { x: 75, y: 38 }
+illustration: loc-ruined-chapel
 scenes: [chapel-threshold, chapel-altar, chapel-prayer]
 connections:
   - to: wolf-hollow

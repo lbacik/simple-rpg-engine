@@ -138,6 +138,7 @@ id: <id>
 name: <text>
 description: <narration>       # static; shown in the Location view
 map?: { x: 0-100, y: 0-100 }   # both keys; origin top-left, y down
+illustration?: <image-id>
 scenes?: [<scene-id>]          # ordered; on-enter and on-demand Scenes of this Location
 connections?:
   - to: <location-id>
@@ -301,9 +302,9 @@ At most one Equipment item per slot among a Template's items.
 
 ## Images
 
-Only **Scenes** have Illustrations, and an Illustration is always optional.
+Both **Locations** and **Scenes** may have Illustrations, and an Illustration is always optional.
 
-- Images are **package-local files** declared in `images` catalogs and referenced by ID (`illustration: <image-id>`). Story content never contains image paths. Several Scenes may share one image.
+- Images are **package-local files** declared in `images` catalogs and referenced by ID (`illustration: <image-id>`). Story content never contains image paths. Several Scenes or Locations may share one image.
 - A path may be declared only once and follows the manifest path rules.
 - **Formats**: PNG, JPEG and WebP, identified by a lowercase extension (`.png`, `.jpg`/`.jpeg`, `.webp`). The file signature must match the extension. SVG, GIF and AVIF are not supported. Animation is neither detected nor forbidden.
 - **Limits**: file size ≤ 2 MiB, each side ≤ 4096 px. No minimum size and no required aspect ratio.
