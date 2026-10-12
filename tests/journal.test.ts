@@ -4,6 +4,7 @@
 // Markdown subset on the stored text, and batches slice the append-only
 // journal_entries table newest first by sequence cursor.
 
+import { sql } from 'kysely';
 import { describe, expect, it } from 'vitest';
 import {
   JOURNAL_BATCH_SIZE,
@@ -14,7 +15,14 @@ import {
   renderJournalEntries,
   renderJournalEntry,
 } from '../src/app/lib/journal';
-import { migrateDatabase, openDatabase, PlaythroughStore } from '../src/persistence/index';
+import { en } from '../src/i18n/en';
+import { pl } from '../src/i18n/pl';
+import {
+  MIGRATIONS,
+  migrateDatabase,
+  openDatabase,
+  PlaythroughStore,
+} from '../src/persistence/index';
 import { STATE_VERSION, type PlaythroughState } from '../src/engine/state';
 
 function makeState(): PlaythroughState {
@@ -50,42 +58,61 @@ describe('renderJournalEntry', () => {
 
   it('renders the intro with the Markdown subset on the stored text', () => {
     const rendered = renderJournalEntry(
-      'intro',
-      { text: 'You wake, **Robin**-less stranger.' },
+      { type: 'intro', lang: 'en', payload: { text: 'You wake, **Robin**-less stranger.' } },
+      en,
       name,
     );
     expect(rendered.label).toBe('Intro');
     expect(rendered.html).toContain('<strong>');
     expect(rendered.html).toContain('<p>');
+    expect(rendered.html).toContain('lang="en"');
   });
 
   it('renders Scene narration with the Markdown subset', () => {
-    const rendered = renderJournalEntry('scene', { text: 'The *mist* parts.' }, name);
+    const rendered = renderJournalEntry(
+      { type: 'scene', lang: 'en', payload: { sceneId: 'mist', text: 'The *mist* parts.' } },
+      en,
+      name,
+    );
     expect(rendered.label).toBe('Scene');
     expect(rendered.html).toContain('<em>mist</em>');
+    expect(rendered.html).toContain('lang="en"');
   });
 
-  it('renders the Choice taken as plain text', () => {
-    const rendered = renderJournalEntry('choice', { text: 'Push on <b>now</b>' }, name);
+  it('renders the Choice wording verbatim with the catalogue label only', () => {
+    const rendered = renderJournalEntry(
+      {
+        type: 'choice',
+        lang: 'en',
+        payload: { sceneId: 's', choiceId: 'c', text: 'Push on <b>now</b>' },
+      },
+      en,
+      name,
+    );
     expect(rendered.label).toBe('Choice taken');
-    expect(rendered.html).toContain('Chose:');
     expect(rendered.html).toContain('&lt;b&gt;now&lt;/b&gt;');
     expect(rendered.html).not.toContain('<b>');
+    expect(rendered.html).not.toContain('Chose:');
+    expect(rendered.html).toContain('lang="en"');
   });
 
   it('renders the Test with dice, modifier, total and result', () => {
     const rendered = renderJournalEntry(
-      'test',
       {
-        text: 'Might, Ordinary 9: rolled 3 and 4, modifier +2, total 9 — success.',
-        attribute: 'might',
-        difficulty: 'ordinary',
-        die1: 3,
-        die2: 4,
-        modifier: 2,
-        total: 9,
-        success: true,
+        type: 'test',
+        lang: 'en',
+        payload: {
+          text: 'Might, Ordinary 9: rolled 3 and 4, modifier +2, total 9 — success.',
+          attribute: 'might',
+          difficulty: 'ordinary',
+          die1: 3,
+          die2: 4,
+          modifier: 2,
+          total: 9,
+          success: true,
+        },
       },
+      en,
       name,
     );
     expect(rendered.label).toBe('Test');
@@ -95,31 +122,67 @@ describe('renderJournalEntry', () => {
   });
 
   it('renders Outcome narration with the Markdown subset', () => {
-    const rendered = renderJournalEntry('outcome', { text: 'You **win** the day.' }, name);
+    const rendered = renderJournalEntry(
+      { type: 'outcome', lang: 'en', payload: { text: 'You **win** the day.' } },
+      en,
+      name,
+    );
     expect(rendered.label).toBe('Outcome');
     expect(rendered.html).toContain('<strong>win</strong>');
+    expect(rendered.html).toContain('lang="en"');
   });
 
   it('renders state changes as plain text', () => {
-    const rendered = renderJournalEntry('state-change', { text: 'received: rope ×2' }, name);
+    const rendered = renderJournalEntry(
+      { type: 'state-change', lang: 'en', payload: { text: 'received: rope ×2' } },
+      en,
+      name,
+    );
     expect(rendered.label).toBe('State change');
     expect(rendered.html).toContain('received: rope ×2');
   });
 
-  it('renders travel as plain text', () => {
+  it('renders structured travel through the catalogue with the name in its lang', () => {
     const rendered = renderJournalEntry(
-      'travel',
-      { text: 'Travelled to Dark Grove.', to: 'grove' },
+      { type: 'travel', lang: 'en', payload: { to: 'grove', name: 'Dark Grove' } },
+      en,
       name,
     );
     expect(rendered.label).toBe('Travel');
-    expect(rendered.html).toContain('Travelled to Dark Grove.');
+    expect(rendered.html).toContain('Travelled to');
+    expect(rendered.html).toContain('<span lang="en">Dark Grove</span>');
+    const polish = renderJournalEntry(
+      { type: 'travel', lang: 'pl', payload: { to: 'grove', name: 'Mroczny Gaj' } },
+      pl,
+      name,
+    );
+    expect(polish.label).toBe('Podróż');
+    expect(polish.html).toContain('Podróż:');
+    expect(polish.html).toContain('<span lang="pl">Mroczny Gaj</span>');
+  });
+
+  it('renders legacy travel rows verbatim in English with only the label translated', () => {
+    for (const catalogue of [en, pl]) {
+      const rendered = renderJournalEntry(
+        { type: 'travel', lang: 'en', payload: { text: 'Travelled to Dark Grove.', to: 'grove' } },
+        catalogue,
+        name,
+      );
+      expect(rendered.html).toContain('Travelled to Dark Grove.');
+    }
+    expect(
+      renderJournalEntry(
+        { type: 'travel', lang: 'en', payload: { text: 'Travelled to Dark Grove.', to: 'grove' } },
+        pl,
+        name,
+      ).label,
+    ).toBe('Podróż');
   });
 
   it('renders Combat start narration with the Markdown subset', () => {
     const rendered = renderJournalEntry(
-      'combat-start',
-      { text: 'A **wolf** lunges from the *mist*!' },
+      { type: 'combat-start', lang: 'en', payload: { text: 'A **wolf** lunges from the *mist*!' } },
+      en,
       name,
     );
     expect(rendered.label).toBe('Combat start');
@@ -129,8 +192,12 @@ describe('renderJournalEntry', () => {
 
   it('renders a Combat round as plain text', () => {
     const rendered = renderJournalEntry(
-      'combat-round',
-      { text: 'Round 1: attacked for 3 damage, enemy missed. Range: near.' },
+      {
+        type: 'combat-round',
+        lang: 'en',
+        payload: { text: 'Round 1: attacked for 3 damage, enemy missed. Range: near.' },
+      },
+      en,
       name,
     );
     expect(rendered.label).toBe('Combat round');
@@ -138,15 +205,19 @@ describe('renderJournalEntry', () => {
   });
 
   it('renders Combat end as plain text', () => {
-    const rendered = renderJournalEntry('combat-end', { text: 'Victory! The wolf falls.' }, name);
+    const rendered = renderJournalEntry(
+      { type: 'combat-end', lang: 'en', payload: { text: 'Victory! The wolf falls.' } },
+      en,
+      name,
+    );
     expect(rendered.label).toBe('Combat end');
     expect(rendered.html).toContain('Victory! The wolf falls.');
   });
 
   it('renders the Enemy-defeated notice as plain text', () => {
     const rendered = renderJournalEntry(
-      'enemy-defeated',
-      { text: 'The wolf is defeated.' },
+      { type: 'enemy-defeated', lang: 'en', payload: { text: 'The wolf is defeated.' } },
+      en,
       name,
     );
     expect(rendered.label).toBe('Enemy defeated');
@@ -159,32 +230,129 @@ describe('renderJournalEntry', () => {
       'Unequipped Hunter’s Cloak.',
       'Used Herbs, restored 3 Health.',
     ]) {
-      const rendered = renderJournalEntry('inventory', { text }, name);
+      const rendered = renderJournalEntry({ type: 'inventory', lang: 'en', payload: { text } }, en, name);
       expect(rendered.label).toBe('Inventory');
       expect(rendered.html).toContain(text.split(',')[0] ?? text);
     }
   });
 
-  it('renders the Ending with kind, title and Markdown narration', () => {
+  it('renders the Ending kind from the catalogue with title and Markdown narration', () => {
     const rendered = renderJournalEntry(
-      'ending',
-      { kind: 'victory', title: 'Dawn Breaks', text: 'The **sun** rises, Robin.' },
+      {
+        type: 'ending',
+        lang: 'en',
+        payload: { endingId: 'dawn', kind: 'victory', title: 'Dawn Breaks', text: 'The **sun** rises, Robin.' },
+      },
+      en,
       name,
     );
     expect(rendered.label).toBe('Ending');
     expect(rendered.html).toContain('Victory');
     expect(rendered.html).toContain('Dawn Breaks');
     expect(rendered.html).toContain('<strong>sun</strong>');
+    expect(rendered.html).toContain('lang="en"');
+    const polish = renderJournalEntry(
+      {
+        type: 'ending',
+        lang: 'en',
+        payload: { endingId: 'dawn', kind: 'defeat', title: 'Zmierzch', text: 'Koniec.' },
+      },
+      pl,
+      name,
+    );
+    expect(polish.label).toBe('Zakończenie');
+    expect(polish.html).toContain('Porażka');
+    expect(polish.html).not.toContain('Defeat');
   });
 
   it('keeps a markup-like character name literal in narration entries', () => {
-    const rendered = renderJournalEntry('scene', { text: 'Hail, **boss**!' }, '**boss**');
+    const rendered = renderJournalEntry(
+      { type: 'scene', lang: 'en', payload: { sceneId: 's', text: 'Hail, **boss**!' } },
+      en,
+      '**boss**',
+    );
     // The name stays literal: its asterisks never form emphasis.
-    expect(rendered.html).toBe('<p>Hail, **boss**!</p>');
+    expect(rendered.html).toBe('<div lang="en"><p>Hail, **boss**!</p></div>');
   });
 
   it('labels unknown types with the raw type', () => {
-    expect(journalEntryLabel('mystery')).toBe('mystery');
+    expect(journalEntryLabel('mystery', en)).toBe('mystery');
+    expect(journalEntryLabel('mystery', pl)).toBe('mystery');
+  });
+
+  it('takes every type label from the catalogue', () => {
+    expect(journalEntryLabel('travel', pl)).toBe('Podróż');
+    expect(journalEntryLabel('intro', pl)).toBe('Wstęp');
+    expect(journalEntryLabel('ending', pl)).toBe('Zakończenie');
+  });
+});
+
+describe('legacy rows seeded through the persistence port', () => {
+  it('render verbatim in English with a catalogue type label', async () => {
+    const db = openDatabase(':memory:');
+    try {
+      await migrateDatabase(db);
+      const store = new PlaythroughStore(db);
+      await store.create(
+        {
+          id: 'pt-legacy',
+          sessionId: 'hash-1',
+          scenarioId: 'meadow',
+          scenarioVersion: '1.0.0',
+          contentHash: 'abc',
+          status: 'active',
+          step: 1,
+          state: makeState(),
+        },
+        [],
+      );
+      // Rows as stored before Interface Languages existed: English text, no
+      // event data, tagged `en` by the migration.
+      await store.appendJournal('pt-legacy', [
+        { step: 0, type: 'intro', lang: 'en', payload: { text: 'You wake in the **grass**.' } },
+        {
+          step: 1,
+          type: 'travel',
+          lang: 'en',
+          payload: { text: 'Travelled to Dark Grove.', to: 'grove' },
+        },
+      ]);
+      const entries = await store.listJournal('pt-legacy');
+      expect(entries.map((entry) => entry.lang)).toEqual(['en', 'en']);
+      const rendered = renderJournalEntries(entries, pl, 'Robin');
+      expect(rendered[0]?.label).toBe('Wstęp');
+      expect(rendered[0]?.html).toContain('You wake in the');
+      expect(rendered[0]?.html).toContain('<strong>grass</strong>');
+      expect(rendered[1]?.label).toBe('Podróż');
+      expect(rendered[1]?.html).toContain('Travelled to Dark Grove.');
+    } finally {
+      await db.destroy();
+    }
+  });
+});
+
+describe('journal lang migration', () => {
+  it('tags rows stored before Interface Languages existed as English', async () => {
+    const db = openDatabase(':memory:');
+    try {
+      await MIGRATIONS['001_init'].up(db);
+      // A legacy row, written while journal_entries had no lang column.
+      await sql`INSERT INTO journal_entries (playthrough_id, seq, step, type, payload, created_at)
+        VALUES ('pt-old', 1, 0, 'intro', '{"text":"You wake."}', '2026-01-01T00:00:00.000Z')`.execute(db);
+      await MIGRATIONS['002_journal_lang'].up(db);
+      const rows = await db.selectFrom('journal_entries').selectAll().execute();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.lang).toBe('en');
+      // New rows record the language they were presented in.
+      const store = new PlaythroughStore(db);
+      await store.appendJournal('pt-old', [
+        { step: 1, type: 'travel', lang: 'pl', payload: { to: 'grove', name: 'Gaj' } },
+      ]);
+      const entries = await store.listJournal('pt-old');
+      expect(entries.map((entry) => entry.lang)).toEqual(['en', 'pl']);
+    } finally {
+      await db.destroy();
+    }
   });
 });
 
@@ -211,9 +379,10 @@ describe('journal cursor helpers', () => {
   it('renders a batch newest first with labels and steps', () => {
     const rendered = renderJournalEntries(
       [
-        { seq: 2, step: 1, type: 'travel', payload: { text: 'Travelled on.' } },
-        { seq: 1, step: 0, type: 'intro', payload: { text: 'You wake.' } },
+        { seq: 2, step: 1, type: 'travel', lang: 'en', payload: { text: 'Travelled on.' } },
+        { seq: 1, step: 0, type: 'intro', lang: 'en', payload: { text: 'You wake.' } },
       ],
+      en,
       'Robin',
     );
     expect(rendered.map((entry) => entry.seq)).toEqual([2, 1]);
@@ -246,6 +415,7 @@ describe('journal cursor batches in the store', () => {
       Array.from({ length: count }, (_, index) => ({
         step: index,
         type: index % 2 === 0 ? 'scene' : 'travel',
+        lang: 'en',
         payload: { text: `entry ${index + 1}` },
       })),
     );
@@ -344,8 +514,8 @@ describe('journal cursor batches in the store', () => {
       expect(first.nextCursor).toBe(4);
 
       await store.appendJournal('pt-journal', [
-        { step: 8, type: 'travel', payload: { text: 'entry 9' } },
-        { step: 9, type: 'travel', payload: { text: 'entry 10' } },
+        { step: 8, type: 'travel', lang: 'en', payload: { text: 'entry 9' } },
+        { step: 9, type: 'travel', lang: 'en', payload: { text: 'entry 10' } },
       ]);
 
       const older = await store.listJournalBatch('pt-journal', {

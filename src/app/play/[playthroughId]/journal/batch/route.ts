@@ -15,6 +15,8 @@ import {
   renderJournalEntries,
   type JournalBatchResponse,
 } from '@/app/lib/journal';
+import { getCatalogue } from '@/i18n/index';
+import { getInterfaceLanguage } from '@/app/lib/language';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,8 +44,9 @@ export async function GET(
     limit: JOURNAL_BATCH_SIZE,
     beforeSeq: before,
   });
+  const catalogue = getCatalogue(await getInterfaceLanguage());
   const body: JournalBatchResponse = {
-    entries: renderJournalEntries(batch.entries, playthrough.state.character.name),
+    entries: renderJournalEntries(batch.entries, catalogue, playthrough.state.character.name),
     nextCursor: batch.nextCursor ?? null,
   };
   return Response.json(body);

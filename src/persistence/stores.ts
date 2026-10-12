@@ -24,6 +24,8 @@ export type StoredJournalEntry = {
   seq: number;
   step: number;
   type: string;
+  /** The language of the Scenario text in effect when the entry was presented. */
+  lang: string;
   payload: unknown;
   createdAt: string;
 };
@@ -53,6 +55,7 @@ export type NewPlaythrough = {
 export type NewJournalInput = {
   step: number;
   type: string;
+  lang: string;
   payload: unknown;
 };
 
@@ -78,6 +81,7 @@ function toJournalEntry(row: Database['journal_entries']): StoredJournalEntry {
     seq: row.seq,
     step: row.step,
     type: row.type,
+    lang: row.lang,
     payload: JSON.parse(row.payload),
     createdAt: row.created_at,
   };
@@ -149,6 +153,7 @@ export class PlaythroughStore {
           seq,
           step: entry.step,
           type: entry.type,
+          lang: entry.lang,
           payload: JSON.stringify(entry.payload),
           created_at: new Date().toISOString(),
         })

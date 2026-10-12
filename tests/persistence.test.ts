@@ -61,7 +61,7 @@ describe('persistence ports', () => {
           step: 0,
           state,
         },
-        [{ step: 0, type: 'intro', payload: { text: 'You wake.' } }],
+        [{ step: 0, type: 'intro', lang: 'en', payload: { text: 'You wake.' } }],
       );
       expect(created.state).toEqual(state);
 
@@ -75,7 +75,7 @@ describe('persistence ports', () => {
       expect(await playthroughs.listBySession('other')).toEqual([]);
 
       await playthroughs.appendJournal('pt-1', [
-        { step: 0, type: 'travel', payload: { to: 'glade' } },
+        { step: 0, type: 'travel', lang: 'en', payload: { to: 'glade' } },
       ]);
       const journal = await playthroughs.listJournal('pt-1');
       expect(journal.map((e) => [e.seq, e.type])).toEqual([

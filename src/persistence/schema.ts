@@ -21,6 +21,12 @@ export type JournalEntryRow = {
   seq: number;
   step: number;
   type: string;
+  /**
+   * The language of the Scenario text in effect when the entry was presented
+   * (docs/spec/playthrough-state.md, journal). Rows stored before Interface
+   * Languages existed hold English text and were tagged `en` by migration 002.
+   */
+  lang: string;
   /** Entry payload JSON, stored as TEXT. */
   payload: string;
   created_at: string;

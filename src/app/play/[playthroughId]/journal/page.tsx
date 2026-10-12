@@ -8,6 +8,8 @@ import {
   parseJournalCursor,
   renderJournalEntries,
 } from '@/app/lib/journal';
+import { getCatalogue } from '@/i18n/index';
+import { getInterfaceLanguage } from '@/app/lib/language';
 import { JournalEntries } from './journal-entries';
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +48,8 @@ export default async function JournalPage({
     beforeSeq: before,
   });
   const characterName = playthrough.state.character.name;
-  const rendered = renderJournalEntries(batch.entries, characterName);
+  const catalogue = getCatalogue(await getInterfaceLanguage());
+  const rendered = renderJournalEntries(batch.entries, catalogue, characterName);
 
   return (
     <main>

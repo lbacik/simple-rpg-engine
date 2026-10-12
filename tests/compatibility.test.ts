@@ -265,7 +265,7 @@ describe('executeTurn with changed content', () => {
           step: state.step,
           state,
         },
-        [{ step: 0, type: 'intro', payload: { text: 'You wake at the crossroads.' } }],
+        [{ step: 0, type: 'intro', lang: 'en', payload: { text: 'You wake at the crossroads.' } }],
       );
       const load = (id: string): Scenario | undefined =>
         id === scenario.id ? scenario : undefined;

@@ -101,34 +101,51 @@ export type CombatAction = 'advance' | 'attack' | 'defend' | 'fall-back' | 'esca
 
 export type CombatRange = 'near' | 'far';
 
-/** New Journal entries produced by one engine step. Stored text as presented. */
+/**
+ * New Journal entries produced by one engine step.
+ * (docs/spec/playthrough-state.md, journal; ADR 0004).
+ *
+ * Every entry carries `lang`: the language of the Scenario text in effect
+ * when the entry was presented (the Scenario's Base Language until
+ * Translations are shown). Scenario text is stored as presented; the travel
+ * wording and the Ending's kind come from the Interface Text catalogue when
+ * the entry is read, so the travel entry stores the target Location's name
+ * and id instead of a sentence.
+ */
 export type NewJournalEntry =
   | {
       type: 'intro';
+      lang: string;
       text: string;
     }
   | {
       type: 'travel';
-      text: string;
+      lang: string;
       to: string;
+      /** The target Location's name as presented. */
+      name: string;
     }
   | {
       type: 'inventory';
+      lang: string;
       text: string;
     }
   | {
       type: 'scene';
+      lang: string;
       sceneId: string;
       text: string;
     }
   | {
       type: 'choice';
+      lang: string;
       sceneId: string;
       choiceId: string;
       text: string;
     }
   | {
       type: 'test';
+      lang: string;
       /** The text as presented: both dice, the modifier, the total and the result. */
       text: string;
       attribute: AttributeName;
@@ -142,14 +159,17 @@ export type NewJournalEntry =
     }
   | {
       type: 'outcome';
+      lang: string;
       text: string;
     }
   | {
       type: 'state-change';
+      lang: string;
       text: string;
     }
   | {
       type: 'ending';
+      lang: string;
       endingId: string;
       kind: 'victory' | 'defeat';
       title: string;
@@ -157,11 +177,13 @@ export type NewJournalEntry =
     }
   | {
       type: 'combat-start';
+      lang: string;
       encounterId: string;
       text: string;
     }
   | {
       type: 'combat-round';
+      lang: string;
       encounterId: string;
       /** The round this turn resolved: the Combat's round before it incremented. */
       round: number;
@@ -179,11 +201,13 @@ export type NewJournalEntry =
     }
   | {
       type: 'combat-end';
+      lang: string;
       encounterId: string;
       text: string;
     }
   | {
       type: 'enemy-defeated';
+      lang: string;
       encounterId: string;
       text: string;
     };
@@ -282,7 +306,7 @@ export function startPlaythrough(
   };
 
   const journal: NewJournalEntry[] = scenario.intro
-    ? [{ type: 'intro', text: substituteName(scenario.intro, trimmed) }]
+    ? [{ type: 'intro', lang: scenario.language, text: substituteName(scenario.intro, trimmed) }]
     : [];
   // Entering the starting Location (no travel entry at start) may activate
   // its opening on-enter Scene. The Scene counts as fired at activation, so
@@ -483,6 +507,7 @@ function activateScene(
     journal: [
       {
         type: 'scene',
+        lang: scenario.language,
         sceneId: scene.id,
         text: substituteName(scene.text, state.character.name),
       },
@@ -512,7 +537,7 @@ function applyTravel(
     ok: true,
     state: entered.state,
     journal: [
-      { type: 'travel', text: `Travelled to ${target.name}.`, to: target.id },
+      { type: 'travel', lang: scenario.language, to: target.id, name: target.name },
       ...entered.journal,
     ],
   };
@@ -553,6 +578,7 @@ function endingEntry(
 ): NewJournalEntry {
   return {
     type: 'ending',
+    lang: scenario.language,
     endingId: ending.id,
     kind: ending.kind,
     title: ending.title,
@@ -583,6 +609,7 @@ function resolveTest(
   return {
     entry: {
       type: 'test',
+      lang: scenario.language,
       text: `${testLabel(test.attribute, test.difficulty)}: rolled ${die1} and ${die2}, modifier ${signed}, total ${total} — ${success ? 'success' : 'failure'}.`,
       attribute: test.attribute,
       difficulty: test.difficulty,
@@ -634,7 +661,13 @@ function applyChoose(
     };
   }
   const journal: NewJournalEntry[] = [
-    { type: 'choice', sceneId: scene.id, choiceId: choice.id, text: choice.text },
+    {
+      type: 'choice',
+      lang: scenario.language,
+      sceneId: scene.id,
+      choiceId: choice.id,
+      text: choice.text,
+    },
   ];
   if (test !== undefined) {
     journal.push(test.entry);
@@ -739,7 +772,11 @@ function applyOutcome(
   let next = state;
   const journal: NewJournalEntry[] = [];
   if (outcome.text !== undefined) {
-    journal.push({ type: 'outcome', text: substituteName(outcome.text, state.character.name) });
+    journal.push({
+      type: 'outcome',
+      lang: scenario.language,
+      text: substituteName(outcome.text, state.character.name),
+    });
   }
   for (const effect of outcome.effects) {
     if ('damage' in effect && next.character.health - effect.damage <= 0) {
@@ -747,7 +784,11 @@ function applyOutcome(
         ...next,
         character: { ...next.character, health: 0 },
       };
-      journal.push({ type: 'state-change', text: `−${effect.damage} Health` });
+      journal.push({
+        type: 'state-change',
+        lang: scenario.language,
+        text: `−${effect.damage} Health`,
+      });
       next = {
         ...next,
         status: 'ended',
@@ -806,14 +847,14 @@ function applyEffect(
     const flag = effect['set-flag'];
     return {
       state: { ...state, flags: pushUnique(state.flags, flag) },
-      entry: { type: 'state-change', text: `flag set: ${flag}` },
+      entry: { type: 'state-change', lang: scenario.language, text: `flag set: ${flag}` },
     };
   }
   if ('clear-flag' in effect) {
     const flag = effect['clear-flag'];
     return {
       state: { ...state, flags: state.flags.filter((held) => held !== flag) },
-      entry: { type: 'state-change', text: `flag cleared: ${flag}` },
+      entry: { type: 'state-change', lang: scenario.language, text: `flag cleared: ${flag}` },
     };
   }
   if ('give-item' in effect) {
@@ -826,6 +867,7 @@ function applyEffect(
       },
       entry: {
         type: 'state-change',
+        lang: scenario.language,
         text: quantity === 1 ? `received: ${name}` : `received: ${name} ×${quantity}`,
       },
     };
@@ -862,6 +904,7 @@ function applyEffect(
       state: { ...state, inventory, equipment },
       entry: {
         type: 'state-change',
+        lang: scenario.language,
         text: actual === 1 ? `lost: ${name}` : `lost: ${name} ×${actual}`,
       },
     };
@@ -877,7 +920,7 @@ function applyEffect(
         ...state,
         character: { ...state.character, health: state.character.health + restored },
       },
-      entry: { type: 'state-change', text: `+${restored} Health` },
+      entry: { type: 'state-change', lang: scenario.language, text: `+${restored} Health` },
     };
   }
   if ('damage' in effect) {
@@ -888,7 +931,7 @@ function applyEffect(
         ...state,
         character: { ...state.character, health: state.character.health - effect.damage },
       },
-      entry: { type: 'state-change', text: `−${effect.damage} Health` },
+      entry: { type: 'state-change', lang: scenario.language, text: `−${effect.damage} Health` },
     };
   }
   const target = effect.reveal;
@@ -899,7 +942,7 @@ function applyEffect(
   }
   return {
     state: { ...state, revealed: pushUnique(state.revealed, target) },
-    entry: { type: 'state-change', text: `revealed: ${name}` },
+    entry: { type: 'state-change', lang: scenario.language, text: `revealed: ${name}` },
   };
 }
 
@@ -934,7 +977,7 @@ function applyEquip(
       step: state.step + 1,
       equipment: { ...state.equipment, [item.slot]: itemId },
     },
-    journal: [{ type: 'inventory', text: `Equipped ${item.name}.` }],
+    journal: [{ type: 'inventory', lang: scenario.language, text: `Equipped ${item.name}.` }],
   };
 }
 
@@ -963,7 +1006,7 @@ function applyUnequip(
   return {
     ok: true,
     state: { ...state, step: state.step + 1, equipment },
-    journal: [{ type: 'inventory', text: `Unequipped ${name}.` }],
+    journal: [{ type: 'inventory', lang: scenario.language, text: `Unequipped ${name}.` }],
   };
 }
 
@@ -1002,7 +1045,9 @@ function applyUseItem(
       inventory,
       equipment,
     },
-    journal: [{ type: 'inventory', text: `Used ${item.name}, restored ${restored} Health.` }],
+    journal: [
+      { type: 'inventory', lang: scenario.language, text: `Used ${item.name}, restored ${restored} Health.` },
+    ],
   };
 }
 
@@ -1044,6 +1089,7 @@ function startCombat(
     journal: [
       {
         type: 'combat-start',
+        lang: scenario.language,
         encounterId: encounter.id,
         text: substituteName(encounter.text, state.character.name),
       },
@@ -1169,6 +1215,7 @@ function finishVictory(
 ): ApplyActionResult {
   const end: NewJournalEntry = {
     type: 'combat-end',
+    lang: scenario.language,
     encounterId: encounter.id,
     text: `${encounter.enemy.name} is defeated.`,
   };
@@ -1190,6 +1237,7 @@ function finishVictory(
   } else {
     journal.push({
       type: 'enemy-defeated',
+      lang: scenario.language,
       encounterId: encounter.id,
       text: `The ${encounter.enemy.name} is defeated.`,
     });
@@ -1215,6 +1263,7 @@ function finishEscape(
 ): ApplyActionResult {
   const end: NewJournalEntry = {
     type: 'combat-end',
+    lang: scenario.language,
     encounterId: encounter.id,
     text: `You escape from ${encounter.enemy.name}.`,
   };
@@ -1349,6 +1398,7 @@ function applyCombat(
         rangeAfter: CombatRange,
       ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
         type: 'combat-round',
+        lang: scenario.language,
         encounterId: encounter.id,
         round: combat.round,
         action: combatAction,
@@ -1410,6 +1460,7 @@ function applyCombat(
     rangeAfter: CombatRange,
   ): Extract<NewJournalEntry, { type: 'combat-round' }> => ({
     type: 'combat-round',
+    lang: scenario.language,
     encounterId: encounter.id,
     round: combat.round,
     action: combatAction,

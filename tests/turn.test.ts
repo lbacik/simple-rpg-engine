@@ -43,7 +43,10 @@ async function setupPlaythrough(
   };
   await new PlaythroughStore(db).create(
     input,
-    started.journal.map((entry) => ({ step: 0, type: entry.type, payload: entry })),
+    started.journal.map((entry) => {
+      const { type, lang, ...payload } = entry;
+      return { step: 0, type, lang, payload };
+    }),
   );
   return { db, playthroughId: id };
 }
