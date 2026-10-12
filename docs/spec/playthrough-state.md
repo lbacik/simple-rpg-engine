@@ -6,7 +6,7 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 
 - The Playthrough's **current state snapshot is the source of truth**. Each successful player action replaces it atomically.
 - Alongside it, the **Journal** is an append-only, read-only record of what was presented. It never drives play. Event sourcing with replay was rejected because replay depends on unchanged Scenario content.
-- Stored state refers to Scenario content **only by ID** (Location, Scene, (Scene, Choice), Encounter, item, slot, Flag, Character Template, Ending). This keeps the compatibility check of [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md) mechanical.
+- Stored state refers to Scenario content **only by ID** (Location, Scene, (Scene, Choice), Encounter, (Encounter, participant), item, slot, Flag, Character Template, Ending). This keeps the compatibility check of [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md) mechanical.
 
 ## Lifecycle
 
@@ -29,7 +29,7 @@ The domain state of a Playthrough and the semantics of every player action. Stor
 | Scenes and Choices | set of fired Scene ids; set of taken `once` Choices as (Scene id, Choice id) | on-demand Scenes on offer; visible Choices |
 | Flags | set of Flags currently true | |
 | Encounters | per Encounter id, created on its first `start-combat`: **Damage taken per participant id**, with an entry, 0 included, for every participant the Encounter had at creation | each participant's remaining Health (its Enemy's maximum − taken) and defeated (remaining ≤ 0); the Encounter is defeated when every participant is. An Encounter without a record is at full Health, and so is a participant without an entry (one added to the content later). |
-| Active Combat | Encounter id, round number, and for each participant taking part (surviving when the Combat started, not defeated since): the Range to it, its committed Intent (the Intent kind only), whether it is prepared, and the last round of its Wary, if any | each participant's Health (from the Encounter record); each Intent's Speed, Damage and what a Prepare prepares (from the rules and the Enemy); the Round's order; available Character actions with their Speed and targets |
+| Active Combat | Encounter id, round number; the participant ids that started this Combat; the participant-id tie-break order captured when the current Round's Intents were selected; and for each surviving participant: the Range to it, its committed Intent (the Intent kind only), whether it is prepared, and the last round of its Wary, if any | arena membership from the starting ids; each participant's Health and defeated state (from the Encounter record); each Intent's Speed, Damage and what a Prepare prepares (from the rules and the Enemy); the Round's order using the stored tie-break order; available Character actions with their Speed and targets |
 | Journal | append-only entries: Scenario text as presented, engine events, and the language of each | the result panel; the intro display; all Interface Text in it |
 
 Notes:
@@ -37,7 +37,8 @@ Notes:
 - **Equipment is a pointer, not a copy.** An equipped item counts towards its held quantity. Removing one of two copies leaves it equipped; removing the last copy unequips it first.
 - **Participant identity is (Encounter id, participant id).** Two Encounters with the same Enemy are independent, and so are two participants of the same Enemy kind in one Encounter. Storing only Damage taken makes "defeated" impossible to desynchronise, for a participant and for the Encounter.
 - **Round-scoped effects are never stored** (for example Guarded, and the once-per-Round counterattack). A whole Round resolves in one step, so an effect that expires at the end of its own Round never outlives it. The committed Intents, prepared states and effects lasting into the next Round are stored, so reading or reloading never re-selects or changes them.
-- **Only rule state is stored.** An Intent is stored as its kind (Strike, Close in, Prepare, Heavy attack); its Speed, Damage and wording are derived, and no display text enters the state. A participant leaves the Combat's entries when it is defeated; its Damage taken stays in the Encounter record.
+- **No display text is stored in Combat state.** An Intent is stored as its kind (Strike, Close in, Prepare, Heavy attack); its Speed, Damage and wording are derived. A defeated participant loses its Range, Intent, prepared state and Wary, but its id remains in this Combat's starting membership until the Combat ends. Its Damage taken stays in the Encounter record. The engine projects its defeated arena lane from these ids and wounds, never from the Journal.
+- **Round tie-break order is stored by participant id.** It lists the surviving participants in the content order used to select this Round's Intents. Reading, reloading, a rejected action or a content reorder does not replace it. Cleanup captures the current content order for the next Round's surviving participants before selecting their Intents. Speed and Agility remain derived, and the complete action order is fixed at commitment; the snapshot preserves participant ties, not old Enemy statistics.
 - **An Encounter record lists every participant from its creation**, so a participant added to the content later is recognisable as new ([Content compatibility](architecture.md#content-compatibility)). A participant with 0 Damage taken is at full Health.
 - **Flags all start false.** There are no counters.
 - The base Attributes are copied so that later Template edits do not change an existing Character.
@@ -131,12 +132,14 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 
 - **`start-combat: E`**:
   - if E is defeated, it is a no-op: no fight, no victory Outcome, Location view;
-  - otherwise create E's record if absent, add an entry of 0 for each participant without one, set the position to Combat {E, each surviving participant at E's `startRange`, round 1}, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken.
-- **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round and stores the next Round's Intents. It appends one Combat round entry, which records every action of the Round in order: executed, cancelled, dropped, or not reached because the sequence stopped ([Journal](#journal)).
+  - otherwise create E's record if absent, add an entry of 0 for each participant without one, set the position to Combat {E, each surviving participant at E's `startRange`, round 1}, store those participants' ids as this Combat's starting membership, capture their current content order, select and store the first Round's Intents, and append the opening narration to the Journal. Re-entry after an escape starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects, shows the opening narration again, and keeps the Damage taken. It creates a new starting membership containing only the participants surviving on re-entry.
+- **Each Combat Round** (the Character's action and every surviving Enemy participant's Intent, resolved by Speed and Agility per [mechanics.md](mechanics.md#rounds)) is one `step`. Unless the Combat or the Playthrough ends, it increments the round, captures the surviving participants' current content order and stores the next Round's Intents. It appends one Combat round entry, which records every action of the Round in order: executed, cancelled, dropped, or not reached because the sequence stopped ([Journal](#journal)).
 - A **rejected** Combat action changes nothing: the round, the Intents and `step` stay as they were.
 - **Victory** (every participant's Damage taken ≥ its Enemy's maximum Health): the Combat ends and a Combat end entry is appended. Then the `victory` Outcome is applied, or, when there is none, an Enemy-defeated notice is appended and the position becomes Location view in the Location where the fight happened.
-- **Escape**: the Combat ends, the Ranges and temporary effects are discarded, the Encounter record keeps each participant's Damage taken, including defeated participants, and the `escape` Outcome is applied.
+- **Escape**: the Combat ends, its starting membership, tie-break order, Ranges and temporary effects are discarded, the Encounter record keeps each participant's Damage taken, including defeated participants, and the `escape` Outcome is applied.
 - **Character death**: Health 0, then `ended(death Ending)`, appending the Ending entry.
+
+Defeat and victory are derived from wounds and the current content, not a stored victory marker. With unchanged content an Encounter stays defeated and its victory Outcome is applied at most once. Outside an active Combat, a content change that increases a participant's maximum Health above its Damage taken may revive it; a later `start-combat` then fights the survivors, and defeating the Encounter applies its victory Outcome again, including its Effects. This does not reopen an ended Playthrough. Revival that changes the surviving membership of an active Combat instead makes the Playthrough incompatible ([architecture.md](architecture.md#content-compatibility)).
 
 ## State versions and migration
 
@@ -153,7 +156,7 @@ Recorded in [ADR 0005](../adr/0005-playthrough-state-migrated-by-the-engine-on-r
 | Version 1 | Version 2 |
 |---|---|
 | Damage taken `n` for Encounter E | E's record `{ p: n }`, where `p` is E's only participant in the current content |
-| active Combat {E, Range r, round k} | active Combat {E, round k, participant `p`: Range r, an Intent selected now, not prepared, not Wary} |
+| active Combat {E, Range r, round k} | active Combat {E, round k, starting membership [`p`], Round tie-break order [`p`], participant `p`: Range r, an Intent selected now, not prepared, not Wary} |
 | everything else | unchanged |
 
 - The participant id comes from the current content, because version 1 stores no Enemy id. It is unambiguous while E has one participant. If E no longer exists, or now has two participants, the stored Damage cannot be assigned and the Playthrough is **incompatible**. Its read-only views use the parts that need no assignment (Character, inventory, map, Ending) and its Journal.
@@ -171,8 +174,22 @@ Example, a Playthrough in a Combat with the wolf, before and after:
 { "stateVersion": 2, "step": 41,
   "encounters": { "hollow-wolf": { "grey-wolf": 3 }, "camp-bandit": { "bandit-archer": 0 } },
   "activeCombat": { "encounterId": "hollow-wolf", "round": 4,
+    "startedParticipants": ["grey-wolf"], "roundParticipantOrder": ["grey-wolf"],
     "participants": { "grey-wolf": { "range": "near", "intent": "strike", "prepared": false } } }, … }
 ```
+
+### Combat compatibility acceptance examples
+
+These examples also belong in the final implementation handoff's migration, compatibility and view checks. Field names above remain illustrative; membership and timing are normative.
+
+| Case | Required result |
+|---|---|
+| Two wolves start; `wolf-a` falls while `wolf-b` survives; reload | Starting membership still contains both ids. Only `wolf-b` has active action state and is targetable; `wolf-a` has a grey defeated lane, reconstructed without the Journal. |
+| Escape from that Combat, then re-enter | Both wounds are kept; starting membership, active state and Round tie-break order contain only `wolf-b`. No lane for `wolf-a`. |
+| Reverse two equal-priority participants in content after their Intents were selected | The current Round uses its saved tie-break order, including after a reload or rejection. Cleanup selects next Intents in the new content order and saves that order for the next Round. |
+| Raise a defeated participant's maximum Health above its Damage taken while another participant is still fighting | The current living participant set no longer matches active action state: incompatible, read-only, no rewritten state or Journal and no new action or Intent. Restoring content restores compatibility. |
+| Revive a defeated Encounter by changing content outside Combat in an active Playthrough | A later start fights only current survivors with recorded wounds. Its next victory applies the victory Outcome and Effects again. No persistent reward/victory marker is introduced. |
+| Migrate a version 1 active Combat with one participant in current content | Starting membership and Round tie-break order are both [`p`]. Preserve Range, round, Health, wounds, inventory and `step`; select the deterministic initial Intent without a Prepare draw. No action resolves and no Journal entry is appended. |
 
 ## Journal
 
@@ -229,12 +246,13 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 
 - Health is always 0–12, and Health 0 always goes with `ended(death Ending)`.
 - Every equipped item is held and fits its slot.
-- A defeated Encounter never re-enters Combat, and its `victory` Outcome applies at most once.
+- With unchanged content, a defeated Encounter never re-enters Combat and its `victory` Outcome applies at most once. Content-driven revival outside Combat follows the exception above.
 - A non-repeatable Scene activates at most once, and a `once` Choice is taken at most once.
 - An Outcome is applied once, by exactly one step-guarded action. A stale or duplicate submission is rejected.
 - Nothing changes after `ended`.
 - A committed Intent changes only by resolving or being cancelled within its Round; reading, reloading or a rejected action never re-selects it.
 - Migrating a stored state resolves nothing and never advances `step`; migrating it again gives the same state.
+- At a persisted active Combat boundary, participants with action state are exactly the Encounter's currently surviving participants, are all in this Combat's starting membership, and appear exactly once in its current Round tie-break order. Starting ids may also include participants defeated during this Combat; those have no action state.
 
 ## Sources
 
@@ -250,3 +268,4 @@ Recorded in [ADR 0004](../adr/0004-journal-stores-events-and-scenario-text-as-pr
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (per-participant Damage taken, Encounter defeat)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (stored tactical Combat, state versions and migration, action targets, Combat events)
 - [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md)
+- [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (starting membership, saved Round ties, active revival incompatibility and repeated victory after content changes)

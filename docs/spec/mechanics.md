@@ -106,7 +106,7 @@ A Combat is a fight between the Character and the **participants** of one Encoun
 ### Participants
 
 - A **participant** is one placement of an Enemy in an Encounter. Its identity is the pair (Encounter id, participant id). The participant id is unique within its Encounter and defaults to its Enemy id. Two participants of the same Enemy kind therefore need explicit participant ids. The Enemy id alone, or a position in a list, is never an identity.
-- The **participant order** is the order in which the Encounter lists its participants. It breaks Agility ties and orders Intent selection. Targets, wounds and stored Combat state refer to participants by id, never by position.
+- The **participant order** is the order in which the Encounter lists its participants. It orders Intent selection and is captured by participant id when a Round's Intents are selected, to break Enemy Agility ties in that Round. A later content reorder takes effect at the next Round's selection, not in an already announced Round. Targets, wounds and stored Combat state refer to participants by id, never by position.
 - Each participant has its own Health, Range, Intent, prepared state and effects. The Enemy kind supplies only its Attributes, maximum Health, Damage, Reach and Behaviour.
 
 ### Range and Reach
@@ -128,7 +128,7 @@ A Combat proceeds in **Rounds**. In each Round the Character takes exactly one a
 - Every Character action and every Intent has a **Speed**: `fast`, `normal` or `slow`.
 - Within a Round all `fast` actions resolve first, then `normal`, then `slow`.
 - Within one Speed, **higher Agility acts first**: the Character's effective Agility, an Enemy's Agility.
-- Ties: the Character acts before an Enemy with equal Agility. Enemy participants with equal Agility, including two of the same Enemy kind, act in the Encounter's stable participant order. Nothing is rolled for order.
+- Ties: the Character acts before an Enemy with equal Agility. Enemy participants with equal Agility, including two of the same Enemy kind, act in the participant order saved when this Round's Intents were selected. Nothing is rolled for order.
 - The order is fixed when the Character commits. Nothing that happens during the Round reorders it.
 
 #### Before the Character commits
@@ -150,7 +150,7 @@ A legal Character action resolves the whole Round in one atomic step:
    5. After the action and after each reaction, the end of the sequence is checked (below).
 
    A cancelled or dropped action is never replaced by another action and never retargeted, and its costs (such as a consumed item) are not paid. The Journal records each cancellation with its reason.
-3. **End of the Round.** Round-scoped effects expire, the round number increases, and the next Round's Intents are selected and stored for every surviving Enemy participant.
+3. **End of the Round.** Round-scoped effects expire, the round number increases, and the current content order of surviving participants is captured for the next Round. Their next Intents are selected in that order and stored with it.
 
 Every roll of the step, in resolution order and then for Intent selection, comes from the injected random source.
 
@@ -277,8 +277,8 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 ### Persistence of wounds
 
 - Damage belongs to the **participant** that took it, within its Encounter. A participant is **defeated** when its Damage taken reaches its Enemy's maximum Health; an Encounter is defeated when **every** participant is.
-- A defeated participant stays defeated. If the Character escapes and later fights the same Encounter again, only the surviving participants take part, each keeping its remaining Health. The Combat starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects. The opening narration is shown as authored; there is no separate narration after a partial victory.
-- A defeated Encounter stays defeated, and its `victory` Outcome applies once, when its last participant falls.
+- With unchanged content, a defeated participant stays defeated. If the Character escapes and later fights the same Encounter again, only the surviving participants take part, each keeping its remaining Health. The Combat starts again at `startRange` with freshly selected Intents and no prepared states or temporary effects. The opening narration is shown as authored; there is no separate narration after a partial victory.
+- With unchanged content, a defeated Encounter stays defeated, and its `victory` Outcome applies once, when its last participant falls. Outside an active Combat, raising maximum Health or changing an Enemy kind can revive a participant whose recorded Damage is now below its maximum Health. A later Combat fights the current survivors, and its victory applies the Outcome and Effects again; there is no stored victory/reward marker. Revival that adds a survivor to an active Combat makes the save incompatible instead ([architecture.md](architecture.md#content-compatibility)). An ended Playthrough remains ended.
 - A different Encounter with the same Enemy kind is independent and starts at full Health.
 
 ### Tactical notes (consequences, not extra rules)
@@ -322,3 +322,4 @@ These targets guide authors and reviewers when choosing Enemies and Encounters. 
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, individual wounds, partial victory)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (migrated Combat's first Intents)
 - [Prototype: tactical Combat balance and meaningful action trade-offs](https://github.com/lbacik/simple-rpg-engine/issues/83) (Heavy attack +3, Escape bonus on commitment, balance targets)
+- [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (saved Round ties, revival boundaries and repeated victory under changed content)

@@ -12,6 +12,7 @@ Tactical Combat changes the stored `state` document: Damage taken moves from one
 
 - The version 1 schema and the migration stay in the code for as long as version 1 rows may exist. A dormant Playthrough is migrated whenever it is next opened.
 - Migration draws no randomness. The first Intents of a migrated Combat are selected without the Prepare draw, so repeating a migration gives the same state, and tests need no RNG for it.
+- A migrated single-participant Combat also records that participant's id as its starting membership and as the current Round's tie-break order. These additions need no randomness and preserve the round, Range, Health, wounds, inventory and `step` ([Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116)).
 - Reading a page can write a row, as the pin update already does. The write is guarded by `step`. If a turn commits in between, the fresh row wins.
 - An incompatible Playthrough is never rewritten, so restoring the content restores the Playthrough, in keeping with incompatibility being derived on read.
 - State versions and database schema migrations are independent: a new state version needs no Kysely migration unless a column changes.

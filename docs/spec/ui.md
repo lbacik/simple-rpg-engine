@@ -112,7 +112,7 @@ There is no "View journal" link above the narration in the reading column; the E
 
 ### Combat panel
 
-During Combat, the reading column shows the Combat panel, while the side panel (map, status card, launchers) stays visible. It works with one or two Enemy participants ([mechanics.md](mechanics.md#participants)); everything below that names "each participant" shows one lane, one bubble, one target when a single participant is left. Top to bottom:
+During Combat, the reading column shows the Combat panel, while the side panel (map, status card, launchers) stays visible. It works with one or two Enemy participants ([mechanics.md](mechanics.md#participants)). The arena has a lane for each participant who started this Combat, including one defeated since; only survivors have Intents and can be targets. A Combat started or re-entered with one survivor has one lane, one bubble and an implicit target. Top to bottom:
 
 - a **header**: a small uppercase kicker (`Combat · <Location name> · Round <n>`), the Encounter name as `h1`, then the opening narration (muted italic) and a bottom rule;
 - the **lane arena**;
@@ -128,10 +128,10 @@ During Combat, the reading column shows the Combat panel, while the side panel (
 - A bordered card. The Character's medallion stands in a left column spanning the whole height. To its right, **one lane per participant**, in participant order, separated by a dashed rule. Each lane has its own ground line and its own Range label (`NEAR` / `FAR`) at the bottom centre, because each participant has its own Range.
 - A medallion is an initial in a coloured disc inside a Health ring (red at low Health), with the name, `health/max` and a detail line below: the Character's weapon, Reach and Damage; the participant's Reach and Damage. A participant with a letter shows it as a small badge on its ring.
 - **Near**: the participant stands at the start of its lane, next to the Character's column, with a crossed-swords mark between them. **Far**: it stands at the far end of its lane, with a `‹ — — Far — — ›` marker in the middle. A Range change moves only that lane's medallion; the movement is animated, honouring `prefers-reduced-motion`.
-- **Intent bubble** above each surviving participant: its place in the Round's order (a numbered disc), its Speed tag, the Intent's name and, for an attack, its Damage and "hits you on N+, M+ if you Defend" (2d6 thresholds). A Prepare bubble has a dashed border and a second line naming what it prepares: "next round: Heavy blow, slow, 5 Damage".
+- **Intent bubble** above each surviving participant: its place in the Round's order (a numbered disc), its Speed tag, the Intent's name and, for an attack, its Damage and "hits you on N+, M+ if you Defend" (2d6 thresholds). A Prepare bubble has a dashed border and a second line naming what it prepares: "next round: Heavy blow, slow, 6 Damage" (for an Enemy with 3 Damage, plus the Heavy attack's +3).
 - **Intent names** depend on the Reach: Strike / Shoot, Close in, Wind up / Take aim, Heavy blow / Aimed shot (`melee` / `ranged`).
 - **State badges** next to the participant's Health: "Wound up" (`melee`) or "Aiming" (`ranged`) while it is prepared; "Wary · to round N" while it is Wary, N being the last round of the effect. Guarded is round-scoped and never shown on the arena: it appears only in the log of the round it applied to. Nothing in the arena is derived from the Journal.
-- A participant defeated during this Combat keeps its lane, with a grey medallion, a "Defeated" badge, no bubble and no Range label, until the Combat ends. On re-entry after an Escape the arena has lanes only for the surviving participants.
+- A participant defeated during this Combat keeps its lane, with a grey medallion, a "Defeated" badge, no bubble and no Range label, until the Combat ends. The engine's arena projection includes it from the Combat's stored starting participant ids and Encounter wounds, even after a reload; it has no active action state and cannot be a target. On re-entry after an Escape the arena has lanes only for the surviving participants, which form the new Combat's starting membership.
 - For screen readers the arena carries a text summary per surviving participant: name, Range, Health, Intent with its Speed and effect, and place among the Enemies' actions. The drawing itself is decorative.
 
 #### Order strip
@@ -139,6 +139,7 @@ During Combat, the reading column shows the Combat panel, while the side panel (
 - One line under the arena, labelled "This round": the Round's actions as numbered chips, grouped by Speed (`FAST`, `NORMAL`, `SLOW`), each naming the actor and its Intent ("Grey Wolf A: Strike"). It is an ordered list.
 - Without a chosen action it lists the Intents only, followed by a dashed hint chip. Pointing at or focusing an action button inserts the Character's action at its place and renumbers the bubbles. This preview is a client-side enhancement only: it reads nothing the server did not render, sends nothing, and is never authoritative.
 - Every action button shows the same information as plain text (below), so the order is readable without JavaScript or a pointer.
+- The order strip and Intent positions use the engine's saved participant tie-break order for this Round. A content reorder may change arena lane order, but it does not change the announced Round's equal-priority order; the next Round uses the new content order.
 
 #### Target picker
 
@@ -149,7 +150,7 @@ During Combat, the reading column shows the Combat panel, while the side panel (
 #### Actions
 
 - Four columns: **Position** (Advance, Fall back), **Fight** (Attack, Defend, Distract), **Items** (one button per held Consumable, or "No Consumables held.") and **Leave** (Escape). On phone width the columns become a 2×2 grid.
-- Each button is a plain form posting `combat`, `target` (targeted actions) and `item` (Consumables), with the `step`. Below its label it shows: the Speed; its place in the Round's order ("acts 2nd of 3"), which depends only on the Speed and so is exact before the target is chosen; for a rolled action, the 2d6 threshold ("needs 9+"); and for a targeted action, the target ("→ Grey Wolf B"). Thresholds read the current state; Escape's +2 and the opposing Agility of Escape and Fall back are re-read when the action resolves ([mechanics.md](mechanics.md#validity-when-the-actions-turn-comes)). No percentages are shown.
+- Each button is a plain form posting `combat`, `target` (targeted actions) and `item` (Consumables), with the `step`. Below its label it shows: the Speed; its place in the Round's order ("acts 2nd of 3"), which depends only on the Speed and so is exact before the target is chosen; for a rolled action, the 2d6 threshold ("needs 9+"); and for a targeted action, the target ("→ Grey Wolf B"). Thresholds read the current state; Escape's +2 is retained from the Round as shown when the Character commits, while the opposing Agility of Escape and Fall back is re-read when the action resolves ([mechanics.md](mechanics.md#validity-when-the-actions-turn-comes)). No percentages are shown.
 - Unavailable actions are disabled with the reason in player language, from the engine's reason code: "Your Sword needs Near Range; Grey Wolf B is Far.", "You are already Near Grey Wolf A.", "Grey Wolf A is wary of tricks until the end of round 5.", "Nothing is Near you.", "You are at full Health.".
 
 #### Log
@@ -268,3 +269,5 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (Journal rendering after a language switch)
 - [Language switcher and availability UX](https://github.com/lbacik/simple-rpg-engine/issues/62) (language menu, flags, collection groups, fallback badge)
 - [Prototype: readable intents, targets and action order for two Enemies](https://github.com/lbacik/simple-rpg-engine/issues/82) (lane arena, Intent bubbles, order strip, target picker, round report, Combat Journal entries)
+- [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (persistent defeated lanes and saved Round ties)
+- [Prototype: tactical Combat balance and meaningful action trade-offs](https://github.com/lbacik/simple-rpg-engine/issues/83) (Heavy attack +3 and commitment-time Escape bonus)
