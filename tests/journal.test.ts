@@ -1,15 +1,17 @@
-// Journal rendering and pagination (docs/spec/playthrough-state.md, journal;
-// docs/spec/ui.md, journal): every entry type renders in order with the step
-// that produced it, narration entries reuse the game screen's Markdown subset
-// on the stored text, and pages slice the append-only journal_entries table.
+// Journal rendering and cursor batches (docs/spec/playthrough-state.md,
+// journal; docs/spec/ui.md, journal): every entry type renders in order with
+// the step that produced it, narration entries reuse the game screen's
+// Markdown subset on the stored text, and batches slice the append-only
+// journal_entries table newest first by sequence cursor.
 
 import { describe, expect, it } from 'vitest';
 import {
-  JOURNAL_PAGE_SIZE,
+  JOURNAL_BATCH_SIZE,
   journalEntryLabel,
   journalHref,
   latestJournalEnding,
-  parseJournalPage,
+  parseJournalCursor,
+  renderJournalEntries,
   renderJournalEntry,
 } from '../src/app/lib/journal';
 import { migrateDatabase, openDatabase, PlaythroughStore } from '../src/persistence/index';
@@ -186,76 +188,173 @@ describe('renderJournalEntry', () => {
   });
 });
 
-describe('journal pagination helpers', () => {
-  it('parses page numbers with a safe default', () => {
-    expect(parseJournalPage(undefined)).toBe(1);
-    expect(parseJournalPage('2')).toBe(2);
-    expect(parseJournalPage('0')).toBe(1);
-    expect(parseJournalPage('-3')).toBe(1);
-    expect(parseJournalPage('nope')).toBe(1);
-    expect(parseJournalPage('')).toBe(1);
+describe('journal cursor helpers', () => {
+  it('parses sequence cursors with a safe default', () => {
+    expect(parseJournalCursor(undefined)).toBeUndefined();
+    expect(parseJournalCursor('6')).toBe(6);
+    expect(parseJournalCursor('0')).toBeUndefined();
+    expect(parseJournalCursor('-3')).toBeUndefined();
+    expect(parseJournalCursor('nope')).toBeUndefined();
+    expect(parseJournalCursor('')).toBeUndefined();
   });
 
-  it('builds page links that degrade to plain links without JavaScript', () => {
-    expect(journalHref('pt-1', 1)).toBe('/play/pt-1/journal');
-    expect(journalHref('pt-1', 3)).toBe('/play/pt-1/journal?page=3');
+  it('builds cursor links that degrade to plain links without JavaScript', () => {
+    expect(journalHref('pt-1')).toBe('/play/pt-1/journal');
+    expect(journalHref('pt-1', null)).toBe('/play/pt-1/journal');
+    expect(journalHref('pt-1', 6)).toBe('/play/pt-1/journal?before=6');
   });
 
-  it('uses a fixed page size', () => {
-    expect(JOURNAL_PAGE_SIZE).toBe(20);
+  it('uses a fixed batch size', () => {
+    expect(JOURNAL_BATCH_SIZE).toBe(20);
+  });
+
+  it('renders a batch newest first with labels and steps', () => {
+    const rendered = renderJournalEntries(
+      [
+        { seq: 2, step: 1, type: 'travel', payload: { text: 'Travelled on.' } },
+        { seq: 1, step: 0, type: 'intro', payload: { text: 'You wake.' } },
+      ],
+      'Robin',
+    );
+    expect(rendered.map((entry) => entry.seq)).toEqual([2, 1]);
+    expect(rendered[0]).toMatchObject({ label: 'Travel', step: 1 });
+    expect(rendered[0]?.html).toContain('Travelled on.');
+    expect(rendered[1]).toMatchObject({ label: 'Intro', step: 0 });
   });
 });
 
-describe('journal pagination in the store', () => {
-  it('counts entries and returns ordered pages', async () => {
+describe('journal cursor batches in the store', () => {
+  async function journalWith(count: number) {
     const db = openDatabase(':memory:');
-    try {
-      await migrateDatabase(db);
-      const store = new PlaythroughStore(db);
-      await store.create(
-        {
-          id: 'pt-journal',
-          sessionId: 'hash-1',
-          scenarioId: 'meadow',
-          scenarioVersion: '1.0.0',
-          contentHash: 'abc',
-          status: 'active',
-          step: JOURNAL_PAGE_SIZE + 5,
-          state: makeState(),
-        },
-        [],
-      );
-      const entries = Array.from({ length: JOURNAL_PAGE_SIZE + 5 }, (_, index) => ({
+    await migrateDatabase(db);
+    const store = new PlaythroughStore(db);
+    await store.create(
+      {
+        id: 'pt-journal',
+        sessionId: 'hash-1',
+        scenarioId: 'meadow',
+        scenarioVersion: '1.0.0',
+        contentHash: 'abc',
+        status: 'active',
+        step: count,
+        state: makeState(),
+      },
+      [],
+    );
+    await store.appendJournal(
+      'pt-journal',
+      Array.from({ length: count }, (_, index) => ({
         step: index,
         type: index % 2 === 0 ? 'scene' : 'travel',
         payload: { text: `entry ${index + 1}` },
-      }));
-      await store.appendJournal('pt-journal', entries);
+      })),
+    );
+    return { db, store };
+  }
 
-      expect(await store.countJournal('pt-journal')).toBe(JOURNAL_PAGE_SIZE + 5);
+  it('reads the first batch newest first', async () => {
+    const { db, store } = await journalWith(JOURNAL_BATCH_SIZE + 5);
+    try {
+      expect(await store.countJournal('pt-journal')).toBe(JOURNAL_BATCH_SIZE + 5);
 
-      const first = await store.listJournalPage('pt-journal', {
-        limit: JOURNAL_PAGE_SIZE,
-        offset: 0,
+      const first = await store.listJournalBatch('pt-journal', {
+        limit: JOURNAL_BATCH_SIZE,
       });
-      expect(first).toHaveLength(JOURNAL_PAGE_SIZE);
-      expect(first.map((entry) => entry.seq)).toEqual(
-        Array.from({ length: JOURNAL_PAGE_SIZE }, (_, index) => index + 1),
+      expect(first.entries).toHaveLength(JOURNAL_BATCH_SIZE);
+      expect(first.entries.map((entry) => entry.seq)).toEqual(
+        Array.from({ length: JOURNAL_BATCH_SIZE }, (_, index) => JOURNAL_BATCH_SIZE + 5 - index),
       );
-      expect(first[0]?.step).toBe(0);
+      expect(first.nextCursor).toBe(6);
 
-      const second = await store.listJournalPage('pt-journal', {
-        limit: JOURNAL_PAGE_SIZE,
-        offset: JOURNAL_PAGE_SIZE,
-      });
-      expect(second).toHaveLength(5);
-      expect(second.map((entry) => entry.seq)).toEqual([21, 22, 23, 24, 25]);
-
-      // The full list stays in order for the game screen.
+      // The full list stays oldest first for the game screen.
       const all = await store.listJournal('pt-journal');
       expect(all.map((entry) => entry.seq)).toEqual(
-        Array.from({ length: JOURNAL_PAGE_SIZE + 5 }, (_, index) => index + 1),
+        Array.from({ length: JOURNAL_BATCH_SIZE + 5 }, (_, index) => index + 1),
       );
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('reads a middle batch older than the cursor', async () => {
+    const { db, store } = await journalWith(JOURNAL_BATCH_SIZE + 5);
+    try {
+      const middle = await store.listJournalBatch('pt-journal', {
+        limit: 10,
+        beforeSeq: 16,
+      });
+      expect(middle.entries.map((entry) => entry.seq)).toEqual(
+        [15, 14, 13, 12, 11, 10, 9, 8, 7, 6],
+      );
+      expect(middle.nextCursor).toBe(6);
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('ends the last partial batch at the first entry', async () => {
+    const { db, store } = await journalWith(JOURNAL_BATCH_SIZE + 5);
+    try {
+      const last = await store.listJournalBatch('pt-journal', {
+        limit: JOURNAL_BATCH_SIZE,
+        beforeSeq: 6,
+      });
+      expect(last.entries.map((entry) => entry.seq)).toEqual([5, 4, 3, 2, 1]);
+      expect(last.nextCursor).toBeUndefined();
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('reads an empty journal as an empty batch', async () => {
+    const { db, store } = await journalWith(0);
+    try {
+      expect(await store.countJournal('pt-journal')).toBe(0);
+      const batch = await store.listJournalBatch('pt-journal', {
+        limit: JOURNAL_BATCH_SIZE,
+      });
+      expect(batch.entries).toEqual([]);
+      expect(batch.nextCursor).toBeUndefined();
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('reads an invalid cursor as the newest batch', async () => {
+    const { db, store } = await journalWith(3);
+    try {
+      for (const beforeSeq of [Number.NaN, -3, 0]) {
+        const batch = await store.listJournalBatch('pt-journal', {
+          limit: JOURNAL_BATCH_SIZE,
+          beforeSeq,
+        });
+        expect(batch.entries.map((entry) => entry.seq)).toEqual([3, 2, 1]);
+        expect(batch.nextCursor).toBeUndefined();
+      }
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('never shifts a batch when entries are appended after opening', async () => {
+    const { db, store } = await journalWith(8);
+    try {
+      const first = await store.listJournalBatch('pt-journal', { limit: 5 });
+      expect(first.entries.map((entry) => entry.seq)).toEqual([8, 7, 6, 5, 4]);
+      expect(first.nextCursor).toBe(4);
+
+      await store.appendJournal('pt-journal', [
+        { step: 8, type: 'travel', payload: { text: 'entry 9' } },
+        { step: 9, type: 'travel', payload: { text: 'entry 10' } },
+      ]);
+
+      const older = await store.listJournalBatch('pt-journal', {
+        limit: 5,
+        beforeSeq: first.nextCursor,
+      });
+      expect(older.entries.map((entry) => entry.seq)).toEqual([3, 2, 1]);
+      const seen = [...first.entries, ...older.entries].map((entry) => entry.seq);
+      expect(new Set(seen).size).toBe(seen.length);
     } finally {
       await db.destroy();
     }
