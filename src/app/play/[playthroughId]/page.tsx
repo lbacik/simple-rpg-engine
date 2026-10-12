@@ -29,6 +29,10 @@ import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes'
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { ResultPanel } from './result-panel';
+// PROTOTYPE (throwaway): Character / Inventory / Journal modal variants.
+import { SidePanelPrototype } from './side-panel.prototype';
+import { buildProtoSheet, PROTOTYPE_VARIANTS } from './side-panel.prototype-data';
+import { PrototypeSwitcher } from '@/app/prototype-switcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -513,10 +517,18 @@ export default async function PlayPage({
   searchParams,
 }: {
   params: Promise<{ playthroughId: string }>;
-  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string }>;
+  searchParams: Promise<{ notice?: string; tab?: string; unknown?: string; variant?: string }>;
 }) {
   const { playthroughId } = await params;
-  const { notice, tab: tabParam, unknown } = await searchParams;
+  const { notice, tab: tabParam, unknown, variant } = await searchParams;
+  // PROTOTYPE: `?variant=A|B|C|current`, dev builds only (default A).
+  const protoVariant =
+    process.env.NODE_ENV === 'production'
+      ? 'current'
+      : PROTOTYPE_VARIANTS.some((candidate) => candidate.key === variant)
+        ? (variant as string)
+        : 'A';
+  const prototyping = protoVariant !== 'current';
   const tab = parsePanelTab(tabParam);
   // App-level display setting, off by default: draw unvisited targets of
   // visible exits as "?" nodes. It is not a Scenario field.
@@ -684,9 +696,11 @@ export default async function PlayPage({
             </p>
           ) : null}
           <ResultPanel entries={resultEntries} />
-          <p>
-            <a href={`/play/${playthrough.id}/journal`}>View journal</a>
-          </p>
+          {prototyping ? null : (
+            <p>
+              <a href={`/play/${playthrough.id}/journal`}>View journal</a>
+            </p>
+          )}
           {gameView.kind === 'location' ? (
             <>
               <h1>{gameView.name}</h1>
@@ -812,6 +826,34 @@ export default async function PlayPage({
             </>
           )}
         </article>
+        {prototyping ? (
+          <SidePanelPrototype
+            variant={protoVariant}
+            playthroughId={playthrough.id}
+            sheet={buildProtoSheet({
+              scenario,
+              state,
+              journal,
+              locationName:
+                gameView.kind === 'location'
+                  ? gameView.name
+                  : gameView.kind === 'scene' || gameView.kind === 'combat'
+                    ? gameView.locationName
+                    : 'Ended',
+            })}
+            map={
+              <LocationMap
+                map={gameView.map}
+                playthroughId={playthrough.id}
+                step={playthrough.step}
+                canTravel={canTravel}
+                showUnknownExits={showUnknownExits}
+                toggleHref={mapToggleHref}
+                markerId="map-arrow-proto"
+              />
+            }
+          />
+        ) : (
         <SidePanel
           scenario={scenario}
           state={state}
@@ -833,7 +875,11 @@ export default async function PlayPage({
                 : 'Ended'
           }
         />
+        )}
       </div>
+      {process.env.NODE_ENV === 'production' ? null : (
+        <PrototypeSwitcher variants={PROTOTYPE_VARIANTS} current={protoVariant} />
+      )}
     </main>
   );
 }
