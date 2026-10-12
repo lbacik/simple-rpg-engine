@@ -1,0 +1,14 @@
+- id: wolf-ambush
+  enemy: river-wolf
+  startRange: near
+  text: |
+    The reeds part, and the wolf is on you.
+  victory:
+    text: |
+      The wolf limps away. The bank is quiet again.
+    effects:
+      - give-item: { item: bread }
+  escape:
+    text: |
+      You splash back to the near bank.
+    move: east-bank

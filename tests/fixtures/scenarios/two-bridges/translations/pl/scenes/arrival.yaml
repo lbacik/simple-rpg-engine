@@ -1,0 +1,24 @@
+id: arrival
+title: Bliski most
+text: |
+  Przewoźnik zastawia drogę na deskach z wyciągniętą dłonią. „Most bierze klucz", mówi.
+choices:
+  - id: listen
+    text: Zapytaj, jaki klucz ma na myśli.
+    outcome:
+      text: |
+        „Mosiężny klucz, zgubiony po tamtej stronie", mówi i usuwa się z drogi.
+  - id: cross
+    text: Przebiegnij przez deski.
+    test:
+      success:
+        text: |
+          Przemykasz obok niego i docierasz na daleki brzeg, zdyszany, lecz nieuchwytny.
+      failure:
+        text: |
+          Deska pęka pod tobą i upadasz ciężko wśród trzcin.
+  - id: leave
+    text: Zawróć w dół drogi.
+    outcome:
+      text: |
+        Rzeka zachowuje swoje mosty, a ty swoją drogę.

@@ -1,0 +1,7 @@
+- id: river-wolf
+  name: River Wolf
+  description: A lean wolf that hunts the reeds.
+  attributes: { might: 2, agility: 2, wits: 1, presence: 0 }
+  health: 8
+  damage: 2
+  reach: melee

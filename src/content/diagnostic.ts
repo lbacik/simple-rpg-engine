@@ -22,4 +22,11 @@ export type Diagnostic = {
   path?: (string | number)[];
   /** e.g. "first declared here" for duplicate-ID diagnostics. */
   related?: { file: string; range?: DiagnosticRange; message: string }[];
+  /**
+   * The Translation manifest's path, set on every diagnostic about a
+   * Translation (docs/spec/validation.md, Translations). It is the manifest
+   * path because the path exists even when the Translation's `language`
+   * cannot be read.
+   */
+  translation?: string;
 };

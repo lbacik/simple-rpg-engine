@@ -1,0 +1,8 @@
+id: studnia
+name: Studnia
+description: |
+  Ciemna woda głęboko w dole. Twoje odbicie patrzy w górę.
+map: { x: 60, y: 55 }
+connections:
+  - to: rynek
+    label: Wróć na rynek

@@ -1,0 +1,11 @@
+language: en
+baseVersion: "1.0.0"
+title: The Old Well
+description: A short story about the well on the square.
+locations:
+  - translations/en/locations/rynek.yaml
+  - translations/en/locations/studnia.yaml
+scenes:
+  - translations/en/scenes/spotkanie.yaml
+templates: [translations/en/templates.yaml]
+endings: [translations/en/endings.yaml]

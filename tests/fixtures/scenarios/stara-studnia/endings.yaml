@@ -1,0 +1,10 @@
+- id: powrot
+  kind: victory
+  title: Lżejsza cisza
+  text: |
+    Wracasz na rynek, a studnia milczy już spokojnie.
+- id: smierc
+  kind: defeat
+  title: Bez odpowiedzi
+  text: |
+    Odchodzisz, a głos woła jeszcze długo za tobą.

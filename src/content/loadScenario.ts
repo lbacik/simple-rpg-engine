@@ -15,8 +15,13 @@ import { buildScenario } from './model';
 import { runPlayabilityPhase } from './playability';
 import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath, symlinkEscapesDir } from './paths';
 import type { Scenario } from './model';
-import { runStructurePhase } from './structure';
+import { nodeAtPath, runStructurePhase } from './structure';
 import type { ManifestSection, ParsedFile } from './structure';
+import {
+  compileTranslation,
+  runTranslationPipelines,
+} from './translations';
+import type { TranslationManifestRef } from './translations';
 import { nodeRange, parseYamlText } from './yamlFile';
 
 export type { Diagnostic, DiagnosticRange } from './diagnostic';
@@ -36,18 +41,44 @@ export type {
   CompiledScene,
   CompiledTemplate,
   CompiledTemplateItem,
+  CompiledTranslation,
   Scenario,
+  TranslationChoiceText,
+  TranslationConnectionText,
+  TranslationEncounterText,
+  TranslationEndingText,
+  TranslationImageText,
+  TranslationLocationText,
+  TranslationNamedText,
+  TranslationOutcomeText,
+  TranslationSceneText,
 } from './model';
+
+export type RejectedTranslation = {
+  /** The Translation manifest's path, relative to the Scenario directory. */
+  manifestPath: string;
+  /** The parsed `language`, when the manifest was readable. */
+  language?: string;
+  diagnostics: Diagnostic[];
+};
 
 export type LoadScenarioSuccess = {
   ok: true;
   scenario: Scenario;
   warnings: Diagnostic[];
+  /** Every listed Translation rejected by its own pipeline, in listing order. */
+  rejectedTranslations: RejectedTranslation[];
 };
 
 export type LoadScenarioFailure = {
   ok: false;
   diagnostics: Diagnostic[];
+  /**
+   * Translations rejected by their own pipelines. Empty when the base never
+   * passed Integrity (their pipelines never ran); populated when a
+   * playability error rejects the Scenario, so the CLI still reports them.
+   */
+  rejectedTranslations: RejectedTranslation[];
 };
 
 export type LoadScenarioResult = LoadScenarioSuccess | LoadScenarioFailure;
@@ -111,7 +142,7 @@ export function loadScenario(dir: string): LoadScenarioResult {
       message: `${MANIFEST_FILE} is missing or unreadable`,
       file: MANIFEST_FILE,
     });
-    return { ok: false, diagnostics };
+    return { ok: false, diagnostics, rejectedTranslations: [] };
   }
   const manifestSource = manifestBytes.toString('utf8');
 
@@ -145,7 +176,7 @@ export function loadScenario(dir: string): LoadScenarioResult {
   // Phase gating (docs/spec/validation.md): later phases do not run after an
   // error. Every package/ finding is an error, so any diagnostic rejects.
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
-    return { ok: false, diagnostics };
+    return { ok: false, diagnostics, rejectedTranslations: [] };
   }
 
   // Phase 2 (Structure): the Zod definitions and the custom schema/ checks.
@@ -164,7 +195,7 @@ export function loadScenario(dir: string): LoadScenarioResult {
   diagnostics.sort(compareDiagnostics);
 
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
-    return { ok: false, diagnostics };
+    return { ok: false, diagnostics, rejectedTranslations: [] };
   }
 
   // Phase 3 (Integrity): IDs, typed references, declared Flags, Scene
@@ -181,12 +212,20 @@ export function loadScenario(dir: string): LoadScenarioResult {
   diagnostics.sort(compareDiagnostics);
 
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
-    return { ok: false, diagnostics };
+    return { ok: false, diagnostics, rejectedTranslations: [] };
   }
+
+  // Each listed Translation runs its own pipeline (T1 Package, T2 Structure)
+  // once the base has passed Integrity. Any error rejects only that
+  // Translation; the Scenario loads without it.
+  const translationRefs = collectTranslationRefs(manifestRoot, manifestValue, manifest.lineCounter);
+  const { accepted, rejected } = runTranslationPipelines(scenarioDir, translationRefs, listed);
+  const rejectedTranslations: RejectedTranslation[] = rejected;
 
   // Phase 4 (Playability): reachability, way-out and authoring-quality
   // warnings over the compiled model. An error (no-victory, no-way-out)
-  // rejects the Scenario like any earlier error.
+  // rejects the Scenario like any earlier error, but the Translations'
+  // findings are still reported to the author.
   const scenario = buildScenario({
     id: dirName,
     dir: scenarioDir,
@@ -197,18 +236,56 @@ export function loadScenario(dir: string): LoadScenarioResult {
     manifestBytes,
     listedPaths: listed.map((entry) => entry.value),
     fileBytes,
+    translations: accepted.map((loaded) => ({
+      compiled: compileTranslation(loaded),
+      manifestPath: loaded.manifestPath,
+      manifestBytes: loaded.manifestBytes,
+      listedPaths: loaded.files.map((file) => file.parsed.file),
+      fileBytes: loaded.fileBytes,
+    })),
   });
   runPlayabilityPhase(scenario, manifestParsed, parsedFiles, push);
+  for (const { diagnostics: rejectedDiagnostics } of rejectedTranslations) {
+    diagnostics.push(...rejectedDiagnostics);
+  }
   diagnostics.sort(compareDiagnostics);
 
-  if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
-    return { ok: false, diagnostics };
+  if (diagnostics.some((diagnostic) => diagnostic.translation === undefined && diagnostic.severity === 'error')) {
+    return { ok: false, diagnostics, rejectedTranslations };
   }
+  // A rejected Translation's diagnostics (errors about the Translation, never
+  // about the base) ride along with the base warnings; the Scenario itself is
+  // valid and shows its Base Language instead.
   return {
     ok: true,
     scenario,
-    warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
+    warnings: diagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'warning' || diagnostic.translation !== undefined,
+    ),
+    rejectedTranslations,
   };
+}
+
+/**
+ * The base manifest's `translations` entries with the range of each entry in
+ * scenario.yaml. Call only when the base passed Structure, so the value is a
+ * list of strings (Zod applied the default); anything else is ignored here.
+ */
+function collectTranslationRefs(
+  manifestRoot: unknown,
+  manifestValue: unknown,
+  lineCounter: import('yaml').LineCounter,
+): TranslationManifestRef[] {
+  if (!isRecord(manifestValue) || !Array.isArray(manifestValue['translations'])) return [];
+  const refs: TranslationManifestRef[] = [];
+  manifestValue['translations'].forEach((entry, index) => {
+    if (typeof entry !== 'string') return;
+    refs.push({
+      manifestPath: entry,
+      range: nodeRange(nodeAtPath(manifestRoot, ['translations', index]), lineCounter),
+    });
+  });
+  return refs;
 }
 
 function checkSchemaVersion(

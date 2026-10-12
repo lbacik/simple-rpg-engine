@@ -94,7 +94,18 @@ function loadOne(registry: Map<string, RegistryEntry>, dir: string, name: string
   const result = loadScenario(full);
   if (result.ok) {
     registry.set(name, snapshotEntry(full, result.scenario, result.warnings));
+    for (const rejected of result.rejectedTranslations) {
+      console.error(
+        `scenario "${name}" translation "${rejected.manifestPath}" (${rejected.language ?? 'unknown'}) is invalid and was left out:`,
+      );
+      for (const diagnostic of rejected.diagnostics) {
+        console.error(
+          `  [${diagnostic.code}]${diagnostic.file ? ` ${diagnostic.file}` : ''}: ${diagnostic.message}`,
+        );
+      }
+    }
     for (const warning of result.warnings) {
+      if (warning.translation !== undefined) continue;
       console.warn(
         `scenario "${name}" warning [${warning.code}]${warning.file ? ` ${warning.file}` : ''}: ${warning.message}`,
       );

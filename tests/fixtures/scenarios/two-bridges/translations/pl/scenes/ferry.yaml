@@ -1,0 +1,14 @@
+# "sneak" carries no Outcome text in the base (a bare start-combat), so the
+# Translation carries no Outcome for it either.
+id: ferry
+title: Cena przewoźnika
+text: |
+  Daleki brzeg pachnie smołą. Przewoźnik już tam jest i czeka.
+choices:
+  - id: pay
+    text: Oddaj mosiężny klucz.
+    outcome:
+      text: |
+        Przygryza klucz, szczerzy zęby i macha cię na cichą drogę do domu.
+  - id: sneak
+    text: Przemknij obok niego w stronę wilczych trzcin.

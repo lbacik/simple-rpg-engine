@@ -41,13 +41,26 @@ function main(): number {
   const result = loadScenario(dir);
   const diagnostics = result.ok ? result.warnings : result.diagnostics;
 
+  // One summary entry per rejected Translation, in listing order.
+  const rejected: { manifestPath: string; language?: string }[] = [];
+  for (const entry of result.rejectedTranslations) {
+    if (!rejected.some((known) => known.manifestPath === entry.manifestPath)) {
+      rejected.push({ manifestPath: entry.manifestPath, language: entry.language });
+    }
+  }
+  const rejectionSuffix = rejected
+    .map((entry) => `; Translation ${entry.manifestPath} (${entry.language ?? 'unknown'}) rejected`)
+    .join('');
+
   if (json) {
     console.log(JSON.stringify(diagnostics, null, 2));
   } else {
     for (const diagnostic of diagnostics) console.log(formatDiagnostic(dir, diagnostic));
     const errors = diagnostics.filter((d) => d.severity === 'error').length;
     const warnings = diagnostics.filter((d) => d.severity === 'warning').length;
-    console.log(`${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}`);
+    console.log(
+      `${errors} error${errors === 1 ? '' : 's'}, ${warnings} warning${warnings === 1 ? '' : 's'}${rejectionSuffix}`,
+    );
   }
 
   return diagnostics.some((d) => d.severity === 'error') ? 1 : 0;

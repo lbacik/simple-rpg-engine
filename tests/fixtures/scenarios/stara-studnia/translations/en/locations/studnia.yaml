@@ -1,0 +1,7 @@
+id: studnia
+name: The Well
+description: |
+  Dark water deep below. Your reflection looks back up.
+connections:
+  - to: rynek
+    label: Return to the square

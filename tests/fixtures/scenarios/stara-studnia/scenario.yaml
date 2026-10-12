@@ -1,0 +1,19 @@
+# Stara studnia: Translation reference fixture with a non-English Base
+# Language (pl) and a minimal en Translation. Must load with no diagnostics.
+schemaVersion: 1
+id: stara-studnia
+title: Stara studnia
+description: Krótka historia o studni na rynku.
+language: pl
+version: "1.0.0"
+startLocation: rynek
+deathEnding: smierc
+locations:
+  - locations/rynek.yaml
+  - locations/studnia.yaml
+scenes:
+  - scenes/spotkanie.yaml
+templates: [templates.yaml]
+endings: [endings.yaml]
+translations:
+  - translations/en/translation.yaml

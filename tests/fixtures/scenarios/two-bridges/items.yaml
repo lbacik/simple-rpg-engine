@@ -1,0 +1,27 @@
+# Bread deliberately omits its description: the Translation omits it too.
+- id: bridge-sword
+  kind: equipment
+  name: Bridge Sword
+  description: A short blade, pitted by river water.
+  slot: weapon
+  damage: 3
+- id: ferryman-cloak
+  kind: equipment
+  name: Ferryman's Cloak
+  description: Oilcloth that shrugs off rain.
+  slot: outfit
+  bonus: agility
+- id: river-charm
+  kind: equipment
+  name: River Charm
+  description: A smoothed stone with a hole through it.
+  slot: talisman
+  magic: true
+- id: bread
+  kind: consumable
+  name: Bread
+  heal: 2
+- id: brass-key
+  kind: key
+  name: Brass Key
+  description: A heavy key, green at the edges.
