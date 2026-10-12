@@ -1,0 +1,21 @@
+language: pl
+baseVersion: "1.0.0"
+translator: Testowy Tłumacz
+title: Dwa mosty
+description: >-
+  Rzeka, dwa mosty i przewoźnik, który zamiast monety żąda klucza. Przejdź
+  albo zawróć.
+intro: |
+  Deszcze wezbrały rzekę, {name}, a obu mostów pilnują.
+locations:
+  - translations/pl/locations/east-bank.yaml
+  - translations/pl/locations/west-bank.yaml
+scenes:
+  - translations/pl/scenes/arrival.yaml
+  - translations/pl/scenes/ferry.yaml
+items: [translations/pl/items.yaml]
+enemies: [translations/pl/enemies.yaml]
+encounters: [translations/pl/encounters.yaml]
+templates: [translations/pl/templates.yaml]
+endings: [translations/pl/endings.yaml]
+images: [translations/pl/images.yaml]

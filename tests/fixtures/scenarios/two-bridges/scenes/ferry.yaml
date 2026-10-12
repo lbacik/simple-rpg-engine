@@ -1,0 +1,18 @@
+# A follow-on Scene (no trigger): reached through "listen" above, listed by
+# no Location.
+id: ferry
+title: The Ferryman's Price
+text: |
+  The far bank smells of tar. The ferryman is already there, waiting.
+choices:
+  - id: pay
+    text: Hand over the brass key.
+    when: { has: { item: brass-key } }
+    outcome:
+      text: |
+        He bites the key, grins, and waves you through to the quiet road home.
+      end: home
+  - id: sneak
+    text: Slip past him towards the wolf reeds.
+    outcome:
+      start-combat: wolf-ambush

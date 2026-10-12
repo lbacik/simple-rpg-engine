@@ -1,0 +1,7 @@
+id: west-bank
+name: West Bank
+description: |
+  A ferryman's hut leans against the far bridge. Smoke rises from its chimney.
+map: { x: 70, y: 40 }
+connections:
+  - to: east-bank

@@ -1,0 +1,12 @@
+- id: home
+  title: Cicha droga
+  text: |
+    Za dalekim mostem droga biegnie cicho aż do domu.
+- id: walked-away
+  title: Zachowana droga
+  text: |
+    Nigdy nie dowiesz się, co kryje daleki brzeg, i może to i lepiej.
+- id: death
+  title: Rzeka cię zatrzymuje
+  text: |
+    Brunatna woda zamyka się nad tobą, a mosty trwają bez ciebie.

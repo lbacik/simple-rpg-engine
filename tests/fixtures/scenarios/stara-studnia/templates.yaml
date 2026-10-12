@@ -1,0 +1,4 @@
+- id: wedrowiec
+  name: Wędrowiec
+  description: Znasz gościńce i ich ciszę.
+  attributes: { might: 1, agility: 2, wits: 2, presence: 1 }

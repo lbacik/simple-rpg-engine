@@ -38,6 +38,15 @@ describe('generated schemas', () => {
       'templates',
       'endings',
       'images',
+      'translation-manifest',
+      'translation-location',
+      'translation-scene',
+      'translation-items',
+      'translation-enemies',
+      'translation-encounters',
+      'translation-templates',
+      'translation-endings',
+      'translation-images',
     ]);
     const built = buildJsonSchemas();
     for (const kind of FILE_KINDS) {
@@ -78,6 +87,29 @@ describe('generated schemas', () => {
     // read-runes (index 1) resolves its runes through a wits test.
     brokenScene.choices[1]!.test!.difficulty = 'very hard';
     expect(validateScene(brokenScene)).toBe(false);
+  });
+
+  it('validate a Translation manifest and reject a non-translatable key', () => {
+    const ajv = new Ajv({ strict: false });
+    const validateManifest = ajv.compile(readCommitted('translation-manifest'));
+    expect(
+      validateManifest({
+        language: 'pl',
+        baseVersion: '1.0.0',
+        title: 'Dwa mosty',
+        description: 'Opis.',
+        locations: ['translations/pl/locations/east-bank.yaml'],
+        templates: ['translations/pl/templates.yaml'],
+        endings: ['translations/pl/endings.yaml'],
+      }),
+    ).toBe(true);
+
+    const validateScene = ajv.compile(readCommitted('translation-scene'));
+    expect(validateScene({ id: 'arrival', title: 'Przybycie', text: 'Tekst.' })).toBe(true);
+    // A non-translatable field (mechanics live in the base only) is rejected.
+    expect(
+      validateScene({ id: 'arrival', title: 'Przybycie', text: 'Tekst.', when: { flag: 'x' } }),
+    ).toBe(false);
   });
 
   it('ship an example VS Code yaml.schemas configuration covering every kind', () => {

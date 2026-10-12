@@ -6,7 +6,7 @@
 
 export type { Diagnostic, DiagnosticRange } from './diagnostic';
 export { loadScenario } from './loadScenario';
-export type { LoadScenarioFailure, LoadScenarioResult, LoadScenarioSuccess, Scenario } from './loadScenario';
+export type { LoadScenarioFailure, LoadScenarioResult, LoadScenarioSuccess, RejectedTranslation, Scenario } from './loadScenario';
 export { getScenario, listScenarios, loadAllScenarios, scenarioDirectory } from './registry';
 export { checkPlaythroughCompatibility } from './compatibility';
 export type { CompatibilityResult } from './compatibility';

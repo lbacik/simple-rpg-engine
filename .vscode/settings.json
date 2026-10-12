@@ -15,6 +15,15 @@
     "./schemas/encounters.json": "scenarios/*/encounters*.yaml",
     "./schemas/templates.json": "scenarios/*/templates*.yaml",
     "./schemas/endings.json": "scenarios/*/endings*.yaml",
-    "./schemas/images.json": "scenarios/*/images*.yaml"
+    "./schemas/images.json": "scenarios/*/images*.yaml",
+    "./schemas/translation-manifest.json": "scenarios/*/translations/*/translation.yaml",
+    "./schemas/translation-location.json": "scenarios/*/translations/*/locations/*.yaml",
+    "./schemas/translation-scene.json": "scenarios/*/translations/*/scenes/*.yaml",
+    "./schemas/translation-items.json": "scenarios/*/translations/*/items*.yaml",
+    "./schemas/translation-enemies.json": "scenarios/*/translations/*/enemies*.yaml",
+    "./schemas/translation-encounters.json": "scenarios/*/translations/*/encounters*.yaml",
+    "./schemas/translation-templates.json": "scenarios/*/translations/*/templates*.yaml",
+    "./schemas/translation-endings.json": "scenarios/*/translations/*/endings*.yaml",
+    "./schemas/translation-images.json": "scenarios/*/translations/*/images*.yaml"
   }
 }

@@ -1,0 +1,15 @@
+id: spotkanie
+title: The Voice from the Well
+text: |
+  A voice rises from the depths of the well, {name}. It sounds like your own.
+choices:
+  - id: odpowiedz
+    text: Answer into the dark.
+    outcome:
+      text: |
+        Your words come back as an echo, and the silence is suddenly lighter.
+  - id: odejdz
+    text: Walk away without a word.
+    outcome:
+      text: |
+        You will never learn who called.

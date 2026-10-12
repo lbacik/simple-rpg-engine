@@ -1,0 +1,7 @@
+id: rynek
+name: The Square
+description: |
+  An empty square with the old well at its heart. Someone calls you by name.
+connections:
+  - to: studnia
+    label: Walk up to the well

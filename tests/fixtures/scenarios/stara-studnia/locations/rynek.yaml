@@ -1,0 +1,9 @@
+id: rynek
+name: Rynek
+description: |
+  Pusty rynek i stara studnia pośrodku. Ktoś woła cię po imieniu.
+map: { x: 30, y: 30 }
+scenes: [spotkanie]
+connections:
+  - to: studnia
+    label: Podejdź do studni

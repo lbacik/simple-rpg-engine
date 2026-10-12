@@ -1,0 +1,9 @@
+- id: wolf-ambush
+  text: |
+    Trzciny się rozstępują i wilk rzuca się na ciebie.
+  victory:
+    text: |
+      Wilk utyka w dal. Brzeg znów cichnie.
+  escape:
+    text: |
+      Brodząc, wracasz na bliski brzeg.

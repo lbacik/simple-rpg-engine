@@ -1,0 +1,7 @@
+id: east-bank
+name: Wschodni Brzeg
+description: |
+  Błoto, trzciny i zapach mokrej liny. Bliski most ugina się nad brunatną wodą.
+connections:
+  - to: west-bank
+    label: Przejdź przez bliski most

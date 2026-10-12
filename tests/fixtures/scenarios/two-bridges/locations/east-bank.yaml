@@ -1,0 +1,10 @@
+id: east-bank
+name: East Bank
+description: |
+  Mud, reeds, and the smell of wet rope. The near bridge sags over brown water.
+map: { x: 20, y: 60 }
+illustration: east-bank
+scenes: [arrival]
+connections:
+  - to: west-bank
+    label: Cross the near bridge

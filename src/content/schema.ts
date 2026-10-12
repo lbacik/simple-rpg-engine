@@ -191,6 +191,7 @@ export const ManifestSchema = z.strictObject({
   templates: z.array(z.string()),
   endings: z.array(z.string()),
   images: z.array(z.string()).optional(),
+  translations: z.array(z.string()).default([]),
 });
 
 // ---------------------------------------------------------------------------
@@ -332,3 +333,121 @@ export const EncountersCatalogSchema = z.array(EncounterSchema);
 export const TemplatesCatalogSchema = z.array(TemplateSchema);
 export const EndingsCatalogSchema = z.array(EndingSchema);
 export const ImagesCatalogSchema = z.array(ImageSchema);
+
+// ---------------------------------------------------------------------------
+// Translations: text-only projections of the base file kinds
+// (docs/spec/scenario-format.md, Translation files; ADR 0002). Every object is
+// strict, so a non-translatable field (when, effects, map, ...) is
+// schema/unknown-key. Mechanics exist only in the base files.
+// ---------------------------------------------------------------------------
+
+/** A Translation manifest: no schemaVersion, id, author or version. */
+export const TranslationManifestSchema = z.strictObject({
+  language: z.string(),
+  baseVersion: z.string(),
+  translator: z.string().optional(),
+  title: textSchema,
+  description: textSchema,
+  intro: narrationSchema.optional(),
+  locations: z.array(z.string()),
+  scenes: z.array(z.string()).optional(),
+  items: z.array(z.string()).optional(),
+  enemies: z.array(z.string()).optional(),
+  encounters: z.array(z.string()).optional(),
+  templates: z.array(z.string()),
+  endings: z.array(z.string()),
+  images: z.array(z.string()).optional(),
+});
+
+/** Sections a Translation manifest may list, mirroring the base manifest. */
+export const TRANSLATION_SECTIONS = [
+  'locations',
+  'scenes',
+  'items',
+  'enemies',
+  'encounters',
+  'templates',
+  'endings',
+  'images',
+] as const;
+export type TranslationSection = (typeof TRANSLATION_SECTIONS)[number];
+
+/** Sections a Translation manifest must list. */
+export const REQUIRED_TRANSLATION_SECTIONS: readonly TranslationSection[] = [
+  'locations',
+  'templates',
+  'endings',
+];
+
+const translationConnectionSchema = z.strictObject({
+  to: referenceSchema,
+  label: textSchema.optional(),
+});
+
+/** One Location mapping: id, text fields and Connection labels keyed by `to`. */
+export const TranslationLocationSchema = z.strictObject({
+  id: idSchema,
+  name: textSchema,
+  description: narrationSchema,
+  connections: z.array(translationConnectionSchema).default([]),
+});
+
+const translationOutcomeSchema = z.strictObject({
+  text: narrationSchema.optional(),
+});
+
+const translationTestSchema = z.strictObject({
+  success: translationOutcomeSchema,
+  failure: translationOutcomeSchema,
+});
+
+const translationChoiceSchema = z.strictObject({
+  id: idSchema,
+  text: textSchema,
+  outcome: translationOutcomeSchema.optional(),
+  test: translationTestSchema.optional(),
+});
+
+/** One Scene mapping: id, text fields and Choices keyed by Choice `id`. */
+export const TranslationSceneSchema = z.strictObject({
+  id: idSchema,
+  title: textSchema,
+  text: narrationSchema,
+  choices: z.array(translationChoiceSchema).default([]),
+});
+
+/** A named entry with an optional description: items, Enemies, Templates. */
+const translationNamedEntrySchema = z.strictObject({
+  id: idSchema,
+  name: textSchema,
+  description: textSchema.optional(),
+});
+
+export const TranslationItemsCatalogSchema = z.array(translationNamedEntrySchema);
+export const TranslationEnemiesCatalogSchema = z.array(translationNamedEntrySchema);
+export const TranslationTemplatesCatalogSchema = z.array(translationNamedEntrySchema);
+
+/**
+ * An Encounter entry alike in either base spelling (`enemy` or
+ * `participants`): only the opening text and the Outcome texts.
+ */
+export const TranslationEncounterSchema = z.strictObject({
+  id: idSchema,
+  text: narrationSchema,
+  victory: translationOutcomeSchema.optional(),
+  escape: translationOutcomeSchema,
+});
+export const TranslationEncountersCatalogSchema = z.array(TranslationEncounterSchema);
+
+export const TranslationEndingSchema = z.strictObject({
+  id: idSchema,
+  title: textSchema,
+  text: narrationSchema,
+});
+export const TranslationEndingsCatalogSchema = z.array(TranslationEndingSchema);
+
+export const TranslationImageSchema = z.strictObject({
+  id: idSchema,
+  alt: textSchema,
+});
+export const TranslationImagesCatalogSchema = z.array(TranslationImageSchema);

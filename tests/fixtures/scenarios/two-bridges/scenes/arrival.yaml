@@ -1,0 +1,35 @@
+id: arrival
+title: The Near Bridge
+trigger: on-enter
+illustration: arrival
+text: |
+  A ferryman blocks the planks, palm out. "The bridge takes a key," he says.
+choices:
+  - id: listen
+    text: Ask what key he means.
+    outcome:
+      text: |
+        "The brass key, lost on the far side," he says, and steps aside.
+      effects:
+        - give-item: { item: brass-key }
+      next: ferry
+  - id: cross
+    text: Dash across the planks.
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          You slip past him and reach the far bank, breathless but uncaught.
+        move: west-bank
+      failure:
+        text: |
+          A plank cracks under you and you go down hard among the reeds.
+        effects:
+          - damage: 2
+  - id: leave
+    text: Turn back down the road.
+    outcome:
+      text: |
+        The river keeps its bridges, and you keep your road.
+      end: walked-away

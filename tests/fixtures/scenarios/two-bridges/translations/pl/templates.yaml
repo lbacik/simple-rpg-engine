@@ -1,0 +1,6 @@
+- id: wayfarer
+  name: Wędrowiec
+  description: Idziesz tam, dokąd prowadzi droga.
+- id: pilgrim
+  name: Pielgrzym
+  description: Niewiele niesiesz i niewiele jesteś winien.

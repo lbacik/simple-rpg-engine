@@ -87,6 +87,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "translations": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

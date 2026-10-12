@@ -1,0 +1,30 @@
+# Two Bridges: Translation reference fixture (Base Language en, complete pl
+# Translation). Covers every kind of translatable field, Illustration alt
+# included. Must load with no diagnostics.
+schemaVersion: 1
+id: two-bridges
+title: Two Bridges
+description: >-
+  A river, two bridges, and a ferryman who charges a key instead of a coin.
+  Cross, or turn back.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+intro: |
+  Rain has swollen the river, {name}, and both bridges are watched.
+startLocation: east-bank
+deathEnding: death
+locations:
+  - locations/east-bank.yaml
+  - locations/west-bank.yaml
+scenes:
+  - scenes/arrival.yaml
+  - scenes/ferry.yaml
+items: [items.yaml]
+enemies: [enemies.yaml]
+encounters: [encounters.yaml]
+templates: [templates.yaml]
+endings: [endings.yaml]
+images: [images.yaml]
+translations:
+  - translations/pl/translation.yaml

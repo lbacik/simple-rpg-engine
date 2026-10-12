@@ -1,0 +1,18 @@
+id: spotkanie
+title: Głos ze studni
+trigger: on-enter
+text: |
+  Z głębi studni dobiega głos, {name}. Brzmi jak twój własny.
+choices:
+  - id: odpowiedz
+    text: Odpowiedz do ciemności.
+    outcome:
+      text: |
+        Twoje słowa wracają echem i cisza jest nagle lżejsza.
+      end: powrot
+  - id: odejdz
+    text: Odejdź bez słowa.
+    outcome:
+      text: |
+        Nigdy nie dowiesz się, kto wołał.
+      end: smierc

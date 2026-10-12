@@ -1,0 +1,15 @@
+# Bread omits its description in the base, so it is omitted here too.
+- id: bridge-sword
+  name: Miecz mostowy
+  description: Krótka klinga, wżerana przez rzeczną wodę.
+- id: ferryman-cloak
+  name: Płaszcz przewoźnika
+  description: Cerata, z której deszcz spływa.
+- id: river-charm
+  name: Rzeczny amulet
+  description: Wygładzony kamień z otworem.
+- id: bread
+  name: Chleb
+- id: brass-key
+  name: Mosiężny klucz
+  description: Ciężki klucz, zielonkawy na brzegach.

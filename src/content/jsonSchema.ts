@@ -19,6 +19,15 @@ import {
   ManifestSchema,
   SceneSchema,
   TemplatesCatalogSchema,
+  TranslationEncountersCatalogSchema,
+  TranslationEnemiesCatalogSchema,
+  TranslationEndingsCatalogSchema,
+  TranslationImagesCatalogSchema,
+  TranslationItemsCatalogSchema,
+  TranslationLocationSchema,
+  TranslationManifestSchema,
+  TranslationSceneSchema,
+  TranslationTemplatesCatalogSchema,
 } from './schema';
 import { isRecord } from './structure';
 
@@ -32,6 +41,15 @@ const FILE_SCHEMAS = {
   templates: TemplatesCatalogSchema,
   endings: EndingsCatalogSchema,
   images: ImagesCatalogSchema,
+  'translation-manifest': TranslationManifestSchema,
+  'translation-location': TranslationLocationSchema,
+  'translation-scene': TranslationSceneSchema,
+  'translation-items': TranslationItemsCatalogSchema,
+  'translation-enemies': TranslationEnemiesCatalogSchema,
+  'translation-encounters': TranslationEncountersCatalogSchema,
+  'translation-templates': TranslationTemplatesCatalogSchema,
+  'translation-endings': TranslationEndingsCatalogSchema,
+  'translation-images': TranslationImagesCatalogSchema,
 } as const;
 
 export type FileKind = keyof typeof FILE_SCHEMAS;

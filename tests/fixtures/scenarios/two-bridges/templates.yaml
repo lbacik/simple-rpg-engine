@@ -1,0 +1,16 @@
+- id: wayfarer
+  name: Wayfarer
+  description: You walk where the road goes.
+  attributes: { might: 1, agility: 2, wits: 2, presence: 1 }
+  items:
+    - { item: bridge-sword }
+    - { item: ferryman-cloak }
+    - { item: bread, quantity: 2 }
+- id: pilgrim
+  name: Pilgrim
+  description: You carry little and owe less.
+  attributes: { might: 0, agility: 1, wits: 3, presence: 2 }
+  items:
+    - { item: river-charm }
+    - { item: brass-key }
+    - { item: bread }

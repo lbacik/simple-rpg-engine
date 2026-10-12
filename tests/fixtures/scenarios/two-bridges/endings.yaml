@@ -1,0 +1,15 @@
+- id: home
+  kind: victory
+  title: The Quiet Road
+  text: |
+    Beyond the far bridge the road runs quiet all the way home.
+- id: walked-away
+  kind: defeat
+  title: The Road Kept
+  text: |
+    You never learn what the far bank hides, and perhaps that is for the best.
+- id: death
+  kind: defeat
+  title: The River Keeps You
+  text: |
+    The brown water closes over you, and the bridges go on without you.

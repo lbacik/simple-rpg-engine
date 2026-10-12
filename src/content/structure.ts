@@ -49,12 +49,60 @@ export type ParsedFile = {
   lineCounter: LineCounter;
 };
 
-type Ctx = {
+export type Ctx = {
   file: string;
   contents: unknown;
   lineCounter: LineCounter;
   push: (diagnostic: Diagnostic) => void;
 };
+
+/** Run one Zod definition and convert every issue to a schema/ diagnostic. */
+export function runZodCheck(schema: z.ZodTypeAny, value: unknown, ctx: Ctx): void {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    convertIssues(result.error.issues, value, ctx);
+  }
+}
+
+/** The schema/invalid-language check for a BCP 47 tag value. */
+export function checkLanguageTag(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
+  if (typeof value !== 'string') return;
+  // An empty tag is never valid BCP 47. Runtimes disagree on it (some
+  // throw in Intl.getCanonicalLocales, others return []), so rule it out
+  // explicitly and require a canonical result otherwise.
+  let valid = value.trim() !== '';
+  if (valid) {
+    try {
+      valid = Intl.getCanonicalLocales(value).length > 0;
+    } catch {
+      valid = false;
+    }
+  }
+  if (!valid) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/invalid-language',
+      message: `invalid BCP 47 language tag "${value}"`,
+      file: ctx.file,
+      range: rangeOf(ctx, path),
+      path: [...path],
+    });
+  }
+}
+
+/** The schema/empty-text check for a text value (also applied by checkNarration). */
+export function checkTextValue(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
+  checkText(value, path, ctx);
+}
+
+/** The narration checks: schema/empty-text, schema/narration-brace and the markdown warning. */
+export function checkNarrationValue(
+  value: unknown,
+  path: readonly (string | number)[],
+  ctx: Ctx,
+): void {
+  checkNarration(value, path, ctx);
+}
 
 const SECTION_SCHEMAS: Record<ManifestSection, z.ZodTypeAny> = {
   locations: LocationSchema,

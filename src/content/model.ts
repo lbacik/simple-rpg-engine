@@ -110,6 +110,90 @@ export type CompiledEncounter = {
   escape: CompiledOutcome;
 };
 
+// ---------------------------------------------------------------------------
+// Translations: accepted Translations' text, keyed for a later overlay ticket
+// (docs/spec/scenario-format.md, Translation files; ADR 0002). Mechanics stay
+// in the base only: these shapes carry text fields and the keys that say
+// where they belong (`id`, Choice `id`, Connection `to`, Outcome nesting).
+// ---------------------------------------------------------------------------
+
+export type TranslationOutcomeText = {
+  text?: string;
+};
+
+export type TranslationChoiceText = {
+  id: string;
+  text: string;
+  outcome?: TranslationOutcomeText;
+  test?: {
+    success: TranslationOutcomeText;
+    failure: TranslationOutcomeText;
+  };
+};
+
+export type TranslationConnectionText = {
+  to: string;
+  label?: string;
+};
+
+export type TranslationLocationText = {
+  id: string;
+  name: string;
+  description: string;
+  connections: TranslationConnectionText[];
+};
+
+export type TranslationSceneText = {
+  id: string;
+  title: string;
+  text: string;
+  choices: TranslationChoiceText[];
+};
+
+/** An item, Enemy or Character Template entry: name plus optional description. */
+export type TranslationNamedText = {
+  id: string;
+  name: string;
+  description?: string;
+};
+
+export type TranslationEncounterText = {
+  id: string;
+  text: string;
+  victory?: TranslationOutcomeText;
+  escape: TranslationOutcomeText;
+};
+
+export type TranslationEndingText = {
+  id: string;
+  title: string;
+  text: string;
+};
+
+export type TranslationImageText = {
+  id: string;
+  alt: string;
+};
+
+export type CompiledTranslation = {
+  /** The Translation manifest's path, relative to the Scenario directory. */
+  manifestPath: string;
+  language: string;
+  baseVersion: string;
+  translator?: string;
+  title: string;
+  description: string;
+  intro?: string;
+  locations: Record<string, TranslationLocationText>;
+  scenes: Record<string, TranslationSceneText>;
+  items: Record<string, TranslationNamedText>;
+  enemies: Record<string, TranslationNamedText>;
+  encounters: Record<string, TranslationEncounterText>;
+  templates: Record<string, TranslationNamedText>;
+  endings: Record<string, TranslationEndingText>;
+  images: Record<string, TranslationImageText>;
+};
+
 export type Scenario = {
   id: string;
   /** Absolute path of the Scenario directory. */
@@ -139,11 +223,16 @@ export type Scenario = {
   templatesById: Record<string, CompiledTemplate>;
   endingsById: Record<string, CompiledEnding>;
   imagesById: Record<string, CompiledImageEntry>;
+  /** The accepted Translations, in base-manifest listing order. */
+  translations: CompiledTranslation[];
   /** Deterministic SHA-256 over the manifest, every listed file and every image. */
   contentHash: string;
   /**
-   * Manifest-relative paths of every listed content file, in manifest order.
-   * The dev registry watches these (plus the manifest) for reloads.
+   * Manifest-relative paths of every listed content file, in manifest order:
+   * the base files, then per Translation (accepted or rejected-but-readable)
+   * its manifest and the files it lists. The dev registry watches these (plus
+   * the manifest) for reloads, so editing a rejected Translation's files
+   * reloads the Scenario on the next request.
    */
   listedPaths: string[];
 };
@@ -199,6 +288,27 @@ function resolveChoice(
   };
 }
 
+export type TranslationModelInputs = {
+  compiled: CompiledTranslation;
+  /** The Translation manifest's path, relative to the Scenario directory. */
+  manifestPath: string;
+  manifestBytes: Buffer;
+  /** The Translation's listed file paths in manifest order. */
+  listedPaths: string[];
+  /** Raw bytes of the manifest and every file it lists, keyed by listed path. */
+  fileBytes: Map<string, Buffer>;
+};
+
+/**
+ * The raw content of a Translation that T1 managed to read but a later stage
+ * rejected. It carries no compiled text, but its bytes still feed the content
+ * hash and the dev watch list: the author edits exactly these files to fix it.
+ */
+export type RejectedTranslationContent = Pick<
+  TranslationModelInputs,
+  'manifestPath' | 'manifestBytes' | 'listedPaths' | 'fileBytes'
+>;
+
 export type ModelInputs = {
   id: string;
   dir: string;
@@ -211,23 +321,58 @@ export type ModelInputs = {
   listedPaths: string[];
   /** Raw bytes of every listed file, keyed by listed path. */
   fileBytes: Map<string, Buffer>;
+  /** Accepted Translations, in base-manifest listing order. */
+  translations: TranslationModelInputs[];
+  /**
+   * Translations the pipelines rejected after T1 read them, in
+   * base-manifest listing order. Only their bytes matter (hash, watch list).
+   */
+  rejectedTranslationContents: RejectedTranslationContent[];
 };
 
 /**
  * Compute the deterministic content hash: SHA-256 over the manifest bytes,
- * every listed file's bytes in manifest order, and every declared image's
- * bytes in declaration order, each bound to its path.
+ * every listed file's bytes in manifest order, every listed Translation
+ * manifest and every file it lists (accepted or rejected, so a
+ * Translation-only change changes the hash), and every declared image's bytes
+ * in declaration order, each bound to its path.
  */
-export function computeContentHash(inputs: Pick<ModelInputs, 'images' | 'imageBytes' | 'manifestBytes' | 'listedPaths' | 'fileBytes'>): string {
+export function computeContentHash(
+  inputs: Pick<
+    ModelInputs,
+    | 'images'
+    | 'imageBytes'
+    | 'manifestBytes'
+    | 'listedPaths'
+    | 'fileBytes'
+    | 'translations'
+    | 'rejectedTranslationContents'
+  >,
+): string {
   const hash = createHash('sha256');
   const segment = (name: string, bytes: Buffer): void => {
     hash.update(name, 'utf8');
     hash.update(Buffer.from([0]));
     hash.update(bytes);
   };
+  const segmentTranslation = (translation: TranslationModelInputs | RejectedTranslationContent): void => {
+    segment(translation.manifestPath, translation.manifestBytes);
+    for (const listedPath of translation.listedPaths) {
+      segment(
+        listedPath,
+        required(translation.fileBytes.get(listedPath), `listed file "${listedPath}"`),
+      );
+    }
+  };
   segment('scenario.yaml', inputs.manifestBytes);
   for (const listedPath of inputs.listedPaths) {
     segment(listedPath, required(inputs.fileBytes.get(listedPath), `listed file "${listedPath}"`));
+  }
+  for (const translation of inputs.translations) {
+    segmentTranslation(translation);
+  }
+  for (const translation of inputs.rejectedTranslationContents) {
+    segmentTranslation(translation);
   }
   for (const image of inputs.images) {
     segment(image.path, required(inputs.imageBytes.get(image.id), `image "${image.id}"`));
@@ -361,6 +506,16 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     })),
   }));
 
+  const translationPaths = (translation: TranslationModelInputs | RejectedTranslationContent): string[] => [
+    translation.manifestPath,
+    ...translation.listedPaths,
+  ];
+  const listedPaths = [
+    ...inputs.listedPaths,
+    ...inputs.translations.flatMap(translationPaths),
+    ...inputs.rejectedTranslationContents.flatMap(translationPaths),
+  ];
+
   const scenario: Scenario = {
     id: inputs.id,
     dir: inputs.dir,
@@ -381,6 +536,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     templates,
     endings,
     images: inputs.images,
+    translations: inputs.translations.map((translation) => translation.compiled),
     locationsById: Object.fromEntries(locationById),
     scenesById: Object.fromEntries(sceneById),
     itemsById: Object.fromEntries(itemById),
@@ -390,7 +546,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     endingsById: Object.fromEntries(endingById),
     imagesById: Object.fromEntries(imageById),
     contentHash: computeContentHash(inputs),
-    listedPaths: [...inputs.listedPaths],
+    listedPaths,
   };
   return deepFreeze(scenario);
 }
