@@ -104,6 +104,7 @@ describe('renderJournalEntry', () => {
         payload: {
           attribute: 'might',
           difficulty: 'ordinary',
+          target: 9,
           die1: 3,
           die2: 4,
           modifier: 2,
@@ -126,6 +127,7 @@ describe('renderJournalEntry', () => {
         payload: {
           attribute: 'might',
           difficulty: 'ordinary',
+          target: 9,
           die1: 3,
           die2: 4,
           modifier: 2,

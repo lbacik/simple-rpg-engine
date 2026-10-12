@@ -253,8 +253,6 @@ export const en = {
     travel: (name: string): string => `Travelled to ${name}.`,
     victory: 'Victory',
     defeat: 'Defeat',
-    testSuccess: 'success',
-    testFailure: 'failure',
     test: (
       attribute: string,
       difficulty: string,

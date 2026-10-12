@@ -68,6 +68,7 @@ const STRUCTURED_CASES: ReadonlyArray<{ kind: string; entry: JournalEntryView }>
       payload: {
         attribute: 'might',
         difficulty: 'very-hard',
+        target: 13,
         die1: 4,
         die2: 5,
         modifier: 4,

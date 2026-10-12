@@ -256,8 +256,6 @@ export const pl: Catalogue = {
     travel: (name: string): string => `Podróż: ${name}`,
     victory: 'Zwycięstwo',
     defeat: 'Porażka',
-    testSuccess: 'sukces',
-    testFailure: 'porażka',
     test: (
       attribute: string,
       difficulty: string,

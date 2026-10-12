@@ -149,6 +149,8 @@ export type NewJournalEntry =
       lang: string;
       attribute: AttributeName;
       difficulty: Difficulty;
+      /** The Difficulty target the total was measured against. */
+      target: number;
       die1: number;
       die2: number;
       /** The effective Attribute the roll added. */
@@ -610,13 +612,15 @@ function resolveTest(
   const die2 = rng(1, 7);
   const modifier = effectiveAttributes(scenario, state)[test.attribute];
   const total = die1 + die2 + modifier;
-  const success = total >= DIFFICULTY_TARGETS[test.difficulty];
+  const target = DIFFICULTY_TARGETS[test.difficulty];
+  const success = total >= target;
   return {
     entry: {
       type: 'test',
       lang: scenario.language,
       attribute: test.attribute,
       difficulty: test.difficulty,
+      target,
       die1,
       die2,
       modifier,

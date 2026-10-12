@@ -89,12 +89,14 @@ describe('narrative tests', () => {
       type: 'test',
       attribute: 'might',
       difficulty: 'very-hard',
+      target: 13,
       die1: 4,
       die2: 5,
       modifier: 4,
       total: 13,
       success: true,
     });
+    expect(test).not.toHaveProperty('text');
     // The success Outcome opens the barrow and moves into the tomb.
     expect(resolved.state.flags).toContain('barrow-open');
     expect(resolved.state.currentLocationId).toBe('barrow-tomb');

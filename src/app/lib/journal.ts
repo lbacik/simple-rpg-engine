@@ -315,18 +315,17 @@ function renderTestEntry(
   const die2 = toCount(record.die2);
   const modifier = toCount(record.modifier);
   const total = toCount(record.total);
-  if (die1 === undefined || die2 === undefined || modifier === undefined || total === undefined) {
+  const target = toCount(record.target);
+  if (
+    die1 === undefined ||
+    die2 === undefined ||
+    modifier === undefined ||
+    total === undefined ||
+    target === undefined
+  ) {
     return `<p>${escapeHtml(catalogue.journal.types.test)}</p>`;
   }
   const success = record.success === true;
-  const target =
-    record.difficulty === 'easy'
-      ? 7
-      : record.difficulty === 'ordinary'
-        ? 9
-        : record.difficulty === 'hard'
-          ? 11
-          : 13;
   const message = catalogue.journal.test(
     catalogue.attributes[record.attribute],
     catalogue.difficulty[record.difficulty],
