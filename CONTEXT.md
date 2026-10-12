@@ -142,6 +142,18 @@ _Avoid_: Monster, mob
 A fight between the Character and one Enemy, ending in death or the Character's escape.
 _Avoid_: Battle
 
+**Round**:
+One exchange of a Combat in which the Character takes one action and every surviving Enemy carries out its Intent, all resolved in order of Speed and then Agility.
+_Avoid_: Turn, initiative pass
+
+**Intent**:
+The action an Enemy has committed to for the current Round, chosen and shown before the Character acts; it resolves as shown or is cancelled, never swapped.
+_Avoid_: Telegraph, plan, enemy move
+
+**Speed**:
+Whether a Combat action or Intent resolves early, in the middle or late in a Round: fast, normal or slow.
+_Avoid_: Initiative, tempo
+
 **Range**:
 The current distance between the Character and the Enemy during a Combat: either Near or Far.
 _Avoid_: Zone, distance
