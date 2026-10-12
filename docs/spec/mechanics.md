@@ -201,7 +201,7 @@ The Character takes exactly one action per Round. An action that names a target 
 | Fight | **Attack** (target) | `normal` | the Character's Reach allows it at the Range to the target | Hit roll as above; a hit deals the Character's Damage to the target. |
 | Position | **Advance** (target) | `normal` | the Range to the target is Far | The Range to the target becomes Near. No roll. |
 | Items | **Use a Consumable** | `normal` | a held Consumable, Character below full Health | Heals as described under Consumables. |
-| Leave | **Escape** | `normal` | always | Roll 2d6 + Character's Agility ≥ 7 + the highest Agility among surviving Enemy participants, with **+2 to the roll when no surviving participant is Near**. Success ends the Combat. Failure: no effect. |
+| Leave | **Escape** | `normal` | always | Roll 2d6 + Character's Agility ≥ 7 + the highest Agility among surviving Enemy participants, with **+2 to the roll when no surviving participant was Near in the Round as shown when the Character committed**. Success ends the Combat. Failure: no effect. |
 | Position | **Fall back** | `slow` | at least one surviving Enemy participant is Near | Roll 2d6 + Character's Agility ≥ 7 + the highest Agility among the Near participants. Success: every Near Range becomes Far. Failure: no change. |
 
 There is a single Attack: no fast or heavy variant. The Character has no preparation actions.
@@ -218,7 +218,7 @@ An action legal on submission is **cancelled** (see [Rejected versus cancelled](
 | Fall back | no surviving Enemy participant is Near |
 | Defend, Use a Consumable, Escape | never: Health only falls and items cannot be lost during a Round |
 
-The Escape bonus and the opposing Agility of Escape and Fall back are read when the action resolves, not on submission. A cancelled Consumable is not consumed.
+The Escape bonus comes from the Round as shown on submission: an Enemy that closes in earlier in the order does not remove it. The opposing Agility of Escape and Fall back is read when the action resolves, so a participant defeated earlier in the Round no longer opposes. A cancelled Consumable is not consumed.
 
 #### Temporary effects
 
@@ -247,7 +247,7 @@ These are the only Intents. Each targets the Character.
 | **Strike** | `normal` | attack | Hit roll; a hit deals the Enemy's Damage. | its Reach does not allow it at the current Range |
 | **Close in** | `normal` | movement | The Range to this participant becomes Near. No roll. | the Range is already Near |
 | **Prepare** | `normal` | preparing | No roll. The participant becomes **prepared**. | never (except by interruption) |
-| **Heavy attack** | `slow` | prepared attack | Hit roll; a hit deals the Enemy's Damage **+2**. | its Reach does not allow it at the current Range |
+| **Heavy attack** | `slow` | prepared attack | Hit roll; a hit deals the Enemy's Damage **+3**. | its Reach does not allow it at the current Range |
 
 - A `ranged` Enemy never moves; only a `melee` Enemy closes in. No Intent moves an Enemy away from the Character.
 - A prepared state ends when the Heavy attack it prepares resolves or is cancelled for any reason (interruption, Reach, Fall back). The next Intent is then selected from the unprepared state.
@@ -289,7 +289,25 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - A Prepare is a Round without an attack from that participant: a window to heal, attack or reposition. The Heavy attack that follows is `slow`, so Defend, Distract and a Fall back by a Character at least as agile all come before it. Because preparing is drawn at random, no fixed sequence of answers is always best.
 - Against a `melee` Enemy, Advancing gains little, because the Enemy closes in by itself. Advance matters against `ranged` Enemies, which get free shots while the Character approaches.
 - Healing is `normal`: a faster Enemy's attack resolves before it, so drinking at very low Health can come too late.
+- Escape's +2 depends only on what the player saw when choosing it, so a slow Character keeps it in a Round that starts with every Enemy Far, even when faster `melee` Enemies close in first. Once an Enemy is Near, a Character with low Agility escapes poorly; leaving early is its best chance.
+- A Heavy attack costs its Enemy a whole Round of preparation, so a `heavy` Enemy still deals somewhat less Damage over a fight than a `steady` one. In exchange its blows are larger and announced in advance, which rewards answering them.
 - No fight is unwinnable by construction: the worst hit chance (Might 0 against Agility 3) is 1/6, Damage is at least 2, Enemy Health is at most 30, a `melee` Character can always Advance without a roll, and Escape is always available.
+
+### Balance targets
+
+These targets guide authors and reviewers when choosing Enemies and Encounters. They are not engine rules and not test assertions; content validation does not check them. The figures were measured with the [balance harness](https://github.com/lbacik/simple-rpg-engine/tree/prototype/issue-83-combat-balance/docs/spec/mockups/tactical-combat/balance), which assumes a Character at full Health with starting Equipment and perfect play. A real player does somewhat worse.
+
+| Tier | Example | Target | Measured |
+|---|---|---|---|
+| Ordinary duel | Grey Wolf, Bandit Archer, Drowned Porter, Iron Foreman, Channel Watchman, Brass Auditor | Every Template wins 85% or more, with about half its Health or more left, in 2–16 Rounds | 87–100% for every Template, except the Scholar against the Grey Wolf (51%) |
+| Boss duel | Barrow Wight | Fighting Templates win most of the time; the others must prepare or Escape | Hunter 97%, Soldier 75%, Scholar 12% |
+| Two participants (hard) | Grey Wolf + Bandit Archer, starting Far | Fighting Templates win 60–95%. The others can Escape: a death risk of at most 10% when trying only to survive, or 15% at Agility 0 | Hunter 97%, Canal Runner 98%, Harbour Warden 92%, Soldier 68%. Scholar, Tide Engineer and Crew Advocate win 5–9%; their minimum death risk is 0–3%, and 14% for the Crew Advocate (Agility 0) |
+| Beyond hard | Two Grey Wolves, starting Far | Not a target for ordinary content | Hunter 89%, Canal Runner 92%, Harbour Warden 63%, Soldier 36%, the others 0–2%. Minimum death risk at most 4%, and 15% for the Crew Advocate |
+
+- In every reference fight, a Character at full Health survives the first two Rounds.
+- The Scholar's result against the Grey Wolf is accepted. The Scholar's strength lies outside Combat, and the rules give it no extra Damage source.
+- When composing two-participant Encounters: two `melee` participants with Agility 2 or more go beyond the hard tier. A `melee` participant paired with a `ranged` one, starting Far, is the hard-tier reference. A Character with low Agility depends on leaving early, so a two-participant Encounter that starts Near is harsher still.
+- The Grey Wolf + Bandit Archer and two-Grey-Wolf compositions are the reference fixtures for engine tests. Engine tests check rules on them, not these percentages.
 
 ## Sources
 
@@ -303,3 +321,4 @@ What follows a victory or an escape is authored on the Encounter (see [content-s
 - [Enemy intent profiles for tactical one- and two-Enemy Combat](https://github.com/lbacik/simple-rpg-engine/issues/79) (Behaviours, Intent vocabulary, selection)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, individual wounds, partial victory)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (migrated Combat's first Intents)
+- [Prototype: tactical Combat balance and meaningful action trade-offs](https://github.com/lbacik/simple-rpg-engine/issues/83) (Heavy attack +3, Escape bonus on commitment, balance targets)
