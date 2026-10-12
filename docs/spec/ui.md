@@ -240,7 +240,7 @@ The Polish catalogue uses these terms for the engine's vocabulary. Scenario auth
 | Playthrough | Rozgrywka |
 | Scenario | Scenariusz |
 
-Polish terms for the tactical Combat vocabulary (Speed and its three values, the Intents, Guarded, Wary, participant) are still to be chosen with the Interface Language effort and will be added to this table.
+Exact Polish wording for the tactical Combat vocabulary (Speed and its three values, the Intents, Guarded, Wary, participant) is implementer's discretion under the Interface Text rules, as accepted in [Tactical Combat specification and dependency-ordered implementation handoff](https://github.com/lbacik/simple-rpg-engine/issues/84). Use it consistently across the typed catalogue, arena, actions and Journal, and use any canonical terms settled by the separate Interface Language effort. Selecting the wording does not block the tactical Combat implementation plan or add Scenario Translation fields.
 
 ## Notices
 
@@ -251,12 +251,12 @@ Rejected actions refresh the current state and show a transient notice, such as 
 | Mockup | Shows | Run |
 |---|---|---|
 | [Game screen layout](mockups/game-screen-layout/) | Collection, Character creation, play, inventory, Test feedback, Journal, Endings, Illustration on/off; variants A (selected), B, C | `python3 docs/spec/mockups/game-screen-layout/serve.py`, then open `http://127.0.0.1:4310/?variant=A` |
-| [Combat presentation](mockups/combat-presentation/combat-presentation.prototype.html) | three Combat presentations; **B** (Range zones) is selected; its `CombatCore` module implements the Combat rules | open the file; `?variant=A\|B\|C` or the arrow keys |
+| [Combat presentation](mockups/combat-presentation/combat-presentation.prototype.html) | historical single-Enemy presentations and rules; formerly selected B (Range zones), superseded by Tactical Combat A and the current normative mechanics | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Location map](mockups/location-map/location-map.prototype.html) | four map presentations; **B** (author coordinates) is selected | open the file; `?variant=A\|B\|C\|D` |
 | [Tactical Combat](mockups/tactical-combat/tactical-combat.prototype.html) | three tactical Combat presentations with one or two Enemies (duel, two melee, melee/ranged, same kind), a rules engine, the round report and Journal; **A** (lanes and target picker) is selected | open the file; `?variant=A\|B\|C` or the arrow keys |
 | [Language switcher](mockups/language-switcher/language-switcher.prototype.html) | three switcher and availability presentations; **B** (language menu, with flags) is selected | open the file; `?variant=A\|B\|C` or the arrow keys |
 
-The mockups are throwaway specification artifacts, not application code, and must not be imported into `src/`.
+The mockups are throwaway specification artifacts, not application code, and must not be imported into `src/`. The current normative text governs rules, accepted balance tuning and state compatibility when a prototype predates those decisions.
 
 ## Sources
 
@@ -271,3 +271,4 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Prototype: readable intents, targets and action order for two Enemies](https://github.com/lbacik/simple-rpg-engine/issues/82) (lane arena, Intent bubbles, order strip, target picker, round report, Combat Journal entries)
 - [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (persistent defeated lanes and saved Round ties)
 - [Prototype: tactical Combat balance and meaningful action trade-offs](https://github.com/lbacik/simple-rpg-engine/issues/83) (Heavy attack +3 and commitment-time Escape bonus)
+- [Tactical Combat specification and dependency-ordered implementation handoff](https://github.com/lbacik/simple-rpg-engine/issues/84) (copy discretion and historical prototype clarification)
