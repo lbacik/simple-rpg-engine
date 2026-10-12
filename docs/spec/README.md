@@ -19,6 +19,7 @@ Supporting material:
 
 - [ADR 0001: content compatibility by reference check](../adr/0001-content-compatibility-by-reference-check.md).
 - [ADR 0002: a Translation is a text-only overlay](../adr/0002-translation-as-text-only-overlay.md).
+- [ADR 0003: the engine emits no Interface Text; a typed catalogue renders it](../adr/0003-interface-text-from-a-typed-catalogue.md).
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
@@ -28,7 +29,7 @@ Supporting material:
 - The narrative model is a hybrid: a graph of Locations, within which conditional Scenes with Choices fire. NPC dialogue is Scenes with Choices.
 - All narration is pre-written in YAML. There is no LLM narrator.
 - Playthrough state is server-authoritative (dice are rolled on the server), persisted, and bound to an anonymous Session cookie. A Session has any number of Playthroughs, saved after every action.
-- Each Scenario is written in one Base Language, declared in its manifest, and may carry complete Translations as text-only overlays ([scenario-format.md](scenario-format.md#translations)). The UI is in a single language, English.
+- Each Scenario is written in one Base Language, declared in its manifest, and may carry complete Translations as text-only overlays ([scenario-format.md](scenario-format.md#translations)). The player chooses an Interface Language, English or Polish; it sets the language of all Interface Text and selects the Translation shown ([architecture.md](architecture.md#interface-language)).
 - Mechanics are a closed vocabulary owned by the engine. Scenarios define items, Enemies and Tests only in terms of engine Attributes and Effects; they cannot add Attributes or change the dice.
 - Scenarios enter the collection as directories in a server-side Scenario directory, gated by validation (the CLI, and again at startup). Invalid Scenarios are left out.
 - Combat is abstract, with two Ranges (Near and Far) and no grid board.
@@ -49,12 +50,12 @@ The spec does not include an implementation plan or a breakdown into implementat
 
 These are intentionally left open. Choose freely within the constraints of the spec:
 
-- The TypeScript shapes of the compiled `Scenario` model, `GameView`, actions, Journal entry payloads and the internal layout of the `state` JSON document, as long as they carry what the spec requires and stored state refers to content only by ID.
+- The TypeScript shapes of the compiled `Scenario` model, `GameView`, actions, Journal entry payloads, the engine's structured events and the internal layout of the `state` JSON document, as long as they carry what the spec requires and stored state refers to content only by ID.
 - The content hash and image hash algorithms (for example SHA-256), as long as they are deterministic and the content hash covers everything [architecture.md](architecture.md#content-compatibility) lists.
 - Diagnostic message wording, and any additional `schema/` codes for finer-grained Zod issues, as long as the codes in [validation.md](validation.md) keep their meaning.
-- UI copy, visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
+- UI copy in both Interface Languages (Polish copy uses the [Polish terms](ui.md#polish-terms) and the [Interface Text rules](ui.md#interface-text)), visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
 - How the off-by-default "?" exit-stub map setting is configured.
-- The Session cookie name, and the hash used to store the Session id (for example SHA-256).
+- The Session cookie name, the Interface Language cookie name, and the hash used to store the Session id (for example SHA-256).
 - How the Scenario directory is configured (default `scenarios/` at the repository root), and where the example VS Code schema configuration lives.
 - Libraries not named by the spec, such as the Markdown-subset renderer and the image header reader.
 

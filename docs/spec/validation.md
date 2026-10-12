@@ -45,6 +45,7 @@ type Diagnostic = {
 - Positions come from the `yaml` library's node ranges and `LineCounter`; lines and columns are 1-based.
 - Playability diagnostics point at the `id` node of the entity concerned.
 - Duplicate-ID diagnostics carry the first declaration in `related`.
+- Diagnostics are read by Scenario authors (CLI and startup logs), never by players. Their messages are in English and are not part of the Interface Text catalogue ([architecture.md](architecture.md#interface-text)). The same holds for the CLI's own output.
 - `translation` is set on every diagnostic about a Translation, including those whose `file` is a base file. It is the manifest's path because the path exists even when the Translation's `language` cannot be read.
 
 ## CLI

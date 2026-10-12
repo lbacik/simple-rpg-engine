@@ -365,7 +365,7 @@ A Translation that breaks any rule in this section is rejected on its own: the S
 - A Translation's `language` is a valid BCP 47 tag whose **primary language subtag** differs from the Base Language's (a Scenario in `en-GB` cannot have an `en-US` Translation).
 - A Scenario has at most one Translation per primary language subtag.
 - An Interface Language selects the Translation whose primary language subtag equals it. When the Base Language's primary subtag equals it, the base text is shown. Otherwise the base text is shown as the fallback.
-- A Translation into a language that is not an Interface Language (currently `en` and `pl`) is valid but never shown, and draws a warning.
+- A Translation into a language that is not an Interface Language (currently `en` and `pl`, [architecture.md](architecture.md#interface-language)) is valid but never shown, and draws a warning.
 
 ### Translation files
 

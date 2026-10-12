@@ -6,7 +6,8 @@ The screens, layout and interaction model. This document is normative; the [mock
 
 - Desktop and phone layouts.
 - A neutral, lightly book-inspired style that suits Scenarios of different genres. The UI does not change per Scenario.
-- The UI is in a single language. Scenario text is shown from the Translation that the Interface Language selects, or else in the Base Language ([scenario-format.md](scenario-format.md#language-tags)); the shown text's `language` is set as the `lang` of Scenario content.
+- All Interface Text is shown in the Interface Language (`en` or `pl`), from the catalogue ([Interface Text](#interface-text)). Scenario text is shown from the Translation that the Interface Language selects, or else in the Base Language ([scenario-format.md](scenario-format.md#language-tags)).
+- `<html lang>` is the Interface Language. Each element holding Scenario text carries the `lang` of the text shown (the Translation's or the Base Language's `language`); Interface Text around it is not wrapped in that `lang`.
 - The main view shows the **current** Scene or Location, not a growing conversation. Earlier narration lives in the separate, read-only Journal.
 - Content gated by an unmet Condition (Choices, Connections, on-demand Scenes) is hidden. Unavailable inventory and Combat actions are shown disabled, with the reason. The server validates every action independently.
 
@@ -96,6 +97,51 @@ A paginated, read-only list of the Journal entries in order: intro, narration, C
 
 An `ended` or incompatible Playthrough opens in the same game screen with no actions. An incompatible one explains that the Scenario has changed since it was played (or is no longer available) and offers a new Playthrough when the Scenario is still in the collection. Its Character sheet, inventory and map are best effort, and when the Scenario is gone only the Journal and the Ending from it are shown (see [architecture.md](architecture.md#content-compatibility)).
 
+## Interface Text
+
+Everything the UI shows that does not come from a Scenario goes through the catalogue of the Interface Language ([architecture.md](architecture.md#interface-text), [ADR 0003](../adr/0003-interface-text-from-a-typed-catalogue.md)):
+
+- UI chrome: navigation, headings, buttons, form labels and errors, empty states, tab names, `aria-label`s and other accessible names, the page title and description;
+- notices after rejected actions;
+- Journal entry type labels and the wording of engine-generated entries;
+- Test descriptions (the Attribute, Difficulty, dice, modifier, total, success or failure) and the Test shown on a Choice;
+- Combat round messages, roll lines, the Combat panel's labels, and the Range arena;
+- inventory and state-change wording ("received", "lost", Health gained or lost, …);
+- disabled-action reasons, in inventory and in Combat;
+- the names of the engine's own vocabulary: Attributes, Difficulty levels, Ranges, Reach, Equipment slots, Victory and Defeat. These are never shown as raw ids;
+- the not-found and error pages (the app defines its own instead of Next.js's built-in English ones).
+
+Rules:
+
+- A message places a Scenario-provided name only where its language needs no inflection: as a label, after a colon, or in the nominative. In Polish, "Atak: Miecz — trafienie, 3 obrażenia" rather than a sentence that would need "mieczem"; "Nowa rozgrywka: Szepczące Lasy" rather than "…Szepczących Lasów". Names are never lower-cased or otherwise transformed.
+- Counts use the language's plural forms (Polish `one`/`few`/`many`/`other`: "1 obrażenie", "3 obrażenia", "5 obrażeń").
+- Numbers are formatted with `Intl` in the Interface Language.
+- Flag ids are author-internal and are never shown to the player ([playthrough-state.md](playthrough-state.md#applying-an-outcome)).
+
+### Polish terms
+
+The Polish catalogue uses these terms for the engine's vocabulary. Scenario authors writing in Polish or translating into it should use them too, so that narration and Interface Text agree. Other Polish wording is UI copy.
+
+| Term | Polish |
+|---|---|
+| Attribute: Might, Agility, Wits, Presence | Atrybut: Krzepa, Zręczność, Spryt, Prezencja |
+| Health | Zdrowie |
+| Damage | Obrażenia |
+| Test | Test |
+| Difficulty: Easy, Ordinary, Hard, Very hard | Trudność: Łatwa, Zwykła, Trudna, Bardzo trudna |
+| Range: Near, Far | Dystans: Blisko, Daleko |
+| Reach: melee, ranged | Zasięg: wręcz, dystansowy |
+| Equipment slots: weapon, outfit, talisman | Broń, Strój, Talizman |
+| Equipment | Ekwipunek |
+| Consumable | Przedmiot jednorazowy |
+| Key Item | Przedmiot fabularny |
+| Combat | Walka |
+| Journal | Dziennik |
+| Ending; Victory, Defeat | Zakończenie; Zwycięstwo, Porażka |
+| Character; Character Template | Postać; Szablon postaci |
+| Playthrough | Rozgrywka |
+| Scenario | Scenariusz |
+
 ## Notices
 
 Rejected actions refresh the current state and show a transient notice, such as "The game was advanced in another tab; this is its current state" or "That action is no longer available". There is no error page.
@@ -117,3 +163,4 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Location map: auto-laid-out graph vs author-provided coordinates](https://github.com/lbacik/simple-rpg-engine/issues/11#issuecomment-6099544434)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478)
 - [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575) (routes, rejection notices)
+- [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (Interface Text, `lang`, Polish terms)
