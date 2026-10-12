@@ -146,7 +146,8 @@ describe('narrative tests', () => {
     expect(test.success).toBe(false);
     expect(test.attribute).toBe('might');
     expect(test.difficulty).toBe('very-hard');
-    expect(typeof test.text).toBe('string');
+    // Structured events carry no English text.
+    expect(test).not.toHaveProperty('text');
   });
 
   it('shows the tested Attribute and Difficulty before the Choice is taken', () => {
@@ -156,10 +157,10 @@ describe('narrative tests', () => {
     if (gameView.kind !== 'scene') throw new Error('expected a Scene view');
     const force = gameView.choices.find((choice) => choice.id === 'force-door');
     expect(force).toBeDefined();
-    expect(force?.testLabel).toContain('Might');
-    expect(force?.testLabel).toContain('Very hard 13');
+    // The Test comes from the view as codes; the app renders it from the catalogue.
+    expect(force?.test).toEqual({ attribute: 'might', difficulty: 'very-hard', target: 13 });
     // A Choice without a Test carries no label.
     const stepAway = gameView.choices.find((choice) => choice.id === 'step-away');
-    expect(stepAway?.testLabel).toBeUndefined();
+    expect(stepAway?.test).toBeUndefined();
   });
 });

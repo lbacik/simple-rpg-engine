@@ -256,6 +256,48 @@ export const pl: Catalogue = {
     travel: (name: string): string => `Podróż: ${name}`,
     victory: 'Zwycięstwo',
     defeat: 'Porażka',
+    testSuccess: 'sukces',
+    testFailure: 'porażka',
+    test: (
+      attribute: string,
+      difficulty: string,
+      target: number,
+      die1: number,
+      die2: number,
+      modifier: number,
+      total: number,
+      success: boolean,
+    ): string => {
+      const signed = modifier >= 0 ? `+${whole(modifier)}` : `−${whole(Math.abs(modifier))}`;
+      const result = success ? 'sukces' : 'porażka';
+      return (
+        `Test: ${attribute}, ${difficulty} ${whole(target)}: ` +
+        `${whole(die1)}+${whole(die2)}${signed}=${whole(total)} vs ${whole(target)} — ${result}.`
+      );
+    },
+    itemReceived: (name: string, count: number): string =>
+      count === 1 ? `Otrzymano: ${name}` : `Otrzymano: ${name} ×${whole(count)}`,
+    itemLost: (name: string, count: number): string =>
+      count === 1 ? `Utracono: ${name}` : `Utracono: ${name} ×${whole(count)}`,
+    healthGained: (amount: number): string =>
+      selectPlural('pl', amount, {
+        one: `+${whole(amount)} punkt Zdrowia`,
+        few: `+${whole(amount)} punkty Zdrowia`,
+        many: `+${whole(amount)} punktów Zdrowia`,
+        other: `+${whole(amount)} punktu Zdrowia`,
+      }),
+    healthLost: (amount: number): string =>
+      selectPlural('pl', amount, {
+        one: `${whole(amount)} obrażenie`,
+        few: `${whole(amount)} obrażenia`,
+        many: `${whole(amount)} obrażeń`,
+        other: `${whole(amount)} obrażenia`,
+      }),
+    revealed: (name: string): string => `Odkryto: ${name}`,
+    equipped: (name: string): string => `Założono: ${name}`,
+    unequipped: (name: string): string => `Zdjęto: ${name}`,
+    used: (name: string, restored: number): string =>
+      `Użyto: ${name} (+${whole(restored)} Zdrowia)`,
   },
   readOnly: {
     combat: 'Walka',

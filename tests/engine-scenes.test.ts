@@ -386,9 +386,21 @@ describe('outcomes, effects and transitions', () => {
         lang: 'en',
         text: 'Brenna presses a bundle of herbs into your hands. "The cart track\nleads to the forest edge. Go with the saints."\n',
       },
-      { type: 'state-change', lang: 'en', text: 'flag set: quest-accepted' },
-      { type: 'state-change', lang: 'en', text: 'received: Healing Herbs' },
-      { type: 'state-change', lang: 'en', text: 'revealed: Forest Edge' },
+      {
+        type: 'state-change',
+        lang: 'en',
+        change: 'item-received',
+        itemId: 'healing-herbs',
+        name: 'Healing Herbs',
+        amount: 1,
+      },
+      {
+        type: 'state-change',
+        lang: 'en',
+        change: 'revealed',
+        itemId: 'forest-edge',
+        name: 'Forest Edge',
+      },
     ]);
     expect(accepted.state.flags).toEqual(['quest-accepted']);
     expect(accepted.state.inventory['healing-herbs']).toBe(3);
@@ -414,18 +426,15 @@ describe('outcomes, effects and transitions', () => {
       'choice',
       'outcome',
       'state-change',
-      'state-change',
       'scene',
     ]);
     expect(turned.journal[2]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'lost: Barrow Key',
-    });
-    expect(turned.journal[3]).toEqual({
-      type: 'state-change',
-      lang: 'en',
-      text: 'flag set: barrow-open',
+      change: 'item-lost',
+      itemId: 'barrow-key',
+      name: 'Barrow Key',
+      amount: 1,
     });
     expect(turned.state.inventory['barrow-key']).toBeUndefined();
     expect(turned.state.flags).toContain('barrow-open');
@@ -467,7 +476,12 @@ describe('outcomes, effects and transitions', () => {
       'outcome',
       'state-change',
     ]);
-    expect(prayed.journal[2]).toEqual({ type: 'state-change', lang: 'en', text: '+2 Health' });
+    expect(prayed.journal[2]).toEqual({
+      type: 'state-change',
+      lang: 'en',
+      change: 'health-gained',
+      amount: 2,
+    });
   });
 
   it('gives the charm and reveals the mound at the chapel altar', () => {
@@ -492,12 +506,17 @@ describe('outcomes, effects and transitions', () => {
     expect(taken.journal[2]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'received: Silver Charm',
+      change: 'item-received',
+      itemId: 'silver-charm',
+      name: 'Silver Charm',
+      amount: 1,
     });
     expect(taken.journal[3]).toEqual({
       type: 'state-change',
       lang: 'en',
-      text: 'revealed: Barrow Mound',
+      change: 'revealed',
+      itemId: 'barrow-mound',
+      name: 'Barrow Mound',
     });
   });
 

@@ -170,12 +170,12 @@ export function renderJournalEntries(
 
 /**
  * Render one journal entry to HTML through the catalogue of the Interface
- * Language current when the Journal is read. Structured entries of this
- * batch (intro, Scene narration, Choice taken, Outcome narration, travel,
- * Ending) render their event data with the catalogue and their Scenario text
- * as presented, each element carrying the entry's `lang`. Every other kind
- * still stores English text and is shown verbatim, with only its type label
- * from the catalogue; later tickets move those kinds to structured events.
+ * Language current when the Journal is read. Structured entries (intro, Scene
+ * narration, Choice taken, Outcome narration, travel, Ending, Test,
+ * state changes, inventory actions) render their event data with the catalogue
+ * and their Scenario text as presented, each name carrying the entry's `lang`.
+ * Rows stored before structured events hold English text and are shown
+ * verbatim, with only their type label from the catalogue.
  */
 export function renderJournalEntry(
   entry: JournalEntryView,
@@ -205,10 +205,13 @@ export function renderJournalEntry(
     };
   }
   if (entry.type === 'test') {
-    return {
-      label,
-      html: `<p lang="${escapeHtml(lang)}">${escapeHtml(testText(record, text))}</p>`,
-    };
+    return { label, html: renderTestEntry(record, catalogue, lang, text) };
+  }
+  if (entry.type === 'state-change') {
+    return { label, html: renderStateChangeEntry(record, catalogue, lang, text) };
+  }
+  if (entry.type === 'inventory') {
+    return { label, html: renderInventoryEntry(record, catalogue, lang, text) };
   }
   return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>` };
 }
@@ -266,17 +269,146 @@ export function latestJournalEnding(
   return undefined;
 }
 
-function testText(record: Record<string, unknown>, fallback: string): string {
-  if (fallback !== '') return fallback;
-  const attribute = String(record.attribute ?? '');
-  const difficulty = String(record.difficulty ?? '');
-  const die1 = String(record.die1 ?? '');
-  const die2 = String(record.die2 ?? '');
-  const modifier = String(record.modifier ?? '');
-  const total = String(record.total ?? '');
-  const result = record.success === true ? 'success' : record.success === false ? 'failure' : '';
-  const parts = [attribute, difficulty, `rolled ${die1} and ${die2}`, `modifier ${modifier}`, `total ${total}`, result]
-    .filter((part) => part !== '' && part !== 'rolled  and ')
-    .join(', ');
-  return parts === '' ? 'Test.' : `${parts}.`;
+/**
+ * A catalogue message with a Scenario name inside: the name keeps the entry's
+ * `lang`, the Interface Text around it does not.
+ */
+function messageWithName(message: string, name: string, lang: string): string {
+  if (name === '') return `<p>${escapeHtml(message)}</p>`;
+  const at = message.lastIndexOf(name);
+  if (at === -1) return `<p>${escapeHtml(message)}</p>`;
+  const before = escapeHtml(message.slice(0, at));
+  const after = escapeHtml(message.slice(at + name.length));
+  return `<p>${before}<span lang="${escapeHtml(lang)}">${escapeHtml(name)}</span>${after}</p>`;
+}
+
+function isAttributeId(value: unknown): value is keyof Catalogue['attributes'] {
+  return value === 'might' || value === 'agility' || value === 'wits' || value === 'presence';
+}
+
+function isDifficultyId(value: unknown): value is keyof Catalogue['difficulty'] {
+  return value === 'easy' || value === 'ordinary' || value === 'hard' || value === 'very-hard';
+}
+
+function toCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * A Test entry: legacy rows carry the English sentence and are shown verbatim;
+ * new rows carry the structured roll and render through the catalogue of the
+ * current Interface Language.
+ */
+function renderTestEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+  text: string,
+): string {
+  if (text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
+  if (!isAttributeId(record.attribute) || !isDifficultyId(record.difficulty)) {
+    return `<p>${escapeHtml(catalogue.journal.types.test)}</p>`;
+  }
+  const die1 = toCount(record.die1);
+  const die2 = toCount(record.die2);
+  const modifier = toCount(record.modifier);
+  const total = toCount(record.total);
+  if (die1 === undefined || die2 === undefined || modifier === undefined || total === undefined) {
+    return `<p>${escapeHtml(catalogue.journal.types.test)}</p>`;
+  }
+  const success = record.success === true;
+  const target =
+    record.difficulty === 'easy'
+      ? 7
+      : record.difficulty === 'ordinary'
+        ? 9
+        : record.difficulty === 'hard'
+          ? 11
+          : 13;
+  const message = catalogue.journal.test(
+    catalogue.attributes[record.attribute],
+    catalogue.difficulty[record.difficulty],
+    target,
+    die1,
+    die2,
+    modifier,
+    total,
+    success,
+  );
+  return `<p>${escapeHtml(message)}</p>`;
+}
+
+/**
+ * A state-change entry: legacy rows carry the English sentence and are shown
+ * verbatim; new rows carry the structured change and render through the
+ * catalogue. Names inside messages carry the entry's `lang`.
+ */
+function renderStateChangeEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+  text: string,
+): string {
+  if (text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
+  const change = record.change;
+  if (change === 'item-received' || change === 'item-lost') {
+    const name = typeof record.name === 'string' ? record.name : undefined;
+    const amount = toCount(record.amount) ?? 1;
+    if (name === undefined) return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
+    const message =
+      change === 'item-received'
+        ? catalogue.journal.itemReceived(name, amount)
+        : catalogue.journal.itemLost(name, amount);
+    return messageWithName(message, name, lang);
+  }
+  if (change === 'health-gained') {
+    const amount = toCount(record.amount);
+    if (amount === undefined) return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
+    return `<p>${escapeHtml(catalogue.journal.healthGained(amount))}</p>`;
+  }
+  if (change === 'health-lost') {
+    const amount = toCount(record.amount);
+    if (amount === undefined) return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
+    return `<p>${escapeHtml(catalogue.journal.healthLost(amount))}</p>`;
+  }
+  if (change === 'revealed') {
+    const name = typeof record.name === 'string' ? record.name : undefined;
+    if (name === undefined) return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
+    return messageWithName(catalogue.journal.revealed(name), name, lang);
+  }
+  return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
+}
+
+/**
+ * An inventory-action entry: legacy rows carry the English sentence and are
+ * shown verbatim; new rows carry the structured action and render through the
+ * catalogue. The item name carries the entry's `lang`.
+ */
+function renderInventoryEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+  text: string,
+): string {
+  if (text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
+  const action = record.action;
+  const name = typeof record.name === 'string' ? record.name : undefined;
+  if (name === undefined) return `<p>${escapeHtml(catalogue.journal.types.inventory)}</p>`;
+  if (action === 'equipped') {
+    return messageWithName(catalogue.journal.equipped(name), name, lang);
+  }
+  if (action === 'unequipped') {
+    return messageWithName(catalogue.journal.unequipped(name), name, lang);
+  }
+  if (action === 'used') {
+    const healed = toCount(record.healed) ?? 0;
+    return messageWithName(catalogue.journal.used(name, healed), name, lang);
+  }
+  return `<p>${escapeHtml(catalogue.journal.types.inventory)}</p>`;
 }

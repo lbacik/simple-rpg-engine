@@ -11,7 +11,7 @@
 
 import Link from 'next/link';
 import type { Scenario } from '@/content/model';
-import type { GameView } from '@/engine/index';
+import { inventoryEquipReason, inventoryUseReason, type GameView } from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
@@ -212,7 +212,12 @@ export function InventorySheet({
   language: InterfaceLanguage;
 }) {
   const readOnly = forceReadOnly === true || state.status !== 'active';
-  const inCombat = state.activeCombat != null;
+  // Unavailable inventory reasons come from the view as codes
+  // (`inventoryEquipReason` / `inventoryUseReason`) and are rendered from the
+  // catalogue into the browser strings below.
+  const equipReason = inventoryEquipReason(state);
+  const useReason = inventoryUseReason(state);
+  const inCombat = equipReason === 'in-combat';
   const slots: InventorySlotData[] = EQUIPMENT_SLOTS.map((slot) => {
     const equippedId = state.equipment[slot];
     // Best effort: an equipped id that is gone from the content reads as empty.
@@ -270,7 +275,7 @@ export function InventorySheet({
         step={step}
         readOnly={readOnly}
         inCombat={inCombat}
-        fullHealth={state.character.health >= MAX_HEALTH}
+        fullHealth={useReason === 'full-health'}
         initialSelectedId={initialSelectedId}
         seen={seen}
         showUnknownExits={showUnknownExits}
