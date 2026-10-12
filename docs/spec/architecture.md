@@ -40,7 +40,7 @@ applyAction(scenario, state, action, rng):
 view(scenario, state): GameView
 ```
 
-- `loadScenario` runs the four validation phases ([validation.md](validation.md)) and returns either an **immutable, compiled model** with references resolved, together with its warnings, or all the diagnostics of the run that rejected it. It also computes the **content hash** and reads each image's dimensions and hash. Shared by the CLI and the app.
+- `loadScenario` runs the four validation phases and each Translation's own pipeline ([validation.md](validation.md)) and returns either an **immutable, compiled model** with references resolved and only the Translations that passed, together with its warnings and the diagnostics of every rejected Translation, or all the diagnostics of the run that rejected it. It also computes the **content hash** and reads each image's dimensions and hash. Shared by the CLI and the app.
 - `applyAction` is synchronous, deterministic for a given `rng`, and does no I/O. It checks `action.expectedStep === state.step` as a domain rule, then legality against the current position ([playthrough-state.md](playthrough-state.md#actions-and-the-step-guard)). It returns only the **new** Journal entries.
 - `view` is the derived projection the UI renders: the current narration, visible Choices, visible Connections, on-demand Scenes on offer, map nodes and lines, effective Attributes, inventory with available item actions, Combat state and available Combat actions (with reasons for unavailable ones), and the latest result entries.
 - `rng` is injected. Production uses `crypto.randomInt(1, 7)` per die and stores no seed. Tests use a deterministic RNG.

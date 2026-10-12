@@ -6,6 +6,7 @@ What a Scenario package must satisfy to enter the collection, how it is checked,
 
 - Two severities: **`error`** and **`warning`**. There is no `info` level and no strict mode.
 - An **error** rejects the Scenario. At startup it is left out of the collection and logged with its diagnostics; the app still starts. The CLI exits with code 1.
+- An error **about a Translation** rejects only that Translation. The Scenario stays in the collection without it, and its players see the Base Language instead ([Translations](#translations)). At startup the rejected Translation is logged with its diagnostics. The CLI still exits with code 1.
 - A **warning** never blocks. It is logged at startup and printed by the CLI. Warnings alone give exit code 0.
 - Assignment principle:
   - **error**: the engine cannot run the package correctly, the player would hit undefined or broken behaviour, or the Scenario *certainly* cannot be won;
@@ -23,6 +24,7 @@ What a Scenario package must satisfy to enter the collection, how it is checked,
 
 - Within a phase, **all** diagnostics from all files are collected.
 - If a phase produced any error, the later phases do not run. Warnings never stop the pipeline. This avoids cascades such as an unknown-Scene error when the Scene's file merely failed to parse.
+- The phases check the base Scenario. Each Translation has a pipeline of its own, run once the base has passed phase 3 ([Translations](#translations)).
 - Limits expressible in JSON Schema (ranges, enums, required keys) also reach the editor through the generated schema. Refinements (the Template point sum, the narration rules, mutually exclusive keys) are enforced by the loader and the CLI only.
 
 ## Diagnostic format
@@ -36,12 +38,14 @@ type Diagnostic = {
   range?: { line: number; column: number; endLine: number; endColumn: number }; // from `yaml` node ranges
   path?: (string | number)[];   // path within the document, e.g. ['choices', 2, 'outcome', 'next']
   related?: { file: string; range?: Diagnostic['range']; message: string }[]; // e.g. "first declared here"
+  translation?: string;         // the Translation manifest's path, on every diagnostic about a Translation
 };
 ```
 
 - Positions come from the `yaml` library's node ranges and `LineCounter`; lines and columns are 1-based.
 - Playability diagnostics point at the `id` node of the entity concerned.
 - Duplicate-ID diagnostics carry the first declaration in `related`.
+- `translation` is set on every diagnostic about a Translation, including those whose `file` is a base file. It is the manifest's path because the path exists even when the Translation's `language` cannot be read.
 
 ## CLI
 
@@ -53,9 +57,9 @@ type Diagnostic = {
   <scenario-dir>/<file>:<line>:<column> <severity> <code>: <message>
   ```
 
-  followed by a summary line with the error and warning counts. A diagnostic without a file or range omits those parts.
+  followed by a summary line with the error and warning counts and each rejected Translation's manifest path and `language`, for example `1 error, 2 warnings; Translation translations/pl/scenario.yaml (pl) rejected`. A diagnostic without a file or range omits those parts.
 - `--json` prints the raw `Diagnostic[]` array instead.
-- Exit code 1 if there is any error, otherwise 0.
+- Exit code 1 if there is any error, including an error that rejects only a Translation, otherwise 0.
 - The CLI applies the same `id`-equals-directory rule as the collection.
 
 ## Rule catalog
@@ -198,12 +202,60 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 - **State-dependent soft-locks** (for example, a key given away before the only locked exit) cannot be proven statically. A warning for "every way out is conditional" was rejected as too noisy, because locked doors with a puzzle are a normal pattern.
 - **Combat balance**: within the mechanics limits no fight is unwinnable by construction (see [mechanics.md](mechanics.md#tactical-notes-consequences-not-extra-rules)). Difficulty estimates are out of scope.
 
+## Translations
+
+A [Translation](scenario-format.md#translations) is checked against the base Scenario, so its checks run only after the base has passed phase 3 (Integrity), when every base ID is resolved. They do not depend on phase 4: a playability error rejects the Scenario anyway, but the CLI still reports the Translations' findings to the author.
+
+Each Translation listed under the base manifest's `translations` runs its own pipeline, independent of the other Translations:
+
+| Stage | Code prefix | Checks |
+|---|---|---|
+| T1. Package | `package/` | the Translation manifest and every file it lists: presence, YAML syntax and subset, path rules, files listed at most once across the whole package |
+| T2. Structure | `schema/` | the Zod definition of the Translation manifest and of each Translation file, a text-only projection of the base file kind; the text rules |
+| T3. Match | `translation/` | completeness against the base, language tags, staleness |
+
+- Within a stage, all diagnostics of that Translation are collected. If a stage produced any error, the Translation's later stages do not run.
+- Any error in its pipeline **rejects the Translation**, and only it. The Scenario is loaded without it, and an Interface Language that would have selected it falls back to the Base Language. Warnings never reject.
+- Every diagnostic of the pipeline carries the Translation's manifest path in `translation`.
+
+What the earlier stages catch, with existing codes:
+
+- A Translation manifest listed under `translations` that is missing or unreadable is `package/missing-file`, and a `translations` entry that breaks the path rules is `package/invalid-path`. Each rejects only that Translation.
+- `package/duplicate-file` covers the whole package. A Translation that lists a base file is rejected. When two Translations list the same file, both are rejected.
+- A non-translatable field in a Translation file (`when`, `effects`, `map`, …) is `schema/unknown-key`.
+- A missing `language` or `baseVersion` is `schema/missing-field`, and an invalid tag is `schema/invalid-language`.
+- Translation text follows the base text rules: `schema/empty-text`, `schema/narration-brace` and the `schema/markdown-outside-subset` warning.
+- `{name}` is not compared with the base. A Translation may drop it where the base has it, or use it where the base does not, as its grammar requires.
+
+### Stage T3: Match
+
+Entries are matched to the base by their keys ([Translation files](scenario-format.md#translation-files)): `id` for entities, catalog entries and Choices, `to` for Connections, and the base nesting for Outcomes.
+
+| Code | Rule |
+|---|---|
+| `translation/missing-text` | A translatable field the base has is absent from the Translation, including every field of a base entity the Translation has no entry for. One diagnostic per field, pointing at the `id` node of the base entity, or at the base field itself for manifest fields. |
+| `translation/unmatched` | The Translation has an entry or field with no base counterpart: an unknown `id`, Choice `id` or Connection `to`; an Outcome branch the base Choice or Encounter does not have (for example `test.success` under a Choice with `outcome`); or an optional field the base omits. |
+| `translation/duplicate-entry` | The Translation has two entries with the same key, in one file or across its files. The first entry is in `related`. |
+| `translation/base-language` | The Translation's primary language subtag equals the Base Language's. |
+| `translation/duplicate-language` | Two Translations of the Scenario share a primary language subtag. **Both** are rejected, since neither has precedence; each names the other in `related`. Every Translation whose manifest declares a valid `language` counts, even one rejected by another rule. |
+| `translation/not-interface-language` **(W)** | The Translation's primary language subtag is not an Interface Language (currently `en` and `pl`). It is valid but never shown. |
+| `translation/stale` **(W)** | The Translation manifest's `baseVersion` differs from the base manifest's `version`. The message names both versions. |
+
+### Staleness
+
+Structural drift is already an error: a Scene, Choice or optional field added to the base makes the Translation incomplete (`translation/missing-text`), and one removed from the base leaves it `translation/unmatched`. What remains is changed text in a field both still have, which no rule can see. A Translation therefore records the base `version` it was translated from in `baseVersion`, and a mismatch draws `translation/stale`.
+
+- The values are compared as plain strings. There is no ordering and no semver: any difference warns.
+- The check is coarse. It relies on the author bumping `version` when text changes, and it marks the whole Translation, not the changed strings. The translator clears it by reviewing the text and updating `baseVersion`.
+- It is a warning, not an error, because a stale Translation is complete and playable. It is shown to players as usual, with no marker.
+
 ## The example Scenario
 
 [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/) has been walked through every phase by hand and passes with **no errors and no warnings**. It is the reference fixture for the validator's tests; invalid fixtures are written alongside the validator.
 
 ## Sources
 
+- [Translation validation and staleness](https://github.com/lbacik/simple-rpg-engine/issues/58) (Translations, scoped rejection, `baseVersion`)
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (rule catalog changes, death Ending, the "not defeated" and `next` warning definitions)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (image rules)
