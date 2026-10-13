@@ -36,6 +36,10 @@ test('the collection groups and flags under en', async ({ page }) => {
     /flag current/,
   );
   await expect(bridges.getByRole('img', { name: 'Polish' })).not.toHaveClass(/current/);
+  await expect(bridges.locator('.flags [role="img"]').first()).toHaveAttribute(
+    'aria-label',
+    'English (original)',
+  );
 
   const other = page.getByRole('region', { name: 'In other languages' });
   await expect(other).toContainText(
@@ -70,6 +74,10 @@ test('the collection groups and flags under pl', async ({ browser }) => {
       /current/,
     );
     await expect(bridges.getByRole('img', { name: 'Polski' })).toHaveClass(/flag current/);
+    await expect(bridges.locator('.flags [role="img"]').first()).toHaveAttribute(
+      'aria-label',
+      'Angielski (oryginał)',
+    );
 
     const other = page.getByRole('region', { name: 'W innych językach' });
     await expect(other).toContainText(
