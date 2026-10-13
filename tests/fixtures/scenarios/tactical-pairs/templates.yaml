@@ -1,0 +1,8 @@
+- id: hunter
+  name: Hunter
+  description: You know the woods.
+  attributes: { might: 1, agility: 3, wits: 2, presence: 0 }
+  items:
+    - { item: hunting-bow }
+    - { item: hunters-cloak }
+    - { item: healing-herbs, quantity: 2 }

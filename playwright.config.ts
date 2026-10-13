@@ -24,6 +24,14 @@ function buildE2EScenarioDir(): string {
   fs.cpSync(path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'two-bridges'), path.join(tmp, 'two-bridges'), {
     recursive: true,
   });
+  // The tactical pair fixture (tests/fixtures/scenarios/tactical-pairs): the
+  // two-Grey-Wolf Encounter the tactical Combat E2E reaches through the
+  // test-only entry path. A test/loader fixture only, never shipped.
+  fs.cpSync(
+    path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'tactical-pairs'),
+    path.join(tmp, 'tactical-pairs'),
+    { recursive: true },
+  );
   const staraSource = path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'stara-studnia');
   const staraDest = path.join(tmp, 'stara-studnia');
   fs.cpSync(staraSource, staraDest, {
@@ -74,6 +82,10 @@ export default defineConfig({
       PORT: String(PORT),
       // The standalone server otherwise binds the machine hostname only.
       HOSTNAME: '127.0.0.1',
+      // Unlock the test-only tactical entry path (`/test-tactical`), which
+      // seeds real pair-Combat and legacy saves for the tactical E2E. Set
+      // only for the throwaway E2E server, never in production.
+      E2E_TEST_ROUTES: '1',
     },
   },
 });
