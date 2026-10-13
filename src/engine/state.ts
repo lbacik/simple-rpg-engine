@@ -4,67 +4,29 @@
 // The document carries a `stateVersion`, is validated with Zod when read, and
 // refers to Scenario content only by ID. Later tickets fill in behaviour, not
 // shape: every area of the stored-state table is present here from the start.
+//
+// State version 1 is frozen in `./state-v1`: this module re-exports it so the
+// live reader and the frozen contract cannot drift before v2 lands.
 
-import { z } from 'zod';
+import {
+  PlaythroughStateV1Schema,
+  STATE_VERSION_V1,
+  parsePlaythroughStateV1,
+  type BaseAttributesV1,
+  type PlaythroughStateV1,
+} from './state-v1';
 
-export const STATE_VERSION = 1 as const;
+export const STATE_VERSION = STATE_VERSION_V1 as typeof STATE_VERSION_V1;
 
 /** Every Character has 12 maximum Health (docs/spec/mechanics.md). */
 export const MAX_HEALTH = 12 as const;
 
-const attributesSchema = z.strictObject({
-  might: z.number().int().min(0).max(3),
-  agility: z.number().int().min(0).max(3),
-  wits: z.number().int().min(0).max(3),
-  presence: z.number().int().min(0).max(3),
-});
+export type BaseAttributes = BaseAttributesV1;
 
-export type BaseAttributes = z.infer<typeof attributesSchema>;
+export const PlaythroughStateSchema = PlaythroughStateV1Schema;
 
-const takenOnceChoiceSchema = z.strictObject({
-  sceneId: z.string(),
-  choiceId: z.string(),
-});
-
-const activeCombatSchema = z.strictObject({
-  encounterId: z.string(),
-  range: z.enum(['near', 'far']),
-  round: z.number().int().min(1),
-});
-
-export const PlaythroughStateSchema = z.strictObject({
-  stateVersion: z.literal(STATE_VERSION),
-  scenarioId: z.string(),
-  scenarioVersion: z.string(),
-  contentHash: z.string(),
-  status: z.enum(['active', 'ended']),
-  endingId: z.string().optional(),
-  step: z.number().int().min(0),
-  character: z.strictObject({
-    templateId: z.string(),
-    name: z.string(),
-    baseAttributes: attributesSchema,
-    health: z.number().int().min(0).max(12),
-  }),
-  inventory: z.record(z.string(), z.number().int().min(1)),
-  equipment: z.strictObject({
-    weapon: z.string().optional(),
-    outfit: z.string().optional(),
-    talisman: z.string().optional(),
-  }),
-  currentLocationId: z.string(),
-  activeSceneId: z.string().nullable().optional(),
-  activeCombat: activeCombatSchema.nullable().optional(),
-  visited: z.array(z.string()),
-  revealed: z.array(z.string()),
-  firedScenes: z.array(z.string()),
-  takenOnceChoices: z.array(takenOnceChoiceSchema),
-  flags: z.array(z.string()),
-  encounterDamage: z.record(z.string(), z.number().int().min(0)),
-});
-
-export type PlaythroughState = z.infer<typeof PlaythroughStateSchema>;
+export type PlaythroughState = PlaythroughStateV1;
 
 export function parsePlaythroughState(value: unknown): PlaythroughState {
-  return PlaythroughStateSchema.parse(value);
+  return parsePlaythroughStateV1(value);
 }
