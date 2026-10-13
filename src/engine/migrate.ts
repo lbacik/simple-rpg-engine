@@ -23,7 +23,7 @@
 // The old Defend bonus expired within its own turn, so nothing of it carries
 // over.
 
-import type { Scenario } from '../content/model';
+import type { CompiledParticipant, Scenario } from '../content/model';
 import type { Rng } from './index';
 import {
   PlaythroughStateSchema,
@@ -78,6 +78,20 @@ function noRandomness(): Rng {
   };
 }
 
+/** The only participant of an Encounter, or undefined when the recorded
+ * single-Enemy Damage cannot be assigned (the Encounter is missing or no
+ * longer has exactly one participant). */
+function soleParticipant(
+  scenario: Scenario,
+  encounterId: string,
+): CompiledParticipant | undefined {
+  const encounter = scenario.encountersById[encounterId];
+  if (encounter === undefined || encounter.participants.length !== 1) {
+    return undefined;
+  }
+  return encounter.participants[0];
+}
+
 /** Why the recorded Damage for one Encounter cannot be assigned. */
 function assignmentFailure(scenario: Scenario, encounterId: string): string {
   const encounter = scenario.encountersById[encounterId];
@@ -111,9 +125,8 @@ export function migratePlaythroughState(
   // kept: the participant is at full Health.
   const encounters: Record<string, Record<string, number>> = {};
   for (const [encounterId, taken] of Object.entries(v1.encounterDamage)) {
-    const encounter = scenario.encountersById[encounterId];
-    const participant = encounter?.participants[0];
-    if (encounter === undefined || encounter.participants.length !== 1 || participant === undefined) {
+    const participant = soleParticipant(scenario, encounterId);
+    if (participant === undefined) {
       fail(assignmentFailure(scenario, encounterId));
       continue;
     }
@@ -127,9 +140,8 @@ export function migratePlaythroughState(
   let activeCombat: PlaythroughState['activeCombat'];
   if (v1.activeCombat != null) {
     const combat = v1.activeCombat;
-    const encounter = scenario.encountersById[combat.encounterId];
-    const participant = encounter?.participants[0];
-    if (encounter === undefined || encounter.participants.length !== 1 || participant === undefined) {
+    const participant = soleParticipant(scenario, combat.encounterId);
+    if (participant === undefined) {
       fail(assignmentFailure(scenario, combat.encounterId));
     } else {
       const selection = selectIntents(
@@ -138,7 +150,7 @@ export function migratePlaythroughState(
         { allowPrepareDraw: false },
       );
       activeCombat = {
-        encounterId: encounter.id,
+        encounterId: combat.encounterId,
         round: combat.round,
         startedParticipants: [participant.id],
         roundParticipantOrder: [participant.id],
@@ -167,11 +179,12 @@ export function migratePlaythroughState(
   } = v1;
   void _taken;
   void _version;
+  void _combat;
   const candidate = {
     ...rest,
     stateVersion: STATE_VERSION,
     encounters,
-    activeCombat: activeCombat ?? _combat ?? null,
+    activeCombat: activeCombat ?? null,
   };
   const parsed = PlaythroughStateSchema.safeParse(candidate);
   if (!parsed.success) {
