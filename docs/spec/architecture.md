@@ -176,10 +176,11 @@ This is optimistic concurrency with no in-process locks, and behaves the same on
   - Journal: rows stored before Interface Languages existed are seeded through the persistence port and rendered verbatim in English with a catalogue type label.
 - **Interface Text rendering**: a table test with one example of every structured event kind the engine emits, rendered with both catalogues; each result is non-empty and contains no `undefined`, `NaN` or `{`. There are no snapshots of whole texts; wording is reviewed by a person against the [term table](ui.md#polish-terms).
 - **Persistence**: port tests against in-memory SQLite, including a race test: two actions with the same `step`, exactly one succeeds.
-- **End to end**: Playwright against a production build, with a temporary Scenario directory holding the shipped Scenarios and both Translation fixtures.
+- **End to end**: Playwright against a production build, with a temporary Scenario directory holding the shipped Scenarios, both Translation fixtures, and the tactical-pair Combat fixture (`tests/fixtures/scenarios/tactical-pairs`: English-only, test/loader-only, never shipped). A test-only entry route (`/test-tactical`, 404 unless `E2E_TEST_ROUTES=1`, which only the throwaway E2E server sets) seeds real pair-Combat and legacy saves through the engine and the stores.
   - The smoke test: start a Playthrough, take one Choice, reload.
   - The Interface Language: a first visit with `Accept-Language: pl-PL` is in Polish; a switch in the language menu survives a reload; a switch also works with JavaScript disabled (one test); the collection groups and each card's language flags; the fallback badge on the game screen; a switch mid-Playthrough followed by the Journal, where earlier narration stays in its language with a flag and Interface Text is in the new language.
   - Which language is shown is asserted through `<html lang>` and the `lang` of elements holding Scenario text. Where visible text matters, it is written in the test, not imported from the catalogue.
+  - Tactical Combat: the no-JavaScript flow through a real two-participant save (Intents, target B, Distract/Attack/Advance, item use, Escape, Continue, Journal) and a legacy active one-Enemy Combat save playing a Round; two tabs at the same step, where the loser sees refreshed state with a stale notice and nothing applies twice.
 
 ## Sources
 

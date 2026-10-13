@@ -1,0 +1,27 @@
+# Tactical pair fixture for browser E2E (docs/spec/tactical-combat-handoff.md,
+# U4/U5). Two Grey Wolves with distinct explicit ids (wolf-a, wolf-b) at Far,
+# steady behaviour, reachable through one on-demand Scene. Test/loader only:
+# it never ships in `scenarios/` and adds no Translation fields. Must load
+# with no diagnostics.
+schemaVersion: 1
+id: tactical-pairs
+title: Tactical Pairs
+description: Reference two-participant Encounter for browser end-to-end tests.
+version: "1.0.0"
+language: en
+startLocation: glade
+deathEnding: death
+locations:
+  - locations/glade.yaml
+scenes:
+  - scenes/ambush.yaml
+items:
+  - items.yaml
+enemies:
+  - enemies.yaml
+encounters:
+  - encounters.yaml
+templates:
+  - templates.yaml
+endings:
+  - endings.yaml

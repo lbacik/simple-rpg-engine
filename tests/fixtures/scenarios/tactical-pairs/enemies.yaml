@@ -1,0 +1,10 @@
+# Same stats as the shipped grey-wolf (steady), so the pair behaves like the
+# reference two-wolf composition in docs/spec/tactical-combat-handoff.md.
+- id: grey-wolf
+  name: Grey Wolf
+  description: Lean and scarred.
+  attributes: { might: 2, agility: 2, wits: 1, presence: 0 }
+  health: 8
+  damage: 2
+  reach: melee
+  behaviour: steady
