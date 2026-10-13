@@ -26,6 +26,7 @@ const COMBAT_ACTIONS: ReadonlySet<string> = new Set([
   'fall-back',
   'attack',
   'defend',
+  'distract',
   'use-item',
   'escape',
 ]);

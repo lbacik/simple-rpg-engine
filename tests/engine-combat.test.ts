@@ -4,12 +4,12 @@
 // turns, guard markers, Enemy responses, Escape, Consumables) with the v2
 // tactical rules in src/engine/index.ts, src/engine/state.ts and
 // src/engine/tactical.ts. Named decisions:
-// - D2: only the `attack` Combat action resolves in this ticket. Submitting
-//   defend is rejected as `illegal-action` (Defend and Distract land in #122).
-//   Advance, Fall back, Escape and Combat `use-item` resolve since #121:
-//   their rejection tests below were rewritten then to assert the new rules.
-//   Non-attack availability shown by combatActions() is standing availability
-//   only. Distract is not tested: it is not in the CombatAction union.
+// - D2: only the `attack` Combat action resolved in #120. Defend and Distract
+//   resolve since #122 (full R4/R5 coverage lives in tests/tactical-round.test.ts;
+//   one Defend smoke test below pins the guard here). Advance, Fall back,
+//   Escape and Combat `use-item` resolve since #121: their rejection tests
+//   below were rewritten then to assert the new rules. Non-attack availability
+//   shown by combatActions() is standing availability only.
 // - D3: the Combat view projection is interim and shows the first surviving
 //   participant (full arena projection arrives with #123/R12).
 //
@@ -916,20 +916,35 @@ describe('non-attack actions (INTERIM D2, #121 behaviour)', () => {
     expect(result.state.activeCombat?.participants['dummy-melee']?.range).toBe('near');
   });
 
-  it('defend is rejected with no state/step change (-> #122)', () => {
+  it('defend executes fast with no roll and guards until cleanup (-> #122)', () => {
     const { scenario, state } = startArena();
     const started = startFight(scenario, state, 'fight-near', strictDice([]));
     const step = started.state.step;
-    const before = started.state;
-    const result = applyAction(
-      scenario,
-      started.state,
-      { kind: 'combat', combatAction: 'defend', expectedStep: step },
-      noDice,
-    );
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
-    expect(started.state).toEqual(before);
-    expect(started.state.step).toBe(step);
+    // The dummy strikes 1+1+1 = 3, missing the guarded 9+1 = 10; the counter
+    // rolls 1+1+1 = 3 against 7+1 = 8, also a miss. Cleanup draws nothing.
+    const rng = strictDice([1, 1, 1, 1]);
+    const result = combat(scenario, started.state, 'defend', rng);
+    rng.assertExhausted();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['defend', 'strike']);
+    expect(round.actions[0]).toMatchObject({
+      speed: 'fast',
+      status: 'executed',
+      guarded: true,
+    });
+    expect(round.actions[0]?.roll).toBeUndefined();
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]?.roll).toMatchObject({ total: 3, target: 10, hit: false });
+    expect(round.actions[1]?.counter).toMatchObject({ damage: 0 });
+    expect(round.actions[1]?.counter?.roll).toMatchObject({
+      total: 3,
+      target: 8,
+      hit: false,
+    });
+    expect(round.stop).toBeUndefined();
+    expect(result.state.step).toBe(step + 1);
+    expect(result.state.character.health).toBe(12);
+    expect(result.state.activeCombat?.round).toBe(2);
   });
 
   it('fall-back resolves at Near: the normal strike lands first, then the lane moves Far (-> #121)', () => {

@@ -1,10 +1,9 @@
-// Tactical Combat tracer bullet: one Round resolving (issue #120).
+// Tactical Combat tracer bullet: one Round resolving (issues #120-#122).
 //
-// Covers acceptance rows R1, R2, R3, R6 (except Fall-back cancellation), R10
-// and R11. Only the Attack resolves in this ticket; every other Character
-// action is rejected as unavailable. Distract interruption is issue #122 and
-// is not tested here (noted where it would apply). The Fall-back-vs-heavy
-// cancellation case is excluded by the ticket and is not tested.
+// Covers acceptance rows R1, R2, R3, R4, R5, R6 (except Fall-back cancellation),
+// R10 and R11. Attack, Defend and Distract resolve; Advance, Fall back, Escape
+// and Consumable use resolve since #121. The Fall-back-vs-heavy cancellation
+// case is excluded by the ticket and is not tested.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,6 +13,7 @@ import { loadScenario, type Scenario } from '../src/content/index';
 import {
   applyAction,
   CHARACTER_ACTION_SPEED,
+  combatActions,
   INTENT_SPEED,
   orderActions,
   selectIntents,
@@ -121,6 +121,36 @@ function attack(
     {
       kind: 'combat',
       combatAction: 'attack',
+      ...(targetParticipantId === undefined ? {} : { targetParticipantId }),
+      expectedStep: state.step,
+    },
+    rng,
+  );
+}
+
+/** The Character's fast Defend: untargeted, never cancelled. */
+function defend(scenario: Scenario, state: PlaythroughState, rng: Rng): Success {
+  return succeed(
+    scenario,
+    state,
+    { kind: 'combat', combatAction: 'defend', expectedStep: state.step },
+    rng,
+  );
+}
+
+/** The Character's fast Distract against one participant. */
+function distract(
+  scenario: Scenario,
+  state: PlaythroughState,
+  rng: Rng,
+  targetParticipantId?: string,
+): Success {
+  return succeed(
+    scenario,
+    state,
+    {
+      kind: 'combat',
+      combatAction: 'distract',
       ...(targetParticipantId === undefined ? {} : { targetParticipantId }),
       expectedStep: state.step,
     },
@@ -585,10 +615,12 @@ describe('R2 selection only on start and cleanup', () => {
     start.assertDone();
     const before = snapshot(state);
     const guard = noDice();
+    // Fall back with nobody Near is unavailable (Defend and Distract resolve
+    // since #122, so they no longer serve as the rejected action here).
     const result = applyAction(
       scenario,
       state,
-      { kind: 'combat', combatAction: 'defend', expectedStep: state.step },
+      { kind: 'combat', combatAction: 'fall-back', expectedStep: state.step },
       guard.rng,
     );
     expect(result).toEqual({ ok: false, reason: 'illegal-action' });
@@ -813,8 +845,7 @@ describe('R6 prepare and heavy attack', () => {
     const { state } = startHunt(scenario, 'ranger', none.rng);
     none.assertSilent();
     // A prepared melee heavy at far: its heavy attack cannot reach.
-    // (Fall-back-vs-heavy cancellation is excluded by the ticket; Distract
-    // interruption belongs to issue #122 and is not tested here.)
+    // (Fall-back-vs-heavy cancellation is excluded by the ticket.)
     const combat = state.activeCombat;
     if (combat == null) throw new Error('expected an active combat');
     const crafted: PlaythroughState = {
@@ -869,12 +900,17 @@ describe('R10 rejected combat actions', () => {
     );
   });
 
-  it('rejects an unavailable action (only attack resolves)', () => {
+  it('rejects an unavailable action (advance at Near)', () => {
     const { scenario, state } = startRats();
     expectRejected(
       scenario,
       state,
-      { kind: 'combat', combatAction: 'defend', expectedStep: state.step },
+      {
+        kind: 'combat',
+        combatAction: 'advance',
+        targetParticipantId: 'rat-a',
+        expectedStep: state.step,
+      },
       'illegal-action',
     );
   });
@@ -1136,5 +1172,411 @@ describe('selectIntents migration reuse', () => {
     );
     expect(ranged.intents[archerParticipant.id]).toBe('strike');
     none.assertSilent();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// R4: Distract interruption and Wary.
+// ---------------------------------------------------------------------------
+
+describe('R4 distract interruption', () => {
+  /** One archer at Far: the heavy draws Prepare on a 1 at selection. */
+  function loadLoneArcher(): { scenario: Scenario } {
+    return loadCustomCombat({
+      enemiesYaml: ENEMY_DEFS.banditArcher,
+      encounterId: 'archer-far',
+      encounterBody: '  participants:\n    - id: archer\n      enemy: bandit-archer',
+      startRange: 'far',
+    });
+  }
+
+  it('cancels an announced Prepare and makes the target Wary through the next Round', () => {
+    const { scenario } = loadLoneArcher();
+    const start = finiteDice([1]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    expect(state.activeCombat?.participants['archer']?.intent).toBe('prepare');
+    const step = state.step;
+    // One survivor, so the target may be omitted. Distract hits 3+3+2 = 8
+    // against 7+1 = 8; cleanup draws the archer's next strike on a 6.
+    const dice = finiteDice([3, 3, 6]);
+    const result = distract(scenario, state, dice.rng);
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map(actorId)).toEqual(['character', 'archer']);
+    expect(round.actions.map((action) => action.kind)).toEqual(['distract', 'prepare']);
+    const interruption = round.actions[0];
+    expect(interruption).toMatchObject({
+      speed: 'fast',
+      order: 1,
+      status: 'executed',
+      damage: 0,
+      waryUntilRound: 2,
+    });
+    expect(interruption?.roll).toMatchObject({
+      die1: 3,
+      die2: 3,
+      modifier: 2,
+      total: 8,
+      target: 8,
+      hit: true,
+    });
+    // The victim carried no preparation, so none is reported cleared.
+    expect(interruption).not.toHaveProperty('prepared');
+    expect(round.actions[1]).toMatchObject({
+      status: 'cancelled',
+      cancelReason: 'interrupted',
+    });
+    expect(round.actions[1]).not.toHaveProperty('prepared');
+    expect(round.actions[1]?.roll).toBeUndefined();
+    expect(round.stop).toBeUndefined();
+    expect(result.state.step).toBe(step + 1);
+    // Wary outlasts the step: stored with the Combat into the next Round.
+    expect(result.state.activeCombat?.round).toBe(2);
+    expect(result.state.activeCombat?.participants['archer']).toMatchObject({
+      intent: 'strike',
+      prepared: false,
+      waryUntilRound: 2,
+    });
+    expect(
+      combatActions(scenario, result.state).find((action) => action.id === 'distract'),
+    ).toMatchObject({ enabled: false, reason: 'wary' });
+  });
+
+  it('bars Distract while the target is Wary and frees it after expiry', () => {
+    const { scenario } = loadLoneArcher();
+    const start = finiteDice([1]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    const first = finiteDice([3, 3, 6]);
+    const distracted = distract(scenario, state, first.rng);
+    first.assertDone();
+    const wary = distracted.state;
+    expect(wary.activeCombat?.round).toBe(2);
+    // Round 2: Distract against the Wary archer is rejected without dice.
+    expectRejected(
+      scenario,
+      wary,
+      {
+        kind: 'combat',
+        combatAction: 'distract',
+        targetParticipantId: 'archer',
+        expectedStep: wary.step,
+      },
+      'illegal-action',
+    );
+    // Round 2 resolves as an attack instead. Both sides miss (bow 1+1+1 = 3
+    // against 7+2 = 9; archer 1+1+1 = 3 against 7+3 = 10); cleanup strikes.
+    const second = finiteDice([1, 1, 1, 1, 6]);
+    const after = attack(scenario, wary, second.rng, 'archer');
+    second.assertDone();
+    expect(after.state.activeCombat?.round).toBe(3);
+    expect(after.state.activeCombat?.participants['archer']?.waryUntilRound).toBeUndefined();
+    expect(
+      combatActions(scenario, after.state).find((action) => action.id === 'distract'),
+    ).toMatchObject({ enabled: true });
+    // Round 3: Distract executes again and makes the archer Wary anew.
+    const third = finiteDice([3, 3, 6]);
+    const freed = distract(scenario, after.state, third.rng, 'archer');
+    third.assertDone();
+    expect(onlyRound(freed.journal).actions[0]).toMatchObject({
+      kind: 'distract',
+      status: 'executed',
+      waryUntilRound: 4,
+    });
+  });
+
+  it('cancels a Heavy attack and clears its stored preparation', () => {
+    const { scenario } = loadCustomCombat({
+      enemiesYaml: ENEMY_DEFS.heavyBoar,
+      encounterId: 'boar-near',
+      encounterBody: '  participants:\n    - enemy: heavy-boar',
+      startRange: 'near',
+    });
+    const start = finiteDice([6]);
+    const { state } = startHunt(scenario, 'hunter', start.rng);
+    start.assertDone();
+    const combat = state.activeCombat;
+    if (combat == null) throw new Error('expected an active combat');
+    const crafted: PlaythroughState = {
+      ...state,
+      activeCombat: {
+        encounterId: combat.encounterId,
+        round: combat.round,
+        startedParticipants: [...combat.startedParticipants],
+        roundParticipantOrder: [...combat.roundParticipantOrder],
+        participants: {
+          'heavy-boar': { range: 'near', intent: 'heavy-attack', prepared: true },
+        },
+      },
+    };
+    // Distract hits 3+3+2 = 8 against 7+0 = 7; cleanup draws the strike.
+    const dice = finiteDice([3, 3, 6]);
+    const result = distract(scenario, crafted, dice.rng, 'heavy-boar');
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map(actorId)).toEqual(['character', 'heavy-boar']);
+    expect(round.actions.map((action) => action.kind)).toEqual(['distract', 'heavy-attack']);
+    expect(round.actions[0]).toMatchObject({
+      speed: 'fast',
+      status: 'executed',
+      damage: 0,
+      prepared: false,
+      waryUntilRound: 2,
+    });
+    expect(round.actions[0]?.roll).toMatchObject({ total: 8, target: 7, hit: true });
+    expect(round.actions[1]).toMatchObject({
+      speed: 'slow',
+      status: 'cancelled',
+      cancelReason: 'interrupted',
+      prepared: false,
+    });
+    expect(result.state.activeCombat?.participants['heavy-boar']).toMatchObject({
+      intent: 'strike',
+      prepared: false,
+      waryUntilRound: 2,
+    });
+  });
+
+  it('a failed Distract has no effect', () => {
+    const { scenario } = loadLoneArcher();
+    const start = finiteDice([1]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    // Distract misses 1+1+2 = 4 against 7+1 = 8, so the Prepare executes and
+    // the prepared heavy that follows needs no selection die.
+    const dice = finiteDice([1, 1]);
+    const result = distract(scenario, state, dice.rng, 'archer');
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['distract', 'prepare']);
+    expect(round.actions[0]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[0]?.roll).toMatchObject({ hit: false });
+    expect(round.actions[0]).not.toHaveProperty('waryUntilRound');
+    expect(round.actions[1]).toMatchObject({ status: 'executed', prepared: true });
+    expect(result.state.activeCombat?.participants['archer']).toMatchObject({
+      intent: 'heavy-attack',
+      prepared: true,
+    });
+    expect(result.state.activeCombat?.participants['archer']?.waryUntilRound).toBeUndefined();
+    // Still distractable next Round.
+    expect(
+      combatActions(scenario, result.state).find((action) => action.id === 'distract'),
+    ).toMatchObject({ enabled: true });
+  });
+
+  it('requires a target with two survivors', () => {
+    const { scenario } = loadArchersFar();
+    const start = finiteDice([1]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    expectRejected(
+      scenario,
+      state,
+      { kind: 'combat', combatAction: 'distract', expectedStep: state.step },
+      'illegal-action',
+    );
+  });
+
+  it('resolves against an explicit target while the other participant still acts', () => {
+    const { scenario } = loadArchersFar();
+    const start = finiteDice([1]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    expect(state.activeCombat?.participants['archer-a']?.intent).toBe('prepare');
+    // Distract hits archer-a 3+3+2 = 8; archer-b misses 1+1+1 = 3 against
+    // 7+3 = 10; cleanup draws both next strikes.
+    const dice = finiteDice([3, 3, 1, 1, 6, 5]);
+    const result = distract(scenario, state, dice.rng, 'archer-a');
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map(actorId)).toEqual(['character', 'archer-a', 'archer-b']);
+    expect(round.actions.map((action) => action.kind)).toEqual([
+      'distract',
+      'prepare',
+      'strike',
+    ]);
+    expect(round.actions[0]).toMatchObject({ status: 'executed', waryUntilRound: 2 });
+    expect(round.actions[1]).toMatchObject({
+      status: 'cancelled',
+      cancelReason: 'interrupted',
+    });
+    expect(round.actions[2]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(result.state.activeCombat?.participants['archer-a']?.waryUntilRound).toBe(2);
+    expect(result.state.activeCombat?.participants['archer-b']?.waryUntilRound).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// R5: Defend, Guarded and the counterattack.
+// ---------------------------------------------------------------------------
+
+describe('R5 defend and guard', () => {
+  it('executes first with no roll and raises the threshold to 9 + Agility', () => {
+    const { scenario } = loadWolfNear();
+    const none = noDice();
+    const { state } = startHunt(scenario, 'hunter', none.rng);
+    none.assertSilent();
+    const step = state.step;
+    // The wolf misses 4+4+2 = 10 against the guarded 9+3 = 12; the counter
+    // misses 1+1+1 = 3 against 7+2 = 9. The steady wolf draws no selection die.
+    const dice = finiteDice([4, 4, 1, 1]);
+    const result = defend(scenario, state, dice.rng);
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map(actorId)).toEqual(['character', 'wolf']);
+    expect(round.actions.map((action) => action.kind)).toEqual(['defend', 'strike']);
+    expect(round.actions[0]).toMatchObject({
+      speed: 'fast',
+      order: 1,
+      status: 'executed',
+      guarded: true,
+    });
+    expect(round.actions[0]?.roll).toBeUndefined();
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]?.roll).toMatchObject({
+      die1: 4,
+      die2: 4,
+      modifier: 2,
+      total: 10,
+      target: 12,
+      hit: false,
+    });
+    expect(round.actions[1]?.counter).toMatchObject({ damage: 0 });
+    expect(round.actions[1]?.counter?.roll).toMatchObject({
+      die1: 1,
+      die2: 1,
+      modifier: 1,
+      total: 3,
+      target: 9,
+      hit: false,
+    });
+    expect(round.actions[1]?.counter).not.toHaveProperty('defeatedParticipants');
+    expect(round.stop).toBeUndefined();
+    expect(result.state.step).toBe(step + 1);
+    expect(result.state.character.health).toBe(12);
+    expect(result.state.encounters['wolf-near']).toEqual({ wolf: 0 });
+    expect(result.state.activeCombat?.round).toBe(2);
+  });
+
+  it('guards only until cleanup: the same dice hit the next Round', () => {
+    const { scenario } = loadWolfNear();
+    const none = noDice();
+    const { state } = startHunt(scenario, 'hunter', none.rng);
+    none.assertSilent();
+    const guarded = finiteDice([4, 4, 1, 1]);
+    const defended = defend(scenario, state, guarded.rng);
+    guarded.assertDone();
+    // Round 2 as an attack: the sword misses, and the wolf's 4+4+2 = 10 now
+    // hits the unguarded 7+3 = 10 for 2 Damage, with no counter to a hit.
+    const exposed = finiteDice([1, 1, 4, 4]);
+    const result = attack(scenario, defended.state, exposed.rng, 'wolf');
+    exposed.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['attack', 'strike']);
+    expect(round.actions[0]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 2 });
+    expect(round.actions[1]?.roll).toMatchObject({ total: 10, target: 10, hit: true });
+    expect(round.actions[1]).not.toHaveProperty('counter');
+    expect(result.state.character.health).toBe(10);
+  });
+
+  it('triggers the counter only on the first missed melee attack', () => {
+    const { scenario } = loadCustomCombat({
+      enemiesYaml: ENEMY_DEFS.rat,
+      encounterId: 'rats-near',
+      encounterBody:
+        '  participants:\n    - id: rat-a\n      enemy: rat\n    - id: rat-b\n      enemy: rat',
+      startRange: 'near',
+    });
+    const none = noDice();
+    const { state } = startHunt(scenario, 'hunter', none.rng);
+    none.assertSilent();
+    // Both rats miss the guarded 9+3 = 12 with 1+1+1 = 3. The counter answers
+    // the first only, hitting 6+6+1 = 13 against 7+2 = 9 for 1 Damage.
+    const dice = finiteDice([1, 1, 6, 6, 1, 1]);
+    const result = defend(scenario, state, dice.rng);
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map(actorId)).toEqual(['character', 'rat-a', 'rat-b']);
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]?.counter).toMatchObject({ damage: 1 });
+    expect(round.actions[1]?.counter?.roll).toMatchObject({
+      total: 13,
+      target: 9,
+      hit: true,
+    });
+    expect(round.actions[2]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[2]).not.toHaveProperty('counter');
+    expect(result.state.encounters['rats-near']).toEqual({ 'rat-a': 1, 'rat-b': 0 });
+    expect(result.state.character.health).toBe(12);
+  });
+
+  it('a ranged miss triggers no counter', () => {
+    const { scenario } = loadCustomCombat({
+      enemiesYaml: ENEMY_DEFS.banditArcher,
+      encounterId: 'archer-far',
+      encounterBody: '  participants:\n    - id: archer\n      enemy: bandit-archer',
+      startRange: 'far',
+    });
+    const start = finiteDice([6]);
+    const { state } = startHunt(scenario, 'ranger', start.rng);
+    start.assertDone();
+    expect(state.activeCombat?.participants['archer']?.intent).toBe('strike');
+    // The archer misses 1+1+1 = 3 against the guarded 9+3 = 12; a ranged miss
+    // answers nothing. Cleanup draws the next strike.
+    const dice = finiteDice([1, 1, 6]);
+    const result = defend(scenario, state, dice.rng);
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['defend', 'strike']);
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]).not.toHaveProperty('counter');
+    expect(result.state.character.health).toBe(12);
+  });
+
+  it('a counter that defeats the last participant stops the sequence as victory', () => {
+    const { scenario } = loadCustomCombat({
+      enemiesYaml: ENEMY_DEFS.rat,
+      encounterId: 'rat-near',
+      encounterBody: '  participants:\n    - enemy: rat',
+      startRange: 'near',
+    });
+    const none = noDice();
+    const { state } = startHunt(scenario, 'hunter', none.rng);
+    none.assertSilent();
+    // The rat is one Damage from defeat: the counter's hit ends the Combat.
+    const combat = state.activeCombat;
+    if (combat == null) throw new Error('expected an active combat');
+    const wounded: PlaythroughState = {
+      ...state,
+      encounters: { ...state.encounters, [combat.encounterId]: { rat: 2 } },
+    };
+    // The rat misses 1+1+1 = 3 against the guarded 9+3 = 12; the counter hits
+    // 6+6+1 = 13 against 7+2 = 9 for the last point of Damage. No cleanup.
+    const dice = finiteDice([1, 1, 6, 6]);
+    const result = defend(scenario, wounded, dice.rng);
+    dice.assertDone();
+    const round = onlyRound(result.journal);
+    expect(round.stop).toBe('victory');
+    expect(round.actions.map((action) => action.kind)).toEqual(['defend', 'strike']);
+    expect(round.actions[1]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]?.counter).toMatchObject({
+      damage: 1,
+      defeatedParticipants: ['rat'],
+    });
+    // The reaction triggers no further reaction.
+    expect(round.actions[1]?.counter).not.toHaveProperty('counter');
+    expect(result.state.activeCombat).toBeNull();
+    expect(journalTypes(result.journal)).toEqual([
+      'combat-round',
+      'combat-end',
+      'outcome',
+      'ending',
+    ]);
+    expect(result.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
+      encounterId: 'rat-near',
+      howEnded: 'victory',
+    });
   });
 });

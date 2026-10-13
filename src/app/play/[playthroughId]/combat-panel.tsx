@@ -156,7 +156,7 @@ function actionById(actions: CombatAvailability[], id: CombatAvailability['id'])
   const group: CombatAvailability['group'] =
     id === 'advance' || id === 'fall-back'
       ? 'position'
-      : id === 'attack' || id === 'defend'
+      : id === 'attack' || id === 'defend' || id === 'distract'
         ? 'fight'
         : id === 'use-item'
           ? 'items'
