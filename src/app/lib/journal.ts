@@ -14,6 +14,10 @@
 
 import { escapeHtml, renderStoredText } from '../../engine/narration';
 import { combatRounds } from '../../engine/index';
+import type {
+  CombatParticipantRef,
+  TacticalActionEvent,
+} from '../../engine/index';
 import type { Catalogue } from '../../i18n/index';
 import { primaryLanguageSubtag } from '../../i18n/languages';
 import {
@@ -330,9 +334,39 @@ function combatEnemyName(record: Record<string, unknown>): string | undefined {
 }
 
 /**
- * A Combat start entry: new rows carry the opening narration as presented plus
- * the Enemy's name, and render the narration with the catalogue's opponent
- * line; legacy rows carry the English narration only and are shown verbatim.
+ * A tactical (v2) participant reference list, as stored on combat-start,
+ * combat-end and enemy-defeated entries. The full per-lane report rendering
+ * arrives with the application integration (I5); until then each participant
+ * renders through the existing single-opponent line helpers.
+ */
+function tacticalParticipants(record: Record<string, unknown>): CombatParticipantRef[] | undefined {
+  const participants = record.participants;
+  if (!Array.isArray(participants)) return undefined;
+  if (
+    !participants.every(
+      (entry) =>
+        typeof (entry as CombatParticipantRef).participantId === 'string' &&
+        typeof (entry as CombatParticipantRef).name === 'string',
+    )
+  ) {
+    return undefined;
+  }
+  return participants as CombatParticipantRef[];
+}
+
+/**
+ * One participant as presented in an interim tactical line: the Enemy name,
+ * with the same-kind ordinal when the Encounter holds several of the kind.
+ */
+function tacticalParticipantName(ref: CombatParticipantRef): string {
+  return ref.ordinal === undefined ? ref.name : `${ref.name} ${ref.ordinal}`;
+}
+
+/**
+ * A Combat start entry: tactical (v2) rows carry every participant taking
+ * part as presented and render the narration with one opponent line each;
+ * v1 rows carry the opening narration plus the Enemy's name; legacy rows
+ * carry the English narration only and are shown verbatim.
  */
 function renderCombatStartEntry(
   record: Record<string, unknown>,
@@ -342,17 +376,29 @@ function renderCombatStartEntry(
 ): string {
   const text = String(record.text ?? '');
   const narration = `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`;
+  const participants = tacticalParticipants(record);
+  if (participants !== undefined) {
+    const names = participants.map(tacticalParticipantName);
+    const lines = participants
+      .map(
+        (ref) =>
+          `<p>${wrapScenarioNames(combatStartLine(tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
+      )
+      .join('');
+    return `${narration}${lines}`;
+  }
   const enemyName = combatEnemyName(record);
   if (enemyName === undefined) return narration;
   return `${narration}<p>${wrapScenarioNames(combatStartLine(enemyName, catalogue), [enemyName], lang)}</p>`;
 }
 
 /**
- * A Combat round entry: new rows carry every action of the Round as events
- * (action, rolls, Damage, Range before and after, guard) with the participant,
- * weapon and item names as presented, and render one line per action plus the
- * roll lines through the catalogue; legacy rows carry English text and are
- * shown verbatim.
+ * A Combat round entry: tactical (v2) rows carry every action of the Round as
+ * events and render one line per executed action plus the roll chips (Prepare
+ * and non-executed actions render nothing yet; the structured event retains
+ * their data for the full report in I5); v1 rows carry the Round as events
+ * (action, rolls, Damage, Range before and after, guard); legacy rows carry
+ * English text and are shown verbatim.
  */
 function renderCombatRoundEntry(
   record: Record<string, unknown>,
@@ -360,6 +406,14 @@ function renderCombatRoundEntry(
   lang: string,
   characterName: string,
 ): string {
+  if (Array.isArray(record.actions)) {
+    return renderTacticalRoundEntry(
+      record.actions as TacticalActionEvent[],
+      catalogue,
+      lang,
+      characterName,
+    );
+  }
   const enemyName = combatEnemyName(record);
   if (enemyName === undefined) {
     return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
@@ -386,8 +440,80 @@ function renderCombatRoundEntry(
 }
 
 /**
- * A Combat end entry: new rows carry how the Combat ended with the Enemy's
- * name as presented; legacy rows carry the English sentence and are shown
+ * One interim tactical Round: one line per executed action that fits an
+ * existing line helper (Character attacks, Enemy Strikes and Heavy attacks,
+ * Close in), plus one roll chip per roll. Prepare and non-executed actions
+ * (cancelled, dropped, not reached) render nothing yet; the structured event
+ * retains their data for the full report (I5).
+ */
+function renderTacticalRoundEntry(
+  actions: TacticalActionEvent[],
+  catalogue: Catalogue,
+  lang: string,
+  characterName: string,
+): string {
+  const names = [characterName];
+  for (const action of actions) {
+    const actorName =
+      action.actor.kind === 'character' ? characterName : tacticalParticipantName(action.actor);
+    if (!names.includes(actorName)) names.push(actorName);
+    if (action.weaponName !== undefined && !names.includes(action.weaponName)) {
+      names.push(action.weaponName);
+    }
+  }
+  const lines: string[] = [];
+  const chips: string[] = [];
+  for (const action of actions) {
+    const actorName =
+      action.actor.kind === 'character' ? characterName : tacticalParticipantName(action.actor);
+    if (action.roll !== undefined) {
+      chips.push(
+        `<li>${wrapScenarioNames(combatRollLine(action.roll, catalogue, characterName, actorName), names, lang)}</li>`,
+      );
+    }
+    if (action.status !== 'executed' || action.roll === undefined) {
+      if (
+        action.status === 'executed' &&
+        action.actor.kind === 'participant' &&
+        action.kind === 'close-in'
+      ) {
+        const rangeAfter = catalogue.range[action.rangeAfter ?? 'near'];
+        lines.push(
+          `<p>${wrapScenarioNames(catalogue.combat.lineEnemyClosesIn(actorName, rangeAfter), names, lang)}</p>`,
+        );
+      }
+      continue;
+    }
+    const roll = action.roll;
+    const score = catalogue.combat.rollScore(
+      roll.die1,
+      roll.die2,
+      roll.modifier,
+      roll.total,
+      roll.target,
+    );
+    if (action.actor.kind === 'character') {
+      const weapon = action.weaponName ?? catalogue.combat.unarmed;
+      lines.push(
+        roll.hit
+          ? `<p>${wrapScenarioNames(catalogue.combat.lineAttackHit(weapon, score, catalogue.combat.damage(roll.damage)), names, lang)}</p>`
+          : `<p>${wrapScenarioNames(catalogue.combat.lineAttackMiss(weapon, score), names, lang)}</p>`,
+      );
+    } else if (action.kind === 'strike' || action.kind === 'heavy-attack') {
+      lines.push(
+        roll.hit
+          ? `<p>${wrapScenarioNames(catalogue.combat.lineEnemyAttackHit(actorName, score, catalogue.combat.damage(roll.damage)), names, lang)}</p>`
+          : `<p>${wrapScenarioNames(catalogue.combat.lineEnemyAttackMiss(actorName, score, false), names, lang)}</p>`,
+      );
+    }
+  }
+  return `${lines.join('')}${chips.length === 0 ? '' : `<ul class="combat-rolls">${chips.join('')}</ul>`}`;
+}
+
+/**
+ * A Combat end entry: tactical (v2) rows carry every participant as presented
+ * and render one closing line each; v1 rows carry how the Combat ended with
+ * the Enemy's name; legacy rows carry the English sentence and are shown
  * verbatim.
  */
 function renderCombatEndEntry(
@@ -395,6 +521,17 @@ function renderCombatEndEntry(
   catalogue: Catalogue,
   lang: string,
 ): string {
+  const participants = tacticalParticipants(record);
+  if (participants !== undefined) {
+    const names = participants.map(tacticalParticipantName);
+    const howEnded = record.howEnded === 'escape' ? 'escape' : 'victory';
+    return participants
+      .map(
+        (ref) =>
+          `<p>${wrapScenarioNames(combatEndLine(howEnded, tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
+      )
+      .join('');
+  }
   const enemyName = combatEnemyName(record);
   if (enemyName === undefined) {
     return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
@@ -404,7 +541,8 @@ function renderCombatEndEntry(
 }
 
 /**
- * The Enemy-defeated notice: new rows carry the Enemy's name as presented;
+ * The Enemy-defeated notice: tactical (v2) rows carry every participant as
+ * presented and render one notice line each; v1 rows carry the Enemy's name;
  * legacy rows carry the English sentence and are shown verbatim.
  */
 function renderEnemyDefeatedEntry(
@@ -412,6 +550,16 @@ function renderEnemyDefeatedEntry(
   catalogue: Catalogue,
   lang: string,
 ): string {
+  const participants = tacticalParticipants(record);
+  if (participants !== undefined) {
+    const names = participants.map(tacticalParticipantName);
+    return participants
+      .map(
+        (ref) =>
+          `<p>${wrapScenarioNames(enemyDefeatedLine(tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
+      )
+      .join('');
+  }
   const enemyName = combatEnemyName(record);
   if (enemyName === undefined) {
     return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;

@@ -58,7 +58,7 @@ function stubScenario(): Scenario {
 
 function baseState(): PlaythroughState {
   return {
-    stateVersion: 1,
+    stateVersion: 2,
     scenarioId: 'test',
     scenarioVersion: '0.9.0',
     contentHash: 'stale-hash',
@@ -80,7 +80,7 @@ function baseState(): PlaythroughState {
     firedScenes: [],
     takenOnceChoices: [],
     flags: [],
-    encounterDamage: {},
+    encounters: {},
   };
 }
 
@@ -90,13 +90,19 @@ describe('checkPlaythroughCompatibility', () => {
     const state: PlaythroughState = {
       ...baseState(),
       activeSceneId: 'path',
-      activeCombat: { encounterId: 'enc1', range: 'near', round: 2 },
+      activeCombat: {
+        encounterId: 'enc1',
+        round: 2,
+        startedParticipants: ['wolf'],
+        roundParticipantOrder: ['wolf'],
+        participants: { wolf: { range: 'near', intent: 'strike', prepared: false } },
+      },
       visited: ['glade', 'grove'],
       revealed: ['grove'],
       firedScenes: ['path'],
       takenOnceChoices: [{ sceneId: 'path', choiceId: 'go' }],
       flags: ['gate-open'],
-      encounterDamage: { enc1: 2 },
+      encounters: { enc1: { wolf: 2 } },
     };
     expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
   });
@@ -109,8 +115,8 @@ describe('checkPlaythroughCompatibility', () => {
     ['fired scene', { firedScenes: ['renamed'] }],
     ['taken choice scene', { takenOnceChoices: [{ sceneId: 'renamed', choiceId: 'go' }] }],
     ['taken choice id', { takenOnceChoices: [{ sceneId: 'path', choiceId: 'renamed' }] }],
-    ['active encounter', { activeCombat: { encounterId: 'renamed', range: 'near', round: 1 } }],
-    ['encounter record', { encounterDamage: { renamed: 1 } }],
+    ['active encounter', { activeCombat: { encounterId: 'renamed', round: 1, startedParticipants: ['wolf'], roundParticipantOrder: ['wolf'], participants: { wolf: { range: 'near', intent: 'strike', prepared: false } } } }],
+    ['encounter record', { encounters: { renamed: { wolf: 1 } } }],
     ['held item', { inventory: { renamed: 1 } }],
     ['equipped item', { equipment: { weapon: 'renamed' } }],
     ['flag', { flags: ['renamed'] }],
@@ -148,19 +154,25 @@ describe('checkPlaythroughCompatibility', () => {
 
   it('fails an active Combat whose Enemy no longer outlasts the Damage taken', () => {
     const scenario = stubScenario();
-    const combat = { encounterId: 'enc1', range: 'near' as const, round: 1 };
+    const combat = {
+      encounterId: 'enc1',
+      round: 1,
+      startedParticipants: ['wolf'],
+      roundParticipantOrder: ['wolf'],
+      participants: { wolf: { range: 'near' as const, intent: 'strike' as const, prepared: false } },
+    };
     expect(
       checkPlaythroughCompatibility(scenario, {
         ...baseState(),
         activeCombat: combat,
-        encounterDamage: { enc1: 6 },
+        encounters: { enc1: { wolf: 6 } },
       }).ok,
     ).toBe(false);
     expect(
       checkPlaythroughCompatibility(scenario, {
         ...baseState(),
         activeCombat: combat,
-        encounterDamage: { enc1: 5 },
+        encounters: { enc1: { wolf: 5 } },
       }),
     ).toEqual({ ok: true });
   });

@@ -64,7 +64,12 @@ export function checkPlaythroughCompatibility(
   }
 
   // Encounters: every record key, plus the active Combat and its invariant.
-  for (const id of Object.keys(state.encounterDamage)) {
+  // The wounds record is keyed by Encounter id and then participant id
+  // (state v2). The `?? {}` fallbacks only keep legacy v1-shaped documents
+  // passed by pre-migration tests from crashing here; v1 documents never reach
+  // this check in production (they fail v2 validation first) and migrate with
+  // the state-versions package (issue #124), which owns the M-matrix.
+  for (const id of Object.keys(state.encounters ?? {})) {
     missing(scenario.encountersById, id, 'encounter');
   }
   if (state.activeCombat != null) {
@@ -72,20 +77,22 @@ export function checkPlaythroughCompatibility(
     if (encounter === undefined) {
       fail(`unknown encounter "${state.activeCombat.encounterId}"`);
     } else {
-      const taken = state.encounterDamage[state.activeCombat.encounterId] ?? 0;
-      // The active Combat still has a surviving Participant while at least one
-      // participant's maximum Health exceeds the Damage taken. (Single
-      // participant: exactly the old invariant.) Per-participant wounds and
-      // the full membership rules arrive with the state-versions package.
+      const wounds = state.encounters?.[state.activeCombat.encounterId] ?? {};
+      // The active Combat still has a surviving participant while at least one
+      // participant's maximum Health exceeds its recorded Damage taken.
       const survivors = encounter.participants.filter(
-        (participant) => participant.enemy.health > taken,
+        (participant) => participant.enemy.health > (wounds[participant.id] ?? 0),
       );
       if (survivors.length === 0) {
         const highestHealth = Math.max(
           ...encounter.participants.map((participant) => participant.enemy.health),
         );
+        const highestTaken = Math.max(
+          0,
+          ...encounter.participants.map((participant) => wounds[participant.id] ?? 0),
+        );
         fail(
-          `encounter "${encounter.id}" no longer has more maximum Health (${highestHealth}) than the Damage taken (${taken})`,
+          `encounter "${encounter.id}" no longer has more maximum Health (${highestHealth}) than the Damage taken (${highestTaken})`,
         );
       }
     }

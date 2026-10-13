@@ -576,8 +576,12 @@ describe('outcomes, effects and transitions', () => {
     );
     expect(fought.ok).toBe(true);
     if (!fought.ok) throw new Error(`wolf-den fight failed: ${fought.reason}`);
-    expect(fought.state.activeCombat).toMatchObject({ encounterId: 'hollow-wolf', range: 'far', round: 1 });
-    expect(fought.state.encounterDamage['hollow-wolf']).toBe(0);
+    expect(fought.state.activeCombat).toMatchObject({
+      encounterId: 'hollow-wolf',
+      round: 1,
+      participants: { 'grey-wolf': { range: 'far' } },
+    });
+    expect(fought.state.encounters['hollow-wolf']).toEqual({ 'grey-wolf': 0 });
     expect(fought.journal.map((entry) => entry.type)).toEqual(['choice', 'combat-start']);
     // A hidden Choice cannot be taken, even by id.
     const keyed: PlaythroughState = { ...hollow };
@@ -611,7 +615,7 @@ describe('conditions: every fact', () => {
       ...started,
       flags: ['quest-accepted'],
       visited: [...started.visited, 'forest-edge'],
-      encounterDamage: { 'camp-bandit': 5 },
+      encounters: { 'camp-bandit': { 'bandit-archer': 5 } },
     };
     expect(evaluateCondition(scenario, flagged, { flag: 'quest-accepted' })).toBe(true);
     expect(evaluateCondition(scenario, flagged, { visited: 'forest-edge' })).toBe(true);
@@ -619,7 +623,7 @@ describe('conditions: every fact', () => {
     expect(evaluateCondition(scenario, flagged, { defeated: 'camp-bandit' })).toBe(false);
     const felled: PlaythroughState = {
       ...flagged,
-      encounterDamage: { 'camp-bandit': 6 },
+      encounters: { 'camp-bandit': { 'bandit-archer': 6 } },
     };
     expect(evaluateCondition(scenario, felled, { defeated: 'camp-bandit' })).toBe(true);
     // A defeated bandit (or a gone one) opens the search through `any`.

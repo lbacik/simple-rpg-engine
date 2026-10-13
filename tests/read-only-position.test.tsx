@@ -27,7 +27,7 @@ function stubScenario(): Scenario {
 
 function baseState(): PlaythroughState {
   return {
-    stateVersion: 1,
+    stateVersion: 2,
     scenarioId: 'test',
     scenarioVersion: '1.0.0',
     contentHash: 'abc',
@@ -49,7 +49,7 @@ function baseState(): PlaythroughState {
     firedScenes: [],
     takenOnceChoices: [],
     flags: [],
-    encounterDamage: {},
+    encounters: {},
   };
 }
 

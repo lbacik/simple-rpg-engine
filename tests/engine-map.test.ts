@@ -372,7 +372,16 @@ describe('travel targets', () => {
     expect(
       deriveMap(
         scenario,
-        { ...base, activeCombat: { encounterId: 'wolves', range: 'far', round: 1 } },
+        {
+          ...base,
+          activeCombat: {
+            encounterId: 'wolves',
+            round: 1,
+            startedParticipants: ['wolves-foe'],
+            roundParticipantOrder: ['wolves-foe'],
+            participants: { 'wolves-foe': { range: 'far', intent: 'strike', prepared: false } },
+          },
+        },
       ).travelTargetIds,
     ).toEqual([]);
     expect(
