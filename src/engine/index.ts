@@ -1128,13 +1128,13 @@ function encounterDefeated(encounter: CompiledEncounter, taken: number): boolean
 }
 
 /**
- * The opponent the v1 single-opponent fight mechanics resolve against: the
- * first participant in participant order. Per-participant Range, Intents and
- * wounds for two-participant Combats belong to the round-resolution and
+ * The Enemy the v1 single-Enemy Combat mechanics resolve against: the first
+ * participant in participant order. Per-participant Range, Intents and wounds
+ * for two-participant Combats belong to the round-resolution and
  * state-versions packages; until then only single-participant Encounters are
  * fought, and the pair fixtures exist for loader tests, not for turns.
  */
-function leadEnemy(encounter: CompiledEncounter): CompiledEnemy {
+function firstParticipantEnemy(encounter: CompiledEncounter): CompiledEnemy {
   const first = encounter.participants[0];
   if (first === undefined) throw new Error(`encounter "${encounter.id}" has no participants`);
   return first.enemy;
@@ -1142,7 +1142,7 @@ function leadEnemy(encounter: CompiledEncounter): CompiledEnemy {
 
 /**
  * `start-combat: E` (docs/spec/playthrough-state.md, Combat): on an already
- * defeated Encounter a no-op back to the Location view (no fight, no victory
+ * defeated Encounter a no-op back to the Location view (no Combat, no victory
  * Outcome). Otherwise create E's record (Damage taken) if absent, set the
  * position to Combat {E, `startRange`, round 1} and append the opening
  * narration. Re-entry after an escape starts again at `startRange` and shows
@@ -1180,7 +1180,7 @@ function startCombat(
         type: 'combat-start',
         lang: scenario.language,
         encounterId: encounter.id,
-        enemyName: leadEnemy(encounter).name,
+        enemyName: firstParticipantEnemy(encounter).name,
         text: substituteName(encounter.text, state.character.name),
       },
     ],
@@ -1314,7 +1314,7 @@ function finishVictory(
     type: 'combat-end',
     lang: scenario.language,
     encounterId: encounter.id,
-    enemyName: leadEnemy(encounter).name,
+    enemyName: firstParticipantEnemy(encounter).name,
     howEnded: 'victory',
   };
   let next: PlaythroughState = {
@@ -1337,7 +1337,7 @@ function finishVictory(
       type: 'enemy-defeated',
       lang: scenario.language,
       encounterId: encounter.id,
-      enemyName: leadEnemy(encounter).name,
+      enemyName: firstParticipantEnemy(encounter).name,
     });
   }
   return { ok: true, state: next, journal };
@@ -1363,7 +1363,7 @@ function finishEscape(
     type: 'combat-end',
     lang: scenario.language,
     encounterId: encounter.id,
-    enemyName: leadEnemy(encounter).name,
+    enemyName: firstParticipantEnemy(encounter).name,
     howEnded: 'escape',
   };
   // The Range is discarded by clearing the active Combat before the Outcome:
@@ -1407,7 +1407,7 @@ function applyCombat(
   if (encounter === undefined) {
     return { ok: false, reason: 'illegal-action' };
   }
-  const enemy = leadEnemy(encounter);
+  const enemy = firstParticipantEnemy(encounter);
   const attack = characterAttack(scenario, state);
   // The action must be available (see combatActions): Advance only at Far,
   // Fall back only at Near, Attack only when the Character's Reach allows the
@@ -1896,13 +1896,13 @@ export function view(
         scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
       const attack = characterAttack(scenario, state);
       const taken = state.encounterDamage[combat.encounterId] ?? 0;
-      const shown = leadEnemy(encounter);
+      const lead = firstParticipantEnemy(encounter);
       return {
         kind: 'combat',
         locationId: location.id,
         locationName: location.name,
         encounterId: encounter.id,
-        encounterName: shown.name,
+        encounterName: lead.name,
         text: encounter.text,
         characterName: state.character.name,
         range: combat.range,
@@ -1917,11 +1917,11 @@ export function view(
           damage: attack.damage,
         },
         enemy: {
-          name: shown.name,
-          health: Math.max(0, shown.health - taken),
-          maxHealth: shown.health,
-          damage: shown.damage,
-          reach: shown.reach,
+          name: lead.name,
+          health: Math.max(0, lead.health - taken),
+          maxHealth: lead.health,
+          damage: lead.damage,
+          reach: lead.reach,
         },
         actions: combatActions(scenario, state),
         map: deriveMap(scenario, state, options),

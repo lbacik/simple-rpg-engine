@@ -10,6 +10,26 @@
       "enemy": {
         "type": "string"
       },
+      "participants": {
+        "minItems": 1,
+        "maxItems": 2,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "enemy": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "enemy"
+          ],
+          "additionalProperties": false
+        }
+      },
       "startRange": {
         "default": "far",
         "type": "string",
@@ -320,7 +340,6 @@
     },
     "required": [
       "id",
-      "enemy",
       "text",
       "escape"
     ],

@@ -4,7 +4,7 @@
     "description": "Active one-Enemy Combat at Far (hollow-wolf, round 1) with no guard in its Journal.",
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "9ebdd5e3a5a40d8a02d52f54c50ddab21a2a4749afaf2b1636d02e3a8ff043d1",
+    "contentHash": "fb6068475fca68eb064cf8dd12100b5c1c0d016dbc3e66485f83e451e250759f",
     "scenarioLanguage": "en",
     "capturedWith": "scripts/capture-state-v1-fixtures.ts"
   },
@@ -12,7 +12,7 @@
     "stateVersion": 1,
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "9ebdd5e3a5a40d8a02d52f54c50ddab21a2a4749afaf2b1636d02e3a8ff043d1",
+    "contentHash": "fb6068475fca68eb064cf8dd12100b5c1c0d016dbc3e66485f83e451e250759f",
     "status": "active",
     "step": 6,
     "character": {

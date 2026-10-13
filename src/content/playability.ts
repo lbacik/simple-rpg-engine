@@ -938,7 +938,7 @@ function checkItems(ctx: Ctx): void {
 function checkEnemyUnused(ctx: Ctx): void {
   // Every participant counts: an Enemy placed in any participant of any
   // Encounter is used. No numerical balance check is added here; within the
-  // mechanics limits no fight is unwinnable by construction
+  // mechanics limits no Combat is unwinnable by construction
   // (docs/spec/validation.md, deliberately not checked).
   const placed = new Set(
     ctx.scenario.encounters.flatMap((encounter) =>

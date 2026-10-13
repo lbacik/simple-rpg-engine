@@ -13,7 +13,10 @@
 // - objects are strict everywhere, so an unknown key fails;
 // - field keys are camelCase, vocabulary tokens kebab-case (plain enums, so
 //   `very hard` is rejected while `very-hard` is accepted);
-// - one form per key, no shorthands (scalar vs mapping forms are fixed);
+// - one form per key, no shorthands (scalar vs mapping forms are fixed), with
+//   one exception: `enemy: X` on an Encounter is shorthand for
+//   `participants: [{ enemy: X }]` (docs/spec/scenario-format.md), normalised
+//   to the same participant model in model.ts;
 // - the Defaults table is encoded with .default(), so omitted keys resolve
 //   to their defaults and the generated JSON Schemas document them.
 //
