@@ -19,6 +19,7 @@ import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
 import { MAX_HEALTH, STATE_VERSION, type PlaythroughState } from './state';
 import {
+  CHARACTER_ACTION_SPEED,
   INTENT_SPEED,
   intentInReach,
   orderActions,
@@ -188,6 +189,12 @@ export type TacticalActionEvent = {
   characterDefeated?: boolean;
   /** The Character's weapon name as presented; on Attack when armed. */
   weaponName?: string;
+  /** A Combat `use-item`: the Consumable id. */
+  itemId?: string;
+  /** A Combat `use-item`: the Consumable name as presented. */
+  itemName?: string;
+  /** A Combat `use-item`: the Health restored at execution. */
+  healed?: number;
 };
 
 /**
@@ -1532,29 +1539,64 @@ function finishVictory(
 }
 
 /**
+ * Escape (docs/spec/playthrough-state.md, transitions): the Combat ends, its
+ * starting membership, tie-break order, Ranges and temporary effects are
+ * discarded, the Encounter record keeps each participant's Damage taken
+ * (including defeated participants), and the `escape` Outcome is applied.
+ * Like victory it resolves neither cleanup selection nor remaining actions.
+ */
+function finishEscape(
+  scenario: Scenario,
+  state: PlaythroughState,
+  encounter: CompiledEncounter,
+  round: Extract<NewJournalEntry, { type: 'combat-round' }>,
+  health: number,
+  encounters: PlaythroughState['encounters'],
+  rng: Rng,
+): ApplyActionResult {
+  const end: NewJournalEntry = {
+    type: 'combat-end',
+    lang: scenario.language,
+    encounterId: encounter.id,
+    participants: allParticipantRefs(encounter),
+    howEnded: 'escape',
+  };
+  const next: PlaythroughState = {
+    ...state,
+    step: state.step + 1,
+    character: { ...state.character, health },
+    encounters,
+    activeSceneId: null,
+    activeCombat: null,
+  };
+  const applied = applyOutcome(scenario, next, encounter.escape, rng);
+  return { ok: true, state: applied.state, journal: [round, end, ...applied.journal] };
+}
+
+/**
  * Character actions that name a target participant. Distract joins this set
  * with issue #122; until then submitting it is rejected as unavailable, like
- * every non-Attack action in this ticket.
+ * Defend in this ticket.
  */
 const TARGETED_COMBAT_ACTIONS: ReadonlySet<CombatAction> = new Set(['attack', 'advance']);
 
 /**
  * One Combat Round (docs/spec/mechanics.md, rounds;
- * docs/spec/playthrough-state.md, Combat): the Character's Attack takes its
+ * docs/spec/playthrough-state.md, Combat): the Character's action takes its
  * place in the order among the Round's committed Intents, and the whole Round
  * resolves in one atomic step — one action and one `step`. Actions resolve in
  * Speed order (fast, normal, slow), then by effective Agility (the Character
  * wins ties; equal Enemies use the saved participant order). A defeated
  * participant's queued action is dropped while the Round continues; defeating
- * the last participant, or the Character's death, stops the sequence with
- * later actions recorded as not reached. A continuing Round increments the
- * round number and `step` once, expires round-scoped effects, captures the
- * current content order and stores the next Round's Intents.
+ * the last participant, the Character's death, or a successful Escape stops
+ * the sequence with later actions recorded as not reached. A continuing Round
+ * increments the round number and `step` once, expires round-scoped effects,
+ * captures the current content order and stores the next Round's Intents.
  *
- * Issue #120 resolves only the targeted Attack (plus the Enemy Intents
- * Strike, Close in, Prepare and Heavy attack). Movement, Escape and
- * Consumables (issue #121) and Defend/Distract (issue #122) are separate
- * tickets: submitting any other action is rejected without advancing `step`,
+ * Issue #120 resolves the targeted Attack (plus the Enemy Intents Strike,
+ * Close in, Prepare and Heavy attack); issue #121 adds Advance, Fall back,
+ * Escape and Consumable use. Defend/Distract (issue #122) stay rejected until
+ * their package lands: submitting one is rejected without advancing `step`,
  * drawing dice or changing Intents, state or Journal.
  */
 function applyCombat(
@@ -1566,9 +1608,7 @@ function applyCombat(
   targetParticipantId?: string,
 ): ApplyActionResult {
   // A Combat `use-item` names its Consumable; the other actions take none.
-  // The Consumable itself resolves with issue #121; until then the parameter
-  // only rides the transport.
-  void itemId;
+  // The Consumable resolves at its place in the order (issue #121).
   const combat = state.activeCombat;
   if (combat == null) {
     return { ok: false, reason: 'illegal-action' };
@@ -1599,29 +1639,82 @@ function applyCombat(
     }
   }
 
-  // Availability: only Attack resolves in this ticket.
-  if (combatAction !== 'attack') {
+  // Availability at submission (R10): Defend and Distract stay rejected
+  // until issue #122 (Distract joins the CombatAction union there).
+  // Anything else unknown is rejected too.
+  if (combatAction === 'defend') {
     return { ok: false, reason: 'illegal-action' };
   }
-  const target = encounter.participants.find(
+  const target = targetId === undefined ? undefined : encounter.participants.find(
     (participant) => participant.id === targetId,
   );
-  if (target === undefined) {
+  if (targetId !== undefined && target === undefined) {
     return { ok: false, reason: 'illegal-action' };
   }
   // A fresh non-optional binding: the closures below resolve at their place in
   // the order, so they capture this instead of the narrowed `find` result.
-  const victim: CompiledParticipant = target;
+  const victim: CompiledParticipant | undefined = target;
   const attack = characterAttack(scenario, state);
-  const targetRange = combat.participants[target.id]?.range ?? encounter.startRange;
-  if (attack.reach === 'melee' && targetRange === 'far') {
+  if (combatAction === 'attack') {
+    if (victim === undefined) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
+    if (attack.reach === 'melee' && targetRange === 'far') {
+      return { ok: false, reason: 'illegal-action' };
+    }
+  } else if (combatAction === 'advance') {
+    if (victim === undefined) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    // Advance is available only while the Range to the target is Far.
+    const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
+    if (targetRange === 'near') {
+      return { ok: false, reason: 'illegal-action' };
+    }
+  } else if (combatAction === 'fall-back') {
+    // Fall back is available while at least one surviving participant is Near.
+    const anyNear = survivors.some(
+      (participant) => (combat.participants[participant.id]?.range ?? encounter.startRange) === 'near',
+    );
+    if (!anyNear) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+  } else if (combatAction === 'use-item') {
+    const consumable = itemId === undefined ? undefined : scenario.itemsById[itemId];
+    if (
+      consumable === undefined ||
+      consumable.kind !== 'consumable' ||
+      (state.inventory[consumable.id] ?? 0) < 1
+    ) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    // Use-item at full Health is rejected: nothing is consumed.
+    if (state.character.health >= MAX_HEALTH) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+  } else if (combatAction !== 'escape') {
     return { ok: false, reason: 'illegal-action' };
   }
+  // Escape is always available. The +2 bonus is captured from the Round as
+  // shown when the Character commits: when no surviving participant was Near
+  // then, an Enemy that closes in earlier in the order does not remove it.
+  const escapeBonus =
+    combatAction === 'escape' &&
+    survivors.every(
+      (participant) => (combat.participants[participant.id]?.range ?? encounter.startRange) !== 'near',
+    )
+      ? 2
+      : 0;
 
   const effective = effectiveAttributes(scenario, state);
   const characterRef: TacticalActor = { kind: 'character' };
   const wounds: Record<string, number> = { ...woundsBefore };
   let health = state.character.health;
+  // A Combat `use-item` consumes its copy at execution; every exit path below
+  // carries these instead of the submitted inventory.
+  let inventory: PlaythroughState['inventory'] = { ...state.inventory };
+  let equipment: PlaythroughState['equipment'] = { ...state.equipment };
   const ranges: Record<string, CombatRange> = {};
   const prepared: Record<string, boolean> = {};
   for (const [participantId, record] of Object.entries(combat.participants)) {
@@ -1656,8 +1749,9 @@ function applyCombat(
   // Commit. The Character's action takes its place in the order among the
   // Round's Intents. The order is fixed now; nothing during the Round
   // reorders it.
+  const characterSpeed = CHARACTER_ACTION_SPEED[combatAction] ?? 'normal';
   const queued: QueuedAction[] = [
-    { key: 'character', actor: 'character', speed: 'normal', agility: effective.agility },
+    { key: 'character', actor: 'character', speed: characterSpeed, agility: effective.agility },
     ...survivors.map(
       (participant): QueuedAction => ({
         key: participant.id,
@@ -1676,6 +1770,9 @@ function applyCombat(
 
   /** The target participant as presented, for the Character's action. */
   function targetRef(): TacticalActor {
+    if (victim === undefined) {
+      throw new Error('targeted action committed without a target');
+    }
     return { kind: 'participant', ...participantRefOf(encounter, victim) };
   }
 
@@ -1791,6 +1888,9 @@ function applyCombat(
 
   /** The Character's Attack at its place in the order. */
   function resolveCharacterAttack(order: number): void {
+    if (victim === undefined) {
+      throw new Error('attack committed without a target');
+    }
     const ref = targetRef();
     // Cancelled when the target has been defeated, or the Character's Reach
     // no longer allows it at the Range to the target.
@@ -1849,6 +1949,207 @@ function applyCombat(
     }
   }
 
+  /** Participants still standing at this place in the order. */
+  function currentSurvivors(): CompiledParticipant[] {
+    return survivors.filter(
+      (participant) => (wounds[participant.id] ?? 0) < participant.enemy.health,
+    );
+  }
+
+  /** The Character's Advance at its place in the order: no roll. */
+  function resolveCharacterAdvance(order: number): void {
+    if (victim === undefined) {
+      throw new Error('advance committed without a target');
+    }
+    const ref = targetRef();
+    // Cancelled when the target has been defeated, or a faster Close in has
+    // already made the Range Near. The Round is spent, not replaced.
+    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
+      actions.push({
+        actor: characterRef,
+        kind: 'advance',
+        speed: characterSpeed,
+        order,
+        target: ref,
+        status: 'cancelled',
+        cancelReason: 'target-defeated',
+      });
+      return;
+    }
+    if ((ranges[victim.id] ?? encounter.startRange) === 'near') {
+      actions.push({
+        actor: characterRef,
+        kind: 'advance',
+        speed: characterSpeed,
+        order,
+        target: ref,
+        status: 'cancelled',
+        cancelReason: 'already-near',
+      });
+      return;
+    }
+    // Only the targeted Far lane moves; every other Range is untouched.
+    ranges[victim.id] = 'near';
+    actions.push({
+      actor: characterRef,
+      kind: 'advance',
+      speed: characterSpeed,
+      order,
+      target: ref,
+      status: 'executed',
+      rangeBefore: 'far',
+      rangeAfter: 'near',
+    });
+  }
+
+  /** The Character's Fall back at its place in the order: slow, one roll. */
+  function resolveCharacterFallBack(order: number): void {
+    // Cancelled when no surviving participant is Near at this place in the
+    // order. The opposing Agility is read now, from the currently Near
+    // survivors, so a participant defeated earlier no longer opposes.
+    const near = currentSurvivors().filter(
+      (participant) => (ranges[participant.id] ?? encounter.startRange) === 'near',
+    );
+    if (near.length === 0) {
+      actions.push({
+        actor: characterRef,
+        kind: 'fall-back',
+        speed: characterSpeed,
+        order,
+        status: 'cancelled',
+        cancelReason: 'none-near',
+      });
+      return;
+    }
+    const opposing = Math.max(
+      ...near.map((participant) => participant.enemy.attributes.agility),
+    );
+    const die1 = rng(1, 7);
+    const die2 = rng(1, 7);
+    const total = die1 + die2 + effective.agility;
+    const targetNumber = 7 + opposing;
+    const success = total >= targetNumber;
+    const roll: CombatRoll = {
+      side: 'character',
+      die1,
+      die2,
+      modifier: effective.agility,
+      total,
+      target: targetNumber,
+      hit: success,
+      damage: 0,
+    };
+    if (!success) {
+      actions.push({
+        actor: characterRef,
+        kind: 'fall-back',
+        speed: characterSpeed,
+        order,
+        status: 'executed',
+        roll,
+        damage: 0,
+      });
+      return;
+    }
+    // Success moves every Near lane to Far — including a later melee Heavy
+    // attack's lane, which then cancels as out of Reach at its own place in
+    // the order. Earlier normal actions already resolved and are unaffected.
+    for (const participant of near) {
+      ranges[participant.id] = 'far';
+    }
+    actions.push({
+      actor: characterRef,
+      kind: 'fall-back',
+      speed: characterSpeed,
+      order,
+      status: 'executed',
+      roll,
+      damage: 0,
+      rangeBefore: 'near',
+      rangeAfter: 'far',
+    });
+  }
+
+  /** The Character's Escape at its place in the order: never cancelled. */
+  function resolveCharacterEscape(order: number): void {
+    // The opposing Agility is read now, from the current survivors, while the
+    // +2 bonus was captured at commitment from the Round as shown then.
+    const alive = currentSurvivors();
+    const opposing = alive.length === 0
+      ? 0
+      : Math.max(...alive.map((participant) => participant.enemy.attributes.agility));
+    const die1 = rng(1, 7);
+    const die2 = rng(1, 7);
+    const modifier = effective.agility + escapeBonus;
+    const total = die1 + die2 + modifier;
+    const targetNumber = 7 + opposing;
+    const success = total >= targetNumber;
+    const roll: CombatRoll = {
+      side: 'character',
+      die1,
+      die2,
+      modifier,
+      total,
+      target: targetNumber,
+      hit: success,
+      damage: 0,
+    };
+    actions.push({
+      actor: characterRef,
+      kind: 'escape',
+      speed: characterSpeed,
+      order,
+      status: 'executed',
+      roll,
+      damage: 0,
+    });
+    if (success) {
+      stop = 'escape';
+    }
+  }
+
+  /** The Character's Consumable use at its place in the order: never cancelled. */
+  function resolveCharacterUseItem(order: number): void {
+    const consumable = itemId === undefined ? undefined : scenario.itemsById[itemId];
+    if (consumable === undefined || consumable.kind !== 'consumable') {
+      throw new Error('use-item committed without a consumable');
+    }
+    // Heals — and consumes — only at execution, from the current Health, so
+    // earlier Enemy actions in the order reduce the waste. A death earlier in
+    // the order stops the sequence before this action instead.
+    const restored =
+      Math.min(MAX_HEALTH, health + consumable.heal) - health;
+    health += restored;
+    const after = removeFromInventory({ ...state, inventory, equipment }, consumable.id, 1);
+    inventory = after.inventory;
+    equipment = after.equipment;
+    actions.push({
+      actor: characterRef,
+      kind: 'use-item',
+      speed: characterSpeed,
+      order,
+      status: 'executed',
+      itemId: consumable.id,
+      itemName: consumable.name,
+      healed: restored,
+    });
+  }
+
+  /** The Character's action at its place in the order. */
+  function resolveCharacterAction(order: number): void {
+    if (combatAction === 'advance') {
+      resolveCharacterAdvance(order);
+    } else if (combatAction === 'fall-back') {
+      resolveCharacterFallBack(order);
+    } else if (combatAction === 'escape') {
+      resolveCharacterEscape(order);
+    } else if (combatAction === 'use-item') {
+      resolveCharacterUseItem(order);
+    } else {
+      resolveCharacterAttack(order);
+    }
+  }
+
   ordered.forEach((queuedAction, index) => {
     const order = index + 1;
     if (queuedAction.actor === 'participant') {
@@ -1883,15 +2184,15 @@ function applyCombat(
     if (stop !== undefined) {
       actions.push({
         actor: characterRef,
-        kind: 'attack',
-        speed: 'normal',
+        kind: combatAction,
+        speed: characterSpeed,
         order,
-        target: targetRef(),
+        ...(victim === undefined ? {} : { target: targetRef() }),
         status: 'not-reached',
       });
       return;
     }
-    resolveCharacterAttack(order);
+    resolveCharacterAction(order);
   });
 
   /**
@@ -1934,7 +2235,13 @@ function applyCombat(
   // Victory ends the Combat: no cleanup selection, no remaining actions, only
   // the applicable Encounter Outcome.
   if (stop === 'victory') {
-    return finishVictory(scenario, state, encounter, roundEntry, health, encounters, rng);
+    return finishVictory(scenario, state, encounter, roundEntry, health, encounters, rng, inventory, equipment);
+  }
+
+  // A successful Escape ends the Combat: later actions do not resolve, no
+  // next Intents are selected, and the `escape` Outcome is applied.
+  if (stop === 'escape') {
+    return finishEscape(scenario, state, encounter, roundEntry, health, encounters, rng);
   }
 
   // A continuing Round (R11): the round number and `step` increment once,
@@ -1974,6 +2281,8 @@ function applyCombat(
     step: state.step + 1,
     character: { ...state.character, health },
     encounters,
+    inventory,
+    equipment,
     activeCombat: {
       encounterId: encounter.id,
       round: nextRound,

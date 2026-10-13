@@ -5,11 +5,11 @@
 // tactical rules in src/engine/index.ts, src/engine/state.ts and
 // src/engine/tactical.ts. Named decisions:
 // - D2: only the `attack` Combat action resolves in this ticket. Submitting
-//   advance/defend/fall-back/escape/use-item is rejected as `illegal-action`
-//   (movement, Escape and Consumables land in #121; Defend and Distract in
-//   #122). Non-attack availability shown by combatActions() is standing
-//   availability only. Distract is not tested: it is not in the CombatAction
-//   union.
+//   defend is rejected as `illegal-action` (Defend and Distract land in #122).
+//   Advance, Fall back, Escape and Combat `use-item` resolve since #121:
+//   their rejection tests below were rewritten then to assert the new rules.
+//   Non-attack availability shown by combatActions() is standing availability
+//   only. Distract is not tested: it is not in the CombatAction union.
 // - D3: the Combat view projection is interim and shows the first surviving
 //   participant (full arena projection arrives with #123/R12).
 //
@@ -887,8 +887,8 @@ describe('the combat view', () => {
   });
 });
 
-describe('non-attack actions (INTERIM D2)', () => {
-  it('advance is rejected even where standing availability shows it enabled (-> #121)', () => {
+describe('non-attack actions (INTERIM D2, #121 behaviour)', () => {
+  it('advance resolves at Far: the lane moves Near with no roll (-> #121)', () => {
     const { scenario, state } = startArena();
     const started = startFight(scenario, state, 'fight-melee', strictDice([]));
     // Standing availability still reports Advance enabled at Far.
@@ -897,16 +897,23 @@ describe('non-attack actions (INTERIM D2)', () => {
       enabled: true,
     });
     const step = started.state.step;
-    const before = started.state;
-    const result = applyAction(
-      scenario,
-      started.state,
-      { kind: 'combat', combatAction: 'advance', expectedStep: step },
-      noDice,
-    );
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
-    expect(started.state).toEqual(before);
-    expect(started.state.step).toBe(step);
+    // Both normal at agility 1: the Character wins the tie, advances with no
+    // roll, and the dummy closes in behind. No dice at all.
+    const rng = strictDice([]);
+    const result = combat(scenario, started.state, 'advance', rng);
+    rng.assertExhausted();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['advance', 'close-in']);
+    expect(round.actions[0]).toMatchObject({
+      speed: 'normal',
+      status: 'executed',
+      rangeBefore: 'far',
+      rangeAfter: 'near',
+    });
+    expect(round.stop).toBeUndefined();
+    expect(result.state.step).toBe(step + 1);
+    expect(result.state.activeCombat?.round).toBe(2);
+    expect(result.state.activeCombat?.participants['dummy-melee']?.range).toBe('near');
   });
 
   it('defend is rejected with no state/step change (-> #122)', () => {
@@ -925,36 +932,54 @@ describe('non-attack actions (INTERIM D2)', () => {
     expect(started.state.step).toBe(step);
   });
 
-  it('fall-back is rejected with no state/step change (-> #121)', () => {
+  it('fall-back resolves at Near: the normal strike lands first, then the lane moves Far (-> #121)', () => {
     const { scenario, state } = startArena();
     const started = startFight(scenario, state, 'fight-near', strictDice([]));
-    const step = started.state.step;
-    const before = started.state;
-    const result = applyAction(
-      scenario,
-      started.state,
-      { kind: 'combat', combatAction: 'fall-back', expectedStep: step },
-      noDice,
-    );
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
-    expect(started.state).toEqual(before);
-    expect(started.state.step).toBe(step);
+    // The normal strike (agility 1) resolves before the slow Fall back and
+    // misses 1+1+1 = 3 against 7+1 = 8; Fall back 6+6+1 = 13 hits 7+1 = 8.
+    // Cleanup: the melee dummy at Far closes in (no die).
+    const rng = strictDice([1, 1, 6, 6]);
+    const result = combat(scenario, started.state, 'fall-back', rng);
+    rng.assertExhausted();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['strike', 'fall-back']);
+    expect(round.actions[0]).toMatchObject({ status: 'executed', damage: 0 });
+    expect(round.actions[1]).toMatchObject({
+      speed: 'slow',
+      status: 'executed',
+      rangeBefore: 'near',
+      rangeAfter: 'far',
+    });
+    expect(round.stop).toBeUndefined();
+    expect(result.state.activeCombat?.round).toBe(2);
+    expect(result.state.activeCombat?.participants['dummy-melee']?.range).toBe('far');
+    expect(result.state.character.health).toBe(12);
   });
 
-  it('escape is rejected with no state/step change (-> #121)', () => {
+  it('escape resolves: success stops the Round and applies the escape Outcome (-> #121)', () => {
     const { scenario, state } = startArena();
     const started = startFight(scenario, state, 'fight-near', strictDice([]));
-    const step = started.state.step;
-    const before = started.state;
-    const result = applyAction(
-      scenario,
-      started.state,
-      { kind: 'combat', combatAction: 'escape', expectedStep: step },
-      noDice,
-    );
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
-    expect(started.state).toEqual(before);
-    expect(started.state.step).toBe(step);
+    // Both normal at agility 1: the Character wins the tie. Near at
+    // commitment, so no +2: 6+6+1 = 13 hits 7+1 = 8. No cleanup dice.
+    const rng = strictDice([6, 6]);
+    const result = combat(scenario, started.state, 'escape', rng);
+    rng.assertExhausted();
+    const round = onlyRound(result.journal);
+    expect(round.actions.map((action) => action.kind)).toEqual(['escape', 'strike']);
+    expect(round.actions[0]).toMatchObject({ speed: 'normal', status: 'executed' });
+    expect(round.actions[0]?.roll).toMatchObject({ hit: true, total: 13, target: 8 });
+    expect(round.actions[1]).toMatchObject({ status: 'not-reached' });
+    expect(round.stop).toBe('escape');
+    expect(result.state.activeCombat).toBeNull();
+    expect(result.journal.map((entry) => entry.type)).toEqual([
+      'combat-round',
+      'combat-end',
+      'outcome',
+    ]);
+    expect(result.journal.find((entry) => entry.type === 'combat-end')).toMatchObject({
+      encounterId: 'arena-near',
+      howEnded: 'escape',
+    });
   });
 
   it('use-item is rejected with no state/step change (-> #121)', () => {
