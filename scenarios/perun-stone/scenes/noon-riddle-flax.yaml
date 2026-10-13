@@ -1,0 +1,30 @@
+id: noon-riddle-flax
+illustration: noon-riddle-flax
+title: The Second Question
+repeatable: true
+text: |
+  "Second. My mother asked this, and her mother before her. Tell me how flax is made, from
+  seed to thread, and get the order right."
+choices:
+  - id: order-sung
+    text: "\"Sow it, pull it, soak it, dry it, break it, scutch it, comb it, spin it.\""
+    outcome:
+      text: |
+        She nods along with each word, as though listening to a song she knows.
+      next: noon-riddle-equal
+  - id: order-cut
+    text: "\"Sow it, cut it with a sickle, dry it, soak it, comb it, break it, spin it.\""
+    outcome:
+      text: |
+        "Cut it? With a sickle?" She looks at her own sickle in disgust, and then at you. The
+        heat drops like a lid. You wake in the furrow with the taste of dust in your mouth.
+      effects:
+        - damage: 2
+  - id: order-break
+    text: "\"Sow it, pull it, break it, soak it, comb it, dry it, spin it.\""
+    outcome:
+      text: |
+        "You would break it green?" She sighs like wind through stubble. The world turns
+        white, and you wake in the furrow, alone, with a splitting head.
+      effects:
+        - damage: 2

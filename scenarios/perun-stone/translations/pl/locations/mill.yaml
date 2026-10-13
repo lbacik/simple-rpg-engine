@@ -1,0 +1,14 @@
+id: mill
+name: Młyn Radzima
+description: |
+  Młyn stoi tam, gdzie rzeka płynęła niegdyś wartko. Koryto to dziś spękany muł, a mimo to
+  wielkie koło obraca się powoli i ocieka wodą, jakby wciąż się po nim przelewała. Za
+  młynem ziemna grobla przytrzymuje staw młyński, jedyną pełną wodę na dzień drogi wokół.
+
+  Wszystko tu jest przyprószone bielą: schody, worki, pokrzywy przy drzwiach. Powietrze
+  pachnie mąką i, ledwie wyczuwalnie, rzęsą wodną.
+connections:
+  - to: debina
+    label: Wróć do wsi
+  - to: mill-pond
+    label: Otwórz zastawkę i przejdź groblą nad staw

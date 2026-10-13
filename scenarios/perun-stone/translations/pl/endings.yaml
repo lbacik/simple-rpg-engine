@@ -1,0 +1,81 @@
+- id: death
+  title: Zabrani przez Starych
+  text: |
+    Twoja wędrówka kończy się w Dębinie, wśród suchych pól i dawnych mocy, które nigdy nie
+    były tak łagodne jak pieśni o nich. W Noc Kupały Bogumił rozpala jednak dwa ogniska.
+
+    Po latach wędrowcy wciąż opowiadają o suchym lecie w Dębinie i o przybyszu, który
+    szukał kamienia Peruna. Nikt nie wie na pewno, co spotkało wędrowca imieniem {name}.
+    Wszyscy zgadzają się, że deszcz przyszedł tamtego roku późno. Niektórzy mówią, że nie
+    przyszedł wcale.
+- id: abandoned
+  title: Dalsza droga
+  text: |
+    Opuszczasz Dębinę zakurzonym gościńcem, zanim cień lipy zdąży się wydłużyć. Za twoimi
+    plecami ktoś już układa drewno.
+
+    W Noc Kupały, ze wzgórza wiele mil dalej, widzisz dwa ogniska płonące tam, gdzie powinna
+    być wieś. Niebo nad nimi jest czyste i pełne gwiazd, i nie słychać żadnego grzmotu.
+- id: thunder-returns
+  title: Grom nad Dębiną
+  text: |
+    Kamień dotyka ołtarza, a zimne palenisko zajmuje się samo, z dźwiękiem jak wciągnięty
+    oddech. Potem opowiadasz im wszystko: o utopcu pod stawem, o duszach pod glinianymi
+    garnkami i o ojcu, który oddał kamień Peruna za obietnicę wody. Radzim stoi na skraju
+    blasku pochodni ze spuszczoną głową i czeka, aż wieś zdecyduje, kim jest.
+
+    Pierwsza podchodzi Dobrawa i kładzie mu dłoń na ramieniu. Potem na wzgórze wchodzi
+    Jagna, pierwszy raz od lat, a Bogumił po długim milczeniu odsuwa się, by mogła stanąć
+    przy ogniu. Drugi stos zostaje rozebrany i wrzucony do pierwszego.
+
+    Pierwsza kropla spada na kamień ołtarza tuż przed północą. Potem niebo nad Dębiną pęka
+    od krańca do krańca, grom toczy się nad polami jak wóz pełen żelaza, a deszcz leje tak
+    mocno, że kupalny ogień syczy i huczy jednocześnie. Dziewczęta puszczają wianki na
+    rzekę, która znów płynie. Radzim też puszcza wianek, z chabrów, i patrzy, jak odpływa.
+
+    Rano Czarny Staw jest już tylko stawem. Bogumił wycina na jednym ze słupów wokół dębu
+    nowy znak: małą sześciopłatkową rozetę, dla przybysza, który odnalazł kamień boga.
+- id: rain-and-silence
+  title: Deszcz bez odpowiedzi
+  text: |
+    Kładziesz kamień na ołtarzu i mówisz, że zabrał go wodny demon z Czarnego Stawu. To
+    prawda, w pewnej mierze. Palenisko zajmuje się samo, przed północą nadchodzi grom, a z
+    nim deszcz, i Dębina tańczy w błocie.
+
+    Ale Bogumił przez całą noc wpatruje się w skraj lasu. Rano mówi głośno to, co wszyscy
+    myślą: demony nie wchodzą same na wzgórza i nie otwierają zamkniętych skrzyń. Ktoś go
+    posłał. Miesiąc później chata Jagny stoi pusta i nikt nie wie, dokąd odeszła.
+
+    W młynie Radzim pracuje od świtu do zmierzchu i nigdy nie mówi o stawie. Plony są
+    uratowane. Pytanie pozostaje bez odpowiedzi.
+- id: witch-pyre
+  title: Drugi ogień
+  text: |
+    W Noc Kupały palą chatę Jagny. Dobrawa powstrzymuje ich, zanim spalą samą Jagnę, ale w
+    ostatniej chwili. Zielarka odchodzi do lasu z kotem pod pachą i nie ogląda się za siebie.
+
+    Niebo pozostaje czyste. Żyto usycha na polach, a jesienią pół wsi rusza gościńcem tam,
+    gdzie jest chleb. W młynie koło wciąż obraca się nad suchą rzeką, a młynarz chudnie,
+    siwieje i co noc rozmawia z wodą. Kamień Peruna zostaje tam, gdzie jest, pod czarną
+    wodą, i grom nigdy go nie odnajduje.
+- id: forest-fire
+  title: Las płonie
+  text: |
+    W Noc Kupały młodzi mężczyźni wchodzą do starego lasu z pochodniami. Drzewa są suche jak
+    pola, a ogień nie zatrzymuje się tam, gdzie by chcieli. O świcie las na milę wokół jest
+    popiołem, a dym wisi nad Dębiną przez tydzień.
+
+    Chata Jagny płonie razem ze skrajem lasu, choć sama zielarka uchodzi z życiem. Leszego
+    nikt już nigdy nie widzi, podobnie jak grzybów, saren i źródeł pod starymi drzewami. A
+    deszcz wciąż nie pada, bo kamień Peruna leży na dnie Czarnego Stawu, gdzie żaden ogień
+    nie sięga.
+- id: keeper-cast-out
+  title: Pusty dąb
+  text: |
+    Wieś ci wierzy, bo chce wierzyć. Bogumił zostaje zepchnięty ze wzgórza, z kosturem
+    złamanym na własnym kolanie, i opuszcza Dębinę bez słowa. Był dumny, przestraszony i
+    niesprawiedliwy, ale kamienia nie tknął.
+
+    Bez strażnika nikt nie dogląda dębu, a piorunek zostaje tam, gdzie jest. Susza trwa. Do
+    jesieni ludzie w Dębinie zaczynają szeptać o przybyszu, który przeszedł tędy latem, i o
+    tym, że deszcz przestał padać na dobre, odkąd uwierzono obcym słowom.

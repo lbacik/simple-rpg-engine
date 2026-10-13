@@ -1,0 +1,16 @@
+- id: druzhinnik
+  name: Drużynnik
+  description: Służba w książęcej drużynie skończyła się, gdy książę przestał płacić. Teraz
+    najmujesz swój topór wsiom, które płacą gorzej, ale mniej kłamią.
+- id: forest-hunter
+  name: Leśny łowca
+  description: Znasz tropy każdego zwierzęcia i obyczaje istot, które zwierzętami nie są.
+    Przed każdym polowaniem zostawiasz chleb na pniu.
+- id: guslar
+  name: Wędrowny guślarz
+  description: Chodzisz od wsi do wsi i śpiewasz dawne pieśni na pogrzebach i ucztach. Znasz
+    słowa, które każą słuchać żywym, i kilka takich, którym ulegają też umarli.
+- id: szeptucha
+  name: Szeptucha
+  description: Leczysz ziołami i szeptanymi modlitwami. Wołają cię do gorączki i do porodu, a
+    w każdej innej porze przechodzą na drugą stronę drogi.

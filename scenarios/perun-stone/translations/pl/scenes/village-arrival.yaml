@@ -1,0 +1,25 @@
+id: village-arrival
+title: Wieś pod lipą
+text: |
+  Wygląda na to, że cała wieś zebrała się pod lipą. W samym środku barczysta kobieta z
+  pękiem kluczy u pasa próbuje przekrzyczeć wysokiego starca w białej lnianej szacie. Jego
+  kostur zdobi sześciopłatkowa rozeta, znak gromu.
+
+  „Czterdzieści dni bez deszczu” — woła starzec — „a wy prosicie mnie o cierpliwość?
+  Wiedźma ze skraju lasu doi chmury do swoich skopków! W Noc Kupały rozpalimy dwa
+  ogniska, a jedno z nich będzie dla niej!”
+
+  Kobieta cię dostrzega. „Przybysz” — mówi tak głośno, że starzec milknie. — „Obcy widzą to,
+  czego sąsiedzi widzieć nie chcą. Jestem Dobrawa, sołtyska Dębiny. Dowiedz się, kto zabrał
+  kamień Peruna, zanim Bogumił znajdzie kogoś do spalenia, a wieś będzie ci winna swoje
+  plony”.
+choices:
+  - id: accept
+    text: Obiecaj, że odnajdziesz piorunek i tego, kto go zabrał.
+    outcome:
+      text: |
+        Dobrawa wciska ci w dłonie okrągły bochenek ze szczyptą soli na wierzchu. „Chleb i sól
+        dla gościa. Podziel się nim tam, gdzie będzie potrzebny”. Bogumił mierzy cię wzrokiem i
+        nic nie mówi, co też jest jakąś odpowiedzią.
+  - id: refuse
+    text: Powiedz, że to nie twój spór, i ruszaj dalej gościńcem.

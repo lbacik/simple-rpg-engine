@@ -1,0 +1,44 @@
+id: noon-riddle-equal
+illustration: noon-riddle-equal
+title: The Third Question
+repeatable: true
+text: |
+  "Last. The gods never see it. A prince sees it rarely. You see it every day. What is it?"
+choices:
+  - id: equal
+    text: "\"An equal.\""
+    outcome:
+      text: |
+        The Południca laughs, a dry, rustling laugh like wind in the rye. "An equal. Yes. I
+        meet so few." She lowers the sickle.
+
+        "You are looking for the hot stone. Then hear something for nothing. Last summer a
+        girl came through my field on Kupała morning, with a wreath of cornflowers for the
+        mill pond: Marzenka, the miller's girl. She never came back. At noon, when the water
+        is still, I hear her calling for her father from under the pond. The old one down
+        there keeps her, the way a magpie keeps a ring."
+
+        She holds out the sickle, handle first. "Take it. The rye won't need it this year."
+        When you look up from the blade, she is gone and the larks are singing.
+      effects:
+        - set-flag: riddles-solved
+        - set-flag: field-crossed
+        - set-flag: knows-marzenka
+        - give-item:
+            item: noon-sickle
+  - id: shadow
+    text: "\"Your own shadow.\""
+    outcome:
+      text: |
+        "At noon?" she says. "Look down." You do, and you have no shadow at all. Then the
+        heat takes you, and you wake in the furrow with a burning face.
+      effects:
+        - damage: 2
+  - id: sun
+    text: "\"The sun.\""
+    outcome:
+      text: |
+        "The gods see the sun every day. They made it." The sickle flashes white, and you
+        wake in the furrow, alone and aching.
+      effects:
+        - damage: 2

@@ -1,0 +1,23 @@
+id: noon-riddle-flax
+title: Drugie pytanie
+text: |
+  „Po drugie. Pytała o to moja matka i matka mojej matki. Powiedz mi, jak się robi len, od
+  ziarna do nici, i nie pomyl kolejności”.
+choices:
+  - id: order-sung
+    text: „Posiać, wyrwać, wymoczyć, wysuszyć, wymiędlić, wytrzepać, wyczesać, uprząść”.
+    outcome:
+      text: |
+        Kiwa głową przy każdym słowie, jakby słuchała pieśni, którą zna.
+  - id: order-cut
+    text: „Posiać, ściąć sierpem, wysuszyć, wymoczyć, wyczesać, wymiędlić, uprząść”.
+    outcome:
+      text: |
+        „Ściąć? Sierpem?” Patrzy z niesmakiem na swój sierp, a potem na ciebie. Upał opada jak
+        pokrywa. Budzisz się w bruździe, z kurzem na języku.
+  - id: order-break
+    text: „Posiać, wyrwać, wymiędlić, wymoczyć, wyczesać, wysuszyć, uprząść”.
+    outcome:
+      text: |
+        „Międlić go zielonego?” Wzdycha jak wiatr w ściernisku. Świat bieleje, a budzisz się w
+        pustej bruździe z pękającą głową.

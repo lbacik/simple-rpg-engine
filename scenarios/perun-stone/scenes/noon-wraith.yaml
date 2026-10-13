@@ -1,0 +1,20 @@
+id: noon-wraith
+illustration: noon-wraith
+title: Wait for Noon in the Rye
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: riddles-solved
+text: |
+  You stand among the rye until the sun climbs to its height and the larks fall silent. The
+  Południca rises out of the heat haze with her shining sickle.
+
+  "Back again? Good. I have questions, and nobody answers them any more."
+choices:
+  - id: answer
+    text: Answer her questions.
+    outcome:
+      next: noon-riddle-rye
+  - id: leave
+    text: Back away into the shade before she asks.

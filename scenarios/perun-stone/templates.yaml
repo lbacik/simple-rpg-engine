@@ -1,0 +1,56 @@
+- id: druzhinnik
+  name: Druzhina Warrior
+  description: You served in a prince's war band until the prince stopped paying. Now you
+    sell your axe to villages, which pay worse but lie less.
+  attributes:
+    might: 3
+    agility: 1
+    wits: 0
+    presence: 2
+  items:
+    - item: bearded-axe
+    - item: padded-gambeson
+    - item: herb-draught
+      quantity: 2
+- id: forest-hunter
+  name: Forest Hunter
+  description: You know the tracks of every animal and the habits of the things that are not
+    animals. You leave bread on a stump before every hunt.
+  attributes:
+    might: 1
+    agility: 3
+    wits: 2
+    presence: 0
+  items:
+    - item: hunting-bow
+    - item: wolfskin-cloak
+    - item: herb-draught
+      quantity: 2
+- id: guslar
+  name: Wandering Guślarz
+  description: You walk from village to village singing the old songs at funerals and feasts.
+    You know the words that make the living listen, and some that make the dead listen too.
+  attributes:
+    might: 0
+    agility: 1
+    wits: 2
+    presence: 3
+  items:
+    - item: ash-staff
+    - item: gusle
+    - item: herb-draught
+      quantity: 2
+- id: szeptucha
+  name: Szeptucha
+  description: You heal with herbs and whispered prayers. People call for you in fevers and
+    childbirth, and cross the road when you pass at any other time.
+  attributes:
+    might: 1
+    agility: 1
+    wits: 3
+    presence: 1
+  items:
+    - item: herb-knife
+    - item: rue-bundle
+    - item: herb-draught
+      quantity: 2

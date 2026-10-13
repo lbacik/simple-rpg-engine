@@ -1,0 +1,40 @@
+id: miller-lie-night
+title: „Spałem jak kamień”
+text: |
+  „No to zaniosłem mąkę na wzgórze. To nie zbrodnia”. Radzim wyciera dłonie w fartuch. „A
+  zanim zapytasz: w noc bez księżyca spałem w łóżku przy zaryglowanych drzwiach, jak każdy
+  uczciwy człowiek. Spytaj kogo chcesz”.
+choices:
+  - id: show-flour
+    text: Przypomnij mu jeszcze raz o mące w skrzyni.
+    outcome:
+      text: |
+        „Już mówiłem o mące”. Jego głos znów jest spokojny; ten argument już go nie rusza.
+        „Jeśli to wszystko, co masz, to mam robotę”.
+  - id: show-witness
+    text: Powiedz mu, że widziano go w noc bez księżyca, całego w bieli, z czymś świecącym
+      pod kapotą.
+    outcome:
+      text: |
+        Radzim blednie; pod mąką trudno to dostrzec, ale widzisz. „Kto…” — zaczyna i urywa. —
+        „Nikogo nie było na dworze tamtej nocy”. Siada ciężko na worku. „No dobrze. Czasem
+        chodzę nocami. Nie mogę spać. Człowiek ma do tego prawo”.
+  - id: show-marzenka
+    text: Wypowiedz imię Marzenki i powiedz, co z niej zatrzymała woda.
+    outcome:
+      text: |
+        „Nie ona”. Dłonie Radzima zaciskają się w pięści. „Jej w to nie mieszaj. Wynocha”.
+        Stoi nad tobą, dopóki nie przekroczysz progu.
+  - id: show-pond
+    text: Zwróć mu uwagę, że jego staw jest pełny, a cała dolina wyschła.
+    outcome:
+      text: |
+        „Źródło” — mówi ze znużeniem. — „Ile razy mam powtarzać? Idź męczyć Bogumiła”.
+  - id: threaten
+    text: Powiedz, że cała wieś zacznie pytać, gdzie był tamtej nocy.
+    outcome:
+      text: |
+        „Niech pytają. Usłyszą to samo”. Radzim zarzuca worek na ramię i przechodzi obok
+        ciebie, jakby obok słupa.
+  - id: back-off
+    text: Na razie odpuść.

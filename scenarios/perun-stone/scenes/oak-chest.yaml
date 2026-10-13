@@ -1,0 +1,36 @@
+id: oak-chest
+illustration: oak-chest
+title: The Empty Chest
+trigger: on-demand
+repeatable: true
+text: |
+  The chest is carved with thunder flowers and lined with lambskin, pressed flat where the
+  stone lay for generations. Nobody has wanted to close the lid. Beside it, the altar
+  hearth is a heap of cold, black embers.
+
+  Bogumił watches you from the edge of the hilltop with his arms folded.
+choices:
+  - id: examine-chest
+    text: Run your fingers along the rim of the chest and over the lambskin.
+    once: true
+    outcome:
+      text: |
+        Your fingertips come away white. It isn't ash; ash is grey and gritty. This is fine
+        as frost and smells faintly sweet. Wheat flour, ground twice.
+
+        "Everyone in Dębina eats rye," Bogumił says slowly when you show him. "Wheat is
+        ground once a year, at the mill, for the Kupała bread. I've bought none this year."
+        He looks at the key on his belt, then down the hill towards the turning wheel, and
+        says nothing more.
+      effects:
+        - set-flag: flour-found
+  - id: examine-hearth
+    text: Sift through the cold embers of the altar fire.
+    once: true
+    outcome:
+      text: |
+        The embers did not burn out; they drowned. Black lumps, still damp at the heart
+        after forty dry days. Flecks of green cling to them: duckweed, the kind that grows
+        only on still water.
+  - id: leave
+    text: Leave the chest.

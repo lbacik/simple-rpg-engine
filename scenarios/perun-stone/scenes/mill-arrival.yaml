@@ -1,0 +1,25 @@
+id: mill-arrival
+illustration: mill-arrival
+title: The Wheel That Turns on a Dry River
+trigger: on-enter
+text: |
+  The miller meets you at the door before you can knock: a big, stooped man, white with
+  flour from his eyebrows to his boots. Behind him the millstones grind with a sound like
+  distant thunder.
+
+  "Radzim," he says, as if his name were a debt he owes. "You're looking for Perun's stone.
+  Everyone knows. You won't find it among my sacks."
+
+  Over his shoulder you glimpse the mill pond behind the dyke: full to the brim, black and
+  still, while the river beside the mill is cracked mud. When he sees where you are
+  looking, Radzim steps sideways to block the view.
+choices:
+  - id: ask-pond
+    text: Ask why his pond is full when the river is dry.
+    outcome:
+      text: |
+        "A spring," he says, too quickly. "There's a spring under the pond. Always has been."
+        He starts to close the door, then opens it again, as though he has remembered that a
+        closed door looks worse.
+      effects:
+        - set-flag: pond-seen

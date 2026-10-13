@@ -1,0 +1,12 @@
+id: perun-oak
+name: Dąb Peruna
+description: |
+  Dąb jest starszy niż wieś; dziewięć osób trzymających się za ręce nie zdołałoby go objąć.
+  W korę powbijano stare żeleźca toporów, złożone w ofierze. Kamienny ołtarz u jego korzeni
+  jest czarny od ognia, który płonął przez dziewięć pokoleń. Teraz palenisko jest zimne.
+
+  Szczyt wzgórza otacza krąg rzeźbionych słupów, na każdym wycięto sześciopłatkową rozetę,
+  znak gromu. Pod ołtarzem stoi okuta żelazem dębowa skrzynia z odrzuconym wiekiem.
+connections:
+  - to: debina
+    label: Zejdź do wsi

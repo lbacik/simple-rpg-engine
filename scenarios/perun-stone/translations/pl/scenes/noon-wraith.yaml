@@ -1,0 +1,12 @@
+id: noon-wraith
+title: Zaczekaj w życie na południe
+text: |
+  Stoisz w życie, aż słońce wspina się najwyżej, a skowronki milkną. Południca wyłania się z
+  drgającego powietrza ze swoim lśniącym sierpem.
+
+  „Znowu tutaj? To dobrze. Mam pytania, a nikt już na nie nie odpowiada”.
+choices:
+  - id: answer
+    text: Odpowiedz na jej pytania.
+  - id: leave
+    text: Wycofaj się w cień, zanim zdąży zapytać.

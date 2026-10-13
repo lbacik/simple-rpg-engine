@@ -1,0 +1,14 @@
+id: miller-questioning
+title: Przesłuchaj Radzima
+text: |
+  Radzim pracuje dalej, gdy mówisz, i dźwiga worki, pod którymi ugięłoby się dwóch innych
+  chłopów. Na każde pytanie odpowiada odwrócony plecami.
+
+  Cokolwiek ukrywa, nie odda tego za przeczucie. Trzeba go przyłapać na kłamstwie, i to na
+  czymś, czego nie da się zbyć machnięciem ręki. Jeśli przesadzisz, zamknie się i trzeba
+  będzie zaczynać od nowa.
+choices:
+  - id: press
+    text: Zapytaj go wprost, czy był pod Dębem Peruna.
+  - id: leave
+    text: Zostaw go z jego workami.

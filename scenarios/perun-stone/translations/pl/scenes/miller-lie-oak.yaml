@@ -1,0 +1,40 @@
+id: miller-lie-oak
+title: „Nie byłem na wzgórzu”
+text: |
+  „Pod dębem?” Radzim rzuca kolejny worek na stos. „Nie wchodziłem na to wzgórze od Jarych
+  Godów, od wiosny. Dąb to sprawa Bogumiła. Moja to mąka”.
+choices:
+  - id: show-flour
+    text: Powiedz mu o mące pszennej znalezionej w skrzyni po piorunku.
+    outcome:
+      text: |
+        Radzim zastyga z workiem na ramieniu. Powoli go opuszcza. „Mąka pszenna” — mówi. —
+        „No dobrze. Zaniosłem na wzgórze mąkę na kupalny chleb. Miesiąc temu, może dawniej.
+        Musiałem się oprzeć o skrzynię”.
+  - id: show-witness
+    text: Powiedz mu, że ktoś go widział w noc bez księżyca.
+    outcome:
+      text: |
+        „Widział? Na wzgórzu? Nikt mnie nie widział na wzgórzu, bo mnie tam nie było”.
+        Odwraca się z powrotem do worków i wiesz, że na razie nic więcej z niego nie
+        wyciągniesz.
+  - id: show-marzenka
+    text: Wypowiedz imię Marzenki i powiedz, co z niej zatrzymała woda.
+    outcome:
+      text: |
+        Radzim sztywnieje. „W moim młynie nie wymawia się jej imienia” — mówi bardzo cicho. —
+        „Wynoś się”. Nie odwraca się, dopóki nie wyjdziesz.
+  - id: show-pond
+    text: Zwróć mu uwagę, że jego staw jest pełny, a cała dolina wyschła.
+    outcome:
+      text: |
+        „Źródło. Mówiłem już”. Nawet nie podnosi wzroku. „Co mój staw ma wspólnego ze
+        wzgórzem Bogumiła?”
+  - id: threaten
+    text: Zagroź, że powiesz Bogumiłowi o swoich podejrzeniach.
+    outcome:
+      text: |
+        Radzim śmieje się bez wesołości. „Mów. Zapyta, z czyjej mąki piecze się jego kupalny
+        chleb”. Wraca do pracy i dziś nic więcej z niego nie wydobędziesz.
+  - id: back-off
+    text: Na razie odpuść.

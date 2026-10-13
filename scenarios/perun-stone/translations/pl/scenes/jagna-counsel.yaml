@@ -1,0 +1,47 @@
+id: jagna-counsel
+title: Rozmowa z Jagną
+text: |
+  W chacie Jagny pachnie suszonymi ziołami, dymem i kotem. Nalewa ci kubek czegoś gorzkiego
+  i zielonego i siada naprzeciwko, przyglądając ci się znad własnego kubka.
+
+  „Przysłała cię Dobrawa. Bogumił pewnie mówił, że kradnę chmury i doję je do skopków.
+  Gdybym to umiała, myślisz, że pozwoliłabym własnym ziołom usychać na łodygach?”
+choices:
+  - id: ask-stone
+    text: Zapytaj, co wie o kamieniu Peruna.
+    outcome:
+      text: |
+        „Piorunek to kawałek boskiego gromu. Nie da się go rozbić, spalić ani zakopać dość
+        głęboko; niebo zawsze go znajdzie. Chyba że pod wodą”. Stuka palcem w stół. „Woda
+        chowa rzeczy przed niebem. Perun szuka swojego kamienia od czterdziestu dni i nie
+        może go zobaczyć. Gdzieś w tej suszy jest woda, której nie powinno być. Znajdź ją, a
+        znajdziesz kamień”.
+  - id: ask-forest
+    text: Zapytaj, jak bezpiecznie przejść przez stary las.
+    outcome:
+      text: |
+        „Nie przejdziesz, chyba że Leszy pozwoli. Wodzi ludzi w kółko, aż padną. Ale jest
+        stary sposób: wywróć kapotę na lewą stronę i włóż lewy but na prawą nogę. Weźmie cię
+        za swojego i zostawi ścieżki w spokoju”. Szczerzy zęby. „Będziesz wyglądać głupio.
+        Lepiej głupio niż zbłądzić”.
+  - id: tell-pond
+    text: Opowiedz jej o pełnym po brzegi stawie Radzima nad suchą rzeką.
+    outcome:
+      text: |
+        Jagna nieruchomieje. „Staw Radzima. Och, biedny głupiec”. Odstawia kubek. „Jego córka,
+        Marzenka, utonęła tam w zeszłą Kupałę. Ludzie mówili, że woda ją zatrzymała. Ale w
+        tym stawie zawsze siedział stary, utopiec. Dziad Radzima płacił mu co wiosnę czarną
+        kurą. Od zeszłego lata widuję Radzima nocami na grobli, jak gada do wody. Jeśli
+        utopiec powiedział mu, że może odkupić jej duszę…”
+
+        Grzebie na półce i wciska ci w dłonie mały lniany woreczek. „Popiół z zeszłorocznego
+        kupalnego ognia, z samego ołtarza Peruna. Siła utopca jest w wodzie, która kapie mu z
+        lewej poły. Wysusz ją, a będzie niczym. Nie zmarnuj tego”.
+  - id: heal
+    text: Poproś, żeby obejrzała twoje rany.
+    outcome:
+      text: |
+        Przemywa ci rany czymś, co szczypie jak pokrzywy, i obwiązuje je lnem. Potem wkłada ci
+        do torby zatkany słoiczek. „Na później. Bogumił nazwałby to czarami. To krwawnik”.
+  - id: leave
+    text: Podziękuj jej i idź.

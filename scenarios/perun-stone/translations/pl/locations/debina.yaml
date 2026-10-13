@@ -1,0 +1,17 @@
+id: debina
+name: Dębina
+description: |
+  Niskie chaty z bali, kryte strzechą, tulą się wokół zakurzonego majdanu i wielkiej lipy.
+  Sznur studni wyciąga więcej błota niż wody. Nad dachami, na wzgórzu, stoi Dąb Peruna. Na
+  wschodzie powoli obraca się koło młyńskie, choć rzeka obok niego to niewiele więcej niż
+  spękany muł.
+
+  W cieniu lipy kobiety przędą na ławie. Chłopiec z pasterskim kijem obserwuje cię zza
+  studni, gotów w każdej chwili uciec.
+connections:
+  - to: perun-oak
+    label: Wejdź na wzgórze, pod Dąb Peruna
+  - to: mill
+    label: Idź suchym korytem rzeki do młyna
+  - to: rye-field
+    label: Wyjdź w łany żyta

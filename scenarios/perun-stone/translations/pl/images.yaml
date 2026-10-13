@@ -1,0 +1,107 @@
+- id: loc-debina
+  alt: "Chaty z bali kryte strzechą otaczają zakurzony majdan i wielką lipę, a za nimi na wzgórzu stoi samotny dąb."
+
+- id: loc-perun-oak
+  alt: "Ogromny dąb z żeleźcami toporów w korze wznosi się nad zimnym kamiennym ołtarzem i otwartą okutą skrzynią."
+
+- id: loc-mill
+  alt: "Koło drewnianego młyna obraca się i ocieka wodą nad korytem rzeki ze spękanego, suchego mułu."
+
+- id: loc-mill-pond
+  alt: "Pełny po brzegi czarny staw leży nieruchomo wśród trzcin i pochylonych wierzb, obok małego drewnianego jazu."
+
+- id: loc-rye-field
+  alt: "Ścieżka biegnie między rzadkim, bladym żytem ku ciemnemu lasowi, obok samotnej dzikiej gruszy."
+
+- id: loc-forest-edge
+  alt: "Krzywa chata stoi na jednym pniu o korzeniach jak kurze pazury u stóp ciemnego lasu."
+
+- id: loc-deep-forest
+  alt: "Nikłe ścieżki giną między omszałymi pniami wokół polany otoczonej ściętymi siekierą dębowymi pniakami."
+
+- id: village-arrival
+  alt: "Pod lipą sołtyska odwraca się w stronę patrzącego, a stary strażnik dębu krzyczy z uniesionym kosturem."
+
+- id: headwoman-counsel
+  alt: "Sołtyska siedzi na cembrowinie wyschniętej studni, obraca klucze i podnosi wzrok."
+
+- id: spinning-song
+  alt: "Trzy kobiety w różnym wieku przędą len na wrzecionach, siedząc na ławie w cieniu lipy."
+
+- id: shepherd-boy
+  alt: "Nieufny pastuszek z wysokim kijem chowa się do połowy za studnią."
+
+- id: oak-arrival
+  alt: "Stary strażnik stoi przy zimnym ołtarzu pod ogromnym dębem i wskazuje odległy las."
+
+- id: oak-chest
+  alt: "Dłoń sięga do pustej rzeźbionej skrzyni wyłożonej skórą, odciśniętą w kształt grotu."
+
+- id: name-the-thief
+  alt: "Strażnik czeka przy ołtarzu na imię, a w dole na majdanie rosną dwa stosy drewna."
+
+- id: confirm-jagna
+  alt: "Strażnik unosi płonącą pochodnię przy ołtarzu, a w dole wieśniacy wiwatują."
+
+- id: confirm-leszy
+  alt: "Strażnik wskazuje odległy las, a młodzi mężczyźni z toporami patrzą w górę wzgórza."
+
+- id: confirm-bogumil
+  alt: "Stary strażnik patrzy w osłupieniu, a za nim szemrzą wieśniacy."
+
+- id: mill-arrival
+  alt: "Rosły, biały od mąki młynarz zasłania sobą drzwi, a za nim widać pełny czarny staw."
+
+- id: miller-questioning
+  alt: "W zamączonym wnętrzu młyna młynarz dźwiga ciężki worek, odwrócony plecami."
+
+- id: miller-lie-oak
+  alt: "Młynarz rzuca worek na stos i lekceważąco ogląda się przez ramię."
+
+- id: miller-lie-night
+  alt: "Młynarz stoi przodem, wyciera dłonie w fartuch i hardo unosi brodę."
+
+- id: miller-lie-motive
+  alt: "Młynarz siedzi ciężko na worku mąki, z twarzą zaciętą i nieufną."
+
+- id: miller-confession
+  alt: "Młynarz siedzi między workami z twarzą w dłoniach, pod zasuszonym wiankiem z chabrów."
+
+- id: pond-arrival
+  alt: "Mały, uśmiechnięty wodny demon wspina się na jaz, a z jednej poły kapoty kapie mu woda."
+
+- id: utopiec-bargain
+  alt: "Wodny demon siedzi na jazie, czyści paznokcie rybią ością i zerka na patrzącego."
+
+- id: pots-game
+  alt: "Trzy odwrócone gliniane garnki z rybą, ptakiem i półksiężycem stoją na mule przed wodnym demonem."
+
+- id: field-arrival
+  alt: "Wysoka kobieta w bieli z lśniącym sierpem stoi na ścieżce wśród żyta w południe."
+
+- id: noon-wraith
+  alt: "Południca wyłania się z drgającego powietrza pośrodku łanu żyta."
+
+- id: noon-riddle-rye
+  alt: "Południca pochyla się z uniesionym palcem, z sierpem na ramieniu."
+
+- id: noon-riddle-flax
+  alt: "Południca unosi pasmo lnianego włókna i czeka na odpowiedź."
+
+- id: noon-riddle-equal
+  alt: "Południca stoi oko w oko z patrzącym, z opuszczonym sierpem, i czeka."
+
+- id: hut-arrival
+  alt: "Chata na pniu o kurzych pazurach odwraca się ku patrzącemu ślepą, bezdrzwiową ścianą."
+
+- id: jagna-counsel
+  alt: "Zielarka przygląda się znad kubka przy stole w chacie pełnej suszonych ziół."
+
+- id: forest-maze
+  alt: "Ta sama rozszczepiona brzoza pojawia się dwa razy na zapętlonej leśnej ścieżce."
+
+- id: leszy-meeting
+  alt: "Ogromny duch lasu z brodą z mchu wyrasta z pniaka, a u jego stóp siedzi szary wilk."
+
+- id: leszy-testimony
+  alt: "Siedzący duch lasu wskazuje nowo pojawiającą się ścieżkę ku odległej wodzie."

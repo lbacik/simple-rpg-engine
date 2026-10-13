@@ -1,0 +1,24 @@
+id: miller-confession
+title: Co zatrzymuje woda
+text: |
+  Na dźwięk imienia córki rosły mężczyzna się łamie. Siada między workami, zakrywa twarz
+  umączonymi dłońmi i przez długi czas słychać tylko kamienie młyńskie.
+
+  „Poszła puścić wianek w zeszłą Noc Kupały” — mówi wreszcie. — „Wszystkie dziewczęta tak
+  robią. Staw ją zabrał. A potem *on* z niego wyszedł: utopiec, ten stary, któremu mój dziad
+  co wiosnę płacił czarną kurą. Powiedział, że trzyma jej duszę pod glinianym garnkiem w
+  swoim domu pod wodą, razem z innymi. Powiedział, że mogę ją odzyskać”.
+
+  Radzim podnosi wzrok. „Chciał kamienia Peruna. Grom to jedyne, czego się boją takie jak
+  on. Odcisnąłem klucz Bogumiła w kawałku ciasta, kiedy odsypiał mój miód, i wystrugałem
+  kopię z czarnego dębu. W noc bez księżyca zabrałem kamień, zalałem ogień wodą ze stawu i
+  oddałem kamień utopcowi”. Głos mu się łamie. „A on nigdy mi jej nie oddał. Tylko utuczył
+  staw, puścił w ruch koło i śmiał się ze mnie. I deszcz przestał padać”.
+choices:
+  - id: promise
+    text: Powiedz, że zmierzysz się z utopcem, i poproś, by otworzył drogę nad staw.
+    outcome:
+      text: |
+        Radzim wstaje i zdejmuje z gwoździa żelazny klucz. „Zastawka na grobli. Trzymałem ją
+        zamkniętą, żeby nikt nie podchodził do wody”. W drzwiach się zatrzymuje. „Jeśli ją
+        zobaczysz, powiedz jej, że ojciec przeprasza”.

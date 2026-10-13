@@ -1,0 +1,30 @@
+id: name-the-thief
+title: Wskaż złodzieja
+text: |
+  Kiedy podchodzisz do ołtarza, Bogumił się prostuje. Na majdanie ludzie już układają suche
+  drewno: jeden stos na kupalne ognisko, a obok drugi, na który nikt nie chce patrzeć.
+
+  „No i co, przybyszu? Podaj mi imię, a Dębina dziś w nocy zrobi z nim, co trzeba. Wybieraj
+  ostrożnie. Wieś ci uwierzy, bo chce uwierzyć”.
+choices:
+  - id: name-jagna
+    text: Wskaż Jagnę, zielarkę.
+  - id: name-leszy
+    text: Wskaż Leszego, pana starego lasu.
+  - id: name-bogumil
+    text: Wskaż samego Bogumiła.
+  - id: name-radzim-proven
+    text: Połóż piorunek na ołtarzu i opowiedz całą prawdę o Radzimie i Marzence.
+  - id: name-radzim
+    text: Wskaż Radzima, młynarza.
+    outcome:
+      text: |
+        Bogumiłowi drga szczęka. „Radzim dał dębowi cielę tej wiosny. Radzim mieli mąkę na
+        każdy kupalny chleb, odkąd byłem chłopcem. Chcesz go oskarżyć na podstawie przeczucia?”
+        Kręci głową. „Przynieś mi kamień i przynieś mi słowo samego Radzima. Wtedy będę
+        słuchał”.
+  - id: blame-utopiec
+    text: Połóż piorunek na ołtarzu i powiedz tylko, że zabrał go wodny demon z Czarnego
+      Stawu.
+  - id: not-yet
+    text: Powiedz, że potrzebujesz więcej czasu.

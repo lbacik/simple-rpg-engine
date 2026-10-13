@@ -1,0 +1,18 @@
+id: confirm-jagna
+illustration: confirm-jagna
+title: A Torch for the Herb-Woman
+repeatable: true
+text: |
+  Bogumił lifts a torch from the altar stones, and a cheer rises from the green below.
+  "Jagna. I knew it." He looks at you one last time. "Say it again, so the gods hear it."
+choices:
+  - id: confirm
+    text: Say her name again.
+    outcome:
+      end: witch-pyre
+  - id: recant
+    text: Say you were mistaken and need more time.
+    outcome:
+      text: |
+        Bogumił lowers the torch, disappointed and perhaps relieved. "Then find me someone
+        better."

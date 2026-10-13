@@ -1,0 +1,41 @@
+id: headwoman-counsel
+illustration: headwoman-counsel
+title: Talk with Dobrawa
+trigger: on-demand
+repeatable: true
+text: |
+  Dobrawa sits on the rim of the dry well, turning her keys over in her fingers. "Ask,
+  then. I'd rather answer a stranger than listen to Bogumił again."
+choices:
+  - id: ask-stone
+    text: Ask about the thunderstone.
+    once: true
+    outcome:
+      text: |
+        "A black stone shaped like an arrowhead, warm to the touch even in winter. Our
+        great-grandfathers found it at the foot of the oak after lightning split a branch.
+        Every Kupała Night Bogumił lays it on the altar, and every summer the storms come.
+        The rest of the year it sleeps in the chest, and only Bogumił has the key."
+  - id: ask-jagna
+    text: Ask about the herb-woman Bogumił wants to burn.
+    once: true
+    outcome:
+      text: |
+        "Jagna. The children call her Baba Jaga because her hut stands on a stump like a
+        hen's foot. She set my son's arm when he broke it and wanted nothing for it. Half
+        the village goes to her for cures now instead of bringing gifts to the oak."
+        Dobrawa glances up at the hill. "Bogumił has noticed."
+  - id: ask-year
+    text: Ask whether anything else has gone wrong in Dębina this past year.
+    once: true
+    outcome:
+      text: |
+        Dobrawa thinks. "We've buried nobody this year, thank the gods. Last summer was
+        worse. Radzim the miller lost his girl, Marzenka, on Kupała Night. She went to
+        float her wreath on the mill pond, and the water kept her. He's hardly said a word
+        since. And now his mill turns on a dry river, which is the only luck anyone here
+        has had."
+
+        She frowns at her own words, as though she is hearing them for the first time.
+  - id: leave
+    text: Leave her to her keys.

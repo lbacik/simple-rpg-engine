@@ -1,0 +1,34 @@
+id: spinning-song
+illustration: spinning-song
+title: The Spinning Bench
+trigger: on-demand
+repeatable: true
+text: |
+  Three women sit on a bench in the linden's shade, spindles whirling, spinning last year's
+  flax. The oldest sings, and the others answer each line:
+
+  *In May we sowed you, blue-eyed flax; in August pulled you, root and all.*
+
+  *We laid you in the pond to soak and dried you on the meadow grass.*
+
+  *We broke you on the wooden brake and scutched you till the shives were gone.*
+
+  *We combed you through the iron teeth and spun you through the winter long.*
+
+  "Our grandmothers sang it so the Noon Wraith couldn't catch them out," says the youngest.
+  "She asks about flax, they say. Woe to anyone who gets the order wrong."
+choices:
+  - id: ask-wraith
+    text: Ask them about the Noon Wraith.
+    once: true
+    outcome:
+      text: |
+        "The Południca," the oldest says, and spits to the side. "She walks the rye at noon
+        in a white shift, with a sickle. She asks her questions, and if you answer well
+        she's kind. If you don't, you wake in the furrow with your head splitting, if you
+        wake at all."
+
+        "But she never walks after noon is over," the youngest adds. "Sit in the shade and
+        wait for evening, and she won't touch you. You just won't learn anything from her."
+  - id: thank
+    text: Thank them for the song and move on.

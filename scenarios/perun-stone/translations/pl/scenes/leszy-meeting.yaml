@@ -1,0 +1,35 @@
+id: leszy-meeting
+title: Pan lasu
+text: |
+  Na polanie jeden z pniaków nie jest pniakiem. Rozkłada się i rozkłada, aż patrzy na ciebie
+  z góry starzec wysoki jak niegdyś tutejsze dęby. Brodę ma z szarego mchu, a oczy jak
+  sęki pełne deszczówki. Z paproci wychodzi szary wilk i siada mu u stóp.
+
+  „Dębina” — mówi Leszy głosem jak padające drzewo. — „Pachniesz Dębiną. Co Kupałę twoi
+  ludzie przychodzą z toporami i co Kupałę moje dęby idą z dymem w ich ogniskach. Teraz
+  niebo się na nich gniewa, a oni chcą zrzucić winę na mnie. Co przynosisz do mojego lasu,
+  toporniku?”
+choices:
+  - id: bread
+    text: Połóż chleb i sól od Dobrawy na najbliższym pniaku.
+    outcome:
+      text: |
+        Leszy pochyla się i obwąchuje bochenek. Przez długą chwilę nic się nie dzieje. Potem
+        wilk się kładzie, starzec siada, a pniak pod nim wypuszcza zielony pęd. „Chleb i
+        sól. Nikt mi nie przyniósł chleba i soli od czasów babki twojej babki”. Zjada
+        bochenek na jeden kęs.
+  - id: promise
+    text: Obiecaj, że w tę Kupałę Dębina spali chrust, nie żywe dęby, i że tego dopilnujesz.
+    test:
+      success:
+        text: |
+          Leszy długo ci się przygląda. „Obietnica obcego jest warta tyle, ile sam obcy”.
+          Potem kiwa głową. „Niech będzie. Zważę cię nią”.
+      failure:
+        text: |
+          „Słowa” — mówi Leszy. — „Każdy topornik ma słowa”. Las zamyka się wokół ciebie. Po
+          godzinie marszu wychodzisz dokładnie tam, gdzie zaczęła się ta droga.
+  - id: fight
+    text: Dobądź broni na wilka, zanim się ruszy.
+  - id: leave
+    text: Ukłoń się i opuść jego polanę.

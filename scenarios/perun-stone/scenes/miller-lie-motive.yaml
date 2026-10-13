@@ -1,0 +1,47 @@
+id: miller-lie-motive
+illustration: miller-lie-motive
+title: "\"A Miller Needs Water, Not Thunder\""
+repeatable: true
+text: |
+  Radzim's voice hardens. "But what would I want with Perun's stone? I can't eat it. I can't
+  sell it. A miller needs water, not thunder. My wheel turns, my sacks are full. I have
+  everything a man could need."
+choices:
+  - id: show-flour
+    text: Remind him again about the flour in the chest.
+    when:
+      flag: flour-found
+    outcome:
+      text: |
+        "The flour, the flour." Radzim stands up, steadier now. "That's not a reason, it's
+        dust. Go home, stranger."
+  - id: show-witness
+    text: Remind him that he was seen on the dyke that night.
+    when:
+      any:
+        - flag: ghost-seen
+        - flag: leszy-heard
+    outcome:
+      text: |
+        "I've said I walk at night. Walking isn't stealing." He gets up and holds the door
+        open for you.
+  - id: show-marzenka
+    text: Say quietly that he doesn't have everything. He doesn't have Marzenka, and the
+      water still keeps her.
+    when:
+      flag: knows-marzenka
+    outcome:
+      next: miller-confession
+  - id: show-pond
+    text: Say that a full pond on a dry river is not luck but a bargain.
+    outcome:
+      text: |
+        For a heartbeat something moves in his face. Then he shrugs. "A bargain with whom?
+        With a spring?" He turns back to the millstones, and the moment is gone.
+  - id: threaten
+    text: Tell him the village will burn his mill if he is lying.
+    outcome:
+      text: |
+        "Then they'll eat grass next winter." Radzim points at the door. You go.
+  - id: back-off
+    text: Let it go for now.

@@ -1,0 +1,31 @@
+id: village-arrival
+illustration: village-arrival
+title: The Village Under the Linden
+trigger: on-enter
+text: |
+  The whole village seems to be under the linden tree. At its centre a broad-shouldered
+  woman with a ring of keys at her belt is trying to be heard over a tall old man in a
+  white linen robe. His staff is carved with the six-petalled thunder flower.
+
+  "Forty days without rain," the old man cries, "and you ask me for patience? The witch at
+  the forest's edge milks the clouds into her pails! On Kupała Night we will light two
+  fires, and one of them will be hers!"
+
+  The woman notices you. "A stranger," she says, loudly enough to silence him. "Strangers
+  see what neighbours won't. I am Dobrawa, headwoman of Dębina. Find out who took Perun's
+  stone before Bogumił finds someone to burn, and the village will owe you its harvest."
+choices:
+  - id: accept
+    text: Promise to find the thunderstone and the one who took it.
+    outcome:
+      text: |
+        Dobrawa presses a round loaf into your hands, with a twist of salt on top. "Bread
+        and salt for a guest. Share it where it's needed." Bogumił looks you over and says
+        nothing, which is a kind of answer.
+      effects:
+        - give-item:
+            item: bread-and-salt
+  - id: refuse
+    text: Tell them this is not your quarrel, and take the road onward.
+    outcome:
+      end: abandoned

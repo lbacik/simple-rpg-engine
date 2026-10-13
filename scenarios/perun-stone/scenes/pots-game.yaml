@@ -1,0 +1,59 @@
+id: pots-game
+illustration: pots-game
+title: Three Pots Beneath the Water
+repeatable: true
+text: |
+  The utopiec claps his hands. The pond draws back from the bank like a curtain, and there
+  on the wet mud stand three clay pots, upside down: a green one with a fish scratched on
+  it, a white one with a bird, and a black one with a crescent moon.
+
+  "Under one, the hot stone. Under the other two, guests who stayed." He giggles. "Lift a
+  wrong one and you'll find out what it's like to breathe water. Now listen. Each pot will
+  speak once. The pot that hides Perun's stone can only tell the truth, because thunder
+  never lies. The other two can only lie, because they are mine."
+
+  The green fish pot says: *"The stone is under me."*
+
+  The white bird pot says: *"The fish pot is lying."*
+
+  The black moon pot says: *"The stone is not under the bird."*
+choices:
+  - id: lift-fish
+    text: Lift the green pot with the fish.
+    outcome:
+      text: |
+        Cold pours out of the pot and into your mouth, your nose, your lungs. You come to on
+        the bank, coughing up pond water, while the utopiec slaps his knees with laughter.
+        The pots are gone. "Again some time?"
+      effects:
+        - damage: 3
+  - id: lift-bird
+    text: Lift the white pot with the bird.
+    outcome:
+      text: |
+        Under the white pot lies a black stone shaped like an arrowhead. It is hot enough to
+        sting your palm, and the mud around it has dried and cracked. The utopiec hisses and
+        edges back along the weir. "Fair," he spits. "Fair is fair. Take it and go."
+
+        As you lift the stone, its heat runs out through the water. Deep in the pond, pots
+        crack one after another. Pale lights rise from the depths like bubbles and drift over
+        the reeds, while the utopiec howls at his empty house. One light lingers by the dyke,
+        near the mill, before it goes.
+      effects:
+        - give-item:
+            item: thunderstone
+  - id: lift-moon
+    text: Lift the black pot with the moon.
+    outcome:
+      text: |
+        Something pale and cold rushes out of the pot and through you, and the pond rushes
+        after it. You come to on the bank, retching water, while the utopiec giggles on his
+        weir. "That one was a fisherman. He's very lonely."
+      effects:
+        - damage: 3
+  - id: refuse
+    text: Refuse to choose, and step back from the pots.
+    outcome:
+      text: |
+        The pond swallows the pots again. "Coward," says the utopiec amiably. "Come back when
+        you're braver."

@@ -1,0 +1,50 @@
+id: utopiec-bargain
+illustration: utopiec-bargain
+title: Bargain with the Utopiec
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    has:
+      item: thunderstone
+text: |
+  The utopiec sits on the weir, his coat-tail going drip, drip, drip, and cleans his nails
+  with a fish bone.
+
+  "Well? I like games. I like guests who stay. I don't like hot stones, but a bargain is a
+  bargain, and I bargained for this one fairly." He winks. "Fairly enough."
+choices:
+  - id: play
+    text: Agree to play his game for the stone.
+    outcome:
+      next: pots-game
+  - id: throw-ash
+    text: Fling the Kupała ash onto his dripping coat-tail.
+    when:
+      has:
+        item: hearth-ash
+    outcome:
+      text: |
+        The ash hisses as it strikes the wet cloth and drinks up the water like a sponge.
+        The dripping stops. The utopiec looks down at his coat-tail and turns grey under the
+        green. "No," he whispers. "No, no, that's cheating."
+
+        Without his water he is only a small, old, frightened thing. He dives and comes back
+        with a black stone that steams as it meets the air, and drops it at your feet. Then,
+        unasked, he tips a sack of clay pots into the shallows. Pale lights rise out of them
+        like bubbles and drift away over the reeds. One lingers by the dyke, near the mill,
+        before it goes.
+      effects:
+        - take-item:
+            item: hearth-ash
+        - give-item:
+            item: thunderstone
+  - id: fight
+    text: Grab him by the collar and drag him off the weir.
+    when:
+      not:
+        defeated: utopiec-fight
+    outcome:
+      start-combat: utopiec-fight
+  - id: leave
+    text: Step back from the water's edge.

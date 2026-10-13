@@ -1,0 +1,54 @@
+id: field-arrival
+illustration: field-arrival
+title: The Noon Wraith
+trigger: on-enter
+repeatable: true
+when:
+  not:
+    flag: field-crossed
+text: |
+  Halfway along the balk the larks fall silent. The heat thickens until the rye seems to
+  float. Then she is standing on the path in front of you, though she was not there a
+  moment ago: a tall woman in a white linen shift, her hair the colour of straw, a sickle in
+  her hand that shines too brightly to look at.
+
+  "It is noon," says the Południca, "and you are walking my fields. Answer me well, and walk
+  on. Answer me badly, and lie down in the furrow." The sickle turns slowly in her hand.
+choices:
+  - id: answer
+    text: Agree to answer her questions.
+    outcome:
+      next: noon-riddle-rye
+  - id: talk
+    text: Keep her talking about anything at all until the noon hour has passed.
+    test:
+      attribute: presence
+      difficulty: hard
+      success:
+        text: |
+          You talk about the weather, the price of salt and your grandmother's goat. The
+          Południca frowns and opens her mouth to ask her question, and you talk over her.
+          When the sun finally slides past its height, she flickers like heat haze and is
+          gone, looking deeply offended.
+        effects:
+          - set-flag: field-crossed
+      failure:
+        text: |
+          She lets you talk for a while, then raises one finger. The heat drops on you like
+          a sack of grain. You come to in the furrow with a pounding head and a mouth full of
+          dust. The sun still stands at its height.
+        effects:
+          - damage: 2
+  - id: wait
+    text: Retreat to the shade of the wild pear tree and wait for dusk.
+    outcome:
+      text: |
+        You sit out the long white afternoon under the wild pear at the edge of the field.
+        The Południca walks the furrows, sometimes very close, but she never steps into the
+        shade. At dusk the larks begin to sing again, and the path is only a path.
+      effects:
+        - set-flag: field-crossed
+  - id: back
+    text: Go back to the village.
+    outcome:
+      move: debina

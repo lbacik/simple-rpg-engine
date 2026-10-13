@@ -1,0 +1,13 @@
+id: rye-field
+name: Łany żyta
+description: |
+  O tej porze żyto powinno sięgać piersi. Tymczasem ledwie muska kolana, blade i kruche,
+  i szeleści, choć nie ma wiatru. Chabry na miedzach spaliły się na brąz. Ścieżka biegnie
+  między polami ku ciemnej ścianie lasu, obok samotnej dzikiej gruszy.
+
+  W południe powietrze nad bruzdami drży jak woda, a skowronki milkną.
+connections:
+  - to: debina
+    label: Wróć do wsi
+  - to: forest-edge
+    label: Idź miedzą na skraj lasu

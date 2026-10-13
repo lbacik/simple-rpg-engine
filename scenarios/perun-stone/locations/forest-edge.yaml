@@ -1,0 +1,21 @@
+id: forest-edge
+illustration: loc-forest-edge
+name: The Forest Edge
+description: |
+  Where the fields end, the forest begins all at once, like a wall. At its foot stands a
+  crooked hut on a single thick stump whose roots look like a hen's claws. Bundles of herbs
+  hang under the eaves: mugwort, rue and St John's wort, all gathered too early because of
+  the drought.
+
+  A black cat sits on the roof. The hut's door faces whichever way its mistress pleases.
+map:
+  x: 12
+  y: 48
+scenes:
+  - hut-arrival
+  - jagna-counsel
+connections:
+  - to: rye-field
+    label: Return through the rye
+  - to: deep-forest
+    label: Enter the old forest

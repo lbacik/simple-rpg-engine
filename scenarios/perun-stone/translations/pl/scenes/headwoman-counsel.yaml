@@ -1,0 +1,35 @@
+id: headwoman-counsel
+title: Rozmowa z Dobrawą
+text: |
+  Dobrawa siedzi na cembrowinie wyschniętej studni i obraca w palcach klucze. „Pytaj więc.
+  Wolę odpowiadać obcemu, niż znowu słuchać Bogumiła”.
+choices:
+  - id: ask-stone
+    text: Zapytaj o piorunek.
+    outcome:
+      text: |
+        „Czarny kamień w kształcie grotu, ciepły w dotyku nawet zimą. Nasi pradziadowie
+        znaleźli go u stóp dębu, kiedy piorun rozszczepił gałąź. W każdą Noc Kupały Bogumił
+        kładzie go na ołtarzu i każdego lata przychodzą burze. Przez resztę roku śpi w
+        skrzyni, a klucz ma tylko Bogumił”.
+  - id: ask-jagna
+    text: Zapytaj o zielarkę, którą Bogumił chce spalić.
+    outcome:
+      text: |
+        „Jagna. Dzieci wołają na nią Baba Jaga, bo jej chata stoi na pniu jak na kurzej
+        stopce. Nastawiła mojemu synowi rękę, kiedy ją złamał, i nic za to nie chciała. Pół
+        wsi chodzi teraz do niej po lekarstwa, zamiast nosić dary pod dąb”. Dobrawa zerka w
+        stronę wzgórza. „Bogumił to zauważył”.
+  - id: ask-year
+    text: Zapytaj, czy w ostatnim roku w Dębinie wydarzyło się coś jeszcze złego.
+    outcome:
+      text: |
+        Dobrawa się zastanawia. „W tym roku nikogo nie pochowaliśmy, dzięki bogom. Zeszłe lato
+        było gorsze. Radzim młynarz stracił w Noc Kupały córkę, Marzenkę. Poszła puścić
+        wianek na młyński staw, a woda ją zatrzymała. Od tamtej pory prawie się nie odzywa. A
+        teraz jego młyn kręci się nad suchą rzeką i to jedyne szczęście, jakie ktokolwiek tu
+        miał”.
+
+        Marszczy brwi nad własnymi słowami, jakby słyszała je po raz pierwszy.
+  - id: leave
+    text: Zostaw ją z jej kluczami.

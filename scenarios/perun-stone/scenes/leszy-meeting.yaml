@@ -1,0 +1,61 @@
+id: leszy-meeting
+illustration: leszy-meeting
+title: The Lord of the Forest
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - flag: forest-unlocked
+    - not:
+        flag: leszy-heard
+text: |
+  In the clearing, one of the stumps is not a stump. It unfolds, and keeps unfolding, until
+  an old man as tall as the oaks once were looks down at you. His beard is grey moss and his
+  eyes are knotholes full of rainwater. A grey wolf pads out of the ferns and sits at his
+  feet.
+
+  "Dębina," says the Leszy, in a voice like a falling tree. "You smell of Dębina. Every
+  Kupała your people come with axes, and every Kupała my oaks go up in their fires. Now the
+  sky is angry with them, and they want to blame me. What do you bring to my forest,
+  axe-bringer?"
+choices:
+  - id: bread
+    text: Lay Dobrawa's bread and salt on the nearest stump.
+    when:
+      has:
+        item: bread-and-salt
+    outcome:
+      text: |
+        The Leszy bends and sniffs the loaf. For a long moment nothing happens. Then the
+        wolf lies down, the old man sits, and the stump beneath him puts out a green shoot.
+        "Bread and salt. Nobody has brought me bread and salt since your grandmother's
+        grandmother." He eats the loaf in one bite.
+      effects:
+        - take-item:
+            item: bread-and-salt
+      next: leszy-testimony
+  - id: promise
+    text: Promise that Dębina will burn deadwood this Kupała, not living oaks, and that you
+      will hold them to it.
+    test:
+      attribute: presence
+      difficulty: hard
+      success:
+        text: |
+          The Leszy studies you for a long time. "A stranger's promise is worth what the
+          stranger is worth." Then he nods. "Very well. I will weigh you by it."
+        next: leszy-testimony
+      failure:
+        text: |
+          "Words," says the Leszy. "Every axe-bringer has words." The forest closes around
+          you. You walk for an hour and step out exactly where you went in.
+        move: forest-edge
+  - id: fight
+    text: Draw your weapon on the wolf before it moves.
+    when:
+      not:
+        defeated: wolf-fight
+    outcome:
+      start-combat: wolf-fight
+  - id: leave
+    text: Bow, and leave his clearing.

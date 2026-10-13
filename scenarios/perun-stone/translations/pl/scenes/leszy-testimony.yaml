@@ -1,0 +1,14 @@
+id: leszy-testimony
+title: Co widział las
+text: |
+  „Chcesz wiedzieć o czarnym kamieniu” — mówi Leszy. — „Czułem, jak przechodził.
+  Czterdzieści nocy temu, w ciemności księżyca. Skrajem mojego lasu szedł człowiek, biały od
+  głowy do stóp, biały jak brzoza obdarta z kory. Pod kapotą niósł coś, co żarzyło się jak
+  węgiel i brzęczało jak ul. Zszedł nad Czarny Staw, a woda się rozstąpiła i to zabrała.
+  Potem stał na brzegu i płakał do rana”.
+
+  Starzec wskazuje długim palcem ścieżkę, której przed chwilą tam nie było. „Tędy nad staw.
+  Moja ścieżka; idź nią jako mój gość. I powtórz swojej wsi, co mówiłem o toporach”.
+choices:
+  - id: thank
+    text: Podziękuj Leszemu i zapamiętaj ścieżkę.

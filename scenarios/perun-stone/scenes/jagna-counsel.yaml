@@ -1,0 +1,70 @@
+id: jagna-counsel
+illustration: jagna-counsel
+title: Talk with Jagna
+trigger: on-demand
+repeatable: true
+text: |
+  Jagna's hut smells of drying herbs, smoke and cat. She pours you a cup of something
+  bitter and green and sits across the table, watching you over her own cup.
+
+  "You're the stranger Dobrawa sent. Bogumił will have told you I steal clouds and milk them
+  into pails. If I could do that, do you think I'd let my own herbs wither on the stalk?"
+choices:
+  - id: ask-stone
+    text: Ask what she knows about Perun's stone.
+    once: true
+    outcome:
+      text: |
+        "A thunderstone is a piece of the god's own bolt. You can't break it, burn it or bury
+        it deep enough; the sky always finds it. Except under water." She taps the table.
+        "Water hides things from the sky. Perun has been searching for his stone for forty
+        days and can't see it. Somewhere in this drought there is water that shouldn't be
+        there. Find that, and you've found your stone."
+  - id: ask-forest
+    text: Ask how to get through the old forest safely.
+    once: true
+    outcome:
+      text: |
+        "You don't, unless the Leszy allows it. He leads people round in circles until they
+        drop. But there's an old trick: turn your coat inside out and put your left boot on
+        your right foot. He'll take you for one of his own and leave the paths alone." She
+        grins. "You'll look a fool. Better a fool than lost."
+      effects:
+        - set-flag: knows-inside-out
+  - id: tell-pond
+    text: Tell her about Radzim's brim-full pond on a dry river.
+    once: true
+    when:
+      flag: pond-seen
+    outcome:
+      text: |
+        Jagna goes very still. "Radzim's pond. Oh, the poor fool." She sets down her cup.
+        "His girl, Marzenka, drowned there last Kupała. The water kept her, people said. But
+        that pond has always had an old one in it, an utopiec. Radzim's grandfather paid it a
+        black hen every spring. Since last summer I've seen Radzim on the dyke at night,
+        talking to the water. If the utopiec told him he could buy her soul back..."
+
+        She rummages on a shelf and presses a small linen pouch into your hands. "Ash from
+        last year's Kupała fire, from Perun's own altar. An utopiec's strength is the water
+        dripping from his left coat-tail. Dry it, and he's nothing. Don't waste it."
+      effects:
+        - set-flag: knows-marzenka
+        - give-item:
+            item: hearth-ash
+  - id: heal
+    text: Ask her to look at your wounds.
+    once: true
+    when:
+      health:
+        atMost: 9
+    outcome:
+      text: |
+        She cleans your cuts with something that stings like nettles and binds them with
+        linen. Then she puts a stoppered jar in your bag. "For later. Bogumił would call it
+        witchcraft. It's yarrow."
+      effects:
+        - heal: 6
+        - give-item:
+            item: yarrow-salve
+  - id: leave
+    text: Thank her and go.

@@ -1,0 +1,68 @@
+language: pl
+baseVersion: "1.0.0"
+title: Kamień Peruna
+description: Susza trawi słowiańską wieś, boski piorunek zniknął, a stos rośnie dla
+  niewłaściwej osoby. Wypytaj duchy, odpowiedz na zagadki Południcy i przyłap prawdziwego
+  złodzieja na kłamstwie.
+intro: |
+  Od czterdziestu dni na Dębinę nie spadła ani kropla deszczu. Żyto stoi na polach rzadkie
+  i bielejące, rzeka skurczyła się do sznura kałuż, a starzy ludzie powiadają, że niebo
+  zapomniało o wsi.
+
+  Trzy dni temu Bogumił, strażnik Dębu Peruna, otworzył skrzynię pod ołtarzem, by
+  przygotować się do Nocy Kupały, i zastał ją pustą. Piorunek zniknął: grot samego boga,
+  który od dziewięciu pokoleń przyzywał nad Dębinę burze. Bogumił twierdzi, że wie, kto go
+  zabrał. Zielarka ze skraju lasu, którą dzieci nazywają Babą Jagą, doi chmury do
+  swoich skopków. W Noc Kupały, obiecuje, wieś rozpali dwa ogniska.
+
+  Docierasz o zmierzchu, prosto z zakurzonego gościńca, akurat gdy wieś zbiera się pod lipą.
+locations:
+  - translations/pl/locations/debina.yaml
+  - translations/pl/locations/perun-oak.yaml
+  - translations/pl/locations/mill.yaml
+  - translations/pl/locations/mill-pond.yaml
+  - translations/pl/locations/rye-field.yaml
+  - translations/pl/locations/forest-edge.yaml
+  - translations/pl/locations/deep-forest.yaml
+scenes:
+  - translations/pl/scenes/village-arrival.yaml
+  - translations/pl/scenes/headwoman-counsel.yaml
+  - translations/pl/scenes/spinning-song.yaml
+  - translations/pl/scenes/shepherd-boy.yaml
+  - translations/pl/scenes/oak-arrival.yaml
+  - translations/pl/scenes/oak-chest.yaml
+  - translations/pl/scenes/name-the-thief.yaml
+  - translations/pl/scenes/confirm-jagna.yaml
+  - translations/pl/scenes/confirm-leszy.yaml
+  - translations/pl/scenes/confirm-bogumil.yaml
+  - translations/pl/scenes/mill-arrival.yaml
+  - translations/pl/scenes/miller-questioning.yaml
+  - translations/pl/scenes/miller-lie-oak.yaml
+  - translations/pl/scenes/miller-lie-night.yaml
+  - translations/pl/scenes/miller-lie-motive.yaml
+  - translations/pl/scenes/miller-confession.yaml
+  - translations/pl/scenes/pond-arrival.yaml
+  - translations/pl/scenes/utopiec-bargain.yaml
+  - translations/pl/scenes/pots-game.yaml
+  - translations/pl/scenes/field-arrival.yaml
+  - translations/pl/scenes/noon-wraith.yaml
+  - translations/pl/scenes/noon-riddle-rye.yaml
+  - translations/pl/scenes/noon-riddle-flax.yaml
+  - translations/pl/scenes/noon-riddle-equal.yaml
+  - translations/pl/scenes/hut-arrival.yaml
+  - translations/pl/scenes/jagna-counsel.yaml
+  - translations/pl/scenes/forest-maze.yaml
+  - translations/pl/scenes/leszy-meeting.yaml
+  - translations/pl/scenes/leszy-testimony.yaml
+items:
+  - translations/pl/items.yaml
+enemies:
+  - translations/pl/enemies.yaml
+encounters:
+  - translations/pl/encounters.yaml
+templates:
+  - translations/pl/templates.yaml
+endings:
+  - translations/pl/endings.yaml
+images:
+  - translations/pl/images.yaml

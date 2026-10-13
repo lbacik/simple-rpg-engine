@@ -1,0 +1,22 @@
+id: miller-questioning
+illustration: miller-questioning
+title: Question Radzim
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: miller-confessed
+text: |
+  Radzim keeps working while you talk, lifting sacks that would bend two other men. He
+  answers every question with his back to you.
+
+  Whatever he is hiding, he will not give it up for a hunch. You will have to catch him in
+  a lie, and with something he cannot wave away. If you overplay your hand, he will shut
+  you out and you will have to start again.
+choices:
+  - id: press
+    text: Ask him straight out whether he has been up to Perun's Oak.
+    outcome:
+      next: miller-lie-oak
+  - id: leave
+    text: Leave him to his sacks.

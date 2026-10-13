@@ -1,0 +1,26 @@
+id: hut-arrival
+illustration: hut-arrival
+title: The Hut on a Hen's Foot
+trigger: on-enter
+text: |
+  As you approach, the hut creaks on its stump and shuffles round to show you its blind back
+  wall. Somewhere inside, a cat sneezes.
+
+  Every child in the land knows the words for this. You feel a little foolish saying them
+  aloud.
+choices:
+  - id: old-words
+    text: "\"Little hut, little hut, turn your back to the forest and your face to me.\""
+    outcome:
+      text: |
+        The hut groans, settles and turns. The door opens on a woman of about forty with
+        grey-streaked hair, her sleeves rolled up and her arms green to the elbows. "Well,
+        that's polite, at least," says Jagna. "Most people from Dębina just throw stones.
+        Come in, and mind the cat."
+  - id: knock
+    text: Knock on the back wall.
+    outcome:
+      text: |
+        After a pause, the hut turns with a grumble of old timber. A woman with grey-streaked
+        hair leans out of the door. "There are words for that, you know," says Jagna. "Still,
+        you're the first visitor this month who hasn't brought a torch. Come in."

@@ -1,0 +1,42 @@
+- id: bearded-axe
+  name: Topór brodaty
+  description: Szeroki topór z wyciągniętym ostrzem, zrobiony do wojny, nie do rąbania drewna.
+- id: hunting-bow
+  name: Cisowy łuk myśliwski
+  description: Krótki łuk z cisu, wypolerowany na ciemno przez lata w tych samych dłoniach.
+- id: ash-staff
+  name: Jesionowy kostur
+  description: Wędrowny kostur, na którym wyrzeźbiono rząd małych słońc.
+- id: herb-knife
+  name: Nożyk do ziół
+  description: Mały, zakrzywiony nóż do korzeni i łodyg, dość ostry i do gorszej roboty.
+- id: noon-sickle
+  name: Sierp Południcy
+  description: Sierp, który pozostaje ciepły nawet o północy i lśni zbyt jasno, by na niego patrzeć.
+- id: padded-gambeson
+  name: Pikowana przeszywanica
+  description: Gruby, pikowany kaftan z książęcej zbrojowni, poplamiony na wielu drogach.
+- id: wolfskin-cloak
+  name: Opończa z wilczej skóry
+  description: Szara opończa, w której przechodzi się przez zarośla jak cień.
+- id: gusle
+  name: Gęśle
+  description: Jednostrunne skrzypce, których pieśń sprawia, że nawet rozgniewani milkną i słuchają.
+- id: rue-bundle
+  name: Wiązka ruty i bylicy
+  description: Zioła przewiązane czerwoną nicią, noszone dla jasności myśli i przeciw złemu oku.
+- id: herb-draught
+  name: Ziołowy napar
+  description: Gliniana flaszka gorzkiego naparu z krwawnika i dziurawca.
+- id: yarrow-salve
+  name: Krwawnikowa maść Jagny
+  description: Zatkany słoiczek zielonej maści, która pachnie łąką.
+- id: bread-and-salt
+  name: Chleb i sól
+  description: Okrągły bochenek ze szczyptą soli, dar Dębiny dla gościa.
+- id: hearth-ash
+  name: Kupalny popiół
+  description: Lniany woreczek popiołu z zeszłorocznego ogniska kupalnego na ołtarzu Peruna.
+- id: thunderstone
+  name: Piorunek Peruna
+  description: Czarny kamień w kształcie grotu, zawsze ciepły, brzęczący cicho jak ul.

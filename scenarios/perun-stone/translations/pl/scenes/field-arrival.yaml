@@ -1,0 +1,35 @@
+id: field-arrival
+title: Południca
+text: |
+  W połowie miedzy skowronki milkną. Upał gęstnieje, aż żyto zdaje się unosić w powietrzu. I
+  nagle ona stoi na ścieżce przed tobą, choć jeszcze przed chwilą jej tam nie było: wysoka
+  kobieta w białej lnianej koszuli, z włosami koloru słomy i sierpem w dłoni, który lśni
+  zbyt jasno, by na niego patrzeć.
+
+  „Jest południe” — mówi Południca — „a ty chodzisz po moich polach. Odpowiedz mi dobrze i
+  idź dalej. Odpowiedz źle i połóż się w bruździe”. Sierp powoli obraca się w jej dłoni.
+choices:
+  - id: answer
+    text: Zgódź się odpowiedzieć na jej pytania.
+  - id: talk
+    text: Zagaduj ją o czymkolwiek, dopóki południowa godzina nie minie.
+    test:
+      success:
+        text: |
+          Mówisz o pogodzie, o cenie soli i o kozie twojej babki. Południca marszczy brwi i
+          otwiera usta, żeby zadać pytanie, a ty ją zagadujesz. Kiedy słońce wreszcie zsuwa
+          się z najwyższego punktu, migocze jak drgające powietrze i znika, wyraźnie urażona.
+      failure:
+        text: |
+          Pozwala ci przez chwilę mówić, po czym unosi jeden palec. Upał spada na ciebie jak
+          worek zboża. Przytomność wraca w bruździe, razem z łupaniem w głowie i ustami
+          pełnymi kurzu. Słońce wciąż stoi w zenicie.
+  - id: wait
+    text: Wycofaj się w cień dzikiej gruszy i zaczekaj do zmierzchu.
+    outcome:
+      text: |
+        Długie białe popołudnie mija ci pod dziką gruszą na skraju pola. Południca chodzi po
+        bruzdach, czasem bardzo blisko, ale nigdy nie wchodzi w cień. O zmierzchu skowronki
+        znów zaczynają śpiewać, a ścieżka jest już tylko ścieżką.
+  - id: back
+    text: Wróć do wsi.

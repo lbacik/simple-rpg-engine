@@ -1,0 +1,51 @@
+id: miller-lie-night
+illustration: miller-lie-night
+title: "\"I Slept Like a Stone\""
+repeatable: true
+text: |
+  "So I carried flour up the hill. That's no crime." Radzim wipes his hands on his apron.
+  "And before you ask: on the dark-moon night I was asleep in my bed with the door barred,
+  like any honest man. Ask anyone."
+choices:
+  - id: show-flour
+    text: Remind him again about the flour in the chest.
+    when:
+      flag: flour-found
+    outcome:
+      text: |
+        "I've told you about the flour." His voice is calm again; you have let him off the
+        hook. "If that's all you've got, I have work to do."
+  - id: show-witness
+    text: Tell him he was seen on the night of the dark moon, all in white, carrying
+      something that glowed.
+    when:
+      any:
+        - flag: ghost-seen
+        - flag: leszy-heard
+    outcome:
+      text: |
+        The colour leaves Radzim's face, which is hard to see under the flour, but you see
+        it. "Who," he starts, and stops. "Nobody was out that night." He sits down on a
+        sack. "All right. I walk at night sometimes. I can't sleep. A man has the right."
+      next: miller-lie-motive
+  - id: show-marzenka
+    text: Speak Marzenka's name, and say what the water keeps of her.
+    when:
+      flag: knows-marzenka
+    outcome:
+      text: |
+        "Not her." Radzim's hands close into fists. "You don't bring her into this. Out."
+        He stands over you until you are through the door.
+  - id: show-pond
+    text: Point out that his pond is full while the whole valley is dry.
+    outcome:
+      text: |
+        "A spring," he says wearily. "How many times? Go and bother Bogumił."
+  - id: threaten
+    text: Tell him you will have the whole village asking where he was that night.
+    outcome:
+      text: |
+        "Let them ask. They'll hear the same answer." Radzim shoulders a sack and walks
+        past you as if you were a post.
+  - id: back-off
+    text: Let it go for now.

@@ -1,0 +1,29 @@
+id: spinning-song
+title: Ława prządek
+text: |
+  W cieniu lipy na ławie siedzą trzy kobiety; wrzeciona furkoczą, przędą zeszłoroczny len.
+  Najstarsza śpiewa, a pozostałe odpowiadają na każdy wers:
+
+  *W maju cię siałyśmy, lnie modrooki, w sierpniu rwałyśmy cię z korzeniami.*
+
+  *Do stawu kładłyśmy cię na moczenie, suszyłyśmy cię na łące w trawie.*
+
+  *Na międlicy cię łamałyśmy, trzepałyśmy, aż odpadły paździerze.*
+
+  *Czesałyśmy cię żelaznymi zębami, przędłyśmy cię przez długą zimę.*
+
+  „Nasze babki śpiewały to, żeby Południca ich nie przyłapała” — mówi najmłodsza. —
+  „Podobno pyta o len. Biada temu, kto pomyli kolejność”.
+choices:
+  - id: ask-wraith
+    text: Zapytaj je o Południcę.
+    outcome:
+      text: |
+        „Południca” — mówi najstarsza i spluwa w bok. — „W południe chodzi po życie w białej
+        koszuli, z sierpem. Zadaje pytania i jak dobrze odpowiesz, jest łaskawa. Jak nie,
+        budzisz się w bruździe z pękającą głową, jeśli w ogóle się budzisz”.
+
+        „Ale po południu już nie chodzi” — dodaje najmłodsza. — „Usiądź w cieniu i zaczekaj do
+        wieczora, a nic ci nie zrobi. Tyle że niczego się od niej nie dowiesz”.
+  - id: thank
+    text: Podziękuj za pieśń i idź dalej.

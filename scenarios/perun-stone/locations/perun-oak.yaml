@@ -1,0 +1,20 @@
+id: perun-oak
+illustration: loc-perun-oak
+name: Perun's Oak
+description: |
+  The oak is older than the village; nine people holding hands could not reach around it.
+  Old axe heads are driven into its bark as offerings. The stone altar at its roots is
+  black from a fire that burned for nine generations. Now the hearth is cold.
+
+  A ring of carved posts surrounds the hilltop, each marked with the six-petalled thunder
+  flower. Below the altar stands an oak chest bound with iron, its lid thrown open.
+map:
+  x: 52
+  y: 20
+scenes:
+  - oak-arrival
+  - oak-chest
+  - name-the-thief
+connections:
+  - to: debina
+    label: Go down to the village

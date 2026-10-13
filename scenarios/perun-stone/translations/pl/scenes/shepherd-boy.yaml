@@ -1,0 +1,26 @@
+id: shepherd-boy
+title: Chłopiec przy studni
+text: |
+  Pastuszek cofa się, gdy podchodzisz, ale nie ucieka. Ma może dziesięć lat, spaloną słońcem
+  skórę i kij wyższy od siebie.
+
+  „To ty szukasz kamienia?” — szepcze. — „Nie wolno mi mówić o tamtej nocy. Mama mówi, że jak
+  się mówi o upiorze, to on słyszy i przychodzi”.
+choices:
+  - id: kind
+    text: Przykucnij i obiecaj mu, że cokolwiek widział, zajmiesz się tym.
+    outcome:
+      text: |
+        Słowa wylewają się z Wojtka naraz. „To było w noc bez księżyca. Owca mi uciekła i
+        poszedłem za nią nad rzekę. I zobaczyłem to na grobli przy młynie: upiora, całego
+        białego, białego od głowy do stóp. Niósł coś pod kapotą, co świeciło przez sukno,
+        czerwono jak węgiel, i brzęczało, jak pszczoły w dziupli. Zszedł nad staw”.
+
+        Przełyka ślinę. „Owcy już nie znalazłem”.
+  - id: stern
+    text: Powiedz mu, że upiorów nie ma i niech nie zawraca ci głowy.
+    outcome:
+      text: |
+        Twarz Wojtka zamyka się jak drzwi. Mamrocze coś o owcach i wymyka się za studnię.
+  - id: leave
+    text: Zostaw go w spokoju.

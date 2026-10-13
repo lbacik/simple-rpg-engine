@@ -1,0 +1,31 @@
+id: noon-riddle-rye
+illustration: noon-riddle-rye
+title: The First Question
+repeatable: true
+text: |
+  "First," says the Południca. "A golden head bowed low, with a hundred children in a row.
+  They cut me down in the field, they beat me on the threshing floor, they crush me between
+  two stones, and in the oven I rise again. What am I?"
+choices:
+  - id: rye
+    text: "\"Rye.\""
+    outcome:
+      text: |
+        "Rye," she agrees, and for a moment she almost smiles.
+      next: noon-riddle-flax
+  - id: flax
+    text: "\"Flax.\""
+    outcome:
+      text: |
+        "Flax is pulled, not cut, and nobody bakes it." The sickle flashes. The heat hits
+        you like a fist, and you come to in the furrow with your head ringing. She is gone.
+      effects:
+        - damage: 2
+  - id: sun
+    text: "\"The sun.\""
+    outcome:
+      text: |
+        "Does the sun go into the oven where you come from?" The heat closes over you like
+        water. You wake in the furrow, sick and dizzy, and the field is empty.
+      effects:
+        - damage: 2

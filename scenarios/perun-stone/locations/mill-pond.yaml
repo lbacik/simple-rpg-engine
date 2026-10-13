@@ -1,0 +1,23 @@
+id: mill-pond
+illustration: loc-mill-pond
+name: The Black Pond
+description: |
+  The pond is brim-full and perfectly still, black as a well at night. Reeds stand in it
+  up to their necks, and the willows lean over the water as though listening.
+
+  On the weir, where the water spills towards the mill, the reeds are bent flat, as if
+  someone often sits there. Under the surface, now and then, something knocks like clay
+  on clay.
+map:
+  x: 86
+  y: 36
+scenes:
+  - pond-arrival
+  - utopiec-bargain
+connections:
+  - to: mill
+    label: Walk back along the dyke to the mill
+  - to: deep-forest
+    label: Take the Leszy's path into the old forest
+    when:
+      flag: leszy-heard

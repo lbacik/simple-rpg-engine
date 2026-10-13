@@ -1,0 +1,23 @@
+id: mill
+illustration: loc-mill
+name: Radzim's Mill
+description: |
+  The mill stands where the river once ran fast. The riverbed is cracked mud now, yet the
+  great wheel turns slowly and drips, as though water still pours over it. Behind the
+  mill an earth dyke holds back the mill pond, the only full water for a day's walk.
+
+  Everything here is dusted white: the steps, the sacks, the nettles by the door. The air
+  smells of flour and, faintly, of duckweed.
+map:
+  x: 80
+  y: 66
+scenes:
+  - mill-arrival
+  - miller-questioning
+connections:
+  - to: debina
+    label: Return to the village
+  - to: mill-pond
+    label: Unlock the sluice gate and walk the dyke to the pond
+    when:
+      flag: miller-confessed

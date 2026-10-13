@@ -1,0 +1,71 @@
+id: name-the-thief
+illustration: name-the-thief
+title: Name the Thief
+trigger: on-demand
+repeatable: true
+text: |
+  When you approach the altar, Bogumił straightens. Down on the green, people are already
+  stacking dry wood: one pile for the Kupała fire, and a second beside it that nobody will
+  look at.
+
+  "Well, stranger? Give me a name, and Dębina will act on it tonight. Choose carefully. The
+  village will believe you, because it wants to."
+choices:
+  - id: name-jagna
+    text: Name Jagna, the herb-woman.
+    when:
+      not:
+        has:
+          item: thunderstone
+    outcome:
+      next: confirm-jagna
+  - id: name-leszy
+    text: Name the Leszy, lord of the old forest.
+    when:
+      not:
+        has:
+          item: thunderstone
+    outcome:
+      next: confirm-leszy
+  - id: name-bogumil
+    text: Name Bogumił himself.
+    when:
+      not:
+        has:
+          item: thunderstone
+    outcome:
+      next: confirm-bogumil
+  - id: name-radzim-proven
+    text: Lay the thunderstone on the altar and tell the whole truth about Radzim and
+      Marzenka.
+    when:
+      all:
+        - has:
+            item: thunderstone
+        - flag: miller-confessed
+    outcome:
+      end: thunder-returns
+  - id: name-radzim
+    text: Name Radzim, the miller.
+    when:
+      not:
+        all:
+          - has:
+              item: thunderstone
+          - flag: miller-confessed
+    outcome:
+      text: |
+        Bogumił's jaw works. "Radzim gave the oak a calf this spring. Radzim has ground the
+        flour for every Kupała bread since I was a boy. You would accuse him on a feeling?"
+        He shakes his head. "Bring me the stone, and bring me Radzim's own word. Then I will
+        listen."
+  - id: blame-utopiec
+    text: Lay the thunderstone on the altar and say only that the water demon of the Black
+      Pond took it.
+    when:
+      has:
+        item: thunderstone
+    outcome:
+      end: rain-and-silence
+  - id: not-yet
+    text: Tell him you need more time.

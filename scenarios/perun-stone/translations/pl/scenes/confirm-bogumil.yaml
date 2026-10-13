@@ -1,0 +1,17 @@
+id: confirm-bogumil
+title: Strażnik oskarżony
+text: |
+  Przez chwilę starzec tylko patrzy. Potem krew odpływa mu z twarzy, a ludzie, którzy weszli
+  za tobą na wzgórze, zaczynają szemrać.
+
+  „Ja? Strzegę tego ognia od czterdziestu lat”. Głos mu drży. „To powiedz to jeszcze raz.
+  Powiedz tak, żeby wszyscy słyszeli”.
+choices:
+  - id: confirm
+    text: Oskarż go ponownie, przy wszystkich.
+  - id: recant
+    text: Powiedz, że to pomyłka i potrzebujesz więcej czasu.
+    outcome:
+      text: |
+        Bogumił odwraca się i zaciska dłonie na krawędzi ołtarza, aż bieleją mu kostki.
+        Ludzie schodzą ze wzgórza, szepcząc.

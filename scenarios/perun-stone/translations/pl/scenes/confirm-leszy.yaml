@@ -1,0 +1,15 @@
+id: confirm-leszy
+title: Topory na las
+text: |
+  „Leszy!” Oczy Bogumiła rozszerzają się, a potem zwężają. „Las, który zatrzymuje źródła dla
+  siebie, kiedy nasze studnie wysychają. Tak. Młodzi mają topory, a las jest suchy jak
+  hubka”. Podnosi głos w stronę wsi. „Powtórz to, przybyszu, niech wszyscy usłyszą!”
+choices:
+  - id: confirm
+    text: Wskaż Leszego jeszcze raz.
+  - id: recant
+    text: Powiedz, że to pomyłka i potrzebujesz więcej czasu.
+    outcome:
+      text: |
+        Starzec wypuszcza długi oddech. „Las, wiedźma, ktokolwiek. Przynieś mi kogoś,
+        przybyszu, i to szybko”.

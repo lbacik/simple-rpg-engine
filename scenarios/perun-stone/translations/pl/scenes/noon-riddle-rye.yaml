@@ -1,0 +1,24 @@
+id: noon-riddle-rye
+title: Pierwsze pytanie
+text: |
+  „Po pierwsze” — mówi Południca. — „Złota głowa nisko schylona, a w rzędzie setka dzieci.
+  Ścinają mnie w polu, młócą na klepisku, miażdżą między dwoma kamieniami, a w piecu znów
+  rosnę. Co to takiego?”
+choices:
+  - id: rye
+    text: „Żyto”.
+    outcome:
+      text: |
+        „Żyto” — przyznaje i przez chwilę prawie się uśmiecha.
+  - id: flax
+    text: „Len”.
+    outcome:
+      text: |
+        „Len się rwie, nie ścina, i nikt go nie piecze”. Sierp błyska. Upał uderza jak pięść,
+        a przytomność wraca dopiero w bruździe, razem z dzwonieniem w głowie. Jej już nie ma.
+  - id: sun
+    text: „Słońce”.
+    outcome:
+      text: |
+        „U was słońce wkłada się do pieca?” Upał zamyka się nad tobą jak woda. Budzisz się w
+        bruździe, z mdłościami i zawrotami głowy, a pole jest puste.

@@ -1,0 +1,15 @@
+id: confirm-jagna
+title: Pochodnia dla zielarki
+text: |
+  Bogumił unosi z kamieni ołtarza pochodnię, a z majdanu w dole dobiega wiwat. „Jagna.
+  Wiedziałem”. Patrzy na ciebie po raz ostatni. „Powiedz to jeszcze raz, żeby bogowie
+  usłyszeli”.
+choices:
+  - id: confirm
+    text: Wypowiedz jej imię jeszcze raz.
+  - id: recant
+    text: Powiedz, że to pomyłka i potrzebujesz więcej czasu.
+    outcome:
+      text: |
+        Bogumił opuszcza pochodnię, rozczarowany, a może trochę uspokojony. „To znajdź mi
+        kogoś lepszego”.

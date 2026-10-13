@@ -1,0 +1,20 @@
+id: confirm-leszy
+illustration: confirm-leszy
+title: Axes for the Forest
+repeatable: true
+text: |
+  "The Leszy!" Bogumił's eyes go wide, then narrow. "The forest that keeps its springs to
+  itself while our wells run dry. Yes. The young men have axes, and the forest is dry as
+  tinder." He raises his voice towards the village. "Say it again, stranger, so they all
+  hear!"
+choices:
+  - id: confirm
+    text: Name the Leszy again.
+    outcome:
+      end: forest-fire
+  - id: recant
+    text: Say you were mistaken and need more time.
+    outcome:
+      text: |
+        The old man lets out a long breath. "The forest, the witch, someone. Bring me
+        someone, stranger, and soon."

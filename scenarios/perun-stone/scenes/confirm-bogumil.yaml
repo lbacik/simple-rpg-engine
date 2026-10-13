@@ -1,0 +1,21 @@
+id: confirm-bogumil
+illustration: confirm-bogumil
+title: The Keeper Accused
+repeatable: true
+text: |
+  For a moment the old man only stares. Then the colour drains from his face, and the
+  villagers who have followed you up the hill begin to murmur.
+
+  "Me? I have kept this fire for forty years." His voice shakes. "Say it again, then. Say it
+  where they can all hear."
+choices:
+  - id: confirm
+    text: Accuse him again, in front of everyone.
+    outcome:
+      end: keeper-cast-out
+  - id: recant
+    text: Say you were mistaken and need more time.
+    outcome:
+      text: |
+        Bogumił turns away and grips the edge of the altar until his knuckles are white.
+        The villagers drift back down the hill, whispering.

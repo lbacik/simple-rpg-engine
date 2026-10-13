@@ -1,0 +1,40 @@
+- id: wolf-fight
+  enemy: leszy-wolf
+  startRange: far
+  text: |
+    The grey wolf comes off the ground like a released bowstring. Behind it, the Leszy
+    watches without moving, the way a forest watches a storm.
+  victory:
+    text: |
+      The wolf lies still among the ferns. The Leszy looks at you for a long time. "Teeth,"
+      he says at last. "Dębina always has teeth." But he speaks.
+    next: leszy-testimony
+  escape:
+    text: |
+      You run, and the forest lets you, which is somehow worse. You stumble out of the trees
+      exactly where you went in.
+    move: forest-edge
+- id: utopiec-fight
+  enemy: utopiec
+  startRange: near
+  text: |
+    The utopiec does not let go of the weir, and the weir comes with him. The pond rises in
+    a black wave. Suddenly you are knee-deep, then waist-deep, and the little man is not
+    little any more.
+  victory:
+    text: |
+      The utopiec bursts like a bladder full of water and is gone. Only his red cap is left,
+      turning slowly among the reeds. The pond drops a hand's breadth all at once.
+
+      In the mud by the weir lies a black stone, hot enough to steam, among a scatter of
+      broken clay pots. Pale lights rise from the shards like bubbles and drift away over
+      the reeds. One of them lingers by the dyke, near the mill, before it goes.
+    effects:
+      - give-item:
+          item: thunderstone
+  escape:
+    text: |
+      You tear yourself out of the water and scramble up the dyke. Behind you the pond
+      settles, black and patient, and the little man is back on his weir, wringing out his
+      coat-tail.
+    move: mill

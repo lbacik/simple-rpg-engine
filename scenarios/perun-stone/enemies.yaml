@@ -1,0 +1,22 @@
+- id: leszy-wolf
+  name: The Leszy's Grey Wolf
+  description: A wolf the colour of lichen, that moves through the ferns without a sound.
+  attributes:
+    might: 2
+    agility: 2
+    wits: 1
+    presence: 0
+  health: 8
+  damage: 2
+  behaviour: steady
+- id: utopiec
+  name: The Utopiec
+  description: The old water demon of the Black Pond, small on the bank and huge in the water.
+  attributes:
+    might: 2
+    agility: 2
+    wits: 2
+    presence: 1
+  health: 12
+  damage: 3
+  behaviour: heavy

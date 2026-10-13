@@ -1,0 +1,14 @@
+id: deep-forest
+name: Stary las
+description: |
+  Pod starymi drzewami po raz pierwszy od czterdziestu dni jest chłodno. Mech połyka
+  kroki. Ścieżki pojawiają się między pniami i znikają, gdy spojrzy się na nie drugi raz,
+  a gdzieś dzięcioł stuka w rytmie śmiechu.
+
+  W sercu lasu leży polana otoczona dębowymi pniakami, z których każdy ścięto równo
+  siekierą. Coś tutaj je liczy.
+connections:
+  - to: forest-edge
+    label: Wróć na skraj lasu
+  - to: mill-pond
+    label: Idź ścieżką Leszego nad Czarny Staw

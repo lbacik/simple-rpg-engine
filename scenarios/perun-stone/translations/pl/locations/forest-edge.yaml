@@ -1,0 +1,14 @@
+id: forest-edge
+name: Skraj lasu
+description: |
+  Tam, gdzie kończą się pola, las zaczyna się nagle, jak ściana. U jego stóp stoi
+  krzywa chata na jednym grubym pniu, którego korzenie przypominają kurze pazury. Pod
+  okapem wiszą pęki ziół: bylica, ruta i dziurawiec, wszystkie zebrane za wcześnie przez
+  suszę.
+
+  Na dachu siedzi czarny kot. Drzwi chaty zwrócone są tam, gdzie zechce jej gospodyni.
+connections:
+  - to: rye-field
+    label: Wróć przez żyto
+  - to: deep-forest
+    label: Wejdź do starego lasu

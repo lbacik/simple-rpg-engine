@@ -1,0 +1,24 @@
+id: hut-arrival
+title: Chata na kurzej stopce
+text: |
+  Kiedy się zbliżasz, chata skrzypi na swoim pniu i obraca się, pokazując ci ślepą tylną
+  ścianę. Gdzieś w środku kicha kot.
+
+  Każde dziecko w tej krainie zna słowa na taką okazję. Wypowiadając je na głos, czujesz się
+  trochę głupio.
+choices:
+  - id: old-words
+    text: „Chatko, chatko, obróć się do lasu tyłem, a do mnie przodem”.
+    outcome:
+      text: |
+        Chata stęka, osiada i się obraca. Drzwi otwiera kobieta koło czterdziestki, z
+        przyprószonymi siwizną włosami, z podwiniętymi rękawami i zielonymi po łokcie
+        rękami. „No, przynajmniej grzecznie” — mówi Jagna. — „Większość ludzi z Dębiny po
+        prostu rzuca kamieniami. Wejdź i uważaj na kota”.
+  - id: knock
+    text: Zapukaj w tylną ścianę.
+    outcome:
+      text: |
+        Po chwili chata obraca się z pomrukiem starych bali. Z drzwi wychyla się kobieta z
+        przyprószonymi siwizną włosami. „Są na to słowa, wiesz?” — mówi Jagna. — „Ale to
+        pierwsza wizyta w tym miesiącu bez pochodni. Wejdź”.

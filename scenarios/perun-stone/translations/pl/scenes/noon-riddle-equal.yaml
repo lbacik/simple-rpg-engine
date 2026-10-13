@@ -1,0 +1,32 @@
+id: noon-riddle-equal
+title: Trzecie pytanie
+text: |
+  „Na koniec. Czego bogowie nie widzą nigdy, książę widuje rzadko, a ty widzisz co dzień?”
+choices:
+  - id: equal
+    text: „Równego sobie”.
+    outcome:
+      text: |
+        Południca się śmieje, sucho i szeleszcząco, jak wiatr w życie. „Równego sobie. Tak.
+        Rzadko takich spotykam”. Opuszcza sierp.
+
+        „Szukasz gorącego kamienia. To posłuchaj czegoś za darmo. Zeszłego lata przez moje
+        pole szła w kupalny poranek dziewczyna, z wiankiem z chabrów na młyński staw:
+        Marzenka, córka młynarza. Nigdy nie wróciła. W południe, kiedy woda stoi
+        nieruchomo, słyszę, jak woła ojca spod stawu. Ten stary na dnie trzyma ją tak, jak
+        sroka trzyma pierścionek”.
+
+        Podaje ci sierp, rękojeścią naprzód. „Weź. Żytu w tym roku się nie przyda”. Kiedy
+        podnosisz wzrok znad ostrza, już jej nie ma, a skowronki śpiewają.
+  - id: shadow
+    text: „Własnego cienia”.
+    outcome:
+      text: |
+        „W południe?” — pyta. — „Spójrz w dół”. Spoglądasz i nie masz żadnego cienia. Potem
+        upał cię zabiera, a budzisz się w bruździe z palącą twarzą.
+  - id: sun
+    text: „Słońca”.
+    outcome:
+      text: |
+        „Bogowie widzą słońce codziennie. Sami je zrobili”. Sierp błyska bielą, a budzisz się
+        w bruździe; boli cię każda kość.

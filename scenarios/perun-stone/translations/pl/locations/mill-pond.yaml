@@ -1,0 +1,13 @@
+id: mill-pond
+name: Czarny Staw
+description: |
+  Staw jest pełny po brzegi i zupełnie nieruchomy, czarny jak studnia nocą. Trzciny stoją
+  w nim po szyję, a wierzby pochylają się nad wodą, jakby nasłuchiwały.
+
+  Na jazie, tam gdzie woda spływa ku młynowi, trzciny są przygniecione, jakby ktoś często
+  tam przesiadywał. Spod powierzchni co jakiś czas dobiega stuk, jak glina o glinę.
+connections:
+  - to: mill
+    label: Wróć groblą do młyna
+  - to: deep-forest
+    label: Ruszaj ścieżką Leszego do starego lasu

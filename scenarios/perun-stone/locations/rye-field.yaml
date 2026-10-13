@@ -1,0 +1,23 @@
+id: rye-field
+illustration: loc-rye-field
+name: The Rye Fields
+description: |
+  By now the rye should reach your chest. Instead it barely brushes your knees, pale and
+  brittle, rustling although there is no wind. The cornflowers along the balks have burned
+  brown. A path runs between the fields towards the dark wall of the forest, past a lone
+  wild pear tree.
+
+  At noon the air above the furrows trembles like water, and the larks fall silent.
+map:
+  x: 28
+  y: 74
+scenes:
+  - field-arrival
+  - noon-wraith
+connections:
+  - to: debina
+    label: Return to the village
+  - to: forest-edge
+    label: Follow the balk path to the forest edge
+    when:
+      flag: field-crossed

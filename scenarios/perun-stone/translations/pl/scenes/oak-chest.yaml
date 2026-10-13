@@ -1,0 +1,29 @@
+id: oak-chest
+title: Pusta skrzynia
+text: |
+  Skrzynia jest rzeźbiona w rozety gromu i wyłożona jagnięcą skórą, ugniecioną tam, gdzie
+  przez pokolenia leżał kamień. Nikt nie miał ochoty zamknąć wieka. Obok ołtarzowe palenisko
+  to kupka zimnych, czarnych głowni.
+
+  Bogumił obserwuje cię ze skraju wzgórza z założonymi rękami.
+choices:
+  - id: examine-chest
+    text: Przesuń palcami po krawędzi skrzyni i po jagnięcej skórze.
+    outcome:
+      text: |
+        Opuszki palców robią się białe. To nie popiół; popiół jest szary i szorstki. To jest
+        drobne jak szron i pachnie lekko słodko. Mąka pszenna, dwa razy mielona.
+
+        „W Dębinie wszyscy jedzą żyto” — mówi powoli Bogumił, kiedy mu to pokazujesz. —
+        „Pszenicę miele się raz w roku, w młynie, na kupalny chleb. W tym roku żadnej nie
+        kupiłem”. Spogląda na klucz u pasa, potem w dół zbocza, na obracające się koło, i nic
+        więcej nie mówi.
+  - id: examine-hearth
+    text: Przesiej palcami zimne głownie z ołtarzowego ognia.
+    outcome:
+      text: |
+        Te głownie nie wypaliły się; one utonęły. Czarne bryły, wciąż wilgotne w środku po
+        czterdziestu suchych dniach. Przylgnęły do nich zielone drobinki: rzęsa wodna, taka,
+        która rośnie tylko na stojącej wodzie.
+  - id: leave
+    text: Odejdź od skrzyni.

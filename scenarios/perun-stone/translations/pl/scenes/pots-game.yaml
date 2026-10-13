@@ -1,0 +1,50 @@
+id: pots-game
+title: Trzy garnki pod wodą
+text: |
+  Utopiec klaszcze w dłonie. Staw cofa się od brzegu jak zasłona, a na mokrym mule stoją trzy
+  gliniane garnki, odwrócone do góry dnem: zielony z wydrapaną rybą, biały z ptakiem i czarny
+  z półksiężycem.
+
+  „Pod jednym gorący kamień. Pod dwoma pozostałymi goście, którzy zostali”. Chichocze.
+  „Podnieś zły, a przekonasz się, jak się oddycha wodą. Teraz słuchaj. Każdy garnek powie
+  jedno zdanie. Garnek, który skrywa kamień Peruna, może mówić tylko prawdę, bo grom nigdy
+  nie kłamie. Pozostałe dwa mogą tylko kłamać, bo są moje”.
+
+  Zielony garnek z rybą mówi: *„Kamień jest pode mną”.*
+
+  Biały garnek z ptakiem mówi: *„Garnek z rybą kłamie”.*
+
+  Czarny garnek z księżycem mówi: *„Kamienia nie ma pod ptakiem”.*
+choices:
+  - id: lift-fish
+    text: Podnieś zielony garnek z rybą.
+    outcome:
+      text: |
+        Z garnka wylewa się zimno, prosto do ust, do nosa, do płuc. Przytomność wraca na
+        brzegu; kaszlesz, plując stawową wodą, a utopiec klepie się po kolanach ze śmiechu.
+        Garnków już nie ma. „Kiedy indziej jeszcze raz?”
+  - id: lift-bird
+    text: Podnieś biały garnek z ptakiem.
+    outcome:
+      text: |
+        Pod białym garnkiem leży czarny kamień w kształcie grotu. Jest tak gorący, że parzy w
+        dłoń, a muł wokół niego wysechł i popękał. Utopiec syczy i cofa się po jazie.
+        „Uczciwie” — spluwa. — „Uczciwie to uczciwie. Bierz i idź”.
+
+        Gdy podnosisz kamień, jego żar rozchodzi się po wodzie. Głęboko w stawie pękają garnki,
+        jeden po drugim. Z głębin wznoszą się blade światełka jak bąbelki i płyną nad
+        trzcinami, a utopiec wyje nad swoim pustym domem. Jedno światełko zatrzymuje się przy
+        grobli, blisko młyna, zanim odejdzie.
+  - id: lift-moon
+    text: Podnieś czarny garnek z księżycem.
+    outcome:
+      text: |
+        Coś bladego i zimnego wylatuje z garnka i przenika przez ciebie, a za tym rusza staw.
+        Przytomność wraca na brzegu; wykasłujesz wodę, a utopiec chichocze na jazie.
+        „To był rybak. Strasznie mu samotnie”.
+  - id: refuse
+    text: Odmów wyboru i cofnij się od garnków.
+    outcome:
+      text: |
+        Staw z powrotem połyka garnki. „Tchórz” — mówi utopiec uprzejmie. — „Wróć, jak
+        nabierzesz odwagi”.

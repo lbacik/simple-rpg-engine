@@ -1,0 +1,23 @@
+id: deep-forest
+illustration: loc-deep-forest
+name: The Old Forest
+description: |
+  Under the old trees it is cool for the first time in forty days. Moss swallows your
+  footsteps. Paths appear between the trunks and vanish when you look at them twice, and
+  somewhere a woodpecker knocks in the rhythm of a laugh.
+
+  At the heart of the forest lies a clearing ringed by oak stumps, each one cut clean by an
+  axe. Something here keeps count of them.
+map:
+  x: 30
+  y: 26
+scenes:
+  - forest-maze
+  - leszy-meeting
+connections:
+  - to: forest-edge
+    label: Return to the forest edge
+  - to: mill-pond
+    label: Follow the Leszy's path to the Black Pond
+    when:
+      flag: leszy-heard

@@ -1,0 +1,144 @@
+# Package-local illustrations. Alternative text follows the Scenario language.
+- id: loc-debina
+  path: images/loc-debina.webp
+  alt: "Log houses with thatched roofs surround a dusty green and a great linden, with a lone oak on the hill behind."
+
+- id: loc-perun-oak
+  path: images/loc-perun-oak.webp
+  alt: "A gigantic oak with axe heads in its bark stands over a cold stone altar and an open iron-bound chest."
+
+- id: loc-mill
+  path: images/loc-mill.webp
+  alt: "A timber watermill's wheel drips and turns beside a riverbed of cracked, dry mud."
+
+- id: loc-mill-pond
+  path: images/loc-mill-pond.webp
+  alt: "A brim-full black pond lies still among reeds and leaning willows, beside a small wooden weir."
+
+- id: loc-rye-field
+  path: images/loc-rye-field.webp
+  alt: "A path runs between thin, pale rye fields towards a dark forest, past a lone wild pear tree."
+
+- id: loc-forest-edge
+  path: images/loc-forest-edge.webp
+  alt: "A crooked hut stands on a single stump with roots like a hen's claws at the foot of a dark forest."
+
+- id: loc-deep-forest
+  path: images/loc-deep-forest.webp
+  alt: "Faint paths fade among massive mossy trunks around a clearing ringed by axe-cut oak stumps."
+
+- id: village-arrival
+  path: images/village-arrival.webp
+  alt: "Under the linden, the headwoman turns towards the viewer while the old keeper of the oak shouts with his staff raised."
+
+- id: headwoman-counsel
+  path: images/headwoman-counsel.webp
+  alt: "The headwoman sits on the rim of a dry well, turning her keys and looking up."
+
+- id: spinning-song
+  path: images/spinning-song.webp
+  alt: "Three women of different ages spin flax with drop spindles on a bench in the linden's shade."
+
+- id: shepherd-boy
+  path: images/shepherd-boy.webp
+  alt: "A wary shepherd boy with a tall crook half hides behind the village well."
+
+- id: oak-arrival
+  path: images/oak-arrival.webp
+  alt: "The old keeper stands by the cold altar under the giant oak, pointing towards the distant forest."
+
+- id: oak-chest
+  path: images/oak-chest.webp
+  alt: "A hand reaches into an empty carved chest lined with lambskin pressed in the shape of an arrowhead."
+
+- id: name-the-thief
+  path: images/name-the-thief.webp
+  alt: "The keeper waits at the altar for a name, while two piles of wood are stacked on the green below."
+
+- id: confirm-jagna
+  path: images/confirm-jagna.webp
+  alt: "The keeper lifts a burning torch at the altar while villagers cheer below the hill."
+
+- id: confirm-leszy
+  path: images/confirm-leszy.webp
+  alt: "The keeper points at the distant forest while young men with axes look up the hill."
+
+- id: confirm-bogumil
+  path: images/confirm-bogumil.webp
+  alt: "The old keeper stares in shocked disbelief while villagers murmur behind him."
+
+- id: mill-arrival
+  path: images/mill-arrival.webp
+  alt: "A big miller white with flour blocks his doorway, a full black pond just visible behind him."
+
+- id: miller-questioning
+  path: images/miller-questioning.webp
+  alt: "Inside the floury mill, the miller lifts a heavy sack with his back to the viewer."
+
+- id: miller-lie-oak
+  path: images/miller-lie-oak.webp
+  alt: "The miller heaves a sack onto a pile and glances back dismissively."
+
+- id: miller-lie-night
+  path: images/miller-lie-night.webp
+  alt: "The miller faces the viewer, wiping his hands on his apron with his chin raised."
+
+- id: miller-lie-motive
+  path: images/miller-lie-motive.webp
+  alt: "The miller sits heavily on a flour sack, his face hard and guarded."
+
+- id: miller-confession
+  path: images/miller-confession.webp
+  alt: "The miller sits among the sacks with his face in his hands beneath a dried cornflower wreath."
+
+- id: pond-arrival
+  path: images/pond-arrival.webp
+  alt: "A small grinning water demon climbs onto the weir, water dripping from one coat-tail."
+
+- id: utopiec-bargain
+  path: images/utopiec-bargain.webp
+  alt: "The water demon sits on the weir cleaning his nails with a fish bone and eyes the viewer."
+
+- id: pots-game
+  path: images/pots-game.webp
+  alt: "Three upturned clay pots marked with a fish, a bird and a crescent moon stand on the mud before the water demon."
+
+- id: field-arrival
+  path: images/field-arrival.webp
+  alt: "A tall woman in white with a glaring sickle stands on the path through the rye at noon."
+
+- id: noon-wraith
+  path: images/noon-wraith.webp
+  alt: "The Noon Wraith rises out of the heat haze in the middle of the rye field."
+
+- id: noon-riddle-rye
+  path: images/noon-riddle-rye.webp
+  alt: "The Noon Wraith leans forward with one finger raised, her sickle on her shoulder."
+
+- id: noon-riddle-flax
+  path: images/noon-riddle-flax.webp
+  alt: "The Noon Wraith holds up a hank of flax fibre and waits for an answer."
+
+- id: noon-riddle-equal
+  path: images/noon-riddle-equal.webp
+  alt: "The Noon Wraith stands eye to eye with the viewer, sickle lowered, waiting."
+
+- id: hut-arrival
+  path: images/hut-arrival.webp
+  alt: "A hut on a hen-claw stump turns its blind, doorless back wall towards the viewer."
+
+- id: jagna-counsel
+  path: images/jagna-counsel.webp
+  alt: "The herb-woman watches over her cup across a table in a hut full of drying herbs."
+
+- id: forest-maze
+  path: images/forest-maze.webp
+  alt: "The same split birch appears twice along a looping forest path."
+
+- id: leszy-meeting
+  path: images/leszy-meeting.webp
+  alt: "A towering moss-bearded forest spirit unfolds from a stump, a grey wolf at his feet."
+
+- id: leszy-testimony
+  path: images/leszy-testimony.webp
+  alt: "The seated forest spirit points along a newly appearing path towards distant water."

@@ -1,0 +1,48 @@
+id: forest-maze
+illustration: forest-maze
+title: Paths That Move
+trigger: on-enter
+repeatable: true
+when:
+  not:
+    flag: forest-unlocked
+text: |
+  Ten steps into the forest you pass a split birch. Fifty steps later you pass it again. The
+  path you came by is gone, and the woodpecker is laughing in earnest now.
+
+  Somewhere close by, branches creak like an old man chuckling. The forest is playing with
+  you.
+choices:
+  - id: inside-out
+    text: Turn your coat inside out and swap your boots, as Jagna told you.
+    when:
+      flag: knows-inside-out
+    outcome:
+      text: |
+        You feel ridiculous. The forest, however, seems to find it entirely reasonable. The
+        laughing stops. When you look up, a single path runs straight between the trunks
+        towards a clearing ringed with stumps.
+      effects:
+        - set-flag: forest-unlocked
+  - id: read-signs
+    text: Ignore the paths and steer by the moss and the sun.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          Moss on the north side, the sun's warmth on your left cheek, a stream running
+          downhill whatever the forest says. Grudgingly the trees let you through to a
+          clearing ringed with stumps.
+        effects:
+          - set-flag: forest-unlocked
+      failure:
+        text: |
+          Moss grows on every side of every tree, and the sun seems to be in two places at
+          once. After an hour of walking you step out of the forest exactly where you went
+          in.
+        move: forest-edge
+  - id: turn-back
+    text: Turn back while you still can.
+    outcome:
+      move: forest-edge

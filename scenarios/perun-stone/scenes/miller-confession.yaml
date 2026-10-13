@@ -1,0 +1,29 @@
+id: miller-confession
+illustration: miller-confession
+title: What the Water Keeps
+repeatable: true
+text: |
+  At his daughter's name, the big man folds. He sits among the sacks with his floury hands
+  over his face, and for a long time the only sound is the millstones.
+
+  "She went to float her wreath, last Kupała Night," he says at last. "All the girls do.
+  The pond took her. And then *he* came up out of it: the utopiec, the old one, the one my
+  grandfather paid with a black hen every spring. He said he keeps her soul under a clay
+  pot in his house beneath the water, with all the others. He said I could have her back."
+
+  Radzim looks up. "He wanted Perun's stone. Thunder is the only thing his kind fears. I
+  pressed Bogumił's key into a lump of dough while he slept off my mead, and cut a copy from
+  bog oak. On the dark-moon night I took the stone, drowned the fire with pond water and gave
+  the stone to the utopiec." His voice cracks. "And he never gave her back. He only made the
+  pond fat and the wheel turn, and laughed at me. And the rain stopped coming."
+choices:
+  - id: promise
+    text: Tell him you will face the utopiec, and ask him to open the way to the pond.
+    outcome:
+      text: |
+        Radzim gets up and takes an iron key from a nail. "The sluice gate on the dyke. I've
+        kept it locked so nobody would go near the water." At the door he stops. "If you see
+        her, tell her that her father is sorry."
+      effects:
+        - set-flag: miller-confessed
+        - reveal: mill-pond

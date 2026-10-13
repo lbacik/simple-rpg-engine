@@ -1,0 +1,91 @@
+- id: death
+  kind: defeat
+  title: Taken by the Old Ones
+  text: |
+    Your journey ends in Dębina, among the dry fields and the old powers that were never as
+    gentle as the songs about them. On Kupała Night, Bogumił lights two fires after all.
+
+    Years later, travellers still tell of the drought summer in Dębina and the stranger who
+    went looking for Perun's stone. Nobody agrees on what happened to {name}. Everyone
+    agrees the rain came late that year. Some say it never came at all.
+- id: abandoned
+  kind: defeat
+  title: The Road Onward
+  text: |
+    You leave Dębina by the dusty road before the linden's shadow grows long. Behind you,
+    someone is already stacking wood.
+
+    On Kupała Night, from a hill many miles away, you see two fires burning where the
+    village should be. The sky above them is clear and full of stars, and there is no
+    thunder at all.
+- id: thunder-returns
+  kind: victory
+  title: Thunder over Dębina
+  text: |
+    The stone touches the altar, and the cold hearth catches by itself with a sound like a
+    drawn breath. Then you tell them everything: the utopiec under the pond, the souls
+    under the clay pots, and the father who traded Perun's stone for a promise from the
+    water. Radzim stands at the edge of the torchlight with his head bowed and waits for
+    the village to decide what he is.
+
+    Dobrawa walks over first and puts her hand on his shoulder. Then Jagna climbs the hill,
+    for the first time in years, and Bogumił, after a long silence, steps aside to let her
+    stand by the fire. The second pyre is pulled apart and thrown into the first.
+
+    The first drop hits the altar stone just before midnight. Then the sky over Dębina
+    splits from end to end, the thunder rolls over the fields like a cart full of iron,
+    and the rain comes down so hard that the Kupała fire hisses and roars at once. The
+    girls float their wreaths on the river, which runs again. Radzim floats one too, of
+    cornflowers, and watches it go.
+
+    In the morning the Black Pond is only a pond. Bogumił carves a new mark on the oak's
+    ring of posts: a small six-petalled flower, for the stranger who found the god's stone.
+- id: rain-and-silence
+  kind: victory
+  title: Rain Without Answers
+  text: |
+    You lay the stone on the altar and say that the water demon of the Black Pond took it.
+    It is true, as far as it goes. The hearth catches by itself, and before midnight the
+    thunder comes, and the rain with it, and Dębina dances in the mud.
+
+    But Bogumił watches the forest's edge all night. In the morning he says what everyone
+    is thinking: demons do not climb hills and open locked chests by themselves. Someone
+    sent it. A month later Jagna's hut stands empty, and nobody knows where she has gone.
+
+    At the mill, Radzim works from dawn to dusk and never speaks of the pond. The harvest
+    is saved. The question is not.
+- id: witch-pyre
+  kind: defeat
+  title: The Second Fire
+  text: |
+    They burn Jagna's hut on Kupała Night. Dobrawa stops them before they burn Jagna
+    herself, but only just. The herb-woman walks into the forest with her cat under her
+    arm and does not look back.
+
+    The sky stays clear. The rye dies in the fields, and in the autumn half the village
+    takes the road to wherever there is bread. At the mill the wheel keeps turning on a dry
+    river, and the miller grows thin and grey and talks to the water every night. Perun's
+    stone stays where it is, under the black water, and the thunder never finds it.
+- id: forest-fire
+  kind: defeat
+  title: The Forest Burns
+  text: |
+    The young men go into the old forest with torches on Kupała Night. The trees are as
+    dry as the fields, and the fire does not stop where they want it to. By dawn the
+    forest is ash for a mile around, and the smoke hangs over Dębina for a week.
+
+    Jagna's hut burns with the forest edge, though she escapes. The Leszy is never seen
+    again, and neither are the mushrooms, the deer or the springs under the old trees.
+    Still no rain falls, because Perun's stone lies under the Black Pond, where no fire can
+    reach it.
+- id: keeper-cast-out
+  kind: defeat
+  title: The Empty Oak
+  text: |
+    The village believes you, because it wants to. Bogumił is driven down the hill with his
+    staff broken over his own knee, and he leaves Dębina without a word. He was proud,
+    frightened and unfair, but he never touched the stone.
+
+    With no keeper, nobody tends the oak, and the thunderstone stays wherever it is. The
+    drought holds. By autumn people in Dębina have begun to whisper about the stranger who
+    came through in the summer, and how the rain stopped for good after they listened.

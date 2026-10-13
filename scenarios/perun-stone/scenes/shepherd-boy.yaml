@@ -1,0 +1,36 @@
+id: shepherd-boy
+illustration: shepherd-boy
+title: The Boy by the Well
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: ghost-seen
+text: |
+  The shepherd boy edges away as you approach, but he doesn't run. He is about ten,
+  sunburnt, with a crook taller than himself.
+
+  "Are you the one looking for the stone?" he whispers. "I'm not supposed to talk about the
+  night. Mother says if you talk about an upiór, it hears you and comes."
+choices:
+  - id: kind
+    text: Crouch down and promise him that whatever he saw, you will deal with it.
+    outcome:
+      text: |
+        The words come out of Wojtek all at once. "It was the dark-moon night. A ewe got out
+        and I went after her down by the river. And I saw it on the mill dyke: an upiór,
+        all white, white from head to foot. It carried something under its coat that glowed
+        through the cloth, red like a coal, and it hummed, like bees in a hollow tree. It
+        went down to the pond."
+
+        He swallows. "I never got the ewe back."
+      effects:
+        - set-flag: ghost-seen
+  - id: stern
+    text: Tell him there are no such things as upiory and he should stop wasting your time.
+    outcome:
+      text: |
+        Wojtek's face shuts like a door. He mutters something about his sheep and slips
+        away behind the well.
+  - id: leave
+    text: Leave him be.

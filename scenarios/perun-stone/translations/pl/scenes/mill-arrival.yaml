@@ -1,0 +1,20 @@
+id: mill-arrival
+title: Koło, które kręci się nad suchą rzeką
+text: |
+  Młynarz otwiera drzwi, zanim zdążysz zapukać: rosły, przygarbiony mężczyzna, biały od mąki
+  od brwi po buty. Za jego plecami kamienie młyńskie mielą z odgłosem dalekiego grzmotu.
+
+  „Radzim” — mówi, jakby jego imię było długiem do spłacenia. — „Szukasz kamienia Peruna.
+  Wszyscy wiedzą. Między moimi workami go nie znajdziesz”.
+
+  Ponad jego ramieniem dostrzegasz staw młyński za groblą: pełny po brzegi, czarny i
+  nieruchomy, podczas gdy rzeka obok młyna to spękany muł. Kiedy Radzim widzi, dokąd
+  patrzysz, przesuwa się w bok i zasłania widok.
+choices:
+  - id: ask-pond
+    text: Zapytaj, czemu jego staw jest pełny, skoro rzeka wyschła.
+    outcome:
+      text: |
+        „Źródło” — odpowiada zbyt szybko. — „Pod stawem jest źródło. Zawsze było”. Zaczyna
+        zamykać drzwi, po czym znów je otwiera, jakby przypomniał sobie, że zamknięte drzwi
+        wyglądają gorzej.

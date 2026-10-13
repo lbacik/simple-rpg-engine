@@ -1,0 +1,34 @@
+id: miller-lie-motive
+title: „Młynarzowi potrzeba wody, nie gromu”
+text: |
+  Głos Radzima twardnieje. „Ale po co mi kamień Peruna? Nie zjem go. Nie sprzedam. Młynarzowi
+  potrzeba wody, nie gromu. Koło mi się kręci, worki mam pełne. Mam wszystko, czego człowiek
+  może potrzebować”.
+choices:
+  - id: show-flour
+    text: Przypomnij mu jeszcze raz o mące w skrzyni.
+    outcome:
+      text: |
+        „Mąka, mąka”. Radzim wstaje, już pewniej. „To nie powód, to pył. Idź do domu,
+        przybyszu”.
+  - id: show-witness
+    text: Przypomnij mu, że widziano go tamtej nocy na grobli.
+    outcome:
+      text: |
+        „Powiedziałem, że chodzę nocami. Chodzenie to nie kradzież”. Wstaje i otwiera ci
+        drzwi.
+  - id: show-marzenka
+    text: Powiedz cicho, że nie ma wszystkiego. Nie ma Marzenki, a woda wciąż ją trzyma.
+  - id: show-pond
+    text: Powiedz, że pełny staw nad suchą rzeką to nie szczęście, tylko umowa.
+    outcome:
+      text: |
+        Przez jedno uderzenie serca coś porusza się w jego twarzy. Potem wzrusza ramionami.
+        „Umowa? Z kim? Ze źródłem?” Odwraca się do kamieni młyńskich i chwila mija.
+  - id: threaten
+    text: Powiedz mu, że wieś spali mu młyn, jeśli kłamie.
+    outcome:
+      text: |
+        „To następnej zimy będą jeść trawę”. Radzim wskazuje drzwi. Wychodzisz.
+  - id: back-off
+    text: Na razie odpuść.

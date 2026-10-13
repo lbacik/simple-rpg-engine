@@ -1,0 +1,29 @@
+- id: wolf-fight
+  text: |
+    Szary wilk odrywa się od ziemi jak zwolniona cięciwa. Za nim Leszy patrzy bez ruchu,
+    tak jak las patrzy na burzę.
+  victory:
+    text: |
+      Wilk leży nieruchomo wśród paproci. Leszy długo ci się przygląda. „Zęby” — mówi
+      wreszcie. „Dębina zawsze miała zęby”. Ale zaczyna mówić.
+  escape:
+    text: |
+      Uciekasz, a las ci na to pozwala, co jest jakoś gorsze. Wychodzisz spomiędzy drzew
+      dokładnie w tym miejscu, w którym zaczęła się twoja droga.
+- id: utopiec-fight
+  text: |
+    Utopiec nie puszcza jazu, więc jaz rusza razem z nim. Staw wzbiera czarną falą. Nagle
+    stoisz w wodzie po kolana, potem po pas, a mały człowieczek wcale już nie jest mały.
+  victory:
+    text: |
+      Utopiec pęka jak pęcherz pełen wody i znika. Zostaje po nim tylko czerwona czapka,
+      obracająca się powoli wśród trzcin. Staw opada nagle o szerokość dłoni.
+
+      W mule przy jazie leży czarny kamień, tak gorący, że paruje, a wokół niego skorupy
+      potłuczonych glinianych garnków. Z odłamków wznoszą się blade światełka jak bąbelki
+      i odpływają nad trzciny. Jedno z nich zatrzymuje się przy grobli, blisko młyna, zanim
+      odejdzie.
+  escape:
+    text: |
+      Wyrywasz się z wody i wdrapujesz na groblę. Za twoimi plecami staw się uspokaja,
+      czarny i cierpliwy, a mały człowieczek znów siedzi na jazie i wyżyma połę kapoty.

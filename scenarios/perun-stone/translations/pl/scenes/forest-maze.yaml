@@ -1,0 +1,30 @@
+id: forest-maze
+title: Ścieżki, które się przesuwają
+text: |
+  Dziesięć kroków w głąb lasu mijasz rozszczepioną brzozę. Pięćdziesiąt kroków dalej mijasz
+  ją znowu. Ścieżka, która cię tu przywiodła, zniknęła, a dzięcioł śmieje się już na dobre.
+
+  Gdzieś blisko gałęzie skrzypią jak chichoczący starzec. Las się z tobą bawi.
+choices:
+  - id: inside-out
+    text: Wywróć kapotę na lewą stronę i zamień buty, tak jak radziła Jagna.
+    outcome:
+      text: |
+        Czujesz się śmiesznie. Las uznaje to jednak za całkiem rozsądne. Śmiech milknie. Gdy
+        podnosisz wzrok, między pniami biegnie prosto jedna ścieżka, ku polanie otoczonej
+        pniakami.
+  - id: read-signs
+    text: Nie zważaj na ścieżki i kieruj się mchem i słońcem.
+    test:
+      success:
+        text: |
+          Mech po północnej stronie, ciepło słońca na lewym policzku, strumień płynący w dół
+          bez względu na to, co mówi las. Drzewa niechętnie przepuszczają cię na polanę
+          otoczoną pniakami.
+      failure:
+        text: |
+          Mech rośnie na każdej stronie każdego drzewa, a słońce wydaje się być w dwóch
+          miejscach naraz. Po godzinie marszu las wypuszcza cię dokładnie tam, gdzie zaczęła
+          się ta droga.
+  - id: turn-back
+    text: Zawróć, póki jeszcze można.

@@ -1,0 +1,27 @@
+id: utopiec-bargain
+title: Targ z utopcem
+text: |
+  Utopiec siedzi na jazie, poła kapoty kap, kap, kap, i czyści paznokcie rybią ością.
+
+  „No i? Lubię gry. Lubię gości, którzy zostają. Nie lubię gorących kamieni, ale umowa to
+  umowa, a ta była uczciwa”. Mruga. „Wystarczająco uczciwa”.
+choices:
+  - id: play
+    text: Zgódź się zagrać z nim o kamień.
+  - id: throw-ash
+    text: Rzuć kupalny popiół na jego ociekającą połę.
+    outcome:
+      text: |
+        Popiół syczy, uderzając w mokre sukno, i chłonie wodę jak gąbka. Kapanie ustaje.
+        Utopiec spogląda na swoją połę i szarzeje pod zielenią. „Nie” — szepcze. — „Nie, nie,
+        to oszustwo”.
+
+        Bez swojej wody jest tylko małą, starą, przestraszoną istotą. Nurkuje i wraca z
+        czarnym kamieniem, który paruje w zetknięciu z powietrzem, i rzuca go do twoich stóp.
+        Potem, nieproszony, wysypuje na płyciznę worek glinianych garnków. Wznoszą się z nich
+        blade światełka jak bąbelki i odpływają nad trzciny. Jedno zatrzymuje się przy
+        grobli, blisko młyna, zanim odejdzie.
+  - id: fight
+    text: Złap go za kołnierz i ściągnij z jazu.
+  - id: leave
+    text: Odsuń się od brzegu.

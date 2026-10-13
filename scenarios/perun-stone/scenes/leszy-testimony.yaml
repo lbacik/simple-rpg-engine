@@ -1,0 +1,21 @@
+id: leszy-testimony
+illustration: leszy-testimony
+title: What the Forest Saw
+repeatable: true
+text: |
+  "You want to know about the black stone," says the Leszy. "I felt it pass. Forty nights
+  ago, in the dark of the moon. A man came along the edge of my forest, white from head to
+  foot, white as a birch with the bark stripped off. Under his coat he carried something
+  that burned like a coal and hummed like a hive. He went down to the Black Pond, and the
+  water opened and took it. Then he stood on the bank and wept until morning."
+
+  The old man points a long finger along a path that was not there a moment ago. "That way
+  lies the pond. My path; walk it as my guest. And tell your village what I said about the
+  axes."
+choices:
+  - id: thank
+    text: Thank the Leszy and fix the path in your memory.
+    outcome:
+      effects:
+        - set-flag: leszy-heard
+        - reveal: mill-pond

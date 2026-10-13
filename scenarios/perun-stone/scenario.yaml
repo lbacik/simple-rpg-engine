@@ -1,0 +1,88 @@
+schemaVersion: 1
+id: perun-stone
+title: Perun's Stone
+description: A drought grips a Slavic village, the god's thunderstone is gone and a pyre is
+  being built for the wrong person. Question spirits, answer the Noon Wraith's riddles and
+  catch the real thief in a lie.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+intro: |
+  For forty days no rain has fallen on Dębina. The rye stands thin and white in the
+  fields, the river has shrunk to a string of puddles, and the old people say the sky has
+  forgotten the village.
+
+  Three days ago Bogumił, keeper of Perun's Oak, opened the chest beneath the altar to
+  prepare for Kupała Night and found it empty. The thunderstone is gone: the god's own
+  arrowhead, which has called the storms to Dębina for nine generations. Bogumił says he
+  knows who took it. The herb-woman at the forest's edge, whom the children call Baba
+  Jaga, milks the clouds into her pails. On Kupała Night, he promises, the village will
+  light two fires.
+
+  You arrive at dusk, dusty from the road, just as the whole village gathers under the
+  linden tree.
+startLocation: debina
+deathEnding: death
+flags:
+  - flour-found
+  - ghost-seen
+  - pond-seen
+  - field-crossed
+  - riddles-solved
+  - knows-marzenka
+  - knows-inside-out
+  - forest-unlocked
+  - leszy-heard
+  - miller-confessed
+locations:
+  - locations/debina.yaml
+  - locations/perun-oak.yaml
+  - locations/mill.yaml
+  - locations/mill-pond.yaml
+  - locations/rye-field.yaml
+  - locations/forest-edge.yaml
+  - locations/deep-forest.yaml
+scenes:
+  - scenes/village-arrival.yaml
+  - scenes/headwoman-counsel.yaml
+  - scenes/spinning-song.yaml
+  - scenes/shepherd-boy.yaml
+  - scenes/oak-arrival.yaml
+  - scenes/oak-chest.yaml
+  - scenes/name-the-thief.yaml
+  - scenes/confirm-jagna.yaml
+  - scenes/confirm-leszy.yaml
+  - scenes/confirm-bogumil.yaml
+  - scenes/mill-arrival.yaml
+  - scenes/miller-questioning.yaml
+  - scenes/miller-lie-oak.yaml
+  - scenes/miller-lie-night.yaml
+  - scenes/miller-lie-motive.yaml
+  - scenes/miller-confession.yaml
+  - scenes/pond-arrival.yaml
+  - scenes/utopiec-bargain.yaml
+  - scenes/pots-game.yaml
+  - scenes/field-arrival.yaml
+  - scenes/noon-wraith.yaml
+  - scenes/noon-riddle-rye.yaml
+  - scenes/noon-riddle-flax.yaml
+  - scenes/noon-riddle-equal.yaml
+  - scenes/hut-arrival.yaml
+  - scenes/jagna-counsel.yaml
+  - scenes/forest-maze.yaml
+  - scenes/leszy-meeting.yaml
+  - scenes/leszy-testimony.yaml
+items:
+  - items.yaml
+enemies:
+  - enemies.yaml
+encounters:
+  - encounters.yaml
+templates:
+  - templates.yaml
+endings:
+  - endings.yaml
+translations:
+  - translations/pl/translation.yaml
+images:
+  - images.yaml

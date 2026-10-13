@@ -1,0 +1,17 @@
+id: oak-arrival
+illustration: oak-arrival
+title: The Keeper of the Oak
+trigger: on-enter
+text: |
+  Bogumił reaches the hilltop just after you, breathing hard, and plants his staff by the
+  cold altar.
+
+  "Look, stranger. Nine generations this fire burned. Forty days ago, on the dark-moon
+  night, it died, as if someone had poured a bucket over it. Every fire I have laid since
+  only smokes. Three days ago I opened the chest to make ready for Kupała, and the stone
+  was gone. The key never leaves my belt, and the lock was not forced."
+
+  He jabs a finger west, towards the distant forest. "Who has buckets of water in a
+  drought? A witch who milks the clouds."
+
+  He is frightened, you realise, more than he is cruel. But frightened men build pyres.

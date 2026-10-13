@@ -1,0 +1,26 @@
+id: debina
+illustration: loc-debina
+name: Dębina
+description: |
+  Low log houses with thatched roofs huddle around a dusty green and a great linden tree.
+  The well rope comes up with more mud than water. Above the roofs, Perun's Oak stands on
+  its hill. To the east the mill wheel turns slowly, although the river beside it is
+  little more than cracked mud.
+
+  Women spin on a bench in the linden's shade. A boy with a shepherd's crook watches you
+  from behind the well, ready to run.
+map:
+  x: 50
+  y: 62
+scenes:
+  - village-arrival
+  - headwoman-counsel
+  - spinning-song
+  - shepherd-boy
+connections:
+  - to: perun-oak
+    label: Climb the hill to Perun's Oak
+  - to: mill
+    label: Follow the dry riverbed to the mill
+  - to: rye-field
+    label: Walk out into the rye fields
