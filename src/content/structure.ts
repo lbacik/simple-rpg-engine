@@ -696,6 +696,26 @@ function checkEnemy(value: unknown, path: readonly (string | number)[], ctx: Ctx
 
 function checkEncounter(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
+  // Exactly one of `enemy` and `participants` (docs/spec/validation.md,
+  // schema/encounter-enemies). The 1-2 length limit and each entry's `enemy`
+  // are Zod ranges (schema/invalid-value, schema/missing-field); only the
+  // mutually exclusive spelling is a loader-only refinement here, since JSON
+  // Schema cannot express it.
+  const hasEnemy = value['enemy'] !== undefined;
+  const hasParticipants = value['participants'] !== undefined;
+  if (hasEnemy === hasParticipants) {
+    const id = typeof value['id'] === 'string' ? ` "${value['id']}"` : '';
+    ctx.push({
+      severity: 'error',
+      code: 'schema/encounter-enemies',
+      message: hasEnemy
+        ? `encounter${id} has both "enemy" and "participants"; exactly one of the two spellings is allowed`
+        : `encounter${id} has neither "enemy" nor "participants"; exactly one of the two spellings is required`,
+      file: ctx.file,
+      range: rangeOf(ctx, path),
+      path: [...path],
+    });
+  }
   if (value['text'] !== undefined) checkNarration(value['text'], [...path, 'text'], ctx);
   if (value['victory'] !== undefined) checkOutcome(value['victory'], [...path, 'victory'], ctx);
   if (value['escape'] !== undefined) checkOutcome(value['escape'], [...path, 'escape'], ctx);

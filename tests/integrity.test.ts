@@ -691,7 +691,7 @@ describe('compiled scenario model', () => {
       ['sword', 1],
       ['bread', 2],
     ]);
-    expect(scenario.encounters.find((encounter) => encounter.id === 'rats')?.enemy.id).toBe('rat');
+    expect(scenario.encounters.find((encounter) => encounter.id === 'rats')?.participants.map((p) => [p.id, p.enemy.id])).toEqual([['rat', 'rat']]);
     expect(scenario.locationsById['home']?.scenes.map((scene) => scene.id)).toEqual(['gate']);
   });
 

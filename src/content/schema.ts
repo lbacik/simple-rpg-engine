@@ -289,11 +289,26 @@ export const EnemySchema = z.strictObject({
   health: z.number().int().min(1).max(30),
   damage: z.number().int().min(1).max(6),
   reach: z.enum(['melee', 'ranged']).default('melee'),
+  behaviour: z.enum(['steady', 'heavy']).default('steady'),
+});
+
+/**
+ * One Encounter participant: the placed Enemy and its identity within the
+ * Encounter. The `id` defaults to the `enemy` id (see model.ts); two
+ * participants of the same Enemy kind must name explicit, distinct ids.
+ */
+const encounterParticipantSchema = z.strictObject({
+  id: idSchema.optional(),
+  enemy: referenceSchema,
 });
 
 export const EncounterSchema = z.strictObject({
   id: idSchema,
-  enemy: referenceSchema,
+  // Exactly one of `enemy` and `participants` (the loader-only refinement
+  // schema/encounter-enemies in structure.ts): `enemy: X` is shorthand for
+  // `participants: [{ enemy: X }]`.
+  enemy: referenceSchema.optional(),
+  participants: z.array(encounterParticipantSchema).min(1).max(2).optional(),
   startRange: z.enum(['near', 'far']).default('far'),
   text: narrationSchema,
   victory: OutcomeSchema.optional(),

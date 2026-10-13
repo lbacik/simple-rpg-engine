@@ -73,9 +73,19 @@ export function checkPlaythroughCompatibility(
       fail(`unknown encounter "${state.activeCombat.encounterId}"`);
     } else {
       const taken = state.encounterDamage[state.activeCombat.encounterId] ?? 0;
-      if (!(encounter.enemy.health > taken)) {
+      // The active Combat still has an opponent while at least one
+      // participant's maximum Health exceeds the Damage taken. (Single
+      // participant: exactly the old invariant.) Per-participant wounds and
+      // the full membership rules arrive with the state-versions package.
+      const survivors = encounter.participants.filter(
+        (participant) => participant.enemy.health > taken,
+      );
+      if (survivors.length === 0) {
+        const strongest = Math.max(
+          ...encounter.participants.map((participant) => participant.enemy.health),
+        );
         fail(
-          `encounter "${encounter.id}" no longer has more maximum Health (${encounter.enemy.health}) than the Damage taken (${taken})`,
+          `encounter "${encounter.id}" no longer has more maximum Health (${strongest}) than the Damage taken (${taken})`,
         );
       }
     }
