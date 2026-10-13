@@ -15,25 +15,11 @@ import { randomInt } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
-import type { Action, CombatAction } from '@/engine/index';
 import { getDatabase } from '@/persistence/index';
+import { parseCombatAction } from './combat-request';
 import { getInterfaceLanguage } from './language';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
-
-const COMBAT_ACTIONS: ReadonlySet<string> = new Set([
-  'advance',
-  'fall-back',
-  'attack',
-  'defend',
-  'distract',
-  'use-item',
-  'escape',
-]);
-
-function isCombatAction(value: string): value is CombatAction {
-  return COMBAT_ACTIONS.has(value);
-}
 
 export async function combatAction(formData: FormData): Promise<never> {
   const playthroughId = String(formData.get('playthroughId') ?? '');
@@ -43,7 +29,20 @@ export async function combatAction(formData: FormData): Promise<never> {
     notFound();
   }
   const path = `/play/${playthroughId}`;
-  if (!isCombatAction(actionId)) {
+  // A forged action value fails fast here before reaching the engine, which
+  // re-validates real actions independently.
+  const action = parseCombatAction({
+    actionId,
+    // A Combat use-item also names its Consumable; other actions ignore it.
+    itemId: actionId === 'use-item' ? String(formData.get('item') ?? '') : undefined,
+    // The target travels independently from the item: the engine validates
+    // the pair (an unknown or defeated target, or a target on an action that
+    // takes none, is illegal). Pre-release forms post no target, which
+    // parses to none and means the lone survivor.
+    targetParticipantId: String(formData.get('target') ?? ''),
+    expectedStep,
+  });
+  if (action === undefined) {
     // A forged action value fails fast with the unavailable notice; the
     // engine re-validates real actions independently.
     await ensureSessionId();
@@ -54,9 +53,6 @@ export async function combatAction(formData: FormData): Promise<never> {
   // Sliding refresh: re-set the same id with a fresh Max-Age.
   await ensureSessionId();
 
-  // A Combat use-item also names its Consumable; other actions ignore it.
-  const itemId = actionId === 'use-item' ? String(formData.get('item') ?? '') : undefined;
-  const action: Action = { kind: 'combat', combatAction: actionId, itemId, expectedStep };
   const result = await executeTurn(
     getDatabase(),
     getScenario,
