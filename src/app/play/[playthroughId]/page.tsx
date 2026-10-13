@@ -2,11 +2,11 @@ import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import { localizeScenario } from '@/content/index';
 import {
-  combatGuardUp,
   combatRounds,
   renderNarration,
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
+  tacticalCombatRounds,
   view,
 } from '@/engine/index';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
@@ -294,17 +294,20 @@ export default async function PlayPage({
                 (entry.type === 'combat-round' && gameView.kind !== 'combat')),
           )
           .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
-  // The Combat panel reads the guard marker and the roll log from the
-  // Journal, never from stored state (the Defend bonus expires within its
-  // turn), so the marker survives a reload.
+  // The Combat panel's log reads the stored round events of the Encounter,
+  // never the live Scenario: v1 rows through the legacy round reader,
+  // tactical (v2) rows through the versioned action report. The arena itself
+  // comes from state (the engine's view projection), never the Journal, and
+  // Guarded — round-scoped and never stored — appears only in the log of the
+  // round it applied to, never as an arena badge.
   const combatRows = journal.map((entry) => ({
     type: entry.type,
     payload: entry.payload as { encounterId?: unknown; guard?: unknown },
   }));
-  const guardUp =
-    gameView.kind === 'combat' ? combatGuardUp(combatRows, gameView.encounterId) : false;
   const combatLog =
     gameView.kind === 'combat' ? combatRounds(combatRows, gameView.encounterId) : [];
+  const tacticalLog =
+    gameView.kind === 'combat' ? tacticalCombatRounds(combatRows, gameView.encounterId) : [];
   const combatConsumables =
     gameView.kind === 'combat'
       ? Object.keys(state.inventory)
@@ -517,8 +520,8 @@ export default async function PlayPage({
               combat={gameView}
               playthroughId={playthrough.id}
               step={playthrough.step}
-              guardUp={guardUp}
               rounds={combatLog}
+              tacticalRounds={tacticalLog}
               consumables={combatConsumables}
               formAction={combatAction}
               catalogue={catalogue}

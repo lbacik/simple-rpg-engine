@@ -6,9 +6,14 @@
 //
 // Every line comes from the engine's structured events through the catalogue
 // of the current Interface Language: round messages, roll lines, the action
-// list with its groups and disabled reasons, and the Range arena. The round
-// history is derived from events, not stored text; legacy rows (English text,
-// no event) are shown verbatim, one line per round.
+// list with its groups and disabled reasons, and the Range arena. The arena
+// comes from state (the engine's view projection), never the Journal; the
+// last-round report renders the stored round events through the shared
+// tactical renderer — the same renderer as the full Journal, the modal Journal
+// and the decisive Round in the result panel. Legacy rows (English text, no
+// event) are shown verbatim, one line per round. Guarded is round-scoped and
+// appears only in the log of the round it applied to, never as an arena badge:
+// legacy guard text never creates one.
 //
 // Posts plain forms so Combat works without JavaScript; the server action is
 // injected (page.tsx passes the Combat server action) so tests can drive this
@@ -24,6 +29,7 @@ import {
   type CombatRoll,
   type CombatRoundView,
   type GameView,
+  type TacticalRoundView,
 } from '../../../engine/index';
 import type { Catalogue } from '../../../i18n/index';
 import {
@@ -31,6 +37,8 @@ import {
   combatReasonText,
   combatRollLine,
   combatRoundLines,
+  tacticalRoundHtml,
+  tacticalRoundSummary,
   wrapScenarioNames,
 } from '../../lib/combat-text';
 
@@ -106,7 +114,6 @@ function Medallion({
   health,
   maxHealth,
   detail,
-  guard,
   catalogue,
   lang,
 }: {
@@ -115,7 +122,6 @@ function Medallion({
   health: number;
   maxHealth: number;
   detail: string;
-  guard?: boolean;
   catalogue: Catalogue;
   /** The language of the name shown: set for the Enemy only, never the Character. */
   lang?: string;
@@ -131,7 +137,6 @@ function Medallion({
         <span className="combat-face" aria-hidden="true">
           {initial(name)}
         </span>
-        {guard ? <span className="combat-guard">{catalogue.combat.guardUp}</span> : null}
       </div>
       {lang === undefined ? (
         <p className="combat-name">{name}</p>
@@ -202,8 +207,8 @@ export function CombatPanel({
   combat,
   playthroughId,
   step,
-  guardUp,
   rounds,
+  tacticalRounds,
   consumables,
   formAction,
   catalogue,
@@ -213,10 +218,10 @@ export function CombatPanel({
   combat: CombatView;
   playthroughId: string;
   step: number;
-  /** Derived from the latest round's Journal entry; never stored. */
-  guardUp: boolean;
-  /** The rolls of the current Combat, since its opening narration. */
+  /** The v1 rolls of the current Combat, since its opening narration. */
   rounds: CombatRoundView[];
+  /** The tactical (v2) rounds of the current Combat, oldest first. */
+  tacticalRounds: TacticalRoundView[];
   consumables: { itemId: string; name: string }[];
   formAction: CombatFormAction;
   /** Interface Text: the game screen passes the current catalogue. */
@@ -229,6 +234,14 @@ export function CombatPanel({
   const near = combat.range === 'near';
   const rangeWord = catalogue.range[combat.range];
   const [latest, ...older] = [...rounds].reverse();
+  // The tactical last round: the newest versioned round entry, rendered through
+  // the shared tactical report (the same renderer as the Journal). Older
+  // tactical rounds read as one compact line each, newest first like the legacy
+  // older list below.
+  const [tacticalLatest, ...tacticalOlder] = [...tacticalRounds].reverse();
+  // With tactical rounds on record every legacy row is older than them, so the
+  // legacy older list holds all of them; otherwise it holds all but the latest.
+  const legacyOlder = tacticalLatest === undefined ? older : [...rounds].reverse();
   const enemyNameOf = (round: CombatRoundView): string => round.enemyName ?? combat.enemy.name;
   const roundLines = (round: CombatRoundView): string[] =>
     round.enemyName === undefined ? [round.text ?? ''] : combatRoundLines(round, catalogue);
@@ -297,7 +310,6 @@ export function CombatPanel({
           health={combat.character.health}
           maxHealth={combat.character.maxHealth}
           detail={`${weaponDisplay} · ${catalogue.inventory.weaponStats(combat.character.damage, catalogue.reach[combat.character.reach])}`}
-          guard={guardUp}
           catalogue={catalogue}
         />
         <Medallion
@@ -385,41 +397,80 @@ export function CombatPanel({
       </div>
       <section aria-label={catalogue.combat.log} className="combat-log">
         <h2>{catalogue.combat.log}</h2>
-        {latest === undefined ? (
+        {tacticalLatest === undefined && latest === undefined ? (
           <p className="meta">{catalogue.combat.noRolls}</p>
         ) : (
           <>
-            <div className="combat-latest">
-              <p className="combat-kicker">{catalogue.combat.lastRound(latest.round)}</p>
-              {showChips(latest)
-                ? roundLines(latest).map((line, index) => (
-                    <p
-                      key={index}
-                      dangerouslySetInnerHTML={{
-                        __html: wrapScenarioNames(line, roundNames(latest), lang),
-                      }}
+            {tacticalLatest === undefined ? null : (
+              <div className="combat-latest">
+                <p className="combat-kicker">{catalogue.combat.lastRound(tacticalLatest.round)}</p>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: tacticalRoundHtml(
+                      tacticalLatest.actions,
+                      catalogue,
+                      lang,
+                      combat.characterName,
+                      { stop: tacticalLatest.stop },
+                    ),
+                  }}
+                />
+              </div>
+            )}
+            {tacticalLatest !== undefined &&
+            tacticalOlder.length === 0 &&
+            legacyOlder.length === 0 ? null : tacticalLatest === undefined ? (
+              <div className="combat-latest">
+                <p className="combat-kicker">{catalogue.combat.lastRound((latest as CombatRoundView).round)}</p>
+                {showChips(latest as CombatRoundView)
+                  ? roundLines(latest as CombatRoundView).map((line, index) => (
+                      <p
+                        key={index}
+                        dangerouslySetInnerHTML={{
+                          __html: wrapScenarioNames(
+                            line,
+                            roundNames(latest as CombatRoundView),
+                            lang,
+                          ),
+                        }}
+                      />
+                    ))
+                  : roundLines(latest as CombatRoundView).map((line, index) => (
+                      <p key={index} lang="en">
+                        {line}
+                      </p>
+                    ))}
+                {showChips(latest as CombatRoundView) &&
+                (latest as CombatRoundView).rolls.length > 0 ? (
+                  <ul className="combat-rolls">
+                    <RollChips
+                      rolls={(latest as CombatRoundView).rolls}
+                      enemyName={enemyNameOf(latest as CombatRoundView)}
+                      characterName={combat.characterName}
+                      catalogue={catalogue}
+                      lang={lang}
                     />
-                  ))
-                : roundLines(latest).map((line, index) => (
-                    <p key={index} lang="en">
-                      {line}
-                    </p>
-                  ))}
-              {showChips(latest) && latest.rolls.length > 0 ? (
-                <ul className="combat-rolls">
-                  <RollChips
-                    rolls={latest.rolls}
-                    enemyName={enemyNameOf(latest)}
-                    characterName={combat.characterName}
-                    catalogue={catalogue}
-                    lang={lang}
-                  />
-                </ul>
-              ) : null}
-            </div>
-            {older.length > 0 ? (
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+            {tacticalOlder.length + legacyOlder.length > 0 ? (
               <ol className="combat-older">
-                {older.map((round) => (
+                {tacticalOlder.map((round) => (
+                  <li
+                    key={`tactical-${round.round}`}
+                    dangerouslySetInnerHTML={{
+                      __html: tacticalRoundSummary(
+                        round.round,
+                        round.actions,
+                        catalogue,
+                        lang,
+                        combat.characterName,
+                      ),
+                    }}
+                  />
+                ))}
+                {legacyOlder.map((round) => (
                   <li key={round.round}>
                     <strong>{round.round}.</strong>{' '}
                     {showChips(round) ? (

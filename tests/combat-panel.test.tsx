@@ -19,6 +19,8 @@ import type {
   CombatAvailability,
   CombatRoll,
   CombatRoundView,
+  TacticalActor,
+  TacticalRoundView,
 } from '../src/engine/index';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
@@ -149,8 +151,8 @@ function render(view: CombatView, extra: Record<string, unknown> = {}): string {
       combat={view}
       playthroughId="play-1"
       step={7}
-      guardUp={false}
       rounds={rounds()}
+      tacticalRounds={[]}
       consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
       formAction="#combat"
       catalogue={en}
@@ -204,15 +206,36 @@ describe('combat arena', () => {
     expect(markup).not.toContain('combat-clash');
   });
 
-  it('shows Health, weapon lines and the guard badge on the Character ring', () => {
-    const markup = render(combat(), { guardUp: true, rounds: [], consumables: [] });
+  it('shows Health and weapon lines with never a Guarded badge', () => {
+    const markup = render(combat(), { rounds: [], consumables: [] });
     expect(markup).toContain('Robin');
     expect(markup).toContain('Grey Wolf');
     expect(markup).toContain('9/12');
     expect(markup).toContain('5/8');
     expect(markup).toContain('Hunting Knife · Damage 3 · Reach melee');
     expect(markup).toContain('Damage 2 · Reach melee');
-    expect(markup).toContain('Guard up');
+    // Guarded is round-scoped and lives only in the round log, never on the
+    // arena: no badge is rendered.
+    expect(markup).not.toContain('Guard up');
+    expect(markup).not.toContain('combat-guard');
+  });
+
+  it('never badges legacy guard text on the arena', () => {
+    const legacy: CombatRoundView[] = [
+      {
+        round: 1,
+        action: 'defend',
+        rangeBefore: 'near',
+        rangeAfter: 'near',
+        guard: true,
+        text: 'Robin guards. The Grey Wolf circles, wary of the guard.',
+        rolls: [],
+      },
+    ];
+    const markup = render(combat(), { rounds: legacy, consumables: [] });
+    expect(markup).toContain('Robin guards.');
+    expect(markup).not.toContain('Guard up');
+    expect(markup).not.toContain('combat-guard');
   });
 
   it('names an unarmed Character from the catalogue', () => {
@@ -358,6 +381,193 @@ describe('combat log', () => {
   });
 });
 
+describe('tactical combat log', () => {
+  const hero: TacticalActor = { kind: 'character' };
+  const wolfA: TacticalActor = {
+    kind: 'participant',
+    participantId: 'w1',
+    enemyId: 'wolf',
+    name: 'Grey Wolf',
+    ordinal: 1,
+  };
+  const wolfB: TacticalActor = {
+    kind: 'participant',
+    participantId: 'w2',
+    enemyId: 'wolf',
+    name: 'Grey Wolf',
+    ordinal: 2,
+  };
+
+  function roll(overrides: Partial<CombatRoll>): CombatRoll {
+    return {
+      side: 'enemy',
+      die1: 1,
+      die2: 2,
+      modifier: 1,
+      total: 4,
+      target: 8,
+      hit: false,
+      damage: 0,
+      ...overrides,
+    };
+  }
+
+  /** Three tactical rounds, oldest first: every status the renderer shows. */
+  function tactical(): TacticalRoundView[] {
+    return [
+      {
+        round: 1,
+        actions: [
+          {
+            actor: hero,
+            kind: 'attack',
+            speed: 'normal',
+            order: 1,
+            target: wolfA,
+            status: 'executed',
+            roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 2, total: 9, target: 8, hit: true, damage: 3 }) },
+            damage: 3,
+            weaponName: 'Hunting Knife',
+          },
+          {
+            actor: wolfA,
+            kind: 'strike',
+            speed: 'normal',
+            order: 2,
+            target: hero,
+            status: 'executed',
+            roll: { ...roll({ die1: 5, die2: 4, modifier: 1, total: 10, target: 8, hit: true, damage: 2 }) },
+            damage: 2,
+          },
+          {
+            actor: wolfB,
+            kind: 'close-in',
+            speed: 'slow',
+            order: 3,
+            target: hero,
+            status: 'cancelled',
+            cancelReason: 'already-near',
+          },
+        ],
+      },
+      {
+        round: 2,
+        actions: [
+          {
+            actor: hero,
+            kind: 'distract',
+            speed: 'fast',
+            order: 1,
+            target: wolfA,
+            status: 'executed',
+            roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 1, total: 8, target: 8, hit: true, damage: 0 }) },
+            damage: 0,
+            waryUntilRound: 3,
+          },
+          {
+            actor: wolfA,
+            kind: 'strike',
+            speed: 'normal',
+            order: 2,
+            target: hero,
+            status: 'cancelled',
+            cancelReason: 'interrupted',
+          },
+          { actor: wolfB, kind: 'prepare', speed: 'slow', order: 3, target: hero, status: 'executed', prepared: true },
+        ],
+      },
+      {
+        round: 3,
+        actions: [
+          { actor: hero, kind: 'defend', speed: 'fast', order: 1, status: 'executed', guarded: true },
+          {
+            actor: wolfA,
+            kind: 'strike',
+            speed: 'normal',
+            order: 2,
+            target: hero,
+            status: 'executed',
+            roll: roll({}),
+            damage: 0,
+            counter: {
+              roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 2, total: 9, target: 8, hit: true, damage: 1 }) },
+              damage: 1,
+            },
+          },
+          { actor: wolfB, kind: 'prepare', speed: 'slow', order: 3, target: hero, status: 'executed', prepared: true },
+        ],
+      },
+    ];
+  }
+
+  it('renders the last tactical round through the shared report', () => {
+    const markup = render(combat(), { rounds: [], tacticalRounds: tactical() });
+    expect(markup).toContain('Last round · 3');
+    expect(markup).toContain('<ol class="tactical-round">');
+    // Same-kind participants read as letters from the stored ordinal.
+    expect(markup).toContain('Grey Wolf A');
+    expect(markup).toContain('Grey Wolf B');
+    // Executed Defend, the guarded miss note and the nested counterattack.
+    expect(markup).toContain('Guarded until the end of the round');
+    expect(markup).toContain('(your guard held)');
+    expect(markup).toContain('↳ Counterattack:');
+    expect(markup).toContain('prepares; its heavy attack comes next round');
+  });
+
+  it('lists older tactical rounds newest first as compact summaries', () => {
+    const markup = render(combat(), { rounds: [], tacticalRounds: tactical() });
+    const second = markup.indexOf('>Round 2.');
+    const first = markup.indexOf('>Round 1.');
+    expect(second).toBeGreaterThanOrEqual(0);
+    expect(first).toBeGreaterThan(second);
+    // The older summaries carry the same events: the hit, the interruption
+    // and the cancel reason.
+    expect(markup).toContain('Cancelled: already Near.');
+    expect(markup).toContain('Cancelled: interrupted by your distraction.');
+  });
+
+  it('keeps legacy rows verbatim beside tactical rounds', () => {
+    const legacy: CombatRoundView[] = [
+      {
+        round: 1,
+        action: 'attack',
+        rangeBefore: 'far',
+        rangeAfter: 'near',
+        guard: false,
+        text: 'Robin closes in and strikes.',
+        rolls: [],
+      },
+    ];
+    const markup = render(combat(), { rounds: legacy, tacticalRounds: tactical() });
+    expect(markup).toContain('Last round · 3');
+    expect(markup).toContain('<span lang="en">Robin closes in and strikes.</span>');
+    expect(markup).not.toContain('combat-roll');
+  });
+
+  it('renders tactical rounds in Polish through the same renderer', () => {
+    const markup = renderToStaticMarkup(
+      <CombatPanel
+        combat={combat()}
+        playthroughId="play-1"
+        step={7}
+        rounds={[]}
+        tacticalRounds={tactical()}
+        consumables={[]}
+        formAction="#combat"
+        catalogue={pl}
+        lang="en"
+      />,
+    );
+    expect(markup).toContain('Ostatnia runda · 3');
+    expect(markup).toContain('Szybka');
+    expect(markup).toContain('Garda do końca rundy');
+    expect(markup).toContain('(garda wytrzymała)');
+    expect(markup).toContain('↳ Kontratak:');
+    expect(markup).toContain('Anulowano: już blisko.');
+    expect(markup).toContain('Anulowano: przerwany twoim rozproszeniem.');
+  });
+});
+
 describe('combatRollLine', () => {
   function roll(overrides: Partial<CombatRoll>): CombatRoll {
     return {
@@ -410,8 +620,8 @@ describe('combat panel in Polish', () => {
         combat={view}
         playthroughId="play-1"
         step={7}
-        guardUp={false}
         rounds={rounds()}
+        tacticalRounds={[]}
         consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
         formAction="#combat"
         catalogue={pl}

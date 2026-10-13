@@ -3076,7 +3076,55 @@ export function combatRounds(
   return rounds;
 }
 
-/** One exit button per visible Connection, in authored order. */
+/**
+ * One tactical (v2) round of the current Combat, in resolution order: every
+ * action of the Round with its status, rolls and results, and how the sequence
+ * stopped, if it did. Rendered through the shared tactical report (the full
+ * Journal, the modal Journal, the Combat panel's last-round callout and the
+ * decisive Round in the result panel), never reinterpreted as a legacy round.
+ */
+export type TacticalRoundView = {
+  round: number;
+  actions: TacticalActionEvent[];
+  stop?: CombatStopReason;
+};
+
+/**
+ * The tactical rounds of the current Combat: the versioned Combat round entries
+ * since the latest opening narration of the Encounter. Legacy text, v1 and
+ * guard payloads are skipped here and render through their own paths, so mixed
+ * historical and new entries stay readable side by side.
+ */
+export function tacticalCombatRounds(
+  entries: ReadonlyArray<CombatJournalRow>,
+  encounterId: string,
+): TacticalRoundView[] {
+  const rounds: TacticalRoundView[] = [];
+  for (const entry of entries) {
+    if (entry.payload.encounterId !== encounterId) {
+      continue;
+    }
+    if (entry.type === 'combat-start') {
+      rounds.length = 0;
+    } else if (entry.type === 'combat-round') {
+      if (!isTacticalRoundPayload(entry.payload)) continue;
+      const payload = entry.payload as {
+        round?: unknown;
+        actions?: unknown;
+        stop?: unknown;
+      };
+      if (!Array.isArray(payload.actions)) continue;
+      rounds.push({
+        round: typeof payload.round === 'number' ? payload.round : rounds.length + 1,
+        actions: payload.actions as TacticalActionEvent[],
+        ...(payload.stop === 'victory' || payload.stop === 'death' || payload.stop === 'escape'
+          ? { stop: payload.stop }
+          : {}),
+      });
+    }
+  }
+  return rounds;
+}
 export type ExitView = {
   targetLocationId: string;
   label: string;
