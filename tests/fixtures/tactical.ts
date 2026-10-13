@@ -24,7 +24,9 @@ function write(scenarioDir: string, relative: string, content: string): void {
   fs.writeFileSync(full, content);
 }
 
-const GREY_WOLF = (behaviour: string | undefined): string =>
+type Behaviour = 'steady' | 'heavy';
+
+const GREY_WOLF = (behaviour: Behaviour | undefined): string =>
   [
     '- id: grey-wolf',
     '  name: Grey Wolf',
@@ -37,7 +39,7 @@ const GREY_WOLF = (behaviour: string | undefined): string =>
     '',
   ].join('\n');
 
-const BANDIT_ARCHER = (behaviour: string | undefined): string =>
+const BANDIT_ARCHER = (behaviour: Behaviour | undefined): string =>
   [
     '- id: bandit-archer',
     '  name: Bandit Archer',
@@ -130,7 +132,7 @@ export function loadTacticalFixture(kind: TacticalFixtureKind): {
       'locations:',
       '  - locations/glade.yaml',
       'scenes:',
-      '  - scenes/fight.yaml',
+      '  - scenes/ambush.yaml',
       'items:',
       '  - items.yaml',
       'enemies:',
@@ -152,16 +154,16 @@ export function loadTacticalFixture(kind: TacticalFixtureKind): {
       'name: Glade',
       'description: Sunlight through leaves.',
       'map: { x: 10, y: 20 }',
-      'scenes: [fight]',
+      'scenes: [ambush]',
       '',
     ].join('\n'),
   );
   write(
     scenarioDir,
-    'scenes/fight.yaml',
+    'scenes/ambush.yaml',
     [
-      'id: fight',
-      'title: Fight',
+      'id: ambush',
+      'title: Ambush',
       'trigger: on-demand',
       'text: Something moves beyond the trees.',
       'choices:',
