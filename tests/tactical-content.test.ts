@@ -329,7 +329,15 @@ describe('tactical content C3', () => {
     taken: number,
     expected: boolean,
   ): void {
-    const state = { encounterDamage: { [encounterId]: taken } } as unknown as PlaythroughState;
+    // D1 (issue #120): wounds are per participant in v2. The single `taken`
+    // value applies to every participant, preserving the original expectations
+    // (a mixed pair is defeated only when the toughest participant falls).
+    const encounter = scenario.encountersById[encounterId];
+    const wounds: Record<string, number> = {};
+    for (const participant of encounter?.participants ?? []) {
+      wounds[participant.id] = taken;
+    }
+    const state = { encounters: { [encounterId]: wounds } } as unknown as PlaythroughState;
     expect(evaluateCondition(scenario, state, { defeated: encounterId })).toBe(expected);
   }
 

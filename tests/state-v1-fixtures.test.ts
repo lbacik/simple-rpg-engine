@@ -19,7 +19,7 @@ import { checkPlaythroughCompatibility, loadScenario } from '../src/content/inde
 import {
   combatGuardUp,
   parsePlaythroughState,
-  PlaythroughStateSchema,
+  type PlaythroughState,
 } from '../src/engine/index';
 import {
   parsePlaythroughStateV1,
@@ -112,18 +112,16 @@ describe('state v1 fixtures', () => {
     }
   });
 
-  it('parses every captured document with the frozen v1 schema, matching the live reader', () => {
+  it('parses every captured document with the frozen v1 schema, rejected by the live reader', () => {
     for (const file of FIXTURE_FILES) {
       const fixture = loadFixture(file);
       const frozen = parsePlaythroughStateV1(fixture.state);
       expect(frozen.stateVersion).toBe(1);
-      // The live reader is still v1: it must accept the same documents with
-      // the same result, so current behaviour is unchanged.
-      const live = parsePlaythroughState(fixture.state);
-      expect(live).toEqual(frozen);
-      expect(PlaythroughStateSchema.parse(fixture.state)).toEqual(
-        PlaythroughStateV1Schema.parse(fixture.state),
-      );
+      // D1: the live schema is now v2 (issue #120); v1 documents are rejected
+      // by the live reader and reach v2 through the deterministic migration
+      // (issue #124). The frozen v1 schema keeps parsing them unchanged.
+      expect(() => parsePlaythroughState(fixture.state)).toThrow();
+      expect(PlaythroughStateV1Schema.parse(fixture.state)).toEqual(frozen);
     }
   });
 
@@ -158,7 +156,7 @@ describe('state v1 fixtures', () => {
       range: 'near',
       round: 2,
     });
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds an active Combat at Far without a raised guard', () => {
@@ -172,7 +170,7 @@ describe('state v1 fixtures', () => {
     });
     const rows = fixture.journal.map((row) => ({ type: row.type, payload: row.payload }));
     expect(combatGuardUp(rows, 'hollow-wolf')).toBe(false);
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds an active Combat at Far with a raised guard in its Journal', () => {
@@ -187,7 +185,7 @@ describe('state v1 fixtures', () => {
     });
     const rows = fixture.journal.map((row) => ({ type: row.type, payload: row.payload }));
     expect(combatGuardUp(rows, 'camp-bandit')).toBe(true);
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds an Escaped Encounter with recorded Damage', () => {
@@ -199,7 +197,7 @@ describe('state v1 fixtures', () => {
     expect(state.encounterDamage['hollow-wolf']).toBe(3);
     const end = fixture.journal.find((row) => row.type === 'combat-end');
     expect(end?.payload).toMatchObject({ encounterId: 'hollow-wolf', howEnded: 'escape' });
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds a defeated Encounter', () => {
@@ -212,7 +210,7 @@ describe('state v1 fixtures', () => {
     expect(taken).toBeGreaterThanOrEqual(scenario.encountersById['hollow-wolf']?.participants[0]?.enemy.health ?? 0);
     const end = fixture.journal.find((row) => row.type === 'combat-end');
     expect(end?.payload).toMatchObject({ encounterId: 'hollow-wolf', howEnded: 'victory' });
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds a dormant mid-Scenario save', () => {
@@ -222,7 +220,7 @@ describe('state v1 fixtures', () => {
     expect(state.status).toBe('active');
     expect(state.activeCombat).toBeNull();
     expect(state.currentLocationId).toBe('forest-edge');
-    expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });
+    expect(checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState)).toEqual({ ok: true });
   });
 
   it('holds an ended save', () => {
@@ -238,7 +236,7 @@ describe('state v1 fixtures', () => {
     const scenario = loadWoods();
     const fixture = loadFixture('incompatible.json');
     const state = parsePlaythroughStateV1(fixture.state);
-    const check = checkPlaythroughCompatibility(scenario, state);
+    const check = checkPlaythroughCompatibility(scenario, state as unknown as PlaythroughState);
     expect(check.ok).toBe(false);
     if (check.ok) throw new Error('expected incompatibility');
     expect(check.reasons.join('\n')).toContain('removed-location');

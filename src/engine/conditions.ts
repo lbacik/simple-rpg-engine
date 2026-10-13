@@ -39,7 +39,7 @@ function isDefeated(scenario: Scenario, state: PlaythroughState, encounterId: st
   // (docs/spec/content-semantics.md, conditions; docs/spec/mechanics.md,
   // persistence of wounds). A participant without an entry (one added to the
   // content later) is at full Health.
-  const wounds = state.encounters[encounterId] ?? {};
+  const wounds = state.encounters?.[encounterId] ?? {};
   return encounter.participants.every(
     (participant) => (wounds[participant.id] ?? 0) >= participant.enemy.health,
   );
