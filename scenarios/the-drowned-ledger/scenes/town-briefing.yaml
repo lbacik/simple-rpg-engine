@@ -9,11 +9,11 @@ text: |
 
   "The engine is losing pressure. I need someone to reset the pumps, replace a broken
   counterweight and recover the original maintenance ledger. The ledger will tell us how
-  to close the account."
+  to close the engine's account."
 
   He points to the lockhouse. "The inspection stair is dry. Beyond it, I cannot promise
   anything. Captain Venn has the survey seal. People on the quay need help, too. I would
-  rather lose a day than pretend they are cargo."
+  rather lose a day than treat them as cargo that can wait."
 choices:
   - id: accept
     text: Accept the commission and take his chart.

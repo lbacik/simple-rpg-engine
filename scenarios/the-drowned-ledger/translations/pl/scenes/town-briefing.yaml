@@ -3,16 +3,16 @@ title: Zlecenie mierniczego
 text: |
   Ivo rozkłada plan na pustym straganie rybnym. Sześćdziesiąt lat temu Greyhaven
   zalało dolną dzielnicę, by osłabić napór zimowego sztormu. Później maszyna pod murem
-  ochronnym zapewniała bezpieczeństwo górnemu miastu. Oficjalna wersja głosi,
-  że Lowwater było puste, gdy otwarto wrota.
+  ochronnym zapewniała bezpieczeństwo górnemu miastu. Według oficjalnych rachunków
+  Lowwater było puste, gdy otwarto wrota.
 
   „Maszyna traci ciśnienie. Potrzebuję kogoś, kto ustawi pompy, wymieni uszkodzoną
-  przeciwwagę i odzyska oryginalną księgę konserwacyjną. Księga powie nam,
-  jak zamknąć rachunek”.
+  przeciwwagę i odzyska oryginalną księgę konserwacyjną. Z księgi dowiemy się,
+  jak rozliczyć i zamknąć rachunek maszyny”.
 
   Wskazuje budynek śluzy. „Schody inspekcyjne są suche. Dalej niczego nie mogę obiecać.
   Kapitan Venn ma pieczęć inspekcyjną. Ludzie na nabrzeżu też potrzebują pomocy.
-  Wolę stracić dzień, niż udawać, że są ładunkiem”.
+  Wolę stracić dzień, niż traktować ich jak ładunek, który może poczekać”.
 choices:
   - id: accept
     text: Przyjmij zlecenie i weź jego plan.

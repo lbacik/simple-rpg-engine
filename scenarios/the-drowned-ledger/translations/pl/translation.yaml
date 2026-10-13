@@ -1,14 +1,17 @@
 language: pl
-baseVersion: 1.0.0
+baseVersion: 1.0.1
 title: Zatopiona księga
 description: Zejdź pod zawodzący mur ochronny, odkryj ukrytą historię miasta i zdecyduj, co żywi są
   winni zmarłym. Naprawy mogą kupić czas; tylko wybór może zamknąć rachunek.
 intro: |
-  Docierasz do Greyhaven w poranek, gdy morze przestaje się cofać. Pod czystym niebem
-  napiera na mur portowy, wznosząc się bez wiatru i deszczu.
+  Docierasz do Greyhaven rankiem, w porze odpływu. Coś jednak jest nie tak — odpływ
+  nie nadchodzi. Niebo jest czyste, nie ma wiatru ani deszczu, a mimo to morze wciąż
+  się podnosi i napiera na mur portowy.
 
-  Pod murem leży Lowwater, dzielnica zalana sześćdziesiąt lat temu. Ludzie na górze
-  mówią, że była pusta. Przez przejrzystą wodę widzisz, jak ktoś nakrywa do stołu.
+  U stóp muru, pod wodą, leży Lowwater — dzielnica zatopiona sześćdziesiąt lat temu.
+  Ludzie z górnego miasta zapewniają, że gdy ją zalano, nikogo tam nie było. Tymczasem
+  przez przejrzystą wodę widzisz, jak w jednym z zatopionych domów ktoś nakrywa
+  do stołu.
 locations:
   - translations/pl/locations/greyhaven.yaml
   - translations/pl/locations/quay.yaml

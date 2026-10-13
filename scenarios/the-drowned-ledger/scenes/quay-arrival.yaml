@@ -3,20 +3,23 @@ illustration: quay-arrival
 title: The Ferry Beneath the Crane
 trigger: on-enter
 text: |
-  An older ferryman is lying flat on the quay, reaching for a rope just beyond his
-  fingertips. People on the warehouse roof are keeping very still. The incoming water is
-  already touching the lowest tiles.
+  An older ferryman is lying flat on the wet quay, reaching for a rope just beyond his
+  fingertips. The crane knocked him down when it fell, and his leg will not take his
+  weight. On the warehouse roof, the people waiting for his ferry keep very still. They
+  climbed up when the water first came over the quay; now the crane lies across the
+  outer stair, and they have no way down. Seawater is already washing over the lowest
+  paving stones.
 
   "Bram," he says when you kneel beside him. "I have run Mercy through worse weather.
   Never thought I would lose her in her own berth. Get the crane off her and I can take
   these people to Lantern Island."
 
-  He has a sound plan: secure the crane to a bollard, then work the warehouse winch. It
-  will take patience, not heroics.
+  He has a sound plan: tie the crane's rope to a bollard so the wreck cannot shift, then
+  work the warehouse winch. It will take patience, not heroics.
 choices:
   - id: prepare
     text: Help Bram lay out the hauling ropes.
     outcome:
       text: |
-        You separate the lines and mark the one that must never be cut. Bram nods towards the
-        winch; the ferry can be freed whenever you are ready.
+        You help Bram to his feet, separate the lines and mark the one that must never be
+        cut. Leaning on the winch, Bram nods; the ferry can be freed whenever you are ready.
