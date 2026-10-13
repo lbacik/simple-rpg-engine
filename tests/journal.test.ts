@@ -49,7 +49,7 @@ function makeState(): PlaythroughState {
     firedScenes: [],
     takenOnceChoices: [],
     flags: [],
-    encounterDamage: {},
+    encounters: {},
   };
 }
 

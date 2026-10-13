@@ -29,7 +29,13 @@ function started(scenario: Scenario): PlaythroughState {
 function inCombat(state: PlaythroughState): PlaythroughState {
   return {
     ...state,
-    activeCombat: { encounterId: 'ambush', range: 'far', round: 1 },
+    activeCombat: {
+      encounterId: 'ambush',
+      round: 1,
+      startedParticipants: ['ambush-foe'],
+      roundParticipantOrder: ['ambush-foe'],
+      participants: { 'ambush-foe': { range: 'far', intent: 'strike', prepared: false } },
+    },
   };
 }
 

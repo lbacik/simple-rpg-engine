@@ -101,7 +101,13 @@ describe('scene illustration in view', () => {
     const combat = view(scenario, {
       ...started,
       activeSceneId: null,
-      activeCombat: { encounterId: 'camp-bandit', range: 'far', round: 1 },
+      activeCombat: {
+        encounterId: 'camp-bandit',
+        round: 1,
+        startedParticipants: ['bandit-archer'],
+        roundParticipantOrder: ['bandit-archer'],
+        participants: { 'bandit-archer': { range: 'far', intent: 'strike', prepared: false } },
+      },
     });
     expect(combat.kind).toBe('combat');
     expect('illustration' in combat).toBe(false);

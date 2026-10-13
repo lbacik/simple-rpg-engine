@@ -9,7 +9,6 @@ import type {
   CompiledChoice,
   CompiledEffect,
   CompiledEncounter,
-  CompiledEnemy,
   CompiledOutcome,
   CompiledParticipant,
   CompiledScene,
@@ -38,6 +37,20 @@ export {
 } from './state';
 export { effectiveAttributes, evaluateCondition } from './conditions';
 export { escapeHtml, renderNarration, renderStoredText, substituteName } from './narration';
+// Intent selection, Speed and the Round order live in `tactical.ts` so the
+// v1 migration (issue #124) reuses the same rules with the Prepare draw
+// disabled, instead of a second Behaviour engine.
+export {
+  CHARACTER_ACTION_SPEED,
+  INTENT_SPEED,
+  orderActions,
+  selectIntents,
+  type QueuedAction,
+  type SelectIntentsOptions,
+  type SelectIntentsResult,
+  type SelectionParticipant,
+  type Speed,
+} from './tactical';
 export {
   MAP_ASPECT_RATIO,
   MAP_CENTRE,
@@ -1268,19 +1281,6 @@ function allParticipantRefs(encounter: CompiledEncounter): CombatParticipantRef[
 }
 
 /**
- * The Enemy the v1 single-Enemy Combat mechanics resolve against: the first
- * participant in participant order. Per-participant Range, Intents and wounds
- * for two-participant Combats belong to the round-resolution and
- * state-versions packages; until then only single-participant Encounters are
- * fought, and the pair fixtures exist for loader tests, not for turns.
- */
-function firstParticipantEnemy(encounter: CompiledEncounter): CompiledEnemy {
-  const first = encounter.participants[0];
-  if (first === undefined) throw new Error(`encounter "${encounter.id}" has no participants`);
-  return first.enemy;
-}
-
-/**
  * `start-combat: E` (docs/spec/playthrough-state.md, Combat): on an already
  * defeated Encounter a no-op back to the Location view (no Combat, no victory
  * Outcome). Otherwise create E's record (Damage taken per participant, 0 for
@@ -1609,6 +1609,9 @@ function applyCombat(
   if (target === undefined) {
     return { ok: false, reason: 'illegal-action' };
   }
+  // A fresh non-optional binding: the closures below resolve at their place in
+  // the order, so they capture this instead of the narrowed `find` result.
+  const victim: CompiledParticipant = target;
   const attack = characterAttack(scenario, state);
   const targetRange = combat.participants[target.id]?.range ?? encounter.startRange;
   if (attack.reach === 'melee' && targetRange === 'far') {
@@ -1673,7 +1676,7 @@ function applyCombat(
 
   /** The target participant as presented, for the Character's action. */
   function targetRef(): TacticalActor {
-    return { kind: 'participant', ...participantRefOf(encounter, target) };
+    return { kind: 'participant', ...participantRefOf(encounter, victim) };
   }
 
   /** One Enemy Intent at its place in the order. */
@@ -1791,7 +1794,7 @@ function applyCombat(
     const ref = targetRef();
     // Cancelled when the target has been defeated, or the Character's Reach
     // no longer allows it at the Range to the target.
-    if ((wounds[target.id] ?? 0) >= target.enemy.health) {
+    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
       actions.push({
         actor: characterRef,
         kind: 'attack',
@@ -1803,7 +1806,7 @@ function applyCombat(
       });
       return;
     }
-    const currentRange = ranges[target.id] ?? encounter.startRange;
+    const currentRange = ranges[victim.id] ?? encounter.startRange;
     if (attack.reach === 'melee' && currentRange === 'far') {
       actions.push({
         actor: characterRef,
@@ -1819,14 +1822,14 @@ function applyCombat(
     const roll = attackRoll(
       'character',
       effective.might,
-      target.enemy.attributes.agility,
+      victim.enemy.attributes.agility,
       attack.damage,
     );
     let defeatedParticipants: string[] | undefined;
     if (roll.hit) {
-      wounds[target.id] = (wounds[target.id] ?? 0) + attack.damage;
-      if ((wounds[target.id] ?? 0) >= target.enemy.health) {
-        defeatedParticipants = [target.id];
+      wounds[victim.id] = (wounds[victim.id] ?? 0) + attack.damage;
+      if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
+        defeatedParticipants = [victim.id];
       }
     }
     actions.push({
@@ -1999,7 +2002,8 @@ export type CombatJournalRow = {
  * Guard up when the latest round of this Encounter was a Defend. Walking back
  * stops at the Encounter's latest opening narration, so an earlier Combat
  * cannot leak its guard in. The marker survives a reload because the Journal
- * is the store.
+ * is the store. Tactical (v2) rounds carry no guard: Defend does not resolve
+ * there yet (issue #122), so a v2 round reads as guard down.
  */
 export function combatGuardUp(
   entries: ReadonlyArray<CombatJournalRow>,
@@ -2011,6 +2015,7 @@ export function combatGuardUp(
       continue;
     }
     if (entry.type === 'combat-round') {
+      if (isTacticalRoundPayload(entry.payload)) return false;
       return entry.payload.guard === true;
     }
     if (entry.type === 'combat-start') {
@@ -2018,6 +2023,16 @@ export function combatGuardUp(
     }
   }
   return false;
+}
+
+/**
+ * Whether a stored combat-round payload is a tactical (v2) round: every
+ * action of the Round in resolution order, instead of the legacy v1
+ * action/rolls/guard fields. The full v2 report rendering arrives with the
+ * application integration (I5); the v1 readers below skip these rows.
+ */
+function isTacticalRoundPayload(payload: { encounterId?: unknown; guard?: unknown }): boolean {
+  return Array.isArray((payload as { actions?: unknown }).actions);
 }
 
 export type CombatRoundView = {
@@ -2046,7 +2061,9 @@ export type CombatRoundView = {
  * The rounds of the current Combat: the Combat round entries since the latest
  * opening narration of the Encounter. New rows carry structured events and are
  * rendered through the catalogue; legacy rows carry stored text and are shown
- * verbatim.
+ * verbatim. Tactical (v2) rounds are skipped: their ordered action report is
+ * rendered by the application integration (I5), never reinterpreted as legacy
+ * guard payloads.
  */
 export function combatRounds(
   entries: ReadonlyArray<CombatJournalRow>,
@@ -2060,6 +2077,7 @@ export function combatRounds(
     if (entry.type === 'combat-start') {
       rounds.length = 0;
     } else if (entry.type === 'combat-round') {
+      if (isTacticalRoundPayload(entry.payload)) continue;
       const payload = entry.payload as {
         round?: unknown;
         action?: unknown;
@@ -2243,8 +2261,18 @@ export function view(
       const location =
         scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
       const attack = characterAttack(scenario, state);
-      const taken = state.encounterDamage[combat.encounterId] ?? 0;
-      const lead = firstParticipantEnemy(encounter);
+      // Interim projection (issue #120): the Combat view keeps its old shape
+      // and shows the first surviving participant. The full arena projection
+      // (membership, targets, order, badges) arrives with the arena view
+      // (issue #123, R12).
+      const wounds = state.encounters[combat.encounterId] ?? {};
+      const leadParticipant =
+        survivorsOf(encounter, wounds)[0] ?? encounter.participants[0];
+      if (leadParticipant === undefined) {
+        throw new Error(`encounter "${encounter.id}" has no participants`);
+      }
+      const lead = leadParticipant.enemy;
+      const taken = wounds[leadParticipant.id] ?? 0;
       return {
         kind: 'combat',
         locationId: location.id,
@@ -2253,7 +2281,7 @@ export function view(
         encounterName: lead.name,
         text: encounter.text,
         characterName: state.character.name,
-        range: combat.range,
+        range: combat.participants[leadParticipant.id]?.range ?? encounter.startRange,
         round: combat.round,
         character: {
           health: state.character.health,

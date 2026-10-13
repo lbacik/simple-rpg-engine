@@ -90,11 +90,15 @@ export function selectIntents(
   // already prepared, or that selects Prepare in this same selection, blocks
   // every later preparing draw (which then consumes no die).
   let heavyTaken = survivors.some((entry) => entry.prepared);
-  for (const entry of survivors) {
+  let prepareSelected = false;
+  for (const [index, entry] of survivors.entries()) {
     const { participant } = entry;
     const enemy = participant.enemy;
     // Rule 1: prepared. A Heavy attack in Reach is selected; otherwise the
-    // prepared state ends and selection continues with rule 2.
+    // prepared state ends and selection continues with rule 2. Clearing the
+    // state unblocks a later preparing draw: only another participant that is
+    // still prepared, or that has selected Prepare in this same selection,
+    // keeps the block.
     if (entry.prepared) {
       if (heavyInReach(enemy.reach, entry.range)) {
         intents[participant.id] = 'heavy-attack';
@@ -102,6 +106,13 @@ export function selectIntents(
         continue;
       }
       prepared[participant.id] = false;
+      heavyTaken =
+        prepareSelected ||
+        survivors.some(
+          (other, otherIndex) =>
+            other.participant.id !== participant.id &&
+            (otherIndex < index ? (prepared[other.participant.id] ?? false) : other.prepared),
+        );
     } else {
       prepared[participant.id] = false;
     }
@@ -118,6 +129,7 @@ export function selectIntents(
       const drawn = rng(1, 7);
       if (drawn <= 2) {
         intents[participant.id] = 'prepare';
+        prepareSelected = true;
         heavyTaken = true;
         continue;
       }

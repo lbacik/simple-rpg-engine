@@ -34,7 +34,7 @@ function makeState(overrides: Partial<PlaythroughState> = {}): PlaythroughState 
     firedScenes: [],
     takenOnceChoices: [],
     flags: [],
-    encounterDamage: {},
+    encounters: {},
     ...overrides,
   };
 }
