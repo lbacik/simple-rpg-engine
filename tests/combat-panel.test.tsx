@@ -72,6 +72,15 @@ function combat(overrides: Partial<CombatView> = {}): CombatView {
       reach: 'melee',
     },
     actions: actions(),
+    arena: {
+      encounterId: 'wolf',
+      round: 3,
+      participants: [],
+      legalTargets: [],
+      order: [],
+      actions: [],
+      guarded: false,
+    },
     map: {} as CombatView['map'],
     ...overrides,
   };
