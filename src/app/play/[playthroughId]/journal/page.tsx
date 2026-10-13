@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
-import { resolvePlaythrough } from '@/app/lib/playthrough';
+import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { getSessionHash } from '@/app/lib/session';
 import {
@@ -47,7 +47,10 @@ export default async function JournalPage({
     limit: JOURNAL_BATCH_SIZE,
     beforeSeq: before,
   });
-  const characterName = playthrough.state.character.name;
+  // The Journal renders even for missing Scenarios and invalid documents:
+  // it stores the text as presented and needs only a display name, never a
+  // validated position. Invalid state is never rewritten here.
+  const characterName = safeCharacterName(playthrough.state, playthrough.scenarioId);
   const catalogue = getCatalogue(await getInterfaceLanguage());
   const rendered = renderJournalEntries(batch.entries, catalogue, characterName);
 

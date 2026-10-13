@@ -7,7 +7,7 @@
 
 import { getScenario } from '@/content/registry';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
-import { resolvePlaythrough } from '@/app/lib/playthrough';
+import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
 import { getSessionHash } from '@/app/lib/session';
 import {
   JOURNAL_BATCH_SIZE,
@@ -45,8 +45,10 @@ export async function GET(
     beforeSeq: before,
   });
   const catalogue = getCatalogue(await getInterfaceLanguage());
+  // Journal-only: safe on missing Scenarios and invalid documents alike.
+  const characterName = safeCharacterName(playthrough.state, playthrough.scenarioId);
   const body: JournalBatchResponse = {
-    entries: renderJournalEntries(batch.entries, catalogue, playthrough.state.character.name),
+    entries: renderJournalEntries(batch.entries, catalogue, characterName),
     nextCursor: batch.nextCursor ?? null,
   };
   return Response.json(body);

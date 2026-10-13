@@ -236,7 +236,7 @@ describe('executeTurn with changed content', () => {
       const stored = await new PlaythroughStore(db).findById('pt-typo');
       expect(stored?.contentHash).toBe(scenario.contentHash);
       expect(stored?.scenarioVersion).toBe(scenario.version);
-      expect(stored?.state.contentHash).toBe(scenario.contentHash);
+      expect((stored?.state as PlaythroughState).contentHash).toBe(scenario.contentHash);
     } finally {
       await db.destroy();
     }
@@ -409,7 +409,8 @@ describe('resolvePlaythrough', () => {
       // guarded update finds no row at the old step and leaves the turn alone.
       const read = await store.findById('pt-race');
       if (!read) throw new Error('missing playthrough');
-      const advanced = { ...read.state, step: read.state.step + 1 };
+      const readState = read.state as PlaythroughState;
+      const advanced = { ...readState, step: readState.step + 1 };
       expect(
         await store.updateIfStepMatches('pt-race', read.step, {
           state: advanced,
@@ -418,7 +419,7 @@ describe('resolvePlaythrough', () => {
         }),
       ).toBe(true);
       const repinned = {
-        ...read.state,
+        ...readState,
         scenarioVersion: scenario.version,
         contentHash: scenario.contentHash,
       };
@@ -430,7 +431,7 @@ describe('resolvePlaythrough', () => {
       const fresh = await store.findById('pt-race');
       if (!fresh) throw new Error('missing playthrough');
       const freshPin = {
-        ...fresh.state,
+        ...(fresh.state as PlaythroughState),
         scenarioVersion: scenario.version,
         contentHash: scenario.contentHash,
       };

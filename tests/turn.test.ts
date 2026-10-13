@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { sql } from 'kysely';
 import type { Scenario } from '../src/content/index';
 import { startPlaythrough, type Rng } from '../src/engine/index';
+import type { PlaythroughState } from '../src/engine/state';
 import { executeTurn } from '../src/app/lib/turn';
 import {
   migrateDatabase,
@@ -69,8 +70,8 @@ describe('executeTurn', () => {
       expect(result).toEqual({ ok: true, step: 1 });
       const store = new PlaythroughStore(db);
       const stored = await store.findById(playthroughId);
-      expect(stored?.state.currentLocationId).toBe('grove');
-      expect(stored?.state.visited).toEqual(['glade', 'grove']);
+      expect((stored?.state as PlaythroughState).currentLocationId).toBe('grove');
+      expect((stored?.state as PlaythroughState).visited).toEqual(['glade', 'grove']);
       expect(stored?.step).toBe(1);
       const journal = await store.listJournal(playthroughId);
       expect(journal.map((entry) => entry.type)).toEqual(['intro', 'travel']);
@@ -97,7 +98,7 @@ describe('executeTurn', () => {
       const store = new PlaythroughStore(db);
       const stored = await store.findById(playthroughId);
       expect(stored?.step).toBe(1);
-      expect(stored?.state.currentLocationId).toBe('grove');
+      expect((stored?.state as PlaythroughState).currentLocationId).toBe('grove');
       expect((await store.listJournal(playthroughId)).map((e) => e.type)).toEqual([
         'intro',
         'travel',
@@ -246,7 +247,7 @@ describe('executeTurn', () => {
       const store = new PlaythroughStore(db);
       const stored = await store.findById(playthroughId);
       expect(stored?.step).toBe(0);
-      expect(stored?.state.currentLocationId).toBe('glade');
+      expect((stored?.state as PlaythroughState).currentLocationId).toBe('glade');
       // Nothing committed: state, pin, status and ending are untouched too.
       expect(stored?.status).toBe('active');
       expect(stored?.endingId).toBeNull();
