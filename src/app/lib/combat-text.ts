@@ -33,6 +33,8 @@ export function combatActionLabel(availability: CombatAvailability, catalogue: C
         : catalogue.combat.attackWith(availability.weaponName);
     case 'defend':
       return catalogue.combat.defend;
+    case 'distract':
+      return catalogue.combat.distract;
     case 'use-item':
       return catalogue.combat.useItem(availability.itemName ?? availability.itemId ?? '');
     case 'escape':
@@ -57,6 +59,8 @@ export function combatReasonText(
         : catalogue.combat.reasonNeedsNear(availability.weaponName, catalogue.range.near);
     case 'full-health':
       return catalogue.combat.reasonFullHealth;
+    case 'wary':
+      return catalogue.combat.reasonWary;
   }
 }
 

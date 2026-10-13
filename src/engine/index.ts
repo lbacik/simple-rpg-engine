@@ -100,14 +100,15 @@ export function inventoryUseReason(state: PlaythroughState): InventoryReason | u
 }
 
 /**
- * One side's roll inside a Combat round: both dice, the attacker's Might, the
- * total, the target and the Damage dealt (docs/spec/mechanics.md, hitting).
+ * One side's roll inside a Combat round: both dice, the attacker's modifier,
+ * the total, the target and the Damage dealt (docs/spec/mechanics.md, hitting).
+ * Attacks roll Might; a Distract rolls Wits.
  */
 export type CombatRoll = {
   side: 'character' | 'enemy';
   die1: number;
   die2: number;
-  /** The attacker's Might (the effective value for the Character). */
+  /** The attacker's Might (the effective value for the Character), or Wits on a Distract. */
   modifier: number;
   total: number;
   target: number;
@@ -117,7 +118,14 @@ export type CombatRoll = {
 };
 
 /** Character actions (docs/spec/mechanics.md, character actions). */
-export type CombatAction = 'advance' | 'attack' | 'defend' | 'fall-back' | 'escape' | 'use-item';
+export type CombatAction =
+  | 'advance'
+  | 'attack'
+  | 'defend'
+  | 'distract'
+  | 'fall-back'
+  | 'escape'
+  | 'use-item';
 
 export type CombatRange = 'near' | 'far';
 
@@ -175,6 +183,20 @@ export type TacticalActionEvent = {
   roll?: CombatRoll;
   /** Damage dealt by the executed action. */
   damage?: number;
+  /** A Guarded Character (from Defend): the effect this executed action applied. */
+  guarded?: boolean;
+  /** A distracted participant's Wary: its last round, set by a successful Distract. */
+  waryUntilRound?: number;
+  /**
+   * The counterattack reaction inside the missed melee attack it answers
+   * (docs/spec/mechanics.md, temporary effects): its roll, its Damage and any
+   * defeat. A reaction triggers no further reaction.
+   */
+  counter?: {
+    roll: CombatRoll;
+    damage: number;
+    defeatedParticipants?: string[];
+  };
   rangeBefore?: CombatRange;
   rangeAfter?: CombatRange;
   /**
@@ -1393,7 +1415,12 @@ export type CombatActionGroup = 'position' | 'fight' | 'items' | 'leave';
  * Why an action is unavailable, as a code; the catalogue renders the reason in
  * the Interface Language.
  */
-export type CombatDisabledReason = 'already-near' | 'already-far' | 'needs-near' | 'full-health';
+export type CombatDisabledReason =
+  | 'already-near'
+  | 'already-far'
+  | 'needs-near'
+  | 'full-health'
+  | 'wary';
 
 export type CombatAvailability = {
   id: CombatAction;
@@ -1414,16 +1441,17 @@ export type CombatAvailability = {
  * Whether each Character action is available in the current Combat: Advance
  * while a surviving participant is Far, Fall back while one is Near, Attack
  * when the Character's Reach allows the Range to a surviving participant,
- * Defend and Escape always, and one Use entry per held Consumable while below
- * full Health. Entries carry codes and names as presented; the UI renders
- * labels and reasons through the catalogue. The engine rejects unavailable
- * actions independently.
+ * Defend and Escape always, Distract while a surviving participant is neither
+ * Wary nor already past in the Round's order, and one Use entry per held
+ * Consumable while below full Health. Entries carry codes and names as
+ * presented; the UI renders labels and reasons through the catalogue. The
+ * engine rejects unavailable actions independently.
  *
- * Issue #120 resolves only Attack; the other actions report their standing
- * availability here, but submitting one is rejected until its package lands
- * (movement, Escape and Consumables: issue #121; Defend and Distract: issue
- * #122). The full per-target projection (Speed, order, thresholds) arrives
- * with the arena view (issue #123).
+ * Attack, Defend and Distract resolve (issues #120, #122); movement, Escape
+ * and Consumables report their standing availability here, but submitting one
+ * is rejected until its package lands (issue #121). The full per-target
+ * projection (Speed, order, thresholds) arrives with the arena view
+ * (issue #123).
  */
 export function combatActions(
   scenario: Scenario,
@@ -1449,6 +1477,33 @@ export function combatActions(
   );
   const anyFar = ranges.some((range) => range === 'far');
   const anyNear = ranges.some((range) => range === 'near');
+  // Distract is available while a surviving participant is neither Wary nor
+  // already past in the Round's order. Distract is fast, so it precedes every
+  // Intent; the order check is defensive, and Wary is the bar that disables
+  // the entry in practice.
+  const effectiveAgility = effectiveAttributes(scenario, state).agility;
+  const distractOrder = orderActions(
+    [
+      { key: 'character', actor: 'character', speed: 'fast', agility: effectiveAgility },
+      ...survivors.map(
+        (participant): QueuedAction => ({
+          key: participant.id,
+          actor: 'participant',
+          participantId: participant.id,
+          speed: INTENT_SPEED[combat.participants[participant.id]?.intent ?? 'strike'],
+          agility: participant.enemy.attributes.agility,
+        }),
+      ),
+    ],
+    combat.roundParticipantOrder,
+  );
+  const distractPosition = distractOrder.findIndex((action) => action.actor === 'character');
+  const distractable = survivors.some(
+    (participant) =>
+      (combat.participants[participant.id]?.waryUntilRound ?? 0) < combat.round &&
+      distractOrder.findIndex((action) => action.participantId === participant.id) >
+        distractPosition,
+  );
   return [
     {
       id: 'advance',
@@ -1471,6 +1526,12 @@ export function combatActions(
       weaponName: attack.weaponName,
     },
     { id: 'defend', group: 'fight', enabled: true },
+    {
+      id: 'distract',
+      group: 'fight',
+      enabled: distractable,
+      reason: distractable ? undefined : 'wary',
+    },
     ...consumables.map((itemId): CombatAvailability => {
       const name = scenario.itemsById[itemId]?.name ?? itemId;
       return {
@@ -1575,10 +1636,13 @@ function finishEscape(
 
 /**
  * Character actions that name a target participant. Distract joins this set
- * with issue #122; until then submitting it is rejected as unavailable, like
- * Defend in this ticket.
+ * with issue #122.
  */
-const TARGETED_COMBAT_ACTIONS: ReadonlySet<CombatAction> = new Set(['attack', 'advance']);
+const TARGETED_COMBAT_ACTIONS: ReadonlySet<CombatAction> = new Set([
+  'attack',
+  'advance',
+  'distract',
+]);
 
 /**
  * One Combat Round (docs/spec/mechanics.md, rounds;
@@ -1595,9 +1659,9 @@ const TARGETED_COMBAT_ACTIONS: ReadonlySet<CombatAction> = new Set(['attack', 'a
  *
  * Issue #120 resolves the targeted Attack (plus the Enemy Intents Strike,
  * Close in, Prepare and Heavy attack); issue #121 adds Advance, Fall back,
- * Escape and Consumable use. Defend/Distract (issue #122) stay rejected until
- * their package lands: submitting one is rejected without advancing `step`,
- * drawing dice or changing Intents, state or Journal.
+ * Escape and Consumable use; issue #122 adds Defend and Distract. Anything
+ * else unknown is rejected without advancing `step`, drawing dice or changing
+ * Intents, state or Journal.
  */
 function applyCombat(
   scenario: Scenario,
@@ -1639,12 +1703,8 @@ function applyCombat(
     }
   }
 
-  // Availability at submission (R10): Defend and Distract stay rejected
-  // until issue #122 (Distract joins the CombatAction union there).
+  // Availability at submission (R10): every known action resolves.
   // Anything else unknown is rejected too.
-  if (combatAction === 'defend') {
-    return { ok: false, reason: 'illegal-action' };
-  }
   const target = targetId === undefined ? undefined : encounter.participants.find(
     (participant) => participant.id === targetId,
   );
@@ -1655,7 +1715,7 @@ function applyCombat(
   // the order, so they capture this instead of the narrowed `find` result.
   const victim: CompiledParticipant | undefined = target;
   const attack = characterAttack(scenario, state);
-  if (combatAction === 'attack') {
+  if (combatAction === 'attack' || combatAction === 'distract') {
     if (victim === undefined) {
       return { ok: false, reason: 'illegal-action' };
     }
@@ -1696,6 +1756,7 @@ function applyCombat(
   } else if (combatAction !== 'escape') {
     return { ok: false, reason: 'illegal-action' };
   }
+  }
   // Escape is always available. The +2 bonus is captured from the Round as
   // shown when the Character commits: when no surviving participant was Near
   // then, an Enemy that closes in earlier in the order does not remove it.
@@ -1709,6 +1770,9 @@ function applyCombat(
 
   const effective = effectiveAttributes(scenario, state);
   const characterRef: TacticalActor = { kind: 'character' };
+  // Captured for the resolvers below: narrowing of `combat` does not flow
+  // into their bodies.
+  const round = combat.round;
   const wounds: Record<string, number> = { ...woundsBefore };
   let health = state.character.health;
   // A Combat `use-item` consumes its copy at execution; every exit path below
@@ -1717,28 +1781,35 @@ function applyCombat(
   let equipment: PlaythroughState['equipment'] = { ...state.equipment };
   const ranges: Record<string, CombatRange> = {};
   const prepared: Record<string, boolean> = {};
+  const waryUntil: Record<string, number | undefined> = {};
   for (const [participantId, record] of Object.entries(combat.participants)) {
     ranges[participantId] = record.range;
     prepared[participantId] = record.prepared;
+    waryUntil[participantId] = record.waryUntilRound;
   }
 
-  /** One attack roll: 2d6 + Might against 7 + Agility. A miss deals no Damage. */
+  /**
+   * One roll: 2d6 plus the modifier against the base plus the defender's
+   * Agility (Might for attacks, Wits for a Distract; 9 instead of 7 against a
+   * Guarded Character). A miss deals no Damage.
+   */
   const attackRoll = (
     side: 'character' | 'enemy',
-    might: number,
+    modifier: number,
     agility: number,
     damage: number,
+    base = 7,
   ): CombatRoll => {
     const die1 = rng(1, 7);
     const die2 = rng(1, 7);
-    const total = die1 + die2 + might;
-    const targetNumber = 7 + agility;
+    const total = die1 + die2 + modifier;
+    const targetNumber = base + agility;
     const hit = total >= targetNumber;
     return {
       side,
       die1,
       die2,
-      modifier: might,
+      modifier,
       total,
       target: targetNumber,
       hit,
@@ -1764,9 +1835,35 @@ function applyCombat(
   ];
   const ordered = orderActions(queued, combat.roundParticipantOrder);
 
+  if (combatAction === 'distract' && victim !== undefined) {
+    // A Wary target cannot be distracted again: the attempt is rejected.
+    if ((combat.participants[victim.id]?.waryUntilRound ?? 0) >= combat.round) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+    // The target's Intent must come later in the Round's order than the
+    // Distract. A fast Distract precedes every Intent, so this bar is
+    // defensive; it stays explicit because the spec requires it.
+    const distractPosition = ordered.findIndex((action) => action.actor === 'character');
+    const targetPosition = ordered.findIndex(
+      (action) => action.participantId === victim.id,
+    );
+    if (targetPosition <= distractPosition) {
+      return { ok: false, reason: 'illegal-action' };
+    }
+  }
+
   // Resolve in order.
   const actions: TacticalActionEvent[] = [];
   let stop: CombatStopReason | undefined;
+  // Guarded from Defend's execution until cleanup: attacks against the
+  // Character use the guarded threshold. Round-scoped, never stored.
+  let guarded = false;
+  // At most one counterattack per Round: only the first missed melee attack
+  // against the Guarded Character triggers it.
+  let counterUsed = false;
+  // Participants whose Intent a successful Distract interrupted: cancelled at
+  // their place in the order.
+  const interrupted = new Set<string>();
 
   /** The target participant as presented, for the Character's action. */
   function targetRef(): TacticalActor {
@@ -1774,6 +1871,12 @@ function applyCombat(
       throw new Error('targeted action committed without a target');
     }
     return { kind: 'participant', ...participantRefOf(encounter, victim) };
+  }
+
+  /** The given participant as presented, for parameterized resolvers. */
+  function targetRefOf(participant: CompiledParticipant): TacticalActor {
+    return { kind: 'participant', ...participantRefOf(encounter, participant) };
+  }
   }
 
   /** One Enemy Intent at its place in the order. */
@@ -1793,6 +1896,23 @@ function applyCombat(
         order,
         target: characterRef,
         status: 'dropped',
+      });
+      return;
+    }
+    // A successful Distract interrupted its Intent: cancelled at its place in
+    // the order, never replaced. Interrupting a Prepare or a Heavy attack
+    // clears the preparation it builds on.
+    if (interrupted.has(participant.id)) {
+      prepared[participant.id] = false;
+      actions.push({
+        actor,
+        kind: intent,
+        speed,
+        order,
+        target: characterRef,
+        status: 'cancelled',
+        cancelReason: 'interrupted',
+        ...((intent === 'prepare' || intent === 'heavy-attack') ? { prepared: false } : {}),
       });
       return;
     }
@@ -1856,11 +1976,13 @@ function applyCombat(
       });
       return;
     }
+    // Attacks against the Guarded Character need 9 + Agility instead of 7.
     const roll = attackRoll(
       'enemy',
       participant.enemy.attributes.might,
       effective.agility,
       damage,
+      guarded ? 9 : 7,
     );
     if (roll.hit) {
       health -= damage;
@@ -1879,11 +2001,108 @@ function applyCombat(
       damage: roll.hit ? damage : 0,
       ...(heavy ? { prepared: false } : {}),
     };
+    // The first melee attack in the Round that misses the Guarded Character
+    // triggers the counterattack reaction: the Character's hit roll against
+    // that attacker for 1 Damage. Ranged misses trigger none, later misses
+    // trigger none, and the reaction triggers no further reaction.
+    if (!roll.hit && guarded && !counterUsed && participant.enemy.reach === 'melee') {
+      counterUsed = true;
+      const counterRoll = attackRoll(
+        'character',
+        effective.might,
+        participant.enemy.attributes.agility,
+        1,
+      );
+      let counterDefeated: string[] | undefined;
+      if (counterRoll.hit) {
+        wounds[participant.id] = (wounds[participant.id] ?? 0) + 1;
+        if ((wounds[participant.id] ?? 0) >= participant.enemy.health) {
+          counterDefeated = [participant.id];
+        }
+      }
+      event.counter = {
+        roll: counterRoll,
+        damage: counterRoll.hit ? 1 : 0,
+        ...(counterDefeated !== undefined ? { defeatedParticipants: counterDefeated } : {}),
+      };
+      if (counterDefeated !== undefined && encounterDefeated(encounter, wounds)) {
+        stop = 'victory';
+      }
+    }
     if (roll.hit && health <= 0) {
       event.characterDefeated = true;
       stop = 'death';
     }
     actions.push(event);
+  }
+
+  /** Defend at its place in the order: no roll. The Character is Guarded now. */
+  function resolveCharacterDefend(order: number): void {
+    guarded = true;
+    actions.push({
+      actor: characterRef,
+      kind: 'defend',
+      speed: 'fast',
+      order,
+      status: 'executed',
+      guarded: true,
+    });
+  }
+
+  /** Distract at its place in the order: a Wits roll against the target. */
+  function resolveCharacterDistract(victim: CompiledParticipant, order: number): void {
+    const ref = targetRefOf(victim);
+    // Cancelled when the target has been defeated.
+    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
+      actions.push({
+        actor: characterRef,
+        kind: 'distract',
+        speed: 'fast',
+        order,
+        target: ref,
+        status: 'cancelled',
+        cancelReason: 'target-defeated',
+      });
+      return;
+    }
+    const roll = attackRoll(
+      'character',
+      effective.wits,
+      victim.enemy.attributes.wits,
+      0,
+    );
+    if (!roll.hit) {
+      // Failure has no effect: no interruption, no Wary, no prepared change.
+      actions.push({
+        actor: characterRef,
+        kind: 'distract',
+        speed: 'fast',
+        order,
+        target: ref,
+        status: 'executed',
+        roll,
+        damage: 0,
+      });
+      return;
+    }
+    // Success interrupts the announced Intent (cancelled at its place in the
+    // order), clears the preparation it builds on, and makes the target Wary
+    // until the end of the next Round.
+    interrupted.add(victim.id);
+    prepared[victim.id] = false;
+    waryUntil[victim.id] = round + 1;
+    actions.push({
+      actor: characterRef,
+      kind: 'distract',
+      speed: 'fast',
+      order,
+      target: ref,
+      status: 'executed',
+      roll,
+      damage: 0,
+      prepared: false,
+      waryUntilRound: round + 1,
+    });
   }
 
   /** The Character's Attack at its place in the order. */
@@ -2145,6 +2364,14 @@ function applyCombat(
       resolveCharacterEscape(order);
     } else if (combatAction === 'use-item') {
       resolveCharacterUseItem(order);
+    } else if (combatAction === 'defend') {
+      resolveCharacterDefend(order);
+    } else if (combatAction === 'distract') {
+      // Unreachable when the victim is missing: targeted actions always bind
+      // one at submission, and the resolvers below capture that binding.
+      if (victim !== undefined) {
+        resolveCharacterDistract(victim, order);
+      }
     } else {
       resolveCharacterAttack(order);
     }
@@ -2264,15 +2491,16 @@ function applyCombat(
     { range: CombatRange; intent: IntentKind; prepared: boolean; waryUntilRound?: number }
   > = {};
   for (const participant of remaining) {
-    const stored = combat.participants[participant.id];
     const record: (typeof nextParticipants)[string] = {
       range: ranges[participant.id] ?? encounter.startRange,
       intent: selection.intents[participant.id] ?? 'strike',
       prepared: selection.prepared[participant.id] ?? false,
     };
-    // Wary outlasts the step: it lasts until the end of the next Round.
-    if (stored?.waryUntilRound !== undefined && stored.waryUntilRound >= nextRound) {
-      record.waryUntilRound = stored.waryUntilRound;
+    // Wary outlasts the step: it lasts until the end of the next Round,
+    // including Wary a successful Distract applied this Round.
+    const until = waryUntil[participant.id];
+    if (until !== undefined && until >= nextRound) {
+      record.waryUntilRound = until;
     }
     nextParticipants[participant.id] = record;
   }
