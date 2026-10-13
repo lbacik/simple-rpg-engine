@@ -24,6 +24,40 @@ export function openDatabase(file: string): Kysely<Database> {
 
 let shared: Kysely<Database> | undefined;
 
+// Serialized write queue, one chain per database handle.
+//
+// better-sqlite3 serves every statement on a single connection, so two
+// concurrent `db.transaction().execute()` bodies interleave their statements
+// (each `await` yields to the event loop while the SQLite transaction stays
+// open). Chaining the whole transaction body behind a per-handle promise
+// queue keeps concurrent transactions from interleaving: the next body starts
+// only after the previous one committed or rolled back. The guarded
+// `UPDATE … WHERE step = <expected>` inside remains the cross-process
+// compare-and-swap; the queue only fixes in-process interleaving.
+const writeTails = new WeakMap<object, Promise<void>>();
+
+export function runSerialized<T>(db: Kysely<Database>, fn: () => Promise<T>): Promise<T> {
+  const prev = writeTails.get(db) ?? Promise.resolve();
+  let release: () => void = () => {};
+  const slot = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  writeTails.set(db, slot);
+  return (async () => {
+    try {
+      await prev;
+    } catch {
+      // A previous slot never rejects (it only resolves via `release`), but
+      // never let a broken chain block later writes.
+    }
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  })();
+}
+
 export function getDatabase(): Kysely<Database> {
   if (!shared) shared = openDatabase(databasePath());
   return shared;

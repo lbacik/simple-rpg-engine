@@ -9,16 +9,18 @@
 // resolve the Scenario (gone means the Playthrough is read-only,
 // `incompatible`), run the reference check when the pinned hash differs (a
 // pass updates the pin, a fail means `incompatible`), run `applyAction`
-// (`step`, then legality), then the optimistic-concurrency swap
-// `UPDATE … WHERE step = <expected>`: no row changed means a concurrent turn
-// won, so roll back and report `stale`. Only the winner inserts its Journal
-// entries.
+// (`step`, then legality), then the atomic commit
+// (`UPDATE … WHERE step = <expected>` plus the Journal inserts in one
+// transaction): no row changed means a concurrent turn won, so report `stale`.
+// Only the winner's Journal entries commit, together with its state.
 //
-// The swap plus the insert are adjacent synchronous statements rather than a
-// Kysely transaction object: better-sqlite3 serves every statement on one
-// connection, so two concurrent `transaction().execute()` bodies interleave
-// their BEGINs. The guarded UPDATE is the atomic compare-and-swap on every
-// dialect (no in-process locks), and only its winner reaches the insert.
+// The commit is serialized per database handle as well as guarded: Kysely
+// transactions on better-sqlite3 serve every statement on one connection, so
+// two concurrent `transaction().execute()` bodies would interleave their
+// statements without the store's write queue. The guarded UPDATE stays the
+// atomic compare-and-swap on every dialect (no in-process locks decide the
+// winner); the queue only keeps the loser's statements from interleaving the
+// winner's transaction.
 
 import type { Kysely } from 'kysely';
 // Relative imports: vitest has no `@/` alias, and tests drive this module
@@ -80,21 +82,22 @@ export async function executeTurn(
     if (applied.reason === 'ended') return { ok: false, reason: 'ended' };
     return { ok: false, reason: 'illegal' };
   }
-  const swapped = await store.updateIfStepMatches(playthroughId, action.expectedStep, {
-    state: applied.state,
-    step: applied.state.step,
-    status: applied.state.status,
-    endingId: applied.state.endingId ?? null,
-  });
-  if (!swapped) {
-    return { ok: false, reason: 'stale' };
-  }
-  await store.appendJournal(
+  const committed = await store.commitTurn(
     playthroughId,
+    action.expectedStep,
+    {
+      state: applied.state,
+      step: applied.state.step,
+      status: applied.state.status,
+      endingId: applied.state.endingId ?? null,
+    },
     applied.journal.map((entry) => {
       const { type, lang, ...payload } = entry;
       return { step: applied.state.step, type, lang, payload };
     }),
   );
+  if (!committed) {
+    return { ok: false, reason: 'stale' };
+  }
   return { ok: true, step: applied.state.step };
 }
