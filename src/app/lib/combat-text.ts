@@ -312,10 +312,7 @@ function tacticalCancelReason(action: TacticalActionEvent, catalogue: Catalogue)
 }
 
 /** Participant display names by participant id, from the Round's own references. */
-function tacticalNameById(
-  actions: ReadonlyArray<TacticalActionEvent>,
-  characterName: string,
-): Map<string, string> {
+function tacticalNameById(actions: ReadonlyArray<TacticalActionEvent>): Map<string, string> {
   const names = new Map<string, string>();
   const consider = (actor: TacticalActor): void => {
     if (actor.kind === 'participant' && !names.has(actor.participantId)) {
@@ -326,7 +323,6 @@ function tacticalNameById(
     consider(action.actor);
     if (action.target !== undefined) consider(action.target);
   }
-  void characterName;
   return names;
 }
 
@@ -339,14 +335,17 @@ function tacticalRoundNames(
   const push = (name: string | undefined): void => {
     if (name !== undefined && name !== '' && !names.includes(name)) names.push(name);
   };
-  const byId = tacticalNameById(actions, characterName);
+  const byId = tacticalNameById(actions);
   for (const action of actions) {
     push(tacticalActorName(action.actor, characterName));
     if (action.target !== undefined) push(tacticalActorName(action.target, characterName));
     push(action.weaponName);
     push(action.itemName);
     for (const id of [...(action.defeatedParticipants ?? []), ...(action.counter?.defeatedParticipants ?? [])]) {
-      push(byId.get(id) ?? id);
+      // Participant ids are author-internal and never shown: only names the
+      // Round itself resolves to reach the page.
+      const resolved = byId.get(id);
+      if (resolved !== undefined) push(resolved);
     }
   }
   return names;
@@ -359,7 +358,14 @@ function tacticalFalls(
   catalogue: Catalogue,
 ): string {
   if (ids === undefined || ids.length === 0) return '';
-  return ` ${ids.map((id) => catalogue.combat.tactical.falls(byId.get(id) ?? id)).join(' ')}`;
+  // Participant ids are author-internal and never shown: an id the Round
+  // itself cannot resolve to a name leaves no fragment rather than leaking it.
+  const known = ids.flatMap((id) => {
+    const name = byId.get(id);
+    return name === undefined ? [] : [name];
+  });
+  if (known.length === 0) return '';
+  return ` ${known.map((name) => catalogue.combat.tactical.falls(name)).join(' ')}`;
 }
 
 function tacticalRollChip(roll: CombatRoll, catalogue: Catalogue): string {
@@ -395,10 +401,11 @@ function tacticalExecutedResult(
       return tactical.guarded;
     case 'distract': {
       if (action.roll === undefined || !action.roll.hit) return tactical.failure;
+      const interrupted = tactical.actionInterrupted(targetName);
       const wary =
         action.waryUntilRound === undefined ? '' : `; ${tactical.waryUntil(action.waryUntilRound)}`;
       const preparation = action.prepared === false ? `; ${tactical.preparationLost}` : '';
-      return `${tactical.success} — ${targetName}${wary}${preparation}`;
+      return `${tactical.success} — ${interrupted}${wary}${preparation}`;
     }
     case 'advance':
       return tactical.nowNear(targetName);
@@ -507,7 +514,7 @@ export function tacticalRoundHtml(
   options: { round?: number; stop?: CombatStopReason } = {},
 ): string {
   const names = tacticalRoundNames(actions, characterName);
-  const byId = tacticalNameById(actions, characterName);
+  const byId = tacticalNameById(actions);
   const wrap = (text: string): string => wrapScenarioNames(text, names, lang);
   let guarded = false;
   const items = actions.map((action) => {
@@ -536,7 +543,7 @@ export function tacticalRoundSummary(
   characterName: string,
 ): string {
   const names = tacticalRoundNames(actions, characterName);
-  const byId = tacticalNameById(actions, characterName);
+  const byId = tacticalNameById(actions);
   const wrap = (text: string): string => wrapScenarioNames(text, names, lang);
   let guarded = false;
   const parts = actions.map((action) => {

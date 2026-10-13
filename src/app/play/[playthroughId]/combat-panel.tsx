@@ -236,9 +236,9 @@ export function CombatPanel({
   const [latest, ...older] = [...rounds].reverse();
   // The tactical last round: the newest versioned round entry, rendered through
   // the shared tactical report (the same renderer as the Journal). Older
-  // tactical rounds read as one compact line each, like the legacy older list.
-  const [tacticalLatest, ...tacticalNewer] = [...tacticalRounds].reverse();
-  const tacticalOlder = [...tacticalNewer].reverse();
+  // tactical rounds read as one compact line each, newest first like the legacy
+  // older list below.
+  const [tacticalLatest, ...tacticalOlder] = [...tacticalRounds].reverse();
   // With tactical rounds on record every legacy row is older than them, so the
   // legacy older list holds all of them; otherwise it holds all but the latest.
   const legacyOlder = tacticalLatest === undefined ? older : [...rounds].reverse();

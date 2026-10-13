@@ -454,6 +454,7 @@ export const pl: Catalogue = {
       miss: 'pudło',
       success: 'powodzenie',
       failure: 'niepowodzenie',
+      actionInterrupted: (name: string) => `akcja ${name} przerwana`,
     },
   },
   closePanel: (title: string) => `Zamknij: ${title}`,

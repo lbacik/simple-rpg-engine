@@ -427,6 +427,7 @@ export const en = {
       miss: 'miss',
       success: 'success',
       failure: 'failure',
+      actionInterrupted: (name: string) => `${name}'s action is interrupted`,
     },
   },
   closePanel: (title: string) => `Close ${title}`,
