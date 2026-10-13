@@ -7,8 +7,9 @@
 //
 // Order per turn: read the row (another Session, or none, is `not-found`),
 // resolve the Scenario (gone means the Playthrough is read-only,
-// `incompatible`), run the reference check when the pinned hash differs (a
-// pass updates the pin, a fail means `incompatible`), run `applyAction`
+// `incompatible`), migrate a stored v1 Playthrough against it (a failure
+// means `incompatible`), run the reference check when the pinned hash differs
+// (a pass updates the pin, a fail means `incompatible`), run `applyAction`
 // (`step`, then legality), then the atomic commit
 // (`UPDATE … WHERE step = <expected>` plus the Journal inserts in one
 // transaction): no row changed means a concurrent turn won, so report `stale`.
@@ -29,9 +30,10 @@ import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
 import { localizeScenario } from '../../content/localize';
 import { applyAction, type Action, type Rng } from '../../engine/index';
+import { migratePlaythroughState, parseVersionedState } from '../../engine/migrate';
+import type { PlaythroughState } from '../../engine/state';
 import { PlaythroughStore } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
-import { validateStoredState } from './playthrough';
 
 export type TurnResult =
   | { ok: true; step: number }
@@ -59,14 +61,27 @@ export async function executeTurn(
     return { ok: false, reason: 'incompatible' };
   }
   // The store returns raw state: validate here, where the Scenario is known.
-  // Invalid documents fail without any write and without blocking the Journal
-  // (which reads through the store directly, never through this path).
-  const validated = validateStoredState(row.state);
-  if (validated === undefined) {
+  // A stored v1 Playthrough migrates against the current Scenario before
+  // engine legality. Invalid documents fail without any write and without
+  // blocking the Journal (which reads through the store directly, never
+  // through this path); a failed migration is incompatible without any write.
+  const versioned = parseVersionedState(row.state);
+  if (versioned.kind === 'invalid') {
     return { ok: false, reason: 'incompatible' };
   }
-  let state = validated;
-  let pinMoved = false;
+  let state: PlaythroughState;
+  let migrated = false;
+  if (versioned.kind === 'v1') {
+    const result = migratePlaythroughState(versioned.state, scenario);
+    if (!result.ok) {
+      return { ok: false, reason: 'incompatible' };
+    }
+    state = result.state;
+    migrated = true;
+  } else {
+    state = versioned.state;
+  }
+  let pinMoved = migrated;
   if (row.contentHash !== scenario.contentHash) {
     const check = checkPlaythroughCompatibility(scenario, state);
     if (!check.ok) {
