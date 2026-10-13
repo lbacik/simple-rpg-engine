@@ -20,6 +20,7 @@ import {
   startPlaythrough,
   view,
   type Action,
+  type ApplyActionResult,
   type PlaythroughState,
   type Rng,
 } from '../src/engine/index';
@@ -768,10 +769,7 @@ describe('M10 turn path: actions migrate before engine legality', () => {
 // M3/M4: partial victory and escape on two-participant Combats.
 // ---------------------------------------------------------------------------
 
-type CombatSuccess = Extract<
-  import('../src/engine/index').ApplyActionResult,
-  { ok: true }
->;
+type CombatSuccess = Extract<ApplyActionResult, { ok: true }>;
 
 function succeed(state: PlaythroughState, action: Action, rng: Rng, scenario: Scenario): CombatSuccess {
   const result = applyAction(scenario, state, action, rng);
@@ -862,9 +860,10 @@ describe('M3 defeat one wolf and reload', () => {
     }
 
     // Starting membership still contains both ids; only the survivor has
-    // active action state.
+    // active action state. The Round tie-break order prunes to the survivors
+    // (engine R11: nextOrder is the survivors in content order).
     expect(state.activeCombat?.startedParticipants).toEqual(['wolf-a', 'wolf-b']);
-    expect(state.activeCombat?.roundParticipantOrder).toEqual(['wolf-a', 'wolf-b']);
+    expect(state.activeCombat?.roundParticipantOrder).toEqual(['wolf-b']);
     expect(Object.keys(state.activeCombat?.participants ?? {}).sort()).toEqual(['wolf-b']);
     expect(state.encounters['wolves-ambush']).toEqual({ 'wolf-a': 9, 'wolf-b': 0 });
     expect(state.character.health).toBe(12);
@@ -1036,14 +1035,16 @@ function loadRepeatableWolves(): { scenario: Scenario } {
 describe('M4 escape and re-entry', () => {
   it('keeps both wounds while the new Combat contains only survivors, reset and freshly selected', () => {
     const { scenario } = loadRepeatableWolves();
-    // wolf-b is heavy and draws strike on a 6 at combat start.
-    const startDice = finiteDice([6]);
+    // Both wolves are melee at Far, so both select Close in with no draw
+    // (rule 2 precedes the heavy preparing draw).
+    const startDice = noDice();
     let state = startHunt(scenario, 'ranger', startDice.rng);
-    startDice.assertDone();
+    startDice.assertSilent();
 
-    // Two bow hits at Far (6+6+1 = 13) defeat wolf-a (health 6); wolf-b draws
-    // Prepare on a 1 at the first cleanup and executes it in round 2.
-    const first = finiteDice([6, 6, 1, 1, 1, 1, 1]);
+    // Two bow hits (ranger agility 3: 6+6+3 = 15) defeat wolf-a (health 6).
+    // Round 1 both wolves Close in from Far (no rolls); wolf-b draws Prepare
+    // on a 1 at the first cleanup and executes it in round 2.
+    const first = finiteDice([6, 6, 1]);
     state = attack(state, first.rng, scenario, 'wolf-a').state;
     first.assertDone();
     const second = finiteDice([6, 6]);

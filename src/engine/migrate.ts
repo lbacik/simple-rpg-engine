@@ -165,6 +165,8 @@ export function migratePlaythroughState(
     activeCombat: _combat,
     ...rest
   } = v1;
+  void _taken;
+  void _version;
   const candidate = {
     ...rest,
     stateVersion: STATE_VERSION,
