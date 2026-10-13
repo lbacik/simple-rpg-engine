@@ -142,7 +142,8 @@ describe('JournalEntries', () => {
     expect(html).not.toContain('journal-position');
   });
 
-  it('keeps scroll updates out of the live region and decorates the bar', () => {    const html = renderToStaticMarkup(
+  it('keeps scroll updates out of the live region and decorates the bar', () => {
+    const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
         initialEntries={[entry(25)]}
