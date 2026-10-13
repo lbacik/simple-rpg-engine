@@ -1,12 +1,15 @@
-// The Combat panel (docs/spec/ui.md, Combat panel): variant C, "Arena,
-// compact". Header kicker, one-line Range arena, four action columns in
-// order, and the log newest first with a "Last round" callout.
-//
-// Every line comes from the engine's structured events through the Interface
-// Language catalogue: action labels and disabled reasons render from the
-// engine's codes, and round history renders from events. Legacy rows (stored
-// English text, no event) are shown verbatim.
+// The tactical Combat panel (docs/spec/ui.md, Combat panel; variant A):
+// lanes, Intent bubbles, badges, the Character summary, the order strip, the
+// target picker and the action buttons, all from the engine's arena
+// projection. Cases reuse the shared arena examples from the engine
+// projection ticket (tests/fixtures/tactical.ts): one participant, a
+// same-kind pair, wolf + archer, and a pair with one defeated. The projection
+// itself is covered there, so these tests assert presentation — lanes,
+// letters, thresholds, picker links, button text and forms — never mechanics.
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { combatRollLine } from '../src/app/lib/combat-text';
@@ -15,77 +18,137 @@ import {
   healthPercent,
   type CombatView,
 } from '../src/app/play/[playthroughId]/combat-panel';
-import type {
-  CombatAvailability,
-  CombatRoll,
-  CombatRoundView,
-  TacticalActor,
-  TacticalRoundView,
+import type { Scenario } from '../src/content/index';
+import type { CompiledItem } from '../src/content/model';
+import {
+  applyAction,
+  startPlaythrough,
+  view,
+  type Action,
+  type CombatRoll,
+  type CombatRoundView,
+  type PlaythroughState,
+  type Rng,
 } from '../src/engine/index';
 import { en } from '../src/i18n/en';
+import type { Catalogue } from '../src/i18n/index';
 import { pl } from '../src/i18n/pl';
+import {
+  loadArenaExample,
+  loadTacticalFixture,
+  type ArenaExampleKind,
+} from './fixtures/tactical';
 
-function actions(): CombatAvailability[] {
-  return [
-    { id: 'advance', group: 'position', enabled: false, reason: 'already-near' },
-    { id: 'fall-back', group: 'position', enabled: true },
-    {
-      id: 'attack',
-      group: 'fight',
-      enabled: true,
-      weaponId: 'knife',
-      weaponName: 'Hunting Knife',
-    },
-    { id: 'defend', group: 'fight', enabled: true },
-    {
-      id: 'use-item',
-      group: 'items',
-      enabled: true,
-      itemId: 'poultice',
-      itemName: 'Berry Poultice',
-    },
-    { id: 'escape', group: 'leave', enabled: true },
-  ];
+function render(
+  combat: CombatView,
+  step: number,
+  extra: {
+    selectedTargetId?: string;
+    catalogue?: Catalogue;
+    rounds?: CombatRoundView[];
+  } = {},
+): string {
+  return renderToStaticMarkup(
+    <CombatPanel
+      combat={combat}
+      playthroughId="play-1"
+      step={step}
+      rounds={extra.rounds ?? []}
+      formAction="#combat"
+      catalogue={extra.catalogue ?? en}
+      lang="en"
+      selectedTargetId={extra.selectedTargetId}
+      targetHrefFor={(participantId) => `/play/play-1?target=${participantId}`}
+    />,
+  );
 }
 
-function combat(overrides: Partial<CombatView> = {}): CombatView {
-  return {
-    kind: 'combat',
-    locationId: 'clearing',
-    locationName: 'Whispering Woods',
-    encounterId: 'wolf',
-    encounterName: 'The Grey Wolf',
-    text: 'A wolf blocks the path.',
-    characterName: 'Robin',
-    range: 'near',
-    round: 3,
-    character: {
-      health: 9,
-      maxHealth: 12,
-      weaponName: 'Hunting Knife',
-      reach: 'melee',
-      damage: 3,
+function example(kind: ArenaExampleKind): { combat: CombatView; step: number } {
+  const loaded = loadArenaExample(kind);
+  const gameView = view(loaded.scenario, loaded.state);
+  if (gameView.kind !== 'combat') throw new Error(`example ${kind} has no combat`);
+  return { combat: gameView, step: loaded.state.step };
+}
+
+/** The wolves pair holding Healing Herbs, fresh or wounded. */
+function herbs(wounded: boolean): { combat: CombatView; step: number } {
+  const loaded = loadArenaExample('wolves');
+  // The loaded Scenario is frozen; derive an items case with a cloned lookup.
+  // The arena still comes from the engine projection, never hand-built.
+  const scenario: Scenario = {
+    ...loaded.scenario,
+    itemsById: {
+      ...loaded.scenario.itemsById,
+      'healing-herbs': {
+        id: 'healing-herbs',
+        kind: 'consumable',
+        name: 'Healing Herbs',
+        description: 'Bitter herbs.',
+        heal: 3,
+        magic: false,
+      } as CompiledItem,
     },
-    enemy: {
-      name: 'Grey Wolf',
-      health: 5,
-      maxHealth: 8,
-      damage: 2,
-      reach: 'melee',
-    },
-    actions: actions(),
-    arena: {
-      encounterId: 'wolf',
-      round: 3,
-      participants: [],
-      legalTargets: [],
-      order: [],
-      actions: [],
-      guarded: false,
-    },
-    map: {} as CombatView['map'],
-    ...overrides,
   };
+  const state: PlaythroughState = {
+    ...loaded.state,
+    character: {
+      ...loaded.state.character,
+      health: wounded ? loaded.state.character.health - 3 : loaded.state.character.health,
+    },
+    inventory: { ...loaded.state.inventory, 'healing-herbs': 1 },
+  };
+  const gameView = view(scenario, state);
+  if (gameView.kind !== 'combat') throw new Error('herbs example has no combat');
+  return { combat: gameView, step: state.step };
+}
+
+function silentRng(): Rng {
+  return () => {
+    throw new Error('no dice expected');
+  };
+}
+
+function diceRng(dice: number[]): Rng {
+  let index = 0;
+  return (min: number, max: number) => {
+    const die = dice[index];
+    if (die === undefined || die < min || die >= max) {
+      throw new Error(`die ${String(die)} outside [${min}, ${max})`);
+    }
+    index += 1;
+    return die;
+  };
+}
+
+/**
+ * Wolf + archer after Robin advances on the wolf: the wolf is Near with a
+ * Strike, the archer stays Far preparing its aimed shot, and both survive,
+ * so Advance is legal overall but not against the wolf.
+ */
+function advancedMixed(): { combat: CombatView; step: number } {
+  const { scenario } = loadTacticalFixture('pair-defaulted');
+  const started = startPlaythrough(scenario, 'hunter', 'Robin', silentRng());
+  if (!started.ok) throw new Error('advance example failed to start');
+  let state = started.state;
+  const submit = (action: Action, rng: Rng): void => {
+    const result = applyAction(scenario, state, action, rng);
+    if (!result.ok) throw new Error('advance example action failed');
+    state = result.state;
+  };
+  submit({ kind: 'open-scene', sceneId: 'ambush', expectedStep: state.step }, silentRng());
+  submit({ kind: 'choose', choiceId: 'confront', expectedStep: state.step }, diceRng([1]));
+  submit(
+    {
+      kind: 'combat',
+      combatAction: 'advance',
+      targetParticipantId: 'grey-wolf',
+      expectedStep: state.step,
+    },
+    diceRng([]),
+  );
+  const gameView = view(scenario, state);
+  if (gameView.kind !== 'combat') throw new Error('advance example has no combat');
+  return { combat: gameView, step: state.step };
 }
 
 /** New-shape rounds: structured events with the names as presented. */
@@ -145,176 +208,357 @@ function rounds(): CombatRoundView[] {
   ];
 }
 
-function render(view: CombatView, extra: Record<string, unknown> = {}): string {
-  return renderToStaticMarkup(
-    <CombatPanel
-      combat={view}
-      playthroughId="play-1"
-      step={7}
-      rounds={rounds()}
-      tacticalRounds={[]}
-      consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
-      formAction="#combat"
-      catalogue={en}
-      lang="en"
-      {...extra}
-    />,
-  );
-}
-
 describe('combat panel header', () => {
   it('shows the kicker, the Encounter name and the opening narration', () => {
-    const markup = render(combat());
-    expect(markup).toContain('Combat · <span lang="en">Whispering Woods</span> · Round 3');
-    expect(markup).toContain('<h1><span lang="en">The Grey Wolf</span></h1>');
-    expect(markup).toContain('A wolf blocks the path.');
+    const solo = example('solo');
+    const markup = render(solo.combat, solo.step);
+    expect(markup).toContain('Combat · <span lang="en">Glade</span> · Round 1');
+    expect(markup).toContain('<h1><span lang="en">Grey Wolf</span></h1>');
+    expect(markup).toContain('Teeth and arrows in the dark.');
   });
 
   it('shows no badge without one, and the badge after the Encounter name with one', () => {
-    expect(render(combat())).not.toContain('lang-chip');
-    const markup = render(combat(), { badge: <span className="lang-chip">Text: Polish</span> });
+    const solo = example('solo');
+    expect(render(solo.combat, solo.step)).not.toContain('lang-chip');
+    const markup = renderToStaticMarkup(
+      <CombatPanel
+        combat={solo.combat}
+        playthroughId="play-1"
+        step={solo.step}
+        rounds={[]}
+        formAction="#combat"
+        catalogue={en}
+        lang="en"
+        selectedTargetId={undefined}
+        targetHrefFor={(participantId) => `/play/play-1?target=${participantId}`}
+        badge={<span className="lang-chip">Text: Polish</span>}
+      />,
+    );
     expect(markup).toContain(
-      '<h1><span lang="en">The Grey Wolf</span> <span class="lang-chip">Text: Polish</span></h1>',
+      '<h1><span lang="en">Grey Wolf</span> <span class="lang-chip">Text: Polish</span></h1>',
     );
   });
 
-  it('marks the Enemy name with the Scenario language, never the Character name', () => {
-    const markup = render(combat());
-    expect(markup).toContain('<p class="combat-name" lang="en">Grey Wolf</p>');
+  it('marks participant names with the Scenario language, never the Character name', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
+    expect(markup).toContain('<span lang="en">Grey Wolf A</span>');
     expect(markup).toContain('<p class="combat-name">Robin</p>');
   });
 });
 
-describe('combat arena', () => {
-  it('labels the Range region and marks Near with side-by-side medallions', () => {
-    const markup = render(combat({ range: 'near' }));
-    expect(markup).toContain('aria-label="Range: Near"');
-    expect(markup).toContain('combat-arena near');
-    expect(markup).toContain('combat-medallion char');
-    expect(markup).toContain('combat-medallion enemy');
-    expect(markup).toContain('combat-clash');
-    // The Range word comes from the catalogue; the uppercase is CSS.
-    expect(markup).toContain('>Near</div>');
+describe('lanes, bubbles and badges (U1)', () => {
+  it('renders one lane with its Intent bubble for a lone participant', () => {
+    const solo = example('solo');
+    const markup = render(solo.combat, solo.step);
+    expect(markup.match(/tactical-lane-visual/g)?.length).toBe(1);
+    expect(markup).toContain('aria-label="Combat arena"');
+    // The Close in bubble: first among the Intents, normal Speed, no
+    // threshold on a movement Intent.
+    expect(markup).toContain('data-bubble-order="1"');
+    expect(markup).toContain('Normal');
+    expect(markup).toContain('Close in');
+    // A unique kind carries no letter.
+    expect(markup).not.toContain('combat-letter');
+    // The Character summary: name, Health and weapon line.
+    expect(markup).toContain('<p class="combat-name">Robin</p>');
+    expect(markup).toContain('12/12');
+    expect(markup).toContain('Sword · Damage 3 · Reach melee');
   });
 
-  it('moves the medallions to opposite edges at Far with a middle marker', () => {
-    const markup = render(combat({ range: 'far' }));
-    expect(markup).toContain('aria-label="Range: Far"');
-    expect(markup).toContain('combat-arena far');
-    expect(markup).toContain('combat-far');
-    expect(markup).toContain('>Far</div>');
-    expect(markup).not.toContain('combat-clash');
+  it('distinguishes same-kind participants with A/B letters, never author ids', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
+    expect(markup.match(/tactical-lane-visual/g)?.length).toBe(2);
+    expect(markup).toContain('Grey Wolf A');
+    expect(markup).toContain('Grey Wolf B');
+    expect(markup).toContain('combat-letter">A<');
+    expect(markup).toContain('combat-letter">B<');
+    // Author ids travel in picker hrefs and posted forms, never as names.
+    expect(markup).not.toContain('>wolf-a<');
+    expect(markup).not.toContain('>wolf-b<');
+    // Both wolves closed in at Far: the order strip lists both Intents.
+    expect(markup).toContain('Grey Wolf A</span>: Close in');
+    expect(markup).toContain('Grey Wolf B</span>: Close in');
   });
 
-  it('shows Health and weapon lines with never a Guarded badge', () => {
-    const markup = render(combat(), { rounds: [], consumables: [] });
-    expect(markup).toContain('Robin');
-    expect(markup).toContain('Grey Wolf');
-    expect(markup).toContain('9/12');
-    expect(markup).toContain('5/8');
-    expect(markup).toContain('Hunting Knife · Damage 3 · Reach melee');
-    expect(markup).toContain('Damage 2 · Reach melee');
-    // Guarded is round-scoped and lives only in the round log, never on the
-    // arena: no badge is rendered.
-    expect(markup).not.toContain('Guard up');
-    expect(markup).not.toContain('combat-guard');
+  it('shows preparation and the Heavy attack it builds towards', () => {
+    const mixed = example('mixed');
+    const markup = render(mixed.combat, mixed.step, { selectedTargetId: 'grey-wolf' });
+    // The archer takes aim: dashed Prepare bubble and the next round's aimed
+    // shot for base Damage +3. The Aiming badge appears only while prepared,
+    // after Take aim resolves (see below).
+    expect(markup).toContain('Take aim');
+    expect(markup).toContain('tactical-intent is-prepare');
+    expect(markup).toContain('next round: Aimed shot, slow, 5 Damage');
+    expect(markup).toContain('Close in');
   });
 
-  it('never badges legacy guard text on the arena', () => {
-    const legacy: CombatRoundView[] = [
-      {
-        round: 1,
-        action: 'defend',
-        rangeBefore: 'near',
-        rangeAfter: 'near',
-        guard: true,
-        text: 'Robin guards. The Grey Wolf circles, wary of the guard.',
-        rolls: [],
+  it('shows the prepared badge once Take aim resolves', () => {
+    const advanced = advancedMixed();
+    const markup = render(advanced.combat, advanced.step, {
+      selectedTargetId: 'bandit-archer',
+    });
+    // The archer is prepared: Aiming badge, slow aimed-shot bubble with its
+    // thresholds, still building towards the same Heavy attack.
+    expect(markup).toContain('Aiming');
+    expect(markup).toContain('Aimed shot');
+    expect(markup).toContain('2 Damage · hits you on 10+, 12+ if you Defend');
+    expect(markup).toContain('next round: Aimed shot, slow, 5 Damage');
+  });
+
+  it('shows the attack Damage with its 2d6 thresholds', () => {
+    const fallen = example('defeated');
+    const markup = render(fallen.combat, fallen.step);
+    // The surviving wolf's Strike hits Robin (Agility 3) on 10+, 12+ guarded.
+    expect(markup).toContain('2 Damage · hits you on 10+, 12+ if you Defend');
+  });
+
+  it('keeps a grey defeated lane without a bubble or Range label', () => {
+    const fallen = example('defeated');
+    const markup = render(fallen.combat, fallen.step);
+    expect(markup).toContain('Grey Wolf A');
+    expect(markup).toContain('Defeated');
+    expect(markup).toContain('combat-face is-defeated');
+    // Only the survivor keeps an Intent bubble and a Range label.
+    expect(markup.match(/data-bubble-order/g)?.length).toBe(1);
+    expect(markup.match(/tactical-range/g)?.length).toBe(1);
+    // The lane drawing is decorative; the summary carries the same text.
+    expect(markup).toContain('Grey Wolf B</span>: Near, Health');
+    // One survivor means no picker and a single order chip plus the hint.
+    expect(markup).not.toContain('aria-label="Target"');
+    expect(markup).toContain('Grey Wolf B</span>: Strike');
+    expect(markup).not.toContain('Grey Wolf A</span>: Strike');
+  });
+
+  it('orders lanes by content while the strip keeps the saved tie order', () => {
+    const wolves = example('wolves');
+    const reordered: CombatView = {
+      ...wolves.combat,
+      arena: {
+        ...wolves.combat.arena,
+        participants: [...wolves.combat.arena.participants].reverse(),
       },
-    ];
-    const markup = render(combat(), { rounds: legacy, consumables: [] });
-    expect(markup).toContain('Robin guards.');
-    expect(markup).not.toContain('Guard up');
-    expect(markup).not.toContain('combat-guard');
-  });
-
-  it('names an unarmed Character from the catalogue', () => {
-    const unarmed = combat();
-    unarmed.character = { ...unarmed.character, weaponName: undefined };
-    const markup = render(unarmed, { rounds: [], consumables: [] });
-    expect(markup).toContain('Bare hands');
+    };
+    const markup = render(reordered, wolves.step, { selectedTargetId: 'wolf-b' });
+    // Lane order follows content: wolf-b's medallion comes first.
+    expect(markup.indexOf('combat-name">Grey Wolf B')).toBeLessThan(
+      markup.indexOf('combat-name">Grey Wolf A'),
+    );
+    // The strip still announces the saved order: wolf-a first.
+    const strip = markup.indexOf('combat-order-list');
+    expect(markup.indexOf('Grey Wolf A</span>: Close in', strip)).toBeLessThan(
+      markup.indexOf('Grey Wolf B</span>: Close in', strip),
+    );
   });
 });
 
-describe('combat actions', () => {
-  it('renders the four groups in order: Position, Fight, Items, Leave', () => {
-    const markup = render(combat());
-    const order = ['aria-label="Position"', 'aria-label="Fight"', 'aria-label="Items"', 'aria-label="Leave"'].map(
-      (label) => markup.indexOf(label),
-    );
-    expect(order.every((index) => index >= 0)).toBe(true);
-    expect([...order].sort((a, b) => a - b)).toEqual(order);
+describe('target picker (U2)', () => {
+  it('links both survivors and marks the selected one', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-b' });
+    expect(markup).toContain('aria-label="Target"');
+    expect(markup).toContain('href="/play/play-1?target=wolf-a"');
+    expect(markup).toContain('href="/play/play-1?target=wolf-b" aria-current="true"');
+    expect(markup).toContain('Used by Attack, Distract and Advance.');
+    // The picker is an ordered list of links, one per survivor.
+    expect(markup.match(/\/play\/play-1\?target=/g)?.length).toBe(2);
   });
 
-  it('labels actions from their codes and the names as presented', () => {
-    const markup = render(combat());
-    expect(markup).toContain('Attack: <span lang="en">Hunting Knife</span>');
-    expect(markup).toContain('Use: <span lang="en">Berry Poultice</span>');
-    expect(markup).toContain('Fall back');
+  it('falls back to the first survivor when the parameter is missing or invalid', () => {
+    const wolves = example('wolves');
+    for (const selectedTargetId of [undefined, 'grey-wolf']) {
+      const markup = render(wolves.combat, wolves.step, { selectedTargetId });
+      // The first link carries the mark, and targeted forms post wolf-a.
+      expect(markup).toContain('href="/play/play-1?target=wolf-a" aria-current="true"');
+      expect(markup).toContain('name="target" value="wolf-a"');
+    }
   });
 
-  it('disables unavailable actions with the catalogue reason below the button', () => {
-    const markup = render(combat());
-    expect(markup).toContain('Already at Near Range.');
-    expect(markup).toContain('disabled');
+  it('hides the picker with one survivor and posts that survivor', () => {
+    const solo = example('solo');
+    const markup = render(solo.combat, solo.step);
+    expect(markup).not.toContain('aria-label="Target"');
+    expect(markup).not.toContain('?target=');
+    expect(markup).toContain('name="target" value="wolf-solo"');
   });
 
-  it('renders weapon-Range and full-Health reasons from their codes', () => {
-    const view = combat({
-      actions: [
-        {
-          id: 'attack',
-          group: 'fight',
-          enabled: false,
-          reason: 'needs-near',
-          weaponId: 'knife',
-          weaponName: 'Hunting Knife',
-        },
-        {
-          id: 'use-item',
-          group: 'items',
-          enabled: false,
-          reason: 'full-health',
-          itemId: 'poultice',
-          itemName: 'Berry Poultice',
-        },
-      ],
+  it('renders identically twice: selecting a target writes nothing', () => {
+    const wolves = example('wolves');
+    const first = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-b' });
+    const second = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-b' });
+    expect(first).toBe(second);
+  });
+
+  it('disables Advance against the Near wolf while the Far archer stays open', () => {
+    const advanced = advancedMixed();
+    const nearWolf = render(advanced.combat, advanced.step, {
+      selectedTargetId: 'grey-wolf',
     });
-    const markup = render(view);
-    expect(markup).toContain('Your <span lang="en">Hunting Knife</span> needs Near Range.');
-    expect(markup).toContain('Already at full Health.');
+    expect(nearWolf).toContain('You are already Near <span lang="en">Grey Wolf</span>.');
+    expect(nearWolf).toContain('name="target" value="grey-wolf"');
+    const farArcher = render(advanced.combat, advanced.step, {
+      selectedTargetId: 'bandit-archer',
+    });
+    expect(farArcher).not.toContain('You are already Near');
+    expect(farArcher).toContain('name="target" value="bandit-archer"');
   });
 
-  it('posts plain forms with the hidden playthrough, step, combat and item fields', () => {
-    const markup = render(combat());
-    expect(markup).toContain('name="playthroughId" value="play-1"');
-    expect(markup).toContain('name="expectedStep" value="7"');
-    expect(markup).toContain('name="combat" value="fall-back"');
-    expect(markup).toContain('name="item" value="poultice"');
-  });
-
-  it('explains an empty Items column', () => {
-    const markup = render(
-      { ...combat(), actions: actions().filter((action) => action.id !== 'use-item') },
-      { rounds: [], consumables: [] },
+  it('names the out-of-Reach target on a disabled Attack', () => {
+    const advanced = advancedMixed();
+    const markup = render(advanced.combat, advanced.step, {
+      selectedTargetId: 'bandit-archer',
+    });
+    expect(markup).toContain(
+      'Your <span lang="en">Sword</span> needs Near Range; <span lang="en">Bandit Archer</span> is Far.',
     );
+  });
+});
+
+describe('action buttons (U3)', () => {
+  it('shows Speed, predicted order, threshold and target on every button', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-b' });
+    // Robin (Agility 3) acts first with a normal action: 1st of 3.
+    expect(markup).toContain('Normal · acts 1st of 3 · needs 9+ · → <span lang="en">Grey Wolf B</span>');
+    // Defend is fast and unrolled; Fall back is slow and, with nothing Near,
+    // unrolled too.
+    expect(markup).toContain('Fast · acts 1st of 3');
+    expect(markup).toContain('Slow · acts 3rd of 3');
+    // Escape keeps its committed +2 while every lane is Far.
+    expect(markup).toContain('needs 9+ · includes +2 committed bonus');
+  });
+
+  it('posts plain forms with the step, the selected target and the Consumable id', () => {
+    const wounded = herbs(true);
+    const markup = render(wounded.combat, wounded.step, { selectedTargetId: 'wolf-a' });
+    expect(markup).toContain('name="playthroughId" value="play-1"');
+    expect(markup).toContain(`name="expectedStep" value="${wounded.step}"`);
+    // Targeted actions post the picker selection; untargeted ones post none.
+    expect(markup).toContain('name="combat" value="attack"');
+    // Attack, Distract and Advance post the picker selection; Defend,
+    // Escape and the Consumable post no target.
+    expect(markup.match(/name="target" value="wolf-a"/g)?.length).toBe(3);
+    const defendForm = markup.slice(markup.indexOf('name="combat" value="defend"'));
+    expect(defendForm.slice(0, defendForm.indexOf('</form>'))).not.toContain('name="target"');
+    // The Consumable posts its id on an untargeted form.
+    expect(markup).toContain('name="combat" value="use-item"');
+    expect(markup).toContain('name="item" value="healing-herbs"');
+    expect(markup).toContain('Use: <span lang="en">Healing Herbs</span>');
+  });
+
+  it('disables the Consumable at full Health with the engine reason', () => {
+    const fresh = herbs(false);
+    const markup = render(fresh.combat, fresh.step, { selectedTargetId: 'wolf-a' });
+    expect(markup).toContain('Already at full Health.');
+    expect(markup).not.toContain('name="item" value="healing-herbs"');
+  });
+
+  it('explains an empty Items group', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
     expect(markup).toContain('No Consumables held.');
+  });
+
+  it('exposes the server-given positions for the focus/hover preview', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
+    expect(markup).toContain('data-preview-order="1"');
+    expect(markup).toContain('data-preview-text="#1 Defend (preview)"');
+    expect(markup).toContain('data-bubble-disc');
+    expect(markup).toContain('data-strip-hint');
+  });
+});
+
+describe('tactical accessibility (U6)', () => {
+  it('keeps ordered-list semantics, marked targets and per-lane summaries', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
+    expect(markup).toContain('<ol class="combat-order-list">');
+    expect(markup).toContain('aria-current="true"');
+    // One screen-reader summary per lane; the drawings are decorative.
+    expect(markup.match(/class="visually-hidden"/g)?.length).toBe(2);
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain('Grey Wolf A</span>: Far, Health 8/8. Close in, Normal.');
+  });
+
+  it('points disabled buttons at their reason', () => {
+    const wolves = example('wolves');
+    const markup = render(wolves.combat, wolves.step, { selectedTargetId: 'wolf-a' });
+    // Attack is disabled at Far with a melee weapon; the button names its
+    // reason, which names no target the sword cannot reach past.
+    expect(markup).toContain('aria-describedby="combat-reason-attack"');
+    expect(markup).toContain('id="combat-reason-attack"');
+    expect(markup).toContain('Your <span lang="en">Sword</span> needs Near Range.');
+  });
+
+  it('keeps the phone, motion and focus rules in the stylesheet', () => {
+    const cssPath = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      'src',
+      'app',
+      'globals.css',
+    );
+    const css = fs.readFileSync(cssPath, 'utf8');
+    // The four action groups collapse to a 2x2 grid on phone widths.
+    expect(css).toContain('repeat(2, minmax(0, 1fr))');
+    // Lanes wrap instead of overflowing the page.
+    expect(css).toContain('.tactical-arena');
+    expect(css).toContain('flex-wrap: wrap');
+    // Reduced motion disables lane transitions.
+    expect(css).toContain('prefers-reduced-motion: reduce');
+    // Keyboard focus stays visible on buttons and picker links.
+    expect(css).toContain(':focus-visible');
+    // Decorative drawings read through visually-hidden summaries.
+    expect(css).toContain('.visually-hidden');
+  });
+});
+
+describe('combat panel in Polish', () => {
+  function renderPl(kind: ArenaExampleKind, selectedTargetId?: string): string {
+    const loaded = loadArenaExample(kind);
+    const gameView = view(loaded.scenario, loaded.state);
+    if (gameView.kind !== 'combat') throw new Error(`example ${kind} has no combat`);
+    return render(gameView, loaded.state.step, { selectedTargetId, catalogue: pl });
+  }
+
+  it('shows the arena, strip, picker and buttons in Polish with English names', () => {
+    const markup = renderPl('wolves', 'wolf-b');
+    expect(markup).toContain('Walka · <span lang="en">Glade</span> · Runda 1');
+    expect(markup).toContain('aria-label="Arena walki"');
+    expect(markup).toContain('Ta runda');
+    expect(markup).toContain('aria-label="Cel"');
+    // Scenario names stay as presented: English, lettered, never inflected.
+    expect(markup).toContain('<span lang="en">Grey Wolf B</span>');
+    expect(markup).toContain('Zbliżenie');
+    expect(markup).toContain('Zwykła · działa 1. z 3 · wymaga 9+ · → <span lang="en">Grey Wolf B</span>');
+    expect(markup).toContain('Cel Ataku, Rozproszenia i Podejścia.');
+  });
+
+  it('keeps the defeated lane and preparation badges readable in Polish', () => {
+    expect(renderPl('defeated')).toContain('Pokonany');
+    const mixed = renderPl('mixed', 'grey-wolf');
+    expect(mixed).toContain('Celowanie');
+    expect(mixed).toContain('następna runda: Wycelowany strzał, Wolna, 5 obrażeń');
+    const advanced = advancedMixed();
+    const prepared = render(advanced.combat, advanced.step, {
+      selectedTargetId: 'bandit-archer',
+      catalogue: pl,
+    });
+    expect(prepared).toContain('Celuje');
+    expect(prepared).toContain('Wycelowany strzał');
   });
 });
 
 describe('combat log', () => {
+  function renderWithLog(extra: { catalogue?: Catalogue } = {}): string {
+    const solo = example('solo');
+    return render(solo.combat, solo.step, { ...extra, rounds: rounds() });
+  }
+
   it('leads with a Last round callout, older rounds after, newest first', () => {
-    const markup = render(combat());
+    const markup = renderWithLog();
     expect(markup).toContain('aria-label="Log"');
     expect(markup).toContain('Last round · 2');
     const latest = markup.indexOf('Last round');
@@ -327,7 +571,7 @@ describe('combat log', () => {
   });
 
   it('derives round lines and roll chips from events, not stored text', () => {
-    const markup = render(combat());
+    const markup = renderWithLog();
     expect(markup).toContain(
       'Attack: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8) — hit, 3 Damage.',
     );
@@ -338,13 +582,14 @@ describe('combat log', () => {
   });
 
   it('wraps every Scenario name in the log with the Scenario language', () => {
-    const markup = render(combat());
+    const markup = renderWithLog();
     // The Interface Text around the names carries no lang of its own.
     expect(markup).toContain('Last round · 2');
     expect(markup).not.toContain('lang="en">Fall back (2+2+1=5 vs 4): success');
   });
 
   it('shows legacy rows verbatim, one line per round, with no roll chips', () => {
+    const solo = example('solo');
     const legacy: CombatRoundView[] = [
       {
         round: 1,
@@ -367,7 +612,7 @@ describe('combat log', () => {
         ],
       },
     ];
-    const markup = render(combat(), { rounds: legacy });
+    const markup = render(solo.combat, solo.step, { rounds: legacy });
     expect(markup).toContain('<p lang="en">Robin closes in and strikes.</p>');
     // Chips would resolve the Enemy's name from the live Scenario instead of
     // the entry, so legacy rows show their stored text only.
@@ -376,195 +621,28 @@ describe('combat log', () => {
   });
 
   it('explains an empty log', () => {
-    const markup = render(combat(), { rounds: [], consumables: [] });
+    const solo = example('solo');
+    const markup = render(solo.combat, solo.step);
     expect(markup).toContain('No rolls yet.');
   });
-});
 
-describe('tactical combat log', () => {
-  const hero: TacticalActor = { kind: 'character' };
-  const wolfA: TacticalActor = {
-    kind: 'participant',
-    participantId: 'w1',
-    enemyId: 'wolf',
-    name: 'Grey Wolf',
-    ordinal: 1,
-  };
-  const wolfB: TacticalActor = {
-    kind: 'participant',
-    participantId: 'w2',
-    enemyId: 'wolf',
-    name: 'Grey Wolf',
-    ordinal: 2,
-  };
-
-  function roll(overrides: Partial<CombatRoll>): CombatRoll {
-    return {
-      side: 'enemy',
-      die1: 1,
-      die2: 2,
-      modifier: 1,
-      total: 4,
-      target: 8,
-      hit: false,
-      damage: 0,
-      ...overrides,
-    };
-  }
-
-  /** Three tactical rounds, oldest first: every status the renderer shows. */
-  function tactical(): TacticalRoundView[] {
-    return [
-      {
-        round: 1,
-        actions: [
-          {
-            actor: hero,
-            kind: 'attack',
-            speed: 'normal',
-            order: 1,
-            target: wolfA,
-            status: 'executed',
-            roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 2, total: 9, target: 8, hit: true, damage: 3 }) },
-            damage: 3,
-            weaponName: 'Hunting Knife',
-          },
-          {
-            actor: wolfA,
-            kind: 'strike',
-            speed: 'normal',
-            order: 2,
-            target: hero,
-            status: 'executed',
-            roll: { ...roll({ die1: 5, die2: 4, modifier: 1, total: 10, target: 8, hit: true, damage: 2 }) },
-            damage: 2,
-          },
-          {
-            actor: wolfB,
-            kind: 'close-in',
-            speed: 'slow',
-            order: 3,
-            target: hero,
-            status: 'cancelled',
-            cancelReason: 'already-near',
-          },
-        ],
-      },
-      {
-        round: 2,
-        actions: [
-          {
-            actor: hero,
-            kind: 'distract',
-            speed: 'fast',
-            order: 1,
-            target: wolfA,
-            status: 'executed',
-            roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 1, total: 8, target: 8, hit: true, damage: 0 }) },
-            damage: 0,
-            waryUntilRound: 3,
-          },
-          {
-            actor: wolfA,
-            kind: 'strike',
-            speed: 'normal',
-            order: 2,
-            target: hero,
-            status: 'cancelled',
-            cancelReason: 'interrupted',
-          },
-          { actor: wolfB, kind: 'prepare', speed: 'slow', order: 3, target: hero, status: 'executed', prepared: true },
-        ],
-      },
-      {
-        round: 3,
-        actions: [
-          { actor: hero, kind: 'defend', speed: 'fast', order: 1, status: 'executed', guarded: true },
-          {
-            actor: wolfA,
-            kind: 'strike',
-            speed: 'normal',
-            order: 2,
-            target: hero,
-            status: 'executed',
-            roll: roll({}),
-            damage: 0,
-            counter: {
-              roll: { ...roll({ side: 'character', die1: 4, die2: 3, modifier: 2, total: 9, target: 8, hit: true, damage: 1 }) },
-              damage: 1,
-            },
-          },
-          { actor: wolfB, kind: 'prepare', speed: 'slow', order: 3, target: hero, status: 'executed', prepared: true },
-        ],
-      },
-    ];
-  }
-
-  it('renders the last tactical round through the shared report', () => {
-    const markup = render(combat(), { rounds: [], tacticalRounds: tactical() });
-    expect(markup).toContain('Last round · 3');
-    expect(markup).toContain('<ol class="tactical-round">');
-    // Same-kind participants read as letters from the stored ordinal.
-    expect(markup).toContain('Grey Wolf A');
-    expect(markup).toContain('Grey Wolf B');
-    // Executed Defend, the guarded miss note and the nested counterattack.
-    expect(markup).toContain('Guarded until the end of the round');
-    expect(markup).toContain('(your guard held)');
-    expect(markup).toContain('↳ Counterattack:');
-    expect(markup).toContain('prepares; its heavy attack comes next round');
+  it('shows the kicker, groups and reasons in Polish', () => {
+    const markup = renderWithLog({ catalogue: pl });
+    expect(markup).toContain('Walka · <span lang="en">Glade</span> · Runda 1');
+    for (const group of ['Pozycja', 'Walka', 'Przedmioty', 'Ucieczka']) {
+      expect(markup).toContain(`aria-label="${group}"`);
+    }
+    expect(markup).toContain('Ostatnia runda · 2');
   });
 
-  it('lists older tactical rounds newest first as compact summaries', () => {
-    const markup = render(combat(), { rounds: [], tacticalRounds: tactical() });
-    const second = markup.indexOf('>Round 2.');
-    const first = markup.indexOf('>Round 1.');
-    expect(second).toBeGreaterThanOrEqual(0);
-    expect(first).toBeGreaterThan(second);
-    // The older summaries carry the same events: the hit, the interruption
-    // and the cancel reason.
-    expect(markup).toContain('Cancelled: already Near.');
-    expect(markup).toContain('Cancelled: interrupted by your distraction.');
-  });
-
-  it('keeps legacy rows verbatim beside tactical rounds', () => {
-    const legacy: CombatRoundView[] = [
-      {
-        round: 1,
-        action: 'attack',
-        rangeBefore: 'far',
-        rangeAfter: 'near',
-        guard: false,
-        text: 'Robin closes in and strikes.',
-        rolls: [],
-      },
-    ];
-    const markup = render(combat(), { rounds: legacy, tacticalRounds: tactical() });
-    expect(markup).toContain('Last round · 3');
-    expect(markup).toContain('<span lang="en">Robin closes in and strikes.</span>');
-    expect(markup).not.toContain('combat-roll');
-  });
-
-  it('renders tactical rounds in Polish through the same renderer', () => {
-    const markup = renderToStaticMarkup(
-      <CombatPanel
-        combat={combat()}
-        playthroughId="play-1"
-        step={7}
-        rounds={[]}
-        tacticalRounds={tactical()}
-        consumables={[]}
-        formAction="#combat"
-        catalogue={pl}
-        lang="en"
-      />,
+  it('keeps the label shape with untransformed names and plural Damage', () => {
+    const markup = renderWithLog({ catalogue: pl });
+    // Label-shaped with the weapon name as presented, never case-transformed.
+    expect(markup).toContain(
+      'Atak: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8) — trafienie, 3 obrażenia.',
     );
-    expect(markup).toContain('Ostatnia runda · 3');
-    expect(markup).toContain('Szybka');
-    expect(markup).toContain('Garda do końca rundy');
-    expect(markup).toContain('(garda wytrzymała)');
-    expect(markup).toContain('↳ Kontratak:');
-    expect(markup).toContain('Anulowano: już blisko.');
-    expect(markup).toContain('Anulowano: przerwany twoim rozproszeniem.');
+    expect(markup).not.toContain('hunting knife');
+    expect(markup).not.toContain('HUNTING KNIFE');
   });
 });
 
@@ -610,47 +688,6 @@ describe('combatRollLine', () => {
     expect(combatRollLine(roll({ damage: 5 }), pl, 'Robin', 'Szary Wilk')).toBe(
       'Robin: 4+3+2=9 vs 8 — trafienie, 5 obrażeń',
     );
-  });
-});
-
-describe('combat panel in Polish', () => {
-  function renderPl(view: CombatView, extra: Record<string, unknown> = {}): string {
-    return renderToStaticMarkup(
-      <CombatPanel
-        combat={view}
-        playthroughId="play-1"
-        step={7}
-        rounds={rounds()}
-        tacticalRounds={[]}
-        consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
-        formAction="#combat"
-        catalogue={pl}
-        lang="en"
-        {...extra}
-      />,
-    );
-  }
-
-  it('shows the kicker, groups, arena and reasons in Polish', () => {
-    const markup = renderPl(combat());
-    expect(markup).toContain('Walka · <span lang="en">Whispering Woods</span> · Runda 3');
-    for (const group of ['Pozycja', 'Walka', 'Przedmioty', 'Ucieczka']) {
-      expect(markup).toContain(`aria-label="${group}"`);
-    }
-    expect(markup).toContain('aria-label="Dystans: Blisko"');
-    expect(markup).toContain('Już: Blisko.');
-    expect(markup).toContain('Atak: <span lang="en">Hunting Knife</span>');
-    expect(markup).toContain('Ostatnia runda · 2');
-  });
-
-  it('keeps the label shape with untransformed names and plural Damage', () => {
-    const markup = renderPl(combat());
-    // Label-shaped with the weapon name as presented, never case-transformed.
-    expect(markup).toContain(
-      'Atak: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8) — trafienie, 3 obrażenia.',
-    );
-    expect(markup).not.toContain('hunting knife');
-    expect(markup).not.toContain('HUNTING KNIFE');
   });
 });
 
