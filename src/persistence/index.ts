@@ -3,7 +3,7 @@
 
 export type { Database, PlaythroughRow, JournalEntryRow, SessionRow } from './schema';
 export { MIGRATIONS } from './migrations';
-export { openDatabase, getDatabase, setDatabase, migrateDatabase, databasePath } from './db';
+export { openDatabase, getDatabase, setDatabase, migrateDatabase, databasePath, runSerialized } from './db';
 export { PlaythroughStore, SessionStore } from './stores';
 export type {
   StoredPlaythrough,

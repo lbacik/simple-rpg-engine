@@ -3,6 +3,7 @@
 // same-step race (docs/spec/architecture.md, turn atomicity).
 
 import { describe, expect, it } from 'vitest';
+import { sql } from 'kysely';
 import type { Scenario } from '../src/content/index';
 import { startPlaythrough, type Rng } from '../src/engine/index';
 import { executeTurn } from '../src/app/lib/turn';
@@ -218,6 +219,40 @@ describe('executeTurn', () => {
         rng,
       );
       expect(result).toEqual({ ok: false, reason: 'ended' });
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('rolls back the state update when the journal insert fails', async () => {
+    const scenario = loadFixture();
+    const load = (id: string): Scenario | undefined => (id === scenario.id ? scenario : undefined);
+    const { db, playthroughId } = await setupPlaythrough(scenario, SESSION);
+    try {
+      // Fail every journal insert from here on; the intro entry is already stored.
+      await sql`CREATE TRIGGER inject_journal_failure BEFORE INSERT ON journal_entries BEGIN SELECT RAISE(ABORT, 'injected journal failure'); END;`.execute(
+        db,
+      );
+      await expect(
+        executeTurn(
+          db,
+          load,
+          playthroughId,
+          SESSION,
+          { kind: 'travel', targetLocationId: 'grove', expectedStep: 0 },
+          rng,
+        ),
+      ).rejects.toThrow('injected journal failure');
+      const store = new PlaythroughStore(db);
+      const stored = await store.findById(playthroughId);
+      expect(stored?.step).toBe(0);
+      expect(stored?.state.currentLocationId).toBe('glade');
+      // Nothing committed: state, pin, status and ending are untouched too.
+      expect(stored?.status).toBe('active');
+      expect(stored?.endingId).toBeNull();
+      expect(stored?.scenarioVersion).toBe(scenario.version);
+      expect(stored?.contentHash).toBe(scenario.contentHash);
+      expect((await store.listJournal(playthroughId)).map((e) => e.type)).toEqual(['intro']);
     } finally {
       await db.destroy();
     }

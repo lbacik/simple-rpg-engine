@@ -1,6 +1,7 @@
 // Persistence port tests against in-memory SQLite, including the step-race.
 
 import { describe, expect, it } from 'vitest';
+import { sql } from 'kysely';
 import {
   migrateDatabase,
   openDatabase,
@@ -114,6 +115,36 @@ describe('persistence ports', () => {
       expect([first, second].filter(Boolean)).toHaveLength(1);
       const stored = await playthroughs.findById('pt-race');
       expect(stored?.step).toBe(1);
+    } finally {
+      await db.destroy();
+    }
+  });
+
+  it('leaves no partial playthrough when the initial journal append fails', async () => {
+    const db = openDatabase(':memory:');
+    try {
+      await migrateDatabase(db);
+      const playthroughs = new PlaythroughStore(db);
+      await sql`CREATE TRIGGER inject_journal_failure BEFORE INSERT ON journal_entries BEGIN SELECT RAISE(ABORT, 'injected journal failure'); END;`.execute(
+        db,
+      );
+      await expect(
+        playthroughs.create(
+          {
+            id: 'pt-partial',
+            sessionId: 'hash-1',
+            scenarioId: 'meadow',
+            scenarioVersion: '1.0.0',
+            contentHash: 'abc',
+            status: 'active',
+            step: 0,
+            state: makeState(),
+          },
+          [{ step: 0, type: 'intro', lang: 'en', payload: { text: 'You wake.' } }],
+        ),
+      ).rejects.toThrow('injected journal failure');
+      expect(await playthroughs.findById('pt-partial')).toBeNull();
+      expect(await playthroughs.listJournal('pt-partial')).toEqual([]);
     } finally {
       await db.destroy();
     }
