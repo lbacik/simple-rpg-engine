@@ -31,7 +31,7 @@ import {
   playHref,
   shouldShowResultPanel,
 } from '@/app/lib/panel';
-import { resolvePlaythrough } from '@/app/lib/playthrough';
+import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
 import { CombatPanel } from './combat-panel';
 import { SceneIllustration } from './scene-illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
@@ -129,22 +129,33 @@ export default async function PlayPage({
   if (!resolved.compatible) {
     // Incompatible Playthroughs are read-only: derived on read, never stored.
     // Every action is rejected by executeTurn, so no forms are rendered here.
-    const incompatibleName = resolved.playthrough.state.character.name;
-    if (resolved.scenario === undefined) {
-      // The Scenario left the collection (or is no longer valid): only the
-      // Journal remains, and the Ending is read from its Journal entry. The
-      // Journal always renders completely because it stores the text as presented.
+    // The name never crashes on an invalid document: it falls back to the
+    // row's Scenario id.
+    const incompatibleName = safeCharacterName(
+      resolved.playthrough.state,
+      resolved.playthrough.scenarioId,
+    );
+    if (resolved.scenario === undefined || resolved.parsed === undefined) {
+      // The Scenario left the collection (or is no longer valid), or the
+      // stored document itself is invalid: only the Journal remains, and the
+      // Ending is read from its Journal entry. The Journal always renders
+      // completely because it stores the text as presented.
       // The Ending is the newest entry, so the first batch always holds it.
+      // Invalid documents are never rewritten here.
       const batch = await store.listJournalBatch(resolved.playthrough.id, {
         limit: JOURNAL_BATCH_SIZE,
       });
       const journalTotal = await store.countJournal(resolved.playthrough.id);
       const recordedEnding = latestJournalEnding(batch.entries);
       const rendered = renderJournalEntries(batch.entries, catalogue, incompatibleName);
+      const goneText =
+        resolved.scenario === undefined
+          ? catalogue.game.scenarioGone
+          : catalogue.game.scenarioChanged;
       return (
         <main>
           <h1>{incompatibleName}</h1>
-          <p>{catalogue.game.scenarioGone}</p>
+          <p>{goneText}</p>
           {recordedEnding ? (
             <section aria-label={catalogue.ending.title}>
               <p className="meta">{catalogue.ending[recordedEnding.kind]}</p>
@@ -185,7 +196,7 @@ export default async function PlayPage({
     const incompatibleBadge = incompatibleLocalized.fallback ? (
       <ScenarioFallbackBadge baseLanguage={incompatibleBase.language} catalogue={catalogue} />
     ) : undefined;
-    const incompatibleState = resolved.playthrough.state;
+    const incompatibleState = resolved.parsed;
     const incompatibleView = view(incompatibleScenario, incompatibleState, {
       includeUnknownExits: showUnknownExits,
     });

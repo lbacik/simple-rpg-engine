@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { getScenario } from '@/content/registry';
 import { getCatalogue } from '@/i18n/index';
-import { getDatabase, PlaythroughStore } from '@/persistence/index';
+import { getDatabase } from '@/persistence/index';
 import { getInterfaceLanguage } from '@/app/lib/language';
-import { resolvePlaythrough } from '@/app/lib/playthrough';
+import { listSessionPlaythroughs, safeCharacterName } from '@/app/lib/playthrough';
 import { getSessionHash } from '@/app/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -20,19 +20,10 @@ export default async function PlaythroughsPage() {
   const catalogue = getCatalogue(await getInterfaceLanguage());
   const sessionHash = await getSessionHash();
   const db = getDatabase();
-  const stored = sessionHash
-    ? await new PlaythroughStore(db).listBySession(sessionHash)
-    : [];
-  // Incompatibility is derived on read: an incompatible Playthrough is
-  // viewable, never resumable. Reads that pass the reference check update the
-  // content pin, like every other read.
-  const entries = (
-    await Promise.all(
-      stored.map((playthrough) =>
-        resolvePlaythrough(db, getScenario, playthrough.id, sessionHash),
-      ),
-    )
-  ).filter((entry) => entry !== null);
+  // Every list entry resolves through the Scenario-aware read layer: the
+  // store returns raw state and validation/migration live there. Reads that
+  // pass the reference check update the content pin, like every other read.
+  const entries = await listSessionPlaythroughs(db, getScenario, sessionHash);
   const resumable = entries.filter(
     (entry) => entry.compatible && entry.playthrough.status === 'active',
   );
@@ -44,6 +35,12 @@ export default async function PlaythroughsPage() {
     return entry.playthrough.status === 'active'
       ? catalogue.playthroughs.statusActive
       : catalogue.playthroughs.statusEnded;
+  };
+  // Invalid stored documents never crash the list: fall back to the
+  // Scenario id, which is always present on the row.
+  const displayName = (entry: (typeof entries)[number]): string => {
+    if (entry.compatible) return entry.playthrough.state.character.name;
+    return safeCharacterName(entry.playthrough.state, entry.playthrough.scenarioId);
   };
   return (
     <main>
@@ -63,7 +60,7 @@ export default async function PlaythroughsPage() {
             <ul className="cards">
               {resumable.map((entry) => (
                 <li key={entry.playthrough.id} className="card">
-                  <h3>{entry.playthrough.state.character.name}</h3>
+                  <h3>{displayName(entry)}</h3>
                   <p className="meta">
                     {entry.playthrough.scenarioId} · {statusOf(entry)}
                   </p>
@@ -83,7 +80,7 @@ export default async function PlaythroughsPage() {
             <ul className="cards">
               {viewable.map((entry) => (
                 <li key={entry.playthrough.id} className="card">
-                  <h3>{entry.playthrough.state.character.name}</h3>
+                  <h3>{displayName(entry)}</h3>
                   <p className="meta">
                     {entry.playthrough.scenarioId} · {statusOf(entry)}
                   </p>

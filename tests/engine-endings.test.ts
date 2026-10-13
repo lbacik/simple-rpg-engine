@@ -319,8 +319,8 @@ describe('ended Playthroughs are frozen', () => {
       const stored = await store.findById('pt-ending');
       expect(stored?.status).toBe('ended');
       expect(stored?.endingId).toBe('walked-away');
-      expect(stored?.state.status).toBe('ended');
-      expect(stored?.state.endingId).toBe('walked-away');
+      expect((stored?.state as PlaythroughState).status).toBe('ended');
+      expect((stored?.state as PlaythroughState).endingId).toBe('walked-away');
       expect((await store.listJournal('pt-ending')).map((entry) => entry.type)).toEqual([
         'intro',
         'scene',

@@ -315,7 +315,8 @@ describe('turn pipeline', () => {
       );
       expect(result).toEqual({ ok: true, step: 1 });
       const store = new PlaythroughStore(db);
-      expect((await store.findById('pt-inventory'))?.state.equipment).toEqual({
+      const storedInventory = await store.findById('pt-inventory');
+      expect((storedInventory?.state as PlaythroughState).equipment).toEqual({
         outfit: 'cloak',
       });
       const journal = await store.listJournal('pt-inventory');

@@ -31,6 +31,7 @@ import { localizeScenario } from '../../content/localize';
 import { applyAction, type Action, type Rng } from '../../engine/index';
 import { PlaythroughStore } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
+import { validateStoredState } from './playthrough';
 
 export type TurnResult =
   | { ok: true; step: number }
@@ -57,7 +58,14 @@ export async function executeTurn(
   if (scenario === undefined) {
     return { ok: false, reason: 'incompatible' };
   }
-  let state = row.state;
+  // The store returns raw state: validate here, where the Scenario is known.
+  // Invalid documents fail without any write and without blocking the Journal
+  // (which reads through the store directly, never through this path).
+  const validated = validateStoredState(row.state);
+  if (validated === undefined) {
+    return { ok: false, reason: 'incompatible' };
+  }
+  let state = validated;
   let pinMoved = false;
   if (row.contentHash !== scenario.contentHash) {
     const check = checkPlaythroughCompatibility(scenario, state);

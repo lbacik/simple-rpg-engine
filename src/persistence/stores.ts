@@ -1,8 +1,15 @@
 // Async store ports behind Kysely (docs/spec/architecture.md, persistence).
 // Async ports even though better-sqlite3 is synchronous.
+//
+// The store is a raw persistence seam: it parses the stored TEXT as JSON but
+// never validates the state document. Validation and migration are
+// Scenario-aware and live in `src/app/lib/playthrough.ts` (and the turn path
+// in `src/app/lib/turn.ts`), which own the current Scenario. Callers that need
+// a validated state must go through that layer; reading `state` here yields
+// the stored bytes as parsed JSON, including invalid documents.
 
 import type { Kysely, Transaction } from 'kysely';
-import { parsePlaythroughState, type PlaythroughState } from '../engine/state';
+import type { PlaythroughState } from '../engine/state';
 import { runSerialized } from './db';
 import type { Database } from './schema';
 
@@ -17,7 +24,8 @@ export type StoredPlaythrough = {
   status: string;
   endingId: string | null;
   step: number;
-  state: PlaythroughState;
+  /** Raw stored state: parsed JSON, unvalidated. Validate via the read layer. */
+  state: unknown;
   createdAt: string;
   updatedAt: string;
 };
@@ -62,6 +70,16 @@ export type NewJournalInput = {
   payload: unknown;
 };
 
+function parseRawState(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Corrupt TEXT is not valid state: the Scenario-aware read layer reports
+    // it as invalid without rewriting it, while the Journal stays readable.
+    return undefined;
+  }
+}
+
 function toStored(row: Database['playthroughs']): StoredPlaythrough {
   return {
     id: row.id,
@@ -72,7 +90,7 @@ function toStored(row: Database['playthroughs']): StoredPlaythrough {
     status: row.status,
     endingId: row.ending_id,
     step: row.step,
-    state: parsePlaythroughState(JSON.parse(row.state)),
+    state: parseRawState(row.state),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
