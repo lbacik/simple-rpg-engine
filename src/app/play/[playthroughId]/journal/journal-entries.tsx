@@ -19,6 +19,7 @@ import {
   type JournalBatchResponse,
   type RenderedJournalEntry,
 } from '../../../lib/journal';
+import { LanguageFlag } from '../../../flag';
 
 /** The nearest scrolling ancestor, or null for the viewport (the window). */
 function scrollContainerOf(element: HTMLElement): Element | null {
@@ -200,7 +201,14 @@ export function JournalEntries({
         {entries.map((entry) => (
           <li key={entry.seq} data-seq={entry.seq} data-step={entry.step}>
             <p className="meta">
-              {entry.label} · step {entry.step}
+              {entry.label}
+              {entry.flag !== null ? (
+                <>
+                  {' '}
+                  <LanguageFlag language={entry.flag} label={entry.flagLabel ?? undefined} />
+                </>
+              ) : null}
+              {` · step ${entry.step}`}
             </p>
             <div dangerouslySetInnerHTML={{ __html: entry.html }} />
           </li>

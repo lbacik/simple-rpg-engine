@@ -14,7 +14,7 @@
 
 import type { EquipmentSlot } from '../engine/inventory';
 import { formatNumber } from './format';
-import { primaryLanguageSubtag } from './languages';
+import { primaryLanguageSubtag, type InterfaceLanguage } from './languages';
 import { selectPlural } from './plural';
 
 const whole = (value: number): string => formatNumber('en', value);
@@ -40,6 +40,12 @@ function scenarioLanguageName(language: string): string {
 }
 
 export const en = {
+  /**
+   * The Interface Language this catalogue renders. Journal flags compare an
+   * entry's recorded `lang` against it, so rendering an entry needs only the
+   * entry and the catalogue (docs/spec/playthrough-state.md, journal).
+   */
+  code: 'en' as InterfaceLanguage,
   app: {
     title: 'Simple RPG Engine',
     description: 'Single-player RPG adventures in the browser.',

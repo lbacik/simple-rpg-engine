@@ -19,6 +19,19 @@ function entry(seq: number): RenderedJournalEntry {
     step: seq - 1,
     label: seq === 1 ? 'Intro' : 'Travel',
     html: `<p>entry ${seq}</p>`,
+    flag: null,
+    flagLabel: null,
+  };
+}
+
+function flaggedEntry(seq: number): RenderedJournalEntry {
+  return {
+    seq,
+    step: seq - 1,
+    label: 'Wstęp',
+    html: '<div lang="en"><p>entry</p></div>',
+    flag: 'en',
+    flagLabel: 'Angielski',
   };
 }
 
@@ -35,6 +48,34 @@ describe('JournalEntries', () => {
     expect(html.indexOf('entry 25')).toBeLessThan(html.indexOf('entry 24'));
     expect(html).toContain('Travel · step 24');
     expect(html).toContain('<p>entry 25</p>');
+  });
+
+  it('marks entries shown in another language with a flag after the type label', () => {
+    const html = renderToStaticMarkup(
+      <JournalEntries
+        playthroughId="pt-1"
+        initialEntries={[flaggedEntry(2), entry(1)]}
+        initialNextCursor={null}
+        total={2}
+      />,
+    );
+    // The flag follows the type label, ahead of the step.
+    expect(html.indexOf('Wstęp')).toBeLessThan(html.indexOf('aria-label="Angielski"'));
+    expect(html.indexOf('aria-label="Angielski"')).toBeLessThan(html.indexOf('step 1'));
+    expect(html).toContain('role="img"');
+  });
+
+  it('carries no flag on entries shown in the Interface Language', () => {
+    const html = renderToStaticMarkup(
+      <JournalEntries
+        playthroughId="pt-1"
+        initialEntries={[entry(25)]}
+        initialNextCursor={null}
+        total={25}
+      />,
+    );
+    expect(html).toContain('Travel · step 24');
+    expect(html).not.toContain('role="img"');
   });
 
   it('links the next older batch for readers without JavaScript', () => {
@@ -101,8 +142,7 @@ describe('JournalEntries', () => {
     expect(html).not.toContain('journal-position');
   });
 
-  it('keeps scroll updates out of the live region and decorates the bar', () => {
-    const html = renderToStaticMarkup(
+  it('keeps scroll updates out of the live region and decorates the bar', () => {    const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
         initialEntries={[entry(25)]}

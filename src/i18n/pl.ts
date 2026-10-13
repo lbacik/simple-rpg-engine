@@ -57,6 +57,8 @@ function cap(value: string): string {
 }
 
 export const pl: Catalogue = {
+  // The Interface Language this catalogue renders (see `code` in en.ts).
+  code: 'pl',
   app: {
     title: 'Simple RPG Engine',
     description: 'Solowe przygody RPG w przeglądarce.',
