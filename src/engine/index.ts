@@ -1719,10 +1719,14 @@ function applyCombat(
     if (victim === undefined) {
       return { ok: false, reason: 'illegal-action' };
     }
-    const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
-    if (attack.reach === 'melee' && targetRange === 'far') {
-      return { ok: false, reason: 'illegal-action' };
+    if (combatAction === 'attack') {
+      const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
+      if (attack.reach === 'melee' && targetRange === 'far') {
+        return { ok: false, reason: 'illegal-action' };
+      }
     }
+  } else if (combatAction === 'defend') {
+    // Defend is always available.
   } else if (combatAction === 'advance') {
     if (victim === undefined) {
       return { ok: false, reason: 'illegal-action' };
@@ -1755,7 +1759,6 @@ function applyCombat(
     }
   } else if (combatAction !== 'escape') {
     return { ok: false, reason: 'illegal-action' };
-  }
   }
   // Escape is always available. The +2 bonus is captured from the Round as
   // shown when the Character commits: when no surviving participant was Near
@@ -1877,7 +1880,6 @@ function applyCombat(
   function targetRefOf(participant: CompiledParticipant): TacticalActor {
     return { kind: 'participant', ...participantRefOf(encounter, participant) };
   }
-  }
 
   /** One Enemy Intent at its place in the order. */
   function resolveEnemyAction(
@@ -1900,10 +1902,14 @@ function applyCombat(
       return;
     }
     // A successful Distract interrupted its Intent: cancelled at its place in
-    // the order, never replaced. Interrupting a Prepare or a Heavy attack
-    // clears the preparation it builds on.
+    // the order, never replaced. Only a Heavy attack builds on a stored
+    // preparation (selection keeps `prepared` only with that Intent, and a
+    // fast Distract resolves before any Prepare executes), so only its
+    // cancellation clears — and reports — one.
     if (interrupted.has(participant.id)) {
-      prepared[participant.id] = false;
+      if (intent === 'heavy-attack') {
+        prepared[participant.id] = false;
+      }
       actions.push({
         actor,
         kind: intent,
@@ -1912,7 +1918,7 @@ function applyCombat(
         target: characterRef,
         status: 'cancelled',
         cancelReason: 'interrupted',
-        ...((intent === 'prepare' || intent === 'heavy-attack') ? { prepared: false } : {}),
+        ...(intent === 'heavy-attack' ? { prepared: false } : {}),
       });
       return;
     }
@@ -2087,9 +2093,15 @@ function applyCombat(
     }
     // Success interrupts the announced Intent (cancelled at its place in the
     // order), clears the preparation it builds on, and makes the target Wary
-    // until the end of the next Round.
+    // until the end of the next Round. Only a Heavy attack carries a stored
+    // preparation into the Round (see resolveEnemyAction), so only its
+    // interruption reports one cleared; the interruption itself is recorded on
+    // the victim's cancelled action, correlated via this event's target.
     interrupted.add(victim.id);
-    prepared[victim.id] = false;
+    const wasPrepared = prepared[victim.id] ?? false;
+    if (wasPrepared) {
+      prepared[victim.id] = false;
+    }
     waryUntil[victim.id] = round + 1;
     actions.push({
       actor: characterRef,
@@ -2100,7 +2112,7 @@ function applyCombat(
       status: 'executed',
       roll,
       damage: 0,
-      prepared: false,
+      ...(wasPrepared ? { prepared: false } : {}),
       waryUntilRound: round + 1,
     });
   }
