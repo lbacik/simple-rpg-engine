@@ -308,6 +308,18 @@ text: Unreachable.
     mutate(dir, 'scenario.yaml', 'deathEnding: death\n', 'deathEnding: death\nflags:\n  - met\n');
     expect(succeed(dir)).toEqual([]);
   });
+
+  it('an any with an unknown member is unknown, so the gated scene stays reachable', () => {
+    const dir = freshBase('any-unknown');
+    mutate(
+      dir,
+      'scenes/gate.yaml',
+      '  - id: go\n    text: Go on.\n    outcome:\n      end: win\n',
+      '  - id: go\n    text: Go on.\n    outcome:\n      effects:\n        - set-flag: met\n      move: home\n  - id: win\n    text: Win.\n    when: { any: [{ flag: met }, { not: { flag: met } }] }\n    outcome:\n      end: win\n',
+    );
+    mutate(dir, 'scenario.yaml', 'deathEnding: death\n', 'deathEnding: death\nflags:\n  - met\n');
+    expect(succeed(dir)).toEqual([]);
+  });
 });
 
 describe('playability phase: authoring warnings', () => {

@@ -186,7 +186,7 @@ function evalCondition(
       if (value === 'true') return 'true';
       if (value === 'unknown') seenUnknown = true;
     }
-    return seenUnknown ? 'false' : 'true';
+    return seenUnknown ? 'unknown' : 'false';
   }
   if ('not' in record) {
     const value = evalCondition(record['not'] as CompiledCondition, state, scenario);
