@@ -3,7 +3,7 @@
 // flag of Poland. A language with no flag is marked by its primary subtag in
 // capitals, in a box of the flag's size.
 
-import { primaryLanguageSubtag, type Catalogue } from '@/i18n/index';
+import { primaryLanguageSubtag, type Catalogue } from '../i18n/index';
 
 function UnitedKingdomFlag(): React.ReactNode {
   return (

@@ -15,6 +15,7 @@
 import { escapeHtml, renderStoredText } from '../../engine/narration';
 import { combatRounds } from '../../engine/index';
 import type { Catalogue } from '../../i18n/index';
+import { primaryLanguageSubtag } from '../../i18n/languages';
 import {
   combatEndLine,
   combatRollLine,
@@ -29,6 +30,25 @@ export const JOURNAL_BATCH_SIZE = 20 as const;
 
 /** Journal entry types the engine produces today. */
 const NARRATION_ENTRY_TYPES: ReadonlySet<string> = new Set(['intro', 'scene', 'outcome']);
+
+/**
+ * Entry types whose primary content is Scenario text (narration, Choice
+ * wording, the Ending's title and closing narration, the Combat opening
+ * narration): after a language switch these keep the language they were
+ * presented in and are visibly marked when it differs from the Interface
+ * Language (docs/spec/ui.md, journal). Engine-generated entries (Test, state
+ * changes, travel, Combat rounds and ends, the Enemy-defeated notice,
+ * inventory actions) carry no flag even when they mention a name: the name
+ * inside them only carries its `lang`.
+ */
+const SCENARIO_TEXT_ENTRY_TYPES: ReadonlySet<string> = new Set([
+  'intro',
+  'scene',
+  'choice',
+  'outcome',
+  'ending',
+  'combat-start',
+]);
 
 /** A Journal entry as the renderer reads it: stored rows and new engine entries alike. */
 export type JournalEntryView = {
@@ -46,6 +66,34 @@ export type StoredJournalEntry = JournalEntryView & {
 /** The entry's recorded language, defaulting to English for legacy rows. */
 function entryLang(lang: unknown): string {
   return typeof lang === 'string' && lang !== '' ? lang : 'en';
+}
+
+/** The flag after an entry's type label: the entry's language and its accessible name. */
+export type JournalEntryFlag = {
+  lang: string;
+  label: string;
+};
+
+/**
+ * The flag after an entry's type label (docs/spec/ui.md, journal): the
+ * entry's recorded `lang` (`en` for legacy rows) when the entry holds
+ * Scenario text and that language differs from the catalogue's Interface
+ * Language by primary language subtag, so `en-US` entries under `en` carry no
+ * flag. Engine-generated entries never carry one. The accessible name is the
+ * language's name in the Interface Language; whether it is the Scenario's
+ * Base Language ("(original)") is unknowable here, since rendering an entry
+ * needs only the entry and the catalogue, never the Scenario content.
+ */
+export function journalEntryFlag(
+  entry: JournalEntryView,
+  catalogue: Catalogue,
+): JournalEntryFlag | undefined {
+  if (!SCENARIO_TEXT_ENTRY_TYPES.has(entry.type)) return undefined;
+  const lang = entryLang(entry.lang);
+  if (primaryLanguageSubtag(lang) === primaryLanguageSubtag(catalogue.code)) {
+    return undefined;
+  }
+  return { lang, label: catalogue.scenarioLanguage.flagName(lang, false) };
 }
 
 /** Human labels per entry type from the catalogue, shown beside the step. */
@@ -146,6 +194,10 @@ export type RenderedJournalEntry = {
   step: number;
   label: string;
   html: string;
+  /** The entry's language when its type label carries a flag, else null. */
+  flag: string | null;
+  /** The flag's accessible name in the Interface Language, else null. */
+  flagLabel: string | null;
 };
 
 /**
@@ -168,7 +220,14 @@ export function renderJournalEntries(
 ): RenderedJournalEntry[] {
   return entries.map((entry) => {
     const rendered = renderJournalEntry(entry, catalogue, characterName);
-    return { seq: entry.seq, step: entry.step, label: rendered.label, html: rendered.html };
+    return {
+      seq: entry.seq,
+      step: entry.step,
+      label: rendered.label,
+      html: rendered.html,
+      flag: rendered.flag,
+      flagLabel: rendered.flagLabel,
+    };
   });
 }
 
@@ -180,37 +239,43 @@ export function renderJournalEntries(
  * actions) render their event data with the catalogue and their Scenario
  * text as presented, each name carrying the entry's `lang`. Rows stored
  * before structured events hold English text and are shown verbatim, with
- * only their type label from the catalogue.
+ * only their type label from the catalogue. Entries holding Scenario text in
+ * another language also carry its flag for the type label line.
  */
 export function renderJournalEntry(
   entry: JournalEntryView,
   catalogue: Catalogue,
   characterName: string,
-): { label: string; html: string } {
+): { label: string; html: string; flag: string | null; flagLabel: string | null } {
   const label = journalEntryLabel(entry.type, catalogue);
+  const flag = journalEntryFlag(entry, catalogue);
+  const flagged = {
+    flag: flag?.lang ?? null,
+    flagLabel: flag?.label ?? null,
+  };
   const lang = entryLang(entry.lang);
   const record = (entry.payload ?? {}) as Record<string, unknown>;
   const text = String(record.text ?? '');
   if (NARRATION_ENTRY_TYPES.has(entry.type)) {
-    return { label, html: `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>` };
+    return { label, html: `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`, ...flagged };
   }
   if (entry.type === 'choice') {
-    return { label, html: `<div lang="${escapeHtml(lang)}"><p>${escapeHtml(text)}</p></div>` };
+    return { label, html: `<div lang="${escapeHtml(lang)}"><p>${escapeHtml(text)}</p></div>`, ...flagged };
   }
   if (entry.type === 'travel') {
-    return { label, html: renderTravelEntry(record, catalogue, lang) };
+    return { label, html: renderTravelEntry(record, catalogue, lang), ...flagged };
   }
   if (entry.type === 'combat-start') {
-    return { label, html: renderCombatStartEntry(record, catalogue, lang, characterName) };
+    return { label, html: renderCombatStartEntry(record, catalogue, lang, characterName), ...flagged };
   }
   if (entry.type === 'combat-round') {
-    return { label, html: renderCombatRoundEntry(record, catalogue, lang, characterName) };
+    return { label, html: renderCombatRoundEntry(record, catalogue, lang, characterName), ...flagged };
   }
   if (entry.type === 'combat-end') {
-    return { label, html: renderCombatEndEntry(record, catalogue, lang) };
+    return { label, html: renderCombatEndEntry(record, catalogue, lang), ...flagged };
   }
   if (entry.type === 'enemy-defeated') {
-    return { label, html: renderEnemyDefeatedEntry(record, catalogue, lang) };
+    return { label, html: renderEnemyDefeatedEntry(record, catalogue, lang), ...flagged };
   }
   if (entry.type === 'ending') {
     const kind =
@@ -219,18 +284,19 @@ export function renderJournalEntry(
     return {
       label,
       html: `<p class="meta">${escapeHtml(kind)}</p><h3 lang="${escapeHtml(lang)}">${escapeHtml(title)}</h3><div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`,
+      ...flagged,
     };
   }
   if (entry.type === 'test') {
-    return { label, html: renderTestEntry(record, catalogue, lang, text) };
+    return { label, html: renderTestEntry(record, catalogue, lang, text), ...flagged };
   }
   if (entry.type === 'state-change') {
-    return { label, html: renderStateChangeEntry(record, catalogue, lang, text) };
+    return { label, html: renderStateChangeEntry(record, catalogue, lang, text), ...flagged };
   }
   if (entry.type === 'inventory') {
-    return { label, html: renderInventoryEntry(record, catalogue, lang, text) };
+    return { label, html: renderInventoryEntry(record, catalogue, lang, text), ...flagged };
   }
-  return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>` };
+  return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`, ...flagged };
 }
 
 /**
