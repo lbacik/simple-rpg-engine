@@ -1,0 +1,15 @@
+id: mine-vault
+title: Przeszukaj suchą komorę
+text: |
+  Za żelaznymi drzwiami jest sucha, kwadratowa komora wykuta przez krasnoludy na długo
+  przed czasami Dunrica. Na stojaku z czarnego drewna wisi koszula z drobnej kolczugi,
+  nietknięta przez rdzę. Obok drabina z żelaznych szczebli wspina się szybem w ciemność,
+  a z góry spływa słaby zapach dymu.
+choices:
+  - id: take
+    text: Weź kolczugę i wespnij się szybem.
+    outcome:
+      text: |
+        Kolczuga jest lekka jak len. W połowie szybu znajdujesz górniczą skrytkę z czerwoną
+        szklaną butelką. Na górze zbutwiała klapa otwiera się pod stertą skór, na samym skraju
+        obozu wojennego Klanu Zgliszcz.

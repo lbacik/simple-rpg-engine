@@ -1,0 +1,19 @@
+id: greywatch-rest
+illustration: greywatch-rest
+title: Rest in the Guardroom
+trigger: on-demand
+when:
+  all:
+    - { flag: tower-taken }
+    - { health: { atMost: 11 } }
+text: |
+  The raiders left a fire laid in the guardroom hearth and a heap of stolen blankets in
+  the corner. The door is oak, and the bar is still good.
+choices:
+  - id: sleep
+    text: Bar the door and sleep for a few hours.
+    outcome:
+      text: |
+        You wake stiff and cold, but the worst of the bleeding has stopped.
+      effects:
+        - heal: 5

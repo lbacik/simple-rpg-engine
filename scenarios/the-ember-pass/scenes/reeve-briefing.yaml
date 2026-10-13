@@ -1,0 +1,28 @@
+id: reeve-briefing
+illustration: reeve-briefing
+title: What Waits on the Pass
+text: |
+  Maren counts it off on her fingers. "Wolves on the lower road; they follow the clan's
+  fires. Raiders in Greywatch tower. A gate across the road above it. Their war camp on
+  the high saddle, where they keep our people. And Gharra Ashmane herself, sitting by the
+  cold beacon with her best bowmen."
+
+  "Their shaman has put some working on the beacon so it will not catch. Kill him, and
+  the fire will take. Light it, and the riders at Varrow will be here in two days. Kill
+  Gharra, and there will be nobody left to stop you lighting it."
+choices:
+  - id: accept
+    text: Tell her you will do it.
+    outcome:
+      text: |
+        Maren grips your forearm. "Then take this." She hands you a sack with a whole leg
+        of smoked mutton in it. "The wolves on the road are always hungry. So is the thing
+        under the ford bridge. Ysolde and Dunric will help you if you ask."
+      effects:
+        - set-flag: commissioned
+        - give-item: { item: smoked-mutton }
+        - reveal: south-road
+  - id: refuse
+    text: Tell her it is too much for one blade.
+    outcome:
+      end: turned-back

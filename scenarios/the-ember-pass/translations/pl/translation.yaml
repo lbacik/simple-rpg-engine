@@ -1,0 +1,57 @@
+language: pl
+baseVersion: "1.0.0"
+title: Przełęcz Żaru
+description: Przebij się górską drogą zajętą przez Klan Zgliszcz, uwolnij jeńców z Kessford
+  i zapal ognisko, które wezwie królewskich jeźdźców. Stal czeka na każdym zakręcie.
+intro: |
+  Trzy noce temu zgasło ognisko sygnałowe na Przełęczy Żaru. Od tamtej pory żadna
+  karawana nie zjechała górską drogą, a pasterze z Kessford przestali liczyć owce.
+
+  Klan Zgliszcz przyszedł z północy, przez spalone wzgórza: łupieżcy w okopconych
+  skórach, wilki, które ciągną za ich ogniskami, i wodzini, która nosi na sobie popiół
+  każdej zdobytej wioski. Jeśli ognisko znów zapłonie, królewscy jeźdźcy w Varrow
+  zobaczą je i przybędą. Ktoś jednak musi najpierw zanieść ogień na przełęcz.
+locations:
+  - translations/pl/locations/kessford.yaml
+  - translations/pl/locations/south-road.yaml
+  - translations/pl/locations/troll-ford.yaml
+  - translations/pl/locations/greywatch.yaml
+  - translations/pl/locations/old-mine.yaml
+  - translations/pl/locations/pass-gate.yaml
+  - translations/pl/locations/ember-shrine.yaml
+  - translations/pl/locations/war-camp.yaml
+  - translations/pl/locations/beacon-summit.yaml
+scenes:
+  - translations/pl/scenes/kessford-arrival.yaml
+  - translations/pl/scenes/reeve-briefing.yaml
+  - translations/pl/scenes/healer-ysolde.yaml
+  - translations/pl/scenes/smith-dunric.yaml
+  - translations/pl/scenes/wolves-on-road.yaml
+  - translations/pl/scenes/caravan-wreck.yaml
+  - translations/pl/scenes/troll-toll.yaml
+  - translations/pl/scenes/tower-approach.yaml
+  - translations/pl/scenes/greywatch-lookout.yaml
+  - translations/pl/scenes/greywatch-rest.yaml
+  - translations/pl/scenes/mine-mouth.yaml
+  - translations/pl/scenes/mine-depths.yaml
+  - translations/pl/scenes/mine-vault.yaml
+  - translations/pl/scenes/gate-standoff.yaml
+  - translations/pl/scenes/shrine-defiler.yaml
+  - translations/pl/scenes/shrine-blessing.yaml
+  - translations/pl/scenes/camp-arrival.yaml
+  - translations/pl/scenes/captive-pens.yaml
+  - translations/pl/scenes/fire-circle.yaml
+  - translations/pl/scenes/summit-standoff.yaml
+  - translations/pl/scenes/beacon-lighting.yaml
+items:
+  - translations/pl/items.yaml
+enemies:
+  - translations/pl/enemies.yaml
+encounters:
+  - translations/pl/encounters.yaml
+templates:
+  - translations/pl/templates.yaml
+endings:
+  - translations/pl/endings.yaml
+images:
+  - translations/pl/images.yaml

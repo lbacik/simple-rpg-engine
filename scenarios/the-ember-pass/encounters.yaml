@@ -1,0 +1,255 @@
+# Encounter catalog. Six Encounters have two participants, eight are duels.
+
+- id: road-wolves
+  participants:
+    - { id: wolf-a, enemy: ridge-wolf }
+    - { id: wolf-b, enemy: ridge-wolf }
+  startRange: far
+  text: |
+    The two wolves split apart as they come, one to each side of the road, so that you
+    cannot watch both at once.
+  victory:
+    text: |
+      The second wolf drops in the heather. The road ahead is quiet, and somewhere above
+      you a raven complains about the noise.
+  escape:
+    text: |
+      You back down the road with your weapon up until the wolves lose interest and
+      return to the carcass of a mule.
+    move: kessford
+
+- id: tower-assault
+  participants:
+    - { id: door-guard, enemy: cinder-raider }
+    - { id: roof-bowman, enemy: clan-bowman }
+  startRange: far
+  text: |
+    A raider kicks the tower door open and comes down the steps with his falchion out.
+    On the parapet above him, a bowman puts an arrow to the string.
+  victory:
+    text: |
+      Greywatch is yours. In the guardroom you find the raiders' plunder: two horns of
+      healing draught and a bar of black clan iron that Dunric the smith would want to see.
+    effects:
+      - set-flag: tower-taken
+      - give-item: { item: healing-draught, quantity: 2 }
+      - give-item: { item: cinder-ingot }
+      - reveal: pass-gate
+  escape:
+    text: |
+      You run for the road with arrows clattering on the stones behind you. Nobody
+      follows; the clan is content to keep its tower.
+    move: south-road
+
+- id: tower-roof
+  enemy: clan-bowman
+  startRange: near
+  text: |
+    You haul yourself over the parapet right beside the bowman. He drops his arrow and
+    goes for his knife.
+  victory:
+    text: |
+      The bowman goes over the parapet. Below you, a door bangs and heavy boots start up
+      the tower stairs.
+    start-combat: tower-stairs
+  escape:
+    text: |
+      You swing back over the parapet and climb down faster than you came up.
+    move: south-road
+
+- id: tower-stairs
+  enemy: cinder-raider
+  startRange: near
+  text: |
+    The door guard bursts out of the stairwell onto the roof, falchion first, and finds
+    you waiting for him.
+  victory:
+    text: |
+      Greywatch is yours. In the guardroom you find the raiders' plunder: two horns of
+      healing draught and a bar of black clan iron that Dunric the smith would want to see.
+    effects:
+      - set-flag: tower-taken
+      - give-item: { item: healing-draught, quantity: 2 }
+      - give-item: { item: cinder-ingot }
+      - reveal: pass-gate
+  escape:
+    text: |
+      You go over the parapet and down the wall. The guard bellows after you but will not
+      leave his tower.
+    move: south-road
+
+- id: ford-troll
+  enemy: stone-troll
+  startRange: far
+  text: |
+    The troll heaves itself up out of the river, water pouring from its shoulders, and
+    lifts a boulder in both hands.
+  victory:
+    text: |
+      The troll topples into the ford with a crash that soaks you to the waist. Under the
+      bridge you find its hoard: river junk, old bones and a few things worth keeping.
+    effects:
+      - give-item: { item: river-pearl }
+      - give-item: { item: ember-tonic }
+      - give-item: { item: healing-draught }
+  escape:
+    text: |
+      You scramble up the bank. The troll is too slow to follow, and goes back to sulking
+      under its bridge.
+    move: south-road
+
+- id: mine-crawler
+  enemy: tunnel-crawler
+  startRange: near
+  text: |
+    Something pale drops from the roof of the adit in a rattle of legs, right on top of
+    your lantern light.
+  victory:
+    text: |
+      The crawler curls up and stops twitching. Deeper in, the tunnel slopes down towards
+      the sound of dripping water and a slow, patient tapping.
+  escape:
+    text: |
+      You stumble back out into daylight. The crawler will not follow you into the sun.
+    move: greywatch
+
+- id: depths-pair
+  participants:
+    - { enemy: deep-ghoul }
+    - { enemy: tunnel-crawler }
+  startRange: far
+  text: |
+    The tapping stops. A dead miner turns from the rock face with his pick raised, and a
+    second crawler skitters out of a side tunnel to join him.
+  victory:
+    text: |
+      The ghoul falls still at last, and the crawler with it. Past them, a rusted iron door
+      stands half open on a dry chamber.
+  escape:
+    text: |
+      You run for the daylight with the scrape of a pick and the rattle of legs behind you.
+    move: greywatch
+
+- id: gate-guards
+  participants:
+    - { id: gate-left, enemy: cinder-raider }
+    - { id: gate-right, enemy: cinder-raider }
+  startRange: far
+  text: |
+    Both guards come off the gate together, shouting for each other's courage.
+  victory:
+    text: |
+      The second guard falls against the gate timbers. You drag the bar aside, and on one
+      of the bodies you find a horn of healing draught.
+    effects:
+      - give-item: { item: healing-draught }
+  escape:
+    text: |
+      You retreat down the switchbacks while the guards jeer at your back.
+    move: greywatch
+
+- id: gate-lone-guard
+  enemy: cinder-raider
+  startRange: near
+  text: |
+    The remaining guard realises he has been tricked a moment too late. He draws, alone.
+  victory:
+    text: |
+      The guard falls. You lift the bar from the gate before his friend comes back, and
+      take a horn of healing draught from his belt.
+    effects:
+      - give-item: { item: healing-draught }
+  escape:
+    text: |
+      You back away down the switchbacks. The guard does not dare leave the gate alone.
+    move: greywatch
+
+- id: shrine-brute
+  enemy: clan-brute
+  startRange: far
+  text: |
+    The brute turns from the broken altar and swings his maul up onto his shoulder, glad
+    of something that might fight back.
+  victory:
+    text: |
+      The brute crashes down among the shards of the hearthstone. The shrine is quiet, and
+      the little fire in the niche, which he had been kicking, is still alight.
+  escape:
+    text: |
+      You run back down the side path. The brute laughs, and goes back to his work.
+    move: pass-gate
+
+- id: pen-brute
+  enemy: clan-brute
+  startRange: near
+  text: |
+    The pen guard comes off his stool with his maul already swinging, roaring for the
+    others.
+  victory:
+    text: |
+      The brute topples into the mud. You take the knife from his belt and cut the
+      captives loose, and they press what supplies they have stolen into your hands. "We
+      will be on the summit path," says a boy with Maren Holt's sharp face. "When you go
+      up, we go with you."
+    effects:
+      - set-flag: captives-freed
+      - give-item: { item: healing-draught, quantity: 2 }
+      - give-item: { item: ember-tonic }
+  escape:
+    text: |
+      You dodge between the tents and lose him in the smoke.
+    move: war-camp
+
+- id: shaman-rite
+  participants:
+    - { enemy: ember-shaman }
+    - { enemy: ash-hound }
+  startRange: far
+  text: |
+    The shaman breaks off his chant and points at you with a handful of burning cinders.
+    The ash hound at his feet lowers its head and comes.
+  victory:
+    text: |
+      The shaman falls into his own fire, and the flames go from red to an ordinary
+      yellow. Up on the summit, something that was holding the beacon cold lets go.
+  escape:
+    text: |
+      You fall back between the tents, beating sparks out of your clothes.
+    move: war-camp
+
+- id: warlord-duel
+  enemy: gharra
+  startRange: far
+  text: |
+    Gharra Ashmane lifts her axe and walks towards you without hurrying. Behind her, the
+    captives of Kessford have the last of her bowmen pinned behind the beacon stones.
+  victory:
+    text: |
+      The warlord sinks to her knees beside the cold beacon, and then falls. Up here,
+      above the clouds, there is nothing left between you and the fire.
+    effects:
+      - set-flag: warlord-slain
+  escape:
+    text: |
+      You break away and run down the summit path. Gharra lets you go; she has all night.
+    move: war-camp
+
+- id: warlord-and-guard
+  participants:
+    - { enemy: gharra }
+    - { enemy: clan-bowman }
+  startRange: far
+  text: |
+    Gharra Ashmane lifts her axe and walks towards you without hurrying. On the beacon
+    stones behind her, her last bowman sets an arrow to his string.
+  victory:
+    text: |
+      The warlord sinks to her knees beside the cold beacon, and then falls. Up here,
+      above the clouds, there is nothing left between you and the fire.
+    effects:
+      - set-flag: warlord-slain
+  escape:
+    text: |
+      You break away and run down the summit path with arrows hissing past you. Gharra
+      lets you go; she has all night.
+    move: war-camp

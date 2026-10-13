@@ -1,0 +1,29 @@
+id: troll-toll
+title: Myto przy brodzie
+text: |
+  Spod mostu dobiega głos jak kamienie w worku. — Myto — mówi. Szary troll kuca na
+  płyciźnie i dłubie w zębach żebrem. — Jedzenie. Albo zagadka. Albo ty.
+choices:
+  - id: fight
+    text: Powiedz mu, że nie płacisz myta.
+  - id: mutton
+    text: Zapłać myto wędzoną baraniną.
+    outcome:
+      text: |
+        Troll obwąchuje baraninę, szczerzy zęby i połyka ją razem z kością. — Dobre myto —
+        mówi. Grzebie pod mostem i rzuca ci czerwoną szklaną butelkę. — Bierz. Błyszczy,
+        ale paskudne w smaku.
+  - id: riddle
+    text: Zadaj mu zagadkę, na którą nie zna odpowiedzi.
+    test:
+      success:
+        text: |
+          Troll myśli tak intensywnie, że czerwienieją mu uszy. W końcu się poddaje, nadąsany,
+          i rzuca ci czerwoną szklaną butelkę ze swojego skarbu. — Bierz. Idź. I nie wracaj
+          z kolejnymi zagadkami.
+      failure:
+        text: |
+          — Góra — odpowiada troll od razu i szczerzy zęby. — Teraz płacisz. — Wychodzi
+          z wody.
+  - id: leave
+    text: Odejdź od brodu.

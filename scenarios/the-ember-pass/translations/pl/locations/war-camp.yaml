@@ -1,0 +1,13 @@
+id: war-camp
+name: Obóz wojenny Klanu Zgliszcz
+description: |
+  Namioty ze skór tłoczą się na wysokim, nagim siodle przełęczy. Między nimi tlą się
+  ogniska, a po północnej stronie krąg pali zamyka jeńców z Kessford. Z obozu wiedzie
+  ścieżka na szczyt, gdzie stoi zimne, wielkie ognisko sygnałowe.
+connections:
+  - to: pass-gate
+    label: Wymknij się przez bramę
+  - to: old-mine
+    label: Zejdź starym szybem do kopalni
+  - to: beacon-summit
+    label: Wespnij się do ogniska

@@ -1,0 +1,22 @@
+id: captive-pens
+title: Uwolnij jeńców
+text: |
+  Strażnik zagrody mniej więcej czuwa. Siedzi plecami do pali z młotem na kolanach. Za nim
+  chłopak o bystrej twarzy Maren Holt obserwuje cię przez szparę między dwoma palami.
+choices:
+  - id: fight
+    text: Podejdź i walcz ze strażnikiem.
+  - id: sneak
+    text: Zakradnij się na tyły zagrody i przetnij więzy.
+    test:
+      success:
+        text: |
+          Wślizgujesz się za pale i przecinasz więzy jeden po drugim, podczas gdy strażnik
+          chrapie. Jeńcy znikają w ciemności po dwoje, po troje i wciskają ci w ręce zapasy,
+          które zdołali ukraść. — Będziemy na ścieżce na szczyt — szepcze chłopak. — Kiedy
+          pójdziesz w górę, pójdziemy z tobą.
+      failure:
+        text: |
+          Pal skrzypi pod twoją dłonią. Strażnik w mgnieniu oka jest na nogach.
+  - id: back
+    text: Na razie zostaw zagrodę.

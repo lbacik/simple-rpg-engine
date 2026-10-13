@@ -1,0 +1,29 @@
+id: tower-approach
+title: Greywatch w rękach wroga
+text: |
+  Greywatch przysiadła nad drogą z zamkniętymi drzwiami i czarnym od sadzy sztandarem
+  zwisającym z blanków. Na stopniu siedzi łupieżca i ostrzy tasak. Na dachu łucznik
+  opiera się o blanki i obserwuje drogę.
+
+  Północna ściana wieży to chropowaty granit w głębokim cieniu. Ktoś zwinny mógłby się
+  po niej wspiąć niezauważony i przejść przez blanki tuż obok łucznika.
+choices:
+  - id: storm
+    text: Podejdź drogą i szturmuj drzwi.
+  - id: climb
+    text: Wespnij się po północnej ścianie i najpierw zajmij się łucznikiem.
+    test:
+      success:
+        text: |
+          Chwyt po chwycie pniesz się po zacienionej ścianie. Nikt nie krzyczy. Blanki są tuż
+          nad tobą.
+      failure:
+        text: |
+          Kamień zostaje ci w dłoni i spadasz z ostatnich kilku stóp na drogę. Łupieżca na
+          stopniu podnosi wzrok, szczerzy zęby i krzyczy w stronę dachu.
+  - id: roof-again
+    text: Wespnij się znów po północnej ścianie.
+  - id: stairs-again
+    text: Wróć na dach i dokończ sprawę ze strażnikiem spod drzwi.
+  - id: withdraw
+    text: Wycofaj się w dół drogi.

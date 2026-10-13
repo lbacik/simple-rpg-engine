@@ -1,0 +1,20 @@
+id: shrine-defiler
+illustration: shrine-defiler
+title: The Defiler
+trigger: on-enter
+repeatable: true
+when:
+  not: { defeated: shrine-brute }
+text: |
+  Clay tiles crunch under your boots in the shrine doorway. Inside, a huge raider in a
+  scorched bearskin is smashing the votive tiles off the walls with a smith's maul, and
+  kicking at the little fire in the hearth niche to put it out.
+choices:
+  - id: fight
+    text: Stop him.
+    outcome:
+      start-combat: shrine-brute
+  - id: leave
+    text: Leave him to it and go back to the gate.
+    outcome:
+      move: pass-gate

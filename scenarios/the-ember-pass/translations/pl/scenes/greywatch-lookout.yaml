@@ -1,0 +1,16 @@
+id: greywatch-lookout
+title: Rozejrzyj się z dachu
+text: |
+  Ze szczytu Greywatch cała dolna przełęcz rozpościera się jak mapa. Droga wspina się
+  serpentynami do drewnianej bramy między dwoma skalnymi ramionami. Na zachód od bramy
+  z małej kapliczki unosi się nitka dymu. Na wschodzie, w nagim zboczu, ziewa czarny
+  wylot starej kopalni.
+
+  Ponad tym wszystkim, na wysokim siodle, nad obozem wojennym wisi dym wielu ognisk.
+choices:
+  - id: study
+    text: Zapamiętaj drogi.
+    outcome:
+      text: |
+        Jeśli Dunric ma rację co do szybu kopalni, istnieje droga do obozu, która omija
+        bramę.

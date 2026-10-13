@@ -1,0 +1,39 @@
+id: captive-pens
+illustration: captive-pens
+title: Free the Captives
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - not: { defeated: pen-brute }
+    - not: { flag: captives-freed }
+text: |
+  The pen guard is awake, more or less. He sits with his back to the stakes and his maul
+  across his knees. Behind him, a boy with Maren Holt's sharp face watches you through the
+  gap between two stakes.
+choices:
+  - id: fight
+    text: Walk up and fight the guard.
+    outcome:
+      start-combat: pen-brute
+  - id: sneak
+    text: Creep round the back of the pen and cut the ropes.
+    test:
+      attribute: agility
+      difficulty: hard
+      success:
+        text: |
+          You slip behind the stakes and saw through the ropes one by one while the guard
+          snores. The captives melt away into the dark in twos and threes, pressing what
+          supplies they have stolen into your hands. "We will be on the summit path," the
+          boy whispers. "When you go up, we go with you."
+        effects:
+          - set-flag: captives-freed
+          - give-item: { item: healing-draught, quantity: 2 }
+          - give-item: { item: ember-tonic }
+      failure:
+        text: |
+          A stake creaks under your hand. The guard is on his feet in an instant.
+        start-combat: pen-brute
+  - id: back
+    text: Leave the pens for now.

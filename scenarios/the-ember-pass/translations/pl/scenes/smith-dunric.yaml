@@ -1,0 +1,25 @@
+id: smith-dunric
+title: Odwiedź kuźnię Dunrica
+text: |
+  Dunric to barczysty mężczyzna z bliznami po oparzeniach aż do łokci i górniczym
+  przygarbieniem. Jego palenisko jest zimne; zamiast tego ostrzy dla wioski kosy i widły.
+
+  — Jeśli idziesz tam w górę, przydałoby ci się coś lepszego niż wiejskie żelazo — mówi.
+  — Żelazo klanu jest czarne i dobre. Przynieś mi sztabę, a wykuję ci ostrze.
+choices:
+  - id: lantern
+    text: Zapytaj go o starą kopalnię Greywatch.
+    outcome:
+      text: |
+        — Kopałem w tej żyle dwadzieścia lat — mówi. — Stary szyb na samej górze wychodzi pod
+        wysokim siodłem, dokładnie tam, gdzie klan rozbił obóz. Tyle że teraz coś tam na dole
+        siedzi. — Zdejmuje z haka mosiężną latarnię i ci ją daje.
+  - id: forge
+    text: Daj mu sztabę żużlowego żelaza i poproś o ostrze.
+    outcome:
+      text: |
+        Dunric rozpala kuźnię pierwszy raz od tygodnia. Wieczorem wkłada ci w ręce długie,
+        szaroczarne ostrze, wciąż ciepłe po hartowaniu. — Ostrość utrzyma dłużej, niż ty
+        utrzymasz się przy życiu — mówi. Załóż je, jeśli chcesz.
+  - id: leave
+    text: Zostaw go przy pracy.

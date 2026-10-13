@@ -1,0 +1,121 @@
+# Package-local illustrations with alternative text in this catalog's language.
+- id: loc-kessford
+  path: images/loc-kessford.webp
+  alt: "Dry-stone cottages with turf roofs gather around a well, and a road climbs behind them into the clouds."
+
+- id: loc-south-road
+  path: images/loc-south-road.webp
+  alt: "A rutted road zigzags up a heather slope towards a squat watchtower on the skyline."
+
+- id: loc-troll-ford
+  path: images/loc-troll-ford.webp
+  alt: "A fast river runs over flat stepping stones beside an old stone bridge with a heap of bones beneath it."
+
+- id: loc-greywatch
+  path: images/loc-greywatch.webp
+  alt: "A square granite watchtower with a tattered banner guards the road, with a mine entrance in the slope beyond."
+
+- id: loc-old-mine
+  path: images/loc-old-mine.webp
+  alt: "A lantern lights a narrow mine tunnel with old timber props, rusted rails and strange claw scratches."
+
+- id: loc-pass-gate
+  path: images/loc-pass-gate.webp
+  alt: "A timber gate hung with horse skulls and scorched shields blocks the road between two rock walls."
+
+- id: loc-ember-shrine
+  path: images/loc-ember-shrine.webp
+  alt: "A round stone shrine in a hillside, with a small fire in a hearth niche and clay tiles on the walls."
+
+- id: loc-war-camp
+  path: images/loc-war-camp.webp
+  alt: "Hide tents and smouldering fires crowd a mountain saddle below a dark summit with an unlit beacon."
+
+- id: loc-beacon-summit
+  path: images/loc-beacon-summit.webp
+  alt: "A tall unlit pyre of split pine stands in a ring of standing stones above a sea of clouds."
+
+- id: kessford-arrival
+  path: images/kessford-arrival.webp
+  alt: "Maren Holt, the reeve, stands by the village well with a boar spear on her shoulder."
+
+- id: reeve-briefing
+  path: images/reeve-briefing.webp
+  alt: "Maren Holt counts off the dangers on her fingers, the mountain pass rising behind her."
+
+- id: healer-ysolde
+  path: images/healer-ysolde.webp
+  alt: "Old Ysolde grinds herbs in a mortar beneath bundles of drying yarrow."
+
+- id: smith-dunric
+  path: images/smith-dunric.webp
+  alt: "Dunric the smith sharpens a scythe beside his cold forge, a brass lantern hanging on the wall."
+
+- id: wolves-on-road
+  path: images/wolves-on-road.webp
+  alt: "Two lean wolves raise their heads from a dead mule lying across the road."
+
+- id: caravan-wreck
+  path: images/caravan-wreck.webp
+  alt: "A wagon lies on its side in the scree, its cargo gone and its guards fallen nearby."
+
+- id: troll-toll
+  path: images/troll-toll.webp
+  alt: "A grey troll squats in the shallows under the bridge, picking its teeth with a rib bone."
+
+- id: tower-approach
+  path: images/tower-approach.webp
+  alt: "A raider hones a falchion on the tower steps while a bowman watches from the battlements."
+
+- id: greywatch-lookout
+  path: images/greywatch-lookout.webp
+  alt: "From the tower roof, the switchback road, the gate, a shrine and a mine mouth spread out below."
+
+- id: greywatch-rest
+  path: images/greywatch-rest.webp
+  alt: "A barred oak door, a laid fire and a heap of blankets in the tower guardroom."
+
+- id: mine-mouth
+  path: images/mine-mouth.webp
+  alt: "A pale many-legged creature clings to the mine roof at the edge of the lantern light."
+
+- id: mine-depths
+  path: images/mine-depths.webp
+  alt: "A dead miner chips at the rock with a pick while a pale shape moves in a side passage."
+
+- id: mine-vault
+  path: images/mine-vault.webp
+  alt: "A fine mail shirt hangs on a stand beside an iron ladder climbing a dark shaft."
+
+- id: gate-standoff
+  path: images/gate-standoff.webp
+  alt: "Two spear-armed raiders straighten up in front of the gate, one glancing up the road."
+
+- id: shrine-defiler
+  path: images/shrine-defiler.webp
+  alt: "A huge raider in a bearskin smashes votive tiles inside the shrine with a maul."
+
+- id: shrine-blessing
+  path: images/shrine-blessing.webp
+  alt: "A hand brings kindling to dying coals beneath a clay amulet hanging in the hearth niche."
+
+- id: camp-arrival
+  path: images/camp-arrival.webp
+  alt: "From the shadows, a feathered shaman chants by a fire while captives huddle behind stakes."
+
+- id: captive-pens
+  path: images/captive-pens.webp
+  alt: "A brute dozes by the pen while a boy watches through a gap between the stakes."
+
+- id: fire-circle
+  path: images/fire-circle.webp
+  alt: "The shaman throws something into his fire while his ash hound lifts its head."
+
+- id: summit-standoff
+  path: images/summit-standoff.webp
+  alt: "Gharra Ashmane waits on a standing stone with her axe across her knees, a bowman behind her."
+
+- id: beacon-lighting
+  path: images/beacon-lighting.webp
+  alt: "A smouldering brand is held up at the foot of the towering, still unlit beacon."
+

@@ -1,0 +1,36 @@
+id: caravan-wreck
+illustration: caravan-wreck
+title: Search the Wrecked Caravan
+trigger: on-demand
+text: |
+  Below the road, a wagon lies on its side in the scree with its axle snapped. Two
+  caravan guards lie near it, both with black-fletched clan arrows in them. The
+  cargo has been taken, but raiders are hasty looters.
+choices:
+  - id: search
+    text: Check the wagon for anything useful.
+    outcome:
+      text: |
+        Under the driver's bench you find a horn of healing draught that the raiders
+        missed.
+      effects:
+        - give-item: { item: healing-draught }
+  - id: search-carefully
+    text: Search the wagon and the guards with care.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          Under the driver's bench you find a horn of healing draught. One of the guards
+          has a small red bottle sewn into his collar: an ember tonic, the kind merchants
+          carry for emergencies.
+        effects:
+          - give-item: { item: healing-draught }
+          - give-item: { item: ember-tonic }
+      failure:
+        text: |
+          The guards have nothing left on them. Under the driver's bench, at least, you
+          find a horn of healing draught.
+        effects:
+          - give-item: { item: healing-draught }

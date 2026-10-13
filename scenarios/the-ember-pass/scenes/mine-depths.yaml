@@ -1,0 +1,20 @@
+id: mine-depths
+illustration: mine-depths
+title: Follow the Tapping
+trigger: on-demand
+repeatable: true
+when:
+  all:
+    - { defeated: mine-crawler }
+    - not: { defeated: depths-pair }
+text: |
+  The tunnel slopes down to a flooded working where water drips from the roof. In the
+  far corner, a figure in a rotten leather apron is chipping at the rock face with a
+  pick. Tap. Tap. Tap. Something pale moves in a side passage beside him.
+choices:
+  - id: fight
+    text: Go down into the working.
+    outcome:
+      start-combat: depths-pair
+  - id: back
+    text: Leave the depths alone for now.

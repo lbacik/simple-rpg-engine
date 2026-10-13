@@ -1,0 +1,14 @@
+id: ember-shrine
+illustration: loc-ember-shrine
+name: Shrine of the Hearth Mother
+description: |
+  A round hut of stone built into the hillside, with a hearth niche where travellers
+  have kept a small fire burning for longer than anyone remembers. Clay votive tiles
+  cover the walls.
+map: { x: 24, y: 30 }
+scenes:
+  - shrine-defiler
+  - shrine-blessing
+connections:
+  - to: pass-gate
+    label: Return to the pass gate

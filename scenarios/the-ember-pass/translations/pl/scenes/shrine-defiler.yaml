@@ -1,0 +1,11 @@
+id: shrine-defiler
+title: Świętokradca
+text: |
+  W progu kapliczki gliniane płytki chrzęszczą pod butami. W środku olbrzymi łupieżca
+  w osmalonej niedźwiedziej skórze skuwa kowalskim młotem płytki wotywne ze ścian i kopie
+  mały ogień w niszy paleniska, żeby go zgasić.
+choices:
+  - id: fight
+    text: Powstrzymaj go.
+  - id: leave
+    text: Zostaw go i wróć do bramy.

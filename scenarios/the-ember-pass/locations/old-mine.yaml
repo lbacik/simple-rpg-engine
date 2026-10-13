@@ -1,0 +1,18 @@
+id: old-mine
+illustration: loc-old-mine
+name: The Greywatch Mine
+description: |
+  A narrow adit runs into the mountain, shored up with timbers gone soft with age. Your
+  lantern shows old pick marks, rusted rails and, here and there, scratches that no pick
+  made.
+map: { x: 74, y: 62 }
+scenes:
+  - mine-mouth
+  - mine-depths
+  - mine-vault
+connections:
+  - to: greywatch
+    label: Return to the tower
+  - to: war-camp
+    label: Climb the old shaft to the war camp
+    when: { flag: tunnel-open }

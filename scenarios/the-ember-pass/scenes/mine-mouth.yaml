@@ -1,0 +1,20 @@
+id: mine-mouth
+illustration: mine-mouth
+title: Something in the Adit
+trigger: on-enter
+repeatable: true
+when:
+  not: { defeated: mine-crawler }
+text: |
+  Ten paces into the adit the daylight gives out, and your lantern takes over. The
+  timbers creak. Then, from somewhere just above your head, comes a dry rattle, like
+  many small legs shifting all at once.
+choices:
+  - id: fight
+    text: Raise the lantern and your weapon.
+    outcome:
+      start-combat: mine-crawler
+  - id: back
+    text: Back out into the daylight.
+    outcome:
+      move: greywatch

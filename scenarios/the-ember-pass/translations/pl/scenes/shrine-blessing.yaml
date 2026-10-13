@@ -1,0 +1,13 @@
+id: shrine-blessing
+title: Zadbaj o ogień paleniska
+text: |
+  Ogień w niszy dogasa do kilku węgielków. Nad nim na gwoździu wisi gliniany amulet ze
+  znakiem Matki Ogniska, jedyna rzecz w kapliczce, której osiłek nie rozbił.
+choices:
+  - id: kneel
+    text: Dorzuć do ognia i uklęknij obok.
+    outcome:
+      text: |
+        Węgielki chwytają podpałkę i buchają płomieniem. Ciepło przechodzi przez ciebie jak
+        łyk gorącego wina, a każde rozcięcie i siniak się zamyka. Gdy wstajesz, amulet jest
+        ciepły w twojej dłoni.

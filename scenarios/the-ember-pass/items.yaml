@@ -1,0 +1,123 @@
+# Weapons
+- id: longsword
+  kind: equipment
+  name: Longsword
+  description: A plain, well-kept blade with a hilt long enough for both hands.
+  slot: weapon
+  damage: 3
+
+- id: yew-longbow
+  kind: equipment
+  name: Yew Longbow
+  description: A bow as tall as its owner, strung with waxed gut.
+  slot: weapon
+  reach: ranged
+  damage: 3
+
+- id: bearded-axe
+  kind: equipment
+  name: Bearded Axe
+  description: A warden's axe with a long hooked blade for pulling shields aside.
+  slot: weapon
+  damage: 3
+
+- id: rowan-staff
+  kind: equipment
+  name: Iron-Shod Rowan Staff
+  description: Rowan wood against ill luck, iron caps against everything else.
+  slot: weapon
+  bonus: wits
+  magic: true
+  damage: 3
+
+- id: highland-blade
+  kind: equipment
+  name: Highland Blade
+  description: Dunric's work, forged from Cinder Clan iron and quenched in snowmelt.
+  slot: weapon
+  bonus: might
+  damage: 4
+
+# Outfits
+- id: mail-hauberk
+  kind: equipment
+  name: Mail Hauberk
+  description: Riveted rings to the knee. Heavy, and worth every ounce.
+  slot: outfit
+  bonus: might
+
+- id: ranger-leathers
+  kind: equipment
+  name: Ranger's Leathers
+  description: Soft oiled leather that makes no sound on rock.
+  slot: outfit
+  bonus: agility
+
+- id: witch-cloak
+  kind: equipment
+  name: Hedge Witch's Cloak
+  description: Patched grey wool sewn with charms against thorns, falls and sharp edges.
+  slot: outfit
+  bonus: agility
+
+- id: deepdelver-mail
+  kind: equipment
+  name: Deepdelver Mail
+  description: Fine dwarf-made links, lighter than cloth and cold to the touch.
+  slot: outfit
+  bonus: agility
+  magic: true
+
+# Talismans
+- id: wardens-horn
+  kind: equipment
+  name: Warden's Horn
+  description: A ram's horn bound in bronze. Its note stops a brawl at fifty paces.
+  slot: talisman
+  bonus: presence
+
+- id: river-pearl
+  kind: equipment
+  name: River-Pearl Ward
+  description: A grey pearl from the troll's hoard. Your feet feel quicker while you wear it.
+  slot: talisman
+  bonus: agility
+  magic: true
+
+- id: hearth-amulet
+  kind: equipment
+  name: Amulet of the Hearth Mother
+  description: A warm disc of red clay stamped with a hearth. Your grip never tires.
+  slot: talisman
+  bonus: might
+  magic: true
+
+# Consumables
+- id: healing-draught
+  kind: consumable
+  name: Healing Draught
+  description: Bitter yarrow and honey in a stoppered horn.
+  heal: 4
+
+- id: ember-tonic
+  kind: consumable
+  name: Ember Tonic
+  description: A glowing red cordial that burns all the way down and closes wounds behind it.
+  heal: 8
+  magic: true
+
+# Key Items
+- id: smoked-mutton
+  kind: key
+  name: Smoked Mutton
+  description: A whole leg of smoked mutton wrapped in sacking. It smells wonderful.
+
+- id: miners-lantern
+  kind: key
+  name: Miner's Lantern
+  description: Dunric's old brass lantern from the years he worked the Greywatch seam.
+
+- id: cinder-ingot
+  kind: key
+  name: Cinder Ingot
+  description: A bar of black clan iron, still smelling of smoke.

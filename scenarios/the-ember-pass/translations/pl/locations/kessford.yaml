@@ -1,0 +1,9 @@
+id: kessford
+name: Kessford
+description: |
+  Górska wioska z domów z suchego kamienia pod darniowymi dachami, zbudowana tam, gdzie
+  droga z doliny zaczyna pierwsze podejście na przełęcz. Okiennice są zaryglowane w biały
+  dzień. Za kuźnią górska droga znika w chmurach.
+connections:
+  - to: south-road
+    label: Ruszaj górską drogą

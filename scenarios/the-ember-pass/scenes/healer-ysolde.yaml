@@ -1,0 +1,51 @@
+id: healer-ysolde
+illustration: healer-ysolde
+title: Visit Ysolde the Healer
+trigger: on-demand
+repeatable: true
+text: |
+  Ysolde's cottage smells of boiled linen and drying yarrow. The old healer is grinding
+  something grey in a mortar, and does not stop when you come in.
+
+  "Another one going up the road," she says. "Sit. Show me where it hurts, or tell me
+  what you need."
+choices:
+  - id: draught
+    text: Ask for something to take with you.
+    once: true
+    outcome:
+      text: |
+        She presses a stoppered horn into your hand without looking up. "Drink it when
+        you are bleeding, not before."
+      effects:
+        - give-item: { item: healing-draught }
+  - id: tend-tower
+    text: Have her look at the wounds from Greywatch.
+    once: true
+    when:
+      all:
+        - { flag: tower-taken }
+        - { health: { atMost: 11 } }
+    outcome:
+      text: |
+        She cleans and stitches and binds, muttering about raiders and their dirty blades.
+        You leave feeling stiff, but whole.
+      effects:
+        - heal: 6
+  - id: tend-camp
+    text: Have her see to you properly before the summit.
+    once: true
+    when:
+      all:
+        - any:
+            - { defeated: shaman-rite }
+            - { flag: captives-freed }
+        - { health: { atMost: 11 } }
+    outcome:
+      text: |
+        Ysolde works on you for an hour by the fire, and does not charge you for the
+        herbs. "Bring them home," she says when she is done. "Then we are even."
+      effects:
+        - heal: 12
+  - id: leave
+    text: Thank her and go.

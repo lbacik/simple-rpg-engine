@@ -1,0 +1,22 @@
+id: pass-gate
+illustration: loc-pass-gate
+name: The Pass Gate
+description: |
+  A timber gate set between two shoulders of rock blocks the road where it narrows. The
+  clan has hung it with horse skulls and blackened shields. A goat path climbs away to the
+  west, towards a thread of smoke from a small shrine.
+map: { x: 48, y: 36 }
+scenes:
+  - gate-standoff
+connections:
+  - to: greywatch
+    label: Go back down to Greywatch
+  - to: ember-shrine
+    label: Follow the goat path to the shrine
+  - to: war-camp
+    label: Pass through the gate to the war camp
+    when:
+      any:
+        - { defeated: gate-guards }
+        - { defeated: gate-lone-guard }
+        - { flag: tunnel-open }

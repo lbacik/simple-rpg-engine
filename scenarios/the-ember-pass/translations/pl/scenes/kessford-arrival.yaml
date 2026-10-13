@@ -1,0 +1,21 @@
+id: kessford-arrival
+title: Sołtyska Kessford
+text: |
+  Przy studni czeka na ciebie kobieta w ubłoconym płaszczu do konnej jazdy, z oszczepem
+  na dziki opartym o ramię. Przygląda ci się tak, jak gospodarz przygląda się koniowi.
+
+  — Maren Holt, sołtyska tej wsi — mówi. — Nazywasz się {name} i nosisz stal, a więcej
+  nie muszę wiedzieć. Klan Zgliszcz trzyma drogę, wieżę i ognisko sygnałowe. Trzy dni temu
+  zabrali jedenaścioro naszych. Pójdziesz w górę?
+choices:
+  - id: ask
+    text: Zapytaj, na co się porywasz.
+  - id: accept
+    text: Powiedz, że jeszcze dziś ruszasz na przełęcz.
+    outcome:
+      text: |
+        Maren ściska twoje przedramię. — To weź to. — Podaje ci worek z całym udźcem
+        wędzonej baraniny. — Wilki na drodze zawsze są głodne. Tak samo to coś pod mostem
+        przy brodzie. Ysolde i Dunric pomogą, jeśli poprosisz.
+  - id: refuse
+    text: Powiedz, że to nie twoja walka.

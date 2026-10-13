@@ -1,0 +1,9 @@
+id: beacon-summit
+name: Ognisko Żaru
+description: |
+  Szczyt przełęczy to płaska skalna korona ponad chmurami. Ognisko sygnałowe to wieża
+  z łupanej sosny i smoły w kręgu stojących kamieni, zbudowana tak, by było ją widać
+  z Varrow, oddalonego o czterdzieści mil.
+connections:
+  - to: war-camp
+    label: Zejdź z powrotem do obozu wojennego

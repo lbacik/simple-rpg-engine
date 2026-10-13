@@ -1,0 +1,21 @@
+id: camp-arrival
+illustration: camp-arrival
+title: The War Camp
+trigger: on-enter
+text: |
+  The war camp is quieter than you expected. Most of the raiders have gone up to the
+  summit with Gharra, or are asleep around the cookfires. In the centre of the camp, a
+  shaman in a cloak of ash-grey feathers chants beside a fire that burns an unnatural red,
+  an ash hound curled at his feet.
+
+  On the north side, inside a ring of stakes, the people of Kessford huddle together. A
+  single huge guard sits on a stool by the pen gate with a maul across his knees.
+choices:
+  - id: observe
+    text: Keep to the shadows and watch.
+    outcome:
+      text: |
+        Above the camp, a path climbs to the summit. The beacon up there is a dark shape
+        against the stars. Until the shaman's chant stops, it will stay that way.
+      effects:
+        - reveal: beacon-summit

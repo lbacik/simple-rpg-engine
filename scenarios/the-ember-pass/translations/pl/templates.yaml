@@ -1,0 +1,19 @@
+- id: sellsword
+  name: Najemnik
+  description: Płacono ci już za utrzymanie gorszych dróg niż ta. Długie ostrze i ciężka
+    kolczuga jak dotąd trzymają cię przy życiu.
+
+- id: ridge-ranger
+  name: Tropiciel z grani
+  description: Znasz każdą kozią ścieżkę nad Kessford. Wolisz skończyć walkę, zanim wróg
+    zdąży do ciebie dobiec.
+
+- id: highland-warden
+  name: Strażnik gór
+  description: Pilnujesz spokoju w wysokich dolinach toporem, rogiem i głosem, który niesie
+    się daleko. Ludzie zwykle robią to, co mówisz.
+
+- id: hedge-witch
+  name: Wiedźma
+  description: Czytasz pogodę, rany i drgnienia człowieka, który zaraz się zamachnie. Twój
+    okuty żelazem kostur złamał już niejedną szczękę.

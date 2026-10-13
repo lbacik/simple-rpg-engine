@@ -1,0 +1,13 @@
+id: beacon-lighting
+title: Zapal Ognisko Żaru
+text: |
+  Ognisko wznosi się nad tobą: dwadzieścia stóp łupanej sosny i chrustu nasączonego
+  smołą. W dłoni tli się głownia z koksownika łupieżców. Daleko w dole, za czterdziestoma
+  milami ciemności, leżą wzgórza Varrow.
+choices:
+  - id: light-together
+    text: Zapal ognisko w otoczeniu mieszkańców Kessford.
+  - id: light-alone
+    text: Zapal ognisko teraz, choć jeńcy wciąż siedzą w zagrodzie na dole.
+  - id: wait
+    text: Jeszcze nie.

@@ -1,0 +1,23 @@
+id: gate-standoff
+title: Strażnicy bramy
+text: |
+  Przed bramą dwaj łupieżcy wspierają się na włóczniach i kłócą o kości. Na twój widok
+  prostują się i opuszczają włócznie, ale zerkają w górę drogi, w stronę obozu wojennego,
+  jakby liczyli na rozkazy.
+choices:
+  - id: fight
+    text: Zmierz się z oboma naraz.
+  - id: bluff
+    text: Krzyknij, że Gharra natychmiast chce gońca na szczycie.
+    test:
+      success:
+        text: |
+          Bliższy strażnik podskakuje jak użądlony i pędzi w górę drogi. Drugi patrzy, jak
+          tamten znika, po czym odwraca się do ciebie, a jego twarz się zmienia.
+      failure:
+        text: |
+          Strażnicy spoglądają po sobie i wybuchają śmiechem. Potem ruszają na ciebie razem.
+  - id: lone-again
+    text: Wróć po samotnego strażnika.
+  - id: wait
+    text: Na razie trzymaj się poza ich zasięgiem.

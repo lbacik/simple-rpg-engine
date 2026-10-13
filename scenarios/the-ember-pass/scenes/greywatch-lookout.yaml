@@ -1,0 +1,23 @@
+id: greywatch-lookout
+illustration: greywatch-lookout
+title: Look Out from the Roof
+trigger: on-demand
+when: { flag: tower-taken }
+text: |
+  From the top of Greywatch the whole lower pass is laid out like a map. The road climbs
+  in switchbacks to a timber gate between two shoulders of rock. West of the gate, a
+  thread of smoke rises from a small shrine. East, in the bare slope, gapes the black
+  mouth of the old mine.
+
+  Above it all, on the high saddle, the smoke of many cookfires hangs over the war camp.
+choices:
+  - id: study
+    text: Fix the routes in your mind.
+    outcome:
+      text: |
+        If Dunric is right about the mine shaft, there is a way into the camp that avoids
+        the gate entirely.
+      effects:
+        - reveal: pass-gate
+        - reveal: ember-shrine
+        - reveal: old-mine

@@ -1,0 +1,46 @@
+id: wolves-on-road
+illustration: wolves-on-road
+title: Wolves on the Road
+trigger: on-enter
+repeatable: true
+when:
+  all:
+    - not: { defeated: road-wolves }
+    - not: { flag: wolves-fed }
+text: |
+  Halfway up the first climb, a dead mule lies across the ruts, and two wolves are busy
+  with it. They lift their heads together. Neither of them backs away.
+choices:
+  - id: fight
+    text: Draw your weapon and meet them.
+    outcome:
+      start-combat: road-wolves
+  - id: mutton
+    text: Throw them the smoked mutton.
+    when: { has: { item: smoked-mutton } }
+    outcome:
+      text: |
+        The sack lands in the heather. The wolves forget the mule, forget you, and drag
+        their prize off into the rocks, snarling at each other.
+      effects:
+        - take-item: { item: smoked-mutton }
+        - set-flag: wolves-fed
+  - id: stare-down
+    text: Stand tall, shout and drive them off.
+    test:
+      attribute: presence
+      difficulty: hard
+      success:
+        text: |
+          You roar and stamp and come on. The wolves look at each other, then slink off
+          the road and up into the rocks.
+        effects:
+          - set-flag: wolves-fed
+      failure:
+        text: |
+          The wolves are not impressed. They leave the mule and come for you instead.
+        start-combat: road-wolves
+  - id: back
+    text: Back away down the road.
+    outcome:
+      move: kessford

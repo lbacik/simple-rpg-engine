@@ -1,0 +1,20 @@
+id: shrine-blessing
+illustration: shrine-blessing
+title: Tend the Hearth Fire
+trigger: on-demand
+when: { defeated: shrine-brute }
+text: |
+  The fire in the niche has burned down to a few coals. A clay amulet hangs on a nail
+  above it, stamped with the Hearth Mother's sign, the only thing in the shrine the brute
+  did not break.
+choices:
+  - id: kneel
+    text: Feed the fire and kneel beside it.
+    outcome:
+      text: |
+        The coals take the kindling and blaze up. Warmth goes through you like a draught of
+        hot wine, and every cut and bruise closes. When you stand, the amulet is warm in
+        your hand.
+      effects:
+        - heal: 12
+        - give-item: { item: hearth-amulet }

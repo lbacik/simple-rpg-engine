@@ -1,0 +1,26 @@
+id: wolves-on-road
+title: Wilki na drodze
+text: |
+  W połowie pierwszego podejścia w poprzek kolein leży martwy muł, a dwa wilki są nim
+  zajęte. Podnoszą łby jednocześnie. Żaden się nie cofa.
+choices:
+  - id: fight
+    text: Dobądź broni i stań do walki.
+  - id: mutton
+    text: Rzuć im wędzoną baraninę.
+    outcome:
+      text: |
+        Worek ląduje we wrzosach. Wilki zapominają o mule, zapominają o tobie i warcząc na
+        siebie, wloką zdobycz między skały.
+  - id: stare-down
+    text: Wyprostuj się, krzyknij i przegoń je.
+    test:
+      success:
+        text: |
+          Ryczysz, tupiesz i idziesz naprzód. Wilki patrzą na siebie, po czym umykają z drogi
+          między skały.
+      failure:
+        text: |
+          Na wilkach nie robi to wrażenia. Zostawiają muła i ruszają na ciebie.
+  - id: back
+    text: Wycofaj się w dół drogi.

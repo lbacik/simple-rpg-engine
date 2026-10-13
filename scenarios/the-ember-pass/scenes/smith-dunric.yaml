@@ -1,0 +1,35 @@
+id: smith-dunric
+illustration: smith-dunric
+title: Visit Dunric's Smithy
+trigger: on-demand
+repeatable: true
+text: |
+  Dunric is a broad man with burn scars to the elbow and a miner's stoop. His forge is
+  cold; he has been sharpening scythes and pitchforks for the village instead.
+
+  "If you are going up there, I could use something better than farm iron," he says.
+  "Clan iron is black and good. Bring me a bar of it and I will make you a blade."
+choices:
+  - id: lantern
+    text: Ask him about the old Greywatch mine.
+    once: true
+    outcome:
+      text: |
+        "Worked that seam for twenty years," he says. "The old shaft at the top comes out
+        under the high saddle, right where the clan has made its camp. There are things
+        down there now, though." He takes a brass lantern from a hook and gives it to you.
+      effects:
+        - give-item: { item: miners-lantern }
+  - id: forge
+    text: Give him the cinder ingot and ask for a blade.
+    when: { has: { item: cinder-ingot } }
+    outcome:
+      text: |
+        Dunric lights the forge for the first time in a week. By evening he puts a long,
+        grey-black blade in your hands, still warm from the quench. "It will hold an edge
+        longer than you will," he says. Equip it if you want it.
+      effects:
+        - take-item: { item: cinder-ingot }
+        - give-item: { item: highland-blade }
+  - id: leave
+    text: Leave him to his work.

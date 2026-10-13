@@ -1,0 +1,13 @@
+id: greywatch
+name: Wieża Greywatch
+description: |
+  Kwadratowa strażnica z szarego granitu, wysoka na trzy piętra, pilnuje drogi w miejscu,
+  gdzie wrzosy ustępują nagiej skale. Z jej dachu widać całą dolną część przełęczy i czarny
+  wylot starej kopalni na zboczu na wschodzie.
+connections:
+  - to: south-road
+    label: Zejdź z powrotem na drogę
+  - to: pass-gate
+    label: Wespnij się serpentynami do bramy przełęczy
+  - to: old-mine
+    label: Wejdź do starej kopalni Greywatch

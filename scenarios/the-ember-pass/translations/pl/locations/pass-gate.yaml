@@ -1,0 +1,13 @@
+id: pass-gate
+name: Brama przełęczy
+description: |
+  Drewniana brama osadzona między dwoma skalnymi ramionami zamyka drogę tam, gdzie się
+  zwęża. Klan obwiesił ją końskimi czaszkami i osmalonymi tarczami. Na zachód odchodzi
+  kozia ścieżka, w stronę nitki dymu nad małą kapliczką.
+connections:
+  - to: greywatch
+    label: Zejdź z powrotem do Greywatch
+  - to: ember-shrine
+    label: Idź kozią ścieżką do kapliczki
+  - to: war-camp
+    label: Przejdź przez bramę do obozu wojennego

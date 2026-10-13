@@ -1,0 +1,41 @@
+id: summit-standoff
+illustration: summit-standoff
+title: The Warlord at the Beacon
+trigger: on-enter
+repeatable: true
+when:
+  not: { flag: warlord-slain }
+text: |
+  Gharra Ashmane sits on one of the standing stones with her great axe across her knees,
+  as if she has been waiting for you. Her last bowman stands on the beacon stones behind
+  her. She looks past you, down the path, and smiles.
+
+  "The shaman is dead, then," she says. "Good. I never liked him. Come and light it, if
+  you can."
+
+  Two against one is poor odds. With a few more pairs of hands, someone could keep that
+  bowman busy.
+choices:
+  - id: duel
+    text: Let the freed captives rush the bowman while you face Gharra.
+    when:
+      all:
+        - not: { defeated: warlord-duel }
+        - { flag: captives-freed }
+    outcome:
+      text: |
+        The people of Kessford come up the path behind you with stones and stakes and
+        shouting. The bowman has other things to worry about now.
+      start-combat: warlord-duel
+  - id: guarded
+    text: Face Gharra and her bowman alone.
+    when:
+      all:
+        - not: { defeated: warlord-and-guard }
+        - not: { flag: captives-freed }
+    outcome:
+      start-combat: warlord-and-guard
+  - id: withdraw
+    text: Go back down to the camp.
+    outcome:
+      move: war-camp

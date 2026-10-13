@@ -1,0 +1,11 @@
+id: greywatch-rest
+title: Odpocznij w wartowni
+text: |
+  Łupieżcy zostawili w palenisku wartowni przygotowany ogień, a w kącie stertę
+  zrabowanych koców. Drzwi są dębowe, a rygiel wciąż dobry.
+choices:
+  - id: sleep
+    text: Zarygluj drzwi i prześpij kilka godzin.
+    outcome:
+      text: |
+        Po przebudzeniu ciało masz zesztywniałe z zimna, ale najgorsze krwawienie ustało.

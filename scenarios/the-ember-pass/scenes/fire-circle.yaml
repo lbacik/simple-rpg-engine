@@ -1,0 +1,18 @@
+id: fire-circle
+illustration: fire-circle
+title: Break the Shaman's Rite
+trigger: on-demand
+repeatable: true
+when:
+  not: { defeated: shaman-rite }
+text: |
+  The shaman sways beside the red fire, throwing pinches of something into it that make
+  the flames hiss. Each time he does, the cold on the summit seems to deepen. The ash
+  hound lifts its head and watches you.
+choices:
+  - id: fight
+    text: Walk into the firelight and end the chant.
+    outcome:
+      start-combat: shaman-rite
+  - id: back
+    text: Stay in the shadows a while longer.

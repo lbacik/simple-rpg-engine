@@ -1,0 +1,23 @@
+id: summit-standoff
+title: Wodzini przy ognisku
+text: |
+  Gharra Ashmane siedzi na jednym ze stojących kamieni z wielkim toporem na kolanach,
+  jakby na ciebie czekała. Jej ostatni łucznik stoi na kamieniach ogniska za nią. Wodzini
+  spogląda za ciebie, w dół ścieżki, i się uśmiecha.
+
+  — A więc szaman nie żyje — mówi. — Dobrze. Nigdy go nie lubiłam. Chodź i zapal
+  ognisko, jeśli zdołasz.
+
+  Dwa ostrza przeciw jednemu to kiepskie szanse. Gdyby było więcej rąk do pomocy,
+  ktoś mógłby zająć się łucznikiem.
+choices:
+  - id: duel
+    text: Niech uwolnieni jeńcy rzucą się na łucznika, a ty stań naprzeciw Gharry.
+    outcome:
+      text: |
+        Mieszkańcy Kessford wbiegają ścieżką za tobą, z kamieniami, kołkami i krzykiem.
+        Łucznik ma teraz inne zmartwienia.
+  - id: guarded
+    text: Zmierz się w pojedynkę z Gharrą i jej łucznikiem.
+  - id: withdraw
+    text: Zejdź z powrotem do obozu.

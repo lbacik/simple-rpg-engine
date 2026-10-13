@@ -1,0 +1,67 @@
+- id: longsword
+  name: Długi miecz
+  description: Proste, zadbane ostrze z rękojeścią na tyle długą, by chwycić je oburącz.
+
+- id: yew-longbow
+  name: Cisowy łuk długi
+  description: Łuk wysoki jak jego właściciel, naciągnięty woskowaną cięciwą z jelita.
+
+- id: bearded-axe
+  name: Topór brodaty
+  description: Topór strażnika z długim, zakrzywionym ostrzem do odciągania tarcz.
+
+- id: rowan-staff
+  name: Okuty kostur jarzębinowy
+  description: Jarzębina chroni przed złym losem, żelazne okucia przed całą resztą.
+
+- id: highland-blade
+  name: Ostrze z gór
+  description: Dzieło Dunrica, wykute z żelaza Klanu Zgliszcz i hartowane w roztopach.
+
+- id: mail-hauberk
+  name: Kolczuga
+  description: Nitowane kółka sięgające kolan. Ciężka i warta każdej uncji.
+
+- id: ranger-leathers
+  name: Skóry tropiciela
+  description: Miękka, natłuszczona skóra, która nie wydaje dźwięku na skale.
+
+- id: witch-cloak
+  name: Płaszcz wiedźmy
+  description: Połatana szara wełna, obszyta amuletami od cierni, upadków i ostrych krawędzi.
+
+- id: deepdelver-mail
+  name: Kolczuga z głębin
+  description: Drobne krasnoludzkie ogniwa, lżejsze od płótna i zimne w dotyku.
+
+- id: wardens-horn
+  name: Róg strażnika
+  description: Barani róg okuty brązem. Jego dźwięk przerywa bójkę z pięćdziesięciu kroków.
+
+- id: river-pearl
+  name: Rzeczna perła
+  description: Szara perła ze skarbu trolla. Póki ją nosisz, twoje stopy są szybsze.
+
+- id: hearth-amulet
+  name: Amulet Matki Ogniska
+  description: Ciepły krążek z czerwonej gliny z odciśniętym paleniskiem. Twój chwyt nigdy nie słabnie.
+
+- id: healing-draught
+  name: Napój leczniczy
+  description: Gorzki krwawnik z miodem w zatkanym rogu.
+
+- id: ember-tonic
+  name: Tonik żaru
+  description: Świecący czerwony likier, który pali aż do żołądka i zasklepia za sobą rany.
+
+- id: smoked-mutton
+  name: Wędzona baranina
+  description: Cały udziec wędzonej baraniny zawinięty w worek. Pachnie wspaniale.
+
+- id: miners-lantern
+  name: Latarnia górnicza
+  description: Stara mosiężna latarnia Dunrica z lat, gdy pracował w żyle Greywatch.
+
+- id: cinder-ingot
+  name: Sztaba żużlowego żelaza
+  description: Sztaba czarnego żelaza klanu, wciąż pachnąca dymem.

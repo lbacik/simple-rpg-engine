@@ -1,0 +1,31 @@
+- id: pass-reclaimed
+  title: Przełęcz odzyskana
+  text: |
+    Ognisko wystrzela płomieniem w noc, a jeńcy z Kessford wiwatują na skałach pod nim.
+    Na długo przed świtem na wzgórzach Varrow płonie ogień w odpowiedzi.
+
+    Królewscy jeźdźcy wjeżdżają na drogę dwa dni później. Zastają otwartą bramę, pusty
+    obóz wojenny i mieszkańców Kessford, którzy już wracają do domów. Na ich czele idzie
+    {name}.
+
+- id: lone-flame
+  title: Samotny płomień
+  text: |
+    Ognisko wystrzela płomieniem w noc, a przed świtem na wzgórzach Varrow płonie ogień
+    w odpowiedzi. Przełęcz znów jest otwarta.
+
+    Ale kiedy przybywają jeźdźcy, zagrody w obozie wojennym są puste. Ocaleli łupieżcy
+    popędzili jeńców na północ, gdy trwała walka na szczycie. Jeźdźcy obiecują ruszyć
+    w pościg. Kessford zapala świece w oknach i czeka.
+
+- id: turned-back
+  title: Odwrót
+  text: |
+    Opuszczasz Kessford drogą przez dolinę. Za twoimi plecami ognisko na Przełęczy Żaru
+    pozostaje ciemne, a dym z ognisk Klanu Zgliszcz z każdą nocą schodzi trochę niżej.
+
+- id: death
+  title: Śmierć na przełęczy
+  text: |
+    Góra jest zimna, a kamienie twarde, a potem nic z tego nie ma już znaczenia. Klan
+    Zgliszcz zostawia twoje ciało tam, gdzie upadło, a ognisko pozostaje ciemne.

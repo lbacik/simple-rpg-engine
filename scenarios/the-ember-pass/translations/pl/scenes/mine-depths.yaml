@@ -1,0 +1,11 @@
+id: mine-depths
+title: Idź za stukaniem
+text: |
+  Tunel opada do zalanego przodka, gdzie ze stropu kapie woda. W najdalszym kącie postać
+  w zbutwiałym skórzanym fartuchu odłupuje kilofem skałę. Stuk. Stuk. Stuk. W bocznym
+  chodniku obok niej porusza się coś bladego.
+choices:
+  - id: fight
+    text: Zejdź do przodka.
+  - id: back
+    text: Na razie zostaw głębiny w spokoju.

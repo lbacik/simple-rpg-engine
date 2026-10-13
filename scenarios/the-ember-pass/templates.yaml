@@ -1,0 +1,42 @@
+# Character Templates. Base Attributes are 0-3 and sum to exactly 6.
+# Every Template can fight; they differ in how.
+
+- id: sellsword
+  name: Sellsword
+  description: You have been paid to hold worse roads than this one. A long blade and a
+    heavy hauberk have kept you alive so far.
+  attributes: { might: 3, agility: 1, wits: 1, presence: 1 }
+  items:
+    - { item: longsword }
+    - { item: mail-hauberk }
+    - { item: healing-draught, quantity: 2 }
+
+- id: ridge-ranger
+  name: Ridge Ranger
+  description: You know every goat track above Kessford. You prefer to finish a fight
+    before the enemy can reach you.
+  attributes: { might: 1, agility: 3, wits: 2, presence: 0 }
+  items:
+    - { item: yew-longbow }
+    - { item: ranger-leathers }
+    - { item: healing-draught, quantity: 2 }
+
+- id: highland-warden
+  name: Highland Warden
+  description: You keep the peace in the high valleys with an axe, a horn and a voice
+    that carries. People tend to do what you say.
+  attributes: { might: 2, agility: 2, wits: 0, presence: 2 }
+  items:
+    - { item: bearded-axe }
+    - { item: wardens-horn }
+    - { item: healing-draught, quantity: 2 }
+
+- id: hedge-witch
+  name: Hedge Witch
+  description: You read weather, wounds and the tells of a man about to swing. Your
+    iron-shod staff has broken more than one jaw.
+  attributes: { might: 1, agility: 1, wits: 3, presence: 1 }
+  items:
+    - { item: rowan-staff }
+    - { item: witch-cloak }
+    - { item: healing-draught, quantity: 2 }

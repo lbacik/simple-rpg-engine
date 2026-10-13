@@ -1,0 +1,490 @@
+{
+  "generator": "built-in image_gen",
+  "format": {
+    "width": 1536,
+    "height": 1024,
+    "file": "WebP, under 2 MiB"
+  },
+  "styleReferences": [
+    "tmp/Architectural Sketches.png",
+    "tmp/Sketches Landscapes.jpg"
+  ],
+  "stylePrompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.",
+  "cast": {
+    "maren": "Maren Holt, reeve of Kessford: a weathered woman in her fifties, hair cropped short, mud-spattered long riding coat, a boar spear with a crossbar leaning on her shoulder",
+    "ysolde": "Ysolde the healer: a very old, small woman with a shawl and rolled-up sleeves, white hair in a braid",
+    "dunric": "Dunric the smith: a broad, stooped middle-aged man with a heavy beard, leather apron, burn scars on his forearms",
+    "gharra": "Gharra Ashmane, the Cinder Warlord: a tall, powerful woman in scorched fur and ring-mail, face and long braids streaked with ash, a huge two-handed axe",
+    "shaman": "the Ember Shaman: a thin old man in a cloak of ash-grey feathers, a bone necklace, hands full of glowing cinders",
+    "brute": "a Clan Brute: a giant raider in a scorched bearskin with a heavy smith's maul",
+    "troll": "the Ford Troll: a huge, slow grey troll with river weed in its beard, mossy shoulders, small eyes",
+    "boy": "a boy of about twelve with a sharp, thin face (Maren Holt's nephew)"
+  },
+  "assets": [
+    {
+      "id": "loc-kessford",
+      "type": "location",
+      "entity": "kessford",
+      "title": "Kessford",
+      "subject": "Wide establishing view of a small highland village at dusk: dry-stone cottages with turf roofs, barred shutters, a stone well on a muddy green, a smithy with a cold chimney. Behind the village a cart road climbs into low cloud on the mountainside. No people.",
+      "alt": "Dry-stone cottages with turf roofs gather around a well, and a road climbs behind them into the clouds.",
+      "altPl": "Kamienne chaty z darniowymi dachami skupione wokół studni, a za nimi droga wspinająca się w chmury.",
+      "path": "images/loc-kessford.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Wide establishing view of a small highland village at dusk: dry-stone cottages with turf roofs, barred shutters, a stone well on a muddy green, a smithy with a cold chimney. Behind the village a cart road climbs into low cloud on the mountainside. No people.\n\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-south-road",
+      "type": "location",
+      "entity": "south-road",
+      "title": "The Mountain Road",
+      "subject": "Wide landscape of a rutted cart road zigzagging up a heather and scree slope. A side track drops left towards a river gorge; high on the skyline stands a squat square watchtower. Empty road, no people, no animals.",
+      "alt": "A rutted road zigzags up a heather slope towards a squat watchtower on the skyline.",
+      "altPl": "Droga z koleinami wije się zakosami po wrzosowym zboczu ku przysadzistej wieży na horyzoncie.",
+      "path": "images/loc-south-road.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Wide landscape of a rutted cart road zigzagging up a heather and scree slope. A side track drops left towards a river gorge; high on the skyline stands a squat square watchtower. Empty road, no people, no animals.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-troll-ford",
+      "type": "location",
+      "entity": "troll-ford",
+      "title": "The Troll Ford",
+      "subject": "A fast white river running over a ford of flat stepping stones, with an old humped stone bridge a little upstream. The dark space beneath the bridge holds a heap of bones, broken crates and junk. No troll visible.",
+      "alt": "A fast river runs over flat stepping stones beside an old stone bridge with a heap of bones beneath it.",
+      "altPl": "Bystra rzeka płynie po płaskich kamieniach brodu obok starego mostu, pod którym leży sterta kości.",
+      "path": "images/loc-troll-ford.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A fast white river running over a ford of flat stepping stones, with an old humped stone bridge a little upstream. The dark space beneath the bridge holds a heap of bones, broken crates and junk. No troll visible.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-greywatch",
+      "type": "location",
+      "entity": "greywatch",
+      "title": "Greywatch Tower",
+      "subject": "Three-quarter architectural view of a square three-storey granite watchtower with crenellations, an oak door up a short flight of steps, set where heather gives way to bare rock. In the distance to the right, a black mine entrance in a slope. A tattered dark banner hangs from the parapet. No people.",
+      "alt": "A square granite watchtower with a tattered banner guards the road, with a mine entrance in the slope beyond.",
+      "altPl": "Kwadratowa granitowa strażnica z postrzępionym sztandarem pilnuje drogi, a dalej w zboczu widać wejście do kopalni.",
+      "path": "images/loc-greywatch.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Three-quarter architectural view of a square three-storey granite watchtower with crenellations, an oak door up a short flight of steps, set where heather gives way to bare rock. In the distance to the right, a black mine entrance in a slope. A tattered dark banner hangs from the parapet. No people.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-old-mine",
+      "type": "location",
+      "entity": "old-mine",
+      "title": "The Greywatch Mine",
+      "subject": "Interior of a narrow mine adit lit by a single lantern held in the viewer's hand at the bottom edge: soft old timber props, rusted rails, pick marks on the walls and some long parallel scratches that look like claws. Darkness rendered by sparse hatching only.",
+      "alt": "A lantern lights a narrow mine tunnel with old timber props, rusted rails and strange claw scratches.",
+      "altPl": "Latarnia oświetla wąską sztolnię ze starymi stemplami, zardzewiałymi szynami i dziwnymi zadrapaniami.",
+      "path": "images/loc-old-mine.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Interior of a narrow mine adit lit by a single lantern held in the viewer's hand at the bottom edge: soft old timber props, rusted rails, pick marks on the walls and some long parallel scratches that look like claws. Darkness rendered by sparse hatching only.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-pass-gate",
+      "type": "location",
+      "entity": "pass-gate",
+      "title": "The Pass Gate",
+      "subject": "A heavy timber gate between two shoulders of rock where the road narrows, hung with horse skulls and scorched round shields. A goat path climbs away to the left towards a thin thread of smoke. No people.",
+      "alt": "A timber gate hung with horse skulls and scorched shields blocks the road between two rock walls.",
+      "altPl": "Drewniana brama obwieszona końskimi czaszkami i osmalonymi tarczami zamyka drogę między skałami.",
+      "path": "images/loc-pass-gate.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A heavy timber gate between two shoulders of rock where the road narrows, hung with horse skulls and scorched round shields. A goat path climbs away to the left towards a thin thread of smoke. No people.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-ember-shrine",
+      "type": "location",
+      "entity": "ember-shrine",
+      "title": "Shrine of the Hearth Mother",
+      "subject": "A small round stone hut built into a hillside, its doorway open. Inside, a hearth niche with a tiny fire; the walls covered in small clay votive tiles. Mountain slope and sky around. No people.",
+      "alt": "A round stone shrine in a hillside, with a small fire in a hearth niche and clay tiles on the walls.",
+      "altPl": "Okrągła kamienna kapliczka w zboczu z małym ogniem w niszy paleniska i glinianymi płytkami na ścianach.",
+      "path": "images/loc-ember-shrine.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A small round stone hut built into a hillside, its doorway open. Inside, a hearth niche with a tiny fire; the walls covered in small clay votive tiles. Mountain slope and sky around. No people.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-war-camp",
+      "type": "location",
+      "entity": "war-camp",
+      "title": "The Cinder Clan War Camp",
+      "subject": "Wide night view over a bare mountain saddle crowded with hide tents and smouldering cookfires; on one side a ring of sharpened stakes forms a pen. A path climbs to a dark summit where a tall unlit beacon pyre stands against the stars. Distant small figures only, no close characters.",
+      "alt": "Hide tents and smouldering fires crowd a mountain saddle below a dark summit with an unlit beacon.",
+      "altPl": "Namioty ze skór i tlące się ogniska na górskim siodle pod ciemnym szczytem z niezapalonym stosem.",
+      "path": "images/loc-war-camp.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Wide night view over a bare mountain saddle crowded with hide tents and smouldering cookfires; on one side a ring of sharpened stakes forms a pen. A path climbs to a dark summit where a tall unlit beacon pyre stands against the stars. Distant small figures only, no close characters.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "loc-beacon-summit",
+      "type": "location",
+      "entity": "beacon-summit",
+      "title": "The Ember Beacon",
+      "subject": "A flat rocky summit above a sea of clouds at night, a tall stacked pyre of split pine logs inside a ring of standing stones. Faraway hills on the horizon. No people, the beacon unlit.",
+      "alt": "A tall unlit pyre of split pine stands in a ring of standing stones above a sea of clouds.",
+      "altPl": "Wysoki, niezapalony stos z łupanej sosny w kręgu stojących kamieni ponad morzem chmur.",
+      "path": "images/loc-beacon-summit.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A flat rocky summit above a sea of clouds at night, a tall stacked pyre of split pine logs inside a ring of standing stones. Faraway hills on the horizon. No people, the beacon unlit.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "kessford-arrival",
+      "type": "scene",
+      "entity": "kessford-arrival",
+      "title": "The Reeve of Kessford",
+      "subject": "Medium shot by the village well at dusk: Maren Holt, reeve of Kessford: a weathered woman in her fifties, hair cropped short, mud-spattered long riding coat, a boar spear with a crossbar leaning on her shoulder, standing and looking appraisingly at the viewer. Dry-stone cottages with barred shutters behind her.",
+      "alt": "Maren Holt, the reeve, stands by the village well with a boar spear on her shoulder.",
+      "altPl": "Sołtyska Maren Holt stoi przy studni z oszczepem na dziki na ramieniu.",
+      "path": "images/kessford-arrival.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Medium shot by the village well at dusk: Maren Holt, reeve of Kessford: a weathered woman in her fifties, hair cropped short, mud-spattered long riding coat, a boar spear with a crossbar leaning on her shoulder, standing and looking appraisingly at the viewer. Dry-stone cottages with barred shutters behind her.\nInput images are drawing-technique references only. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "reeve-briefing",
+      "type": "scene",
+      "entity": "reeve-briefing",
+      "title": "What Waits on the Pass",
+      "subject": "Maren Holt, reeve of Kessford: a weathered woman in her fifties, hair cropped short, mud-spattered long riding coat, a boar spear with a crossbar leaning on her shoulder counting on her fingers, half turned towards the mountain; behind her, far up the cloudy slope, a tiny watchtower and a dark, unlit summit. Intimate, serious mood.",
+      "alt": "Maren Holt counts off the dangers on her fingers, the mountain pass rising behind her.",
+      "altPl": "Maren Holt wylicza na palcach niebezpieczeństwa, a za nią wznosi się przełęcz.",
+      "path": "images/reeve-briefing.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Maren Holt, reeve of Kessford: a weathered woman in her fifties, hair cropped short, mud-spattered long riding coat, a boar spear with a crossbar leaning on her shoulder counting on her fingers, half turned towards the mountain; behind her, far up the cloudy slope, a tiny watchtower and a dark, unlit summit. Intimate, serious mood.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes Maren's appearance; depict the same woman in this new moment. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/kessford-arrival.webp"
+      ]
+    },
+    {
+      "id": "healer-ysolde",
+      "type": "scene",
+      "entity": "healer-ysolde",
+      "title": "Visit Ysolde the Healer",
+      "subject": "Cottage interior: Ysolde the healer: a very old, small woman with a shawl and rolled-up sleeves, white hair in a braid, grinding herbs in a stone mortar at a table. Bundles of dried yarrow hang from the beams, boiled linen strips, a stool waiting for a patient.",
+      "alt": "Old Ysolde grinds herbs in a mortar beneath bundles of drying yarrow.",
+      "altPl": "Stara Ysolde uciera zioła w moździerzu pod pękami suszącego się krwawnika.",
+      "path": "images/healer-ysolde.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Cottage interior: Ysolde the healer: a very old, small woman with a shawl and rolled-up sleeves, white hair in a braid, grinding herbs in a stone mortar at a table. Bundles of dried yarrow hang from the beams, boiled linen strips, a stool waiting for a patient.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "smith-dunric",
+      "type": "scene",
+      "entity": "smith-dunric",
+      "title": "Visit Dunric's Smithy",
+      "subject": "Smithy interior with a cold forge: Dunric the smith: a broad, stooped middle-aged man with a heavy beard, leather apron, burn scars on his forearms, sharpening a scythe on a whetstone. Pitchforks lean on the wall; an old brass miner's lantern hangs from a hook.",
+      "alt": "Dunric the smith sharpens a scythe beside his cold forge, a brass lantern hanging on the wall.",
+      "altPl": "Kowal Dunric ostrzy kosę przy zimnym palenisku, a na ścianie wisi mosiężna latarnia.",
+      "path": "images/smith-dunric.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Smithy interior with a cold forge: Dunric the smith: a broad, stooped middle-aged man with a heavy beard, leather apron, burn scars on his forearms, sharpening a scythe on a whetstone. Pitchforks lean on the wall; an old brass miner's lantern hangs from a hook.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "wolves-on-road",
+      "type": "scene",
+      "entity": "wolves-on-road",
+      "title": "Wolves on the Road",
+      "subject": "On a heather road, a dead mule lies across the cart ruts; two lean grey wolves stand over it with heads raised, staring straight at the viewer, beginning to split apart. Tension, no gore: the mule is just a still shape.",
+      "alt": "Two lean wolves raise their heads from a dead mule lying across the road.",
+      "altPl": "Dwa chude wilki podnoszą łby znad martwego muła leżącego w poprzek drogi.",
+      "path": "images/wolves-on-road.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: On a heather road, a dead mule lies across the cart ruts; two lean grey wolves stand over it with heads raised, staring straight at the viewer, beginning to split apart. Tension, no gore: the mule is just a still shape.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "caravan-wreck",
+      "type": "scene",
+      "entity": "caravan-wreck",
+      "title": "Search the Wrecked Caravan",
+      "subject": "Below a road, a merchant wagon lies on its side in scree with a snapped axle; scattered empty crates, two fallen caravan guards lying still at a distance with black-fletched arrows in the ground near them (no blood). Quiet, sombre.",
+      "alt": "A wagon lies on its side in the scree, its cargo gone and its guards fallen nearby.",
+      "altPl": "Wóz leży na boku w piargu, ładunek zniknął, a obok leżą polegli strażnicy.",
+      "path": "images/caravan-wreck.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Below a road, a merchant wagon lies on its side in scree with a snapped axle; scattered empty crates, two fallen caravan guards lying still at a distance with black-fletched arrows in the ground near them (no blood). Quiet, sombre.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "troll-toll",
+      "type": "scene",
+      "entity": "troll-toll",
+      "title": "The Toll of the Ford",
+      "subject": "Under an old stone bridge, the Ford Troll: a huge, slow grey troll with river weed in its beard, mossy shoulders, small eyes squats in the shallows picking its teeth with a rib bone, looking up at the viewer with a sly grin. River water around its knees.",
+      "alt": "A grey troll squats in the shallows under the bridge, picking its teeth with a rib bone.",
+      "altPl": "Szary troll kuca na płyciźnie pod mostem i dłubie w zębach żebrem.",
+      "path": "images/troll-toll.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Under an old stone bridge, the Ford Troll: a huge, slow grey troll with river weed in its beard, mossy shoulders, small eyes squats in the shallows picking its teeth with a rib bone, looking up at the viewer with a sly grin. River water around its knees.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-troll-ford.webp"
+      ]
+    },
+    {
+      "id": "tower-approach",
+      "type": "scene",
+      "entity": "tower-approach",
+      "title": "Greywatch Held",
+      "subject": "View from the road up to the square granite tower: a raider in soot-blackened leather sits on the door step honing a falchion; a bowman leans on the battlements of the roof. The north wall of the tower falls in deep shadow with rough handholds.",
+      "alt": "A raider hones a falchion on the tower steps while a bowman watches from the battlements.",
+      "altPl": "Łupieżca ostrzy tasak na schodach wieży, a łucznik obserwuje drogę z blanków.",
+      "path": "images/tower-approach.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: View from the road up to the square granite tower: a raider in soot-blackened leather sits on the door step honing a falchion; a bowman leans on the battlements of the roof. The north wall of the tower falls in deep shadow with rough handholds.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-greywatch.webp"
+      ]
+    },
+    {
+      "id": "greywatch-lookout",
+      "type": "scene",
+      "entity": "greywatch-lookout",
+      "title": "Look Out from the Roof",
+      "subject": "View from the tower roof between two merlons over the lower pass: switchback road to a timber gate between rocks, a thread of smoke from a small shrine to the left, a black mine mouth to the right, and high above, the smoke of many campfires on a saddle.",
+      "alt": "From the tower roof, the switchback road, the gate, a shrine and a mine mouth spread out below.",
+      "altPl": "Z dachu wieży widać serpentyny drogi, bramę, kapliczkę i wylot kopalni.",
+      "path": "images/greywatch-lookout.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: View from the tower roof between two merlons over the lower pass: switchback road to a timber gate between rocks, a thread of smoke from a small shrine to the left, a black mine mouth to the right, and high above, the smoke of many campfires on a saddle.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-greywatch.webp"
+      ]
+    },
+    {
+      "id": "greywatch-rest",
+      "type": "scene",
+      "entity": "greywatch-rest",
+      "title": "Rest in the Guardroom",
+      "subject": "Small stone guardroom interior: a fire laid in the hearth, a heap of rough blankets in a corner, a heavy oak door with a wooden bar resting in its brackets. Calm, quiet.",
+      "alt": "A barred oak door, a laid fire and a heap of blankets in the tower guardroom.",
+      "altPl": "Zaryglowane dębowe drzwi, przygotowany ogień i sterta koców w wartowni.",
+      "path": "images/greywatch-rest.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Small stone guardroom interior: a fire laid in the hearth, a heap of rough blankets in a corner, a heavy oak door with a wooden bar resting in its brackets. Calm, quiet.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "mine-mouth",
+      "type": "scene",
+      "entity": "mine-mouth",
+      "title": "Something in the Adit",
+      "subject": "Inside a mine adit, lantern light from the viewer; at the edge of the light, clinging to the timbered roof just above, a pale many-legged creature the size of a hound is about to drop. Suspense.",
+      "alt": "A pale many-legged creature clings to the mine roof at the edge of the lantern light.",
+      "altPl": "Blade wielonogie stworzenie trzyma się stropu sztolni na skraju światła latarni.",
+      "path": "images/mine-mouth.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Inside a mine adit, lantern light from the viewer; at the edge of the light, clinging to the timbered roof just above, a pale many-legged creature the size of a hound is about to drop. Suspense.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-old-mine.webp"
+      ]
+    },
+    {
+      "id": "mine-depths",
+      "type": "scene",
+      "entity": "mine-depths",
+      "title": "Follow the Tapping",
+      "subject": "A flooded underground working: in the far corner a dead miner in a rotten leather apron chips at the rock face with a pick, back turned; in a side passage beside him, a pale crawling shape. Dripping water, lantern light from the viewer.",
+      "alt": "A dead miner chips at the rock with a pick while a pale shape moves in a side passage.",
+      "altPl": "Martwy górnik kuje kilofem skałę, a w bocznym chodniku porusza się blady kształt.",
+      "path": "images/mine-depths.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A flooded underground working: in the far corner a dead miner in a rotten leather apron chips at the rock face with a pick, back turned; in a side passage beside him, a pale crawling shape. Dripping water, lantern light from the viewer.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-old-mine.webp"
+      ]
+    },
+    {
+      "id": "mine-vault",
+      "type": "scene",
+      "entity": "mine-vault",
+      "title": "Search the Dry Chamber",
+      "subject": "A dry square dwarf-cut chamber behind a half-open iron door: a shirt of fine mail on a black wooden stand, and beside it a ladder of iron rungs rising up a dark shaft. Clean geometric stonework.",
+      "alt": "A fine mail shirt hangs on a stand beside an iron ladder climbing a dark shaft.",
+      "altPl": "Drobna kolczuga wisi na stojaku obok żelaznej drabiny wznoszącej się w ciemny szyb.",
+      "path": "images/mine-vault.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: A dry square dwarf-cut chamber behind a half-open iron door: a shirt of fine mail on a black wooden stand, and beside it a ladder of iron rungs rising up a dark shaft. Clean geometric stonework.\nInput images 1 and 2 are drawing-technique references only.  Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg"
+      ]
+    },
+    {
+      "id": "gate-standoff",
+      "type": "scene",
+      "entity": "gate-standoff",
+      "title": "The Gate Guards",
+      "subject": "Two Cinder Clan raiders with spears in front of the skull-hung timber gate, straightening up from a game of dice on a barrel and lowering their spears towards the viewer, one glancing uphill.",
+      "alt": "Two spear-armed raiders straighten up in front of the gate, one glancing up the road.",
+      "altPl": "Dwaj łupieżcy z włóczniami prostują się przed bramą, jeden zerka w górę drogi.",
+      "path": "images/gate-standoff.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Two Cinder Clan raiders with spears in front of the skull-hung timber gate, straightening up from a game of dice on a barrel and lowering their spears towards the viewer, one glancing uphill.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-pass-gate.webp"
+      ]
+    },
+    {
+      "id": "shrine-defiler",
+      "type": "scene",
+      "entity": "shrine-defiler",
+      "title": "The Defiler",
+      "subject": "Inside the round stone shrine: a Clan Brute: a giant raider in a scorched bearskin with a heavy smith's maul, smashing clay votive tiles off the wall and kicking at a small fire in the hearth niche. Shards on the floor. Seen from the doorway.",
+      "alt": "A huge raider in a bearskin smashes votive tiles inside the shrine with a maul.",
+      "altPl": "Olbrzymi łupieżca w niedźwiedziej skórze rozbija młotem płytki wotywne w kapliczce.",
+      "path": "images/shrine-defiler.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Inside the round stone shrine: a Clan Brute: a giant raider in a scorched bearskin with a heavy smith's maul, smashing clay votive tiles off the wall and kicking at a small fire in the hearth niche. Shards on the floor. Seen from the doorway.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-ember-shrine.webp"
+      ]
+    },
+    {
+      "id": "shrine-blessing",
+      "type": "scene",
+      "entity": "shrine-blessing",
+      "title": "Tend the Hearth Fire",
+      "subject": "Close view of the hearth niche: a few dying coals, a small clay amulet stamped with a hearth symbol hanging on a nail above, broken tile shards around. A hand reaches in with kindling from the bottom edge. Warm, hopeful mood through white paper.",
+      "alt": "A hand brings kindling to dying coals beneath a clay amulet hanging in the hearth niche.",
+      "altPl": "Dłoń podsuwa podpałkę do dogasających węgli pod glinianym amuletem w niszy.",
+      "path": "images/shrine-blessing.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Close view of the hearth niche: a few dying coals, a small clay amulet stamped with a hearth symbol hanging on a nail above, broken tile shards around. A hand reaches in with kindling from the bottom edge. Warm, hopeful mood through white paper.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-ember-shrine.webp"
+      ]
+    },
+    {
+      "id": "camp-arrival",
+      "type": "scene",
+      "entity": "camp-arrival",
+      "title": "The War Camp",
+      "subject": "From the shadow of a tent: in the middle distance the Ember Shaman: a thin old man in a cloak of ash-grey feathers, a bone necklace, hands full of glowing cinders chants beside a tall fire, a scorched black hound curled at his feet; further away, a ring of stakes holds huddled villagers, and a huge guard sits on a stool at its gate.",
+      "alt": "From the shadows, a feathered shaman chants by a fire while captives huddle behind stakes.",
+      "altPl": "Z cienia widać szamana w piórach przy ogniu i jeńców stłoczonych za palami.",
+      "path": "images/camp-arrival.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: From the shadow of a tent: in the middle distance the Ember Shaman: a thin old man in a cloak of ash-grey feathers, a bone necklace, hands full of glowing cinders chants beside a tall fire, a scorched black hound curled at his feet; further away, a ring of stakes holds huddled villagers, and a huge guard sits on a stool at its gate.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-war-camp.webp"
+      ]
+    },
+    {
+      "id": "captive-pens",
+      "type": "scene",
+      "entity": "captive-pens",
+      "title": "Free the Captives",
+      "subject": "Close to a pen of sharpened stakes at night: a Clan Brute: a giant raider in a scorched bearskin with a heavy smith's maul sits dozing on a stool with his back to the stakes, maul across his knees; behind him a boy of about twelve with a sharp, thin face (Maren Holt's nephew) peers out through a gap between two stakes.",
+      "alt": "A brute dozes by the pen while a boy watches through a gap between the stakes.",
+      "altPl": "Osiłek drzemie przy zagrodzie, a chłopak patrzy przez szparę między palami.",
+      "path": "images/captive-pens.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Close to a pen of sharpened stakes at night: a Clan Brute: a giant raider in a scorched bearskin with a heavy smith's maul sits dozing on a stool with his back to the stakes, maul across his knees; behind him a boy of about twelve with a sharp, thin face (Maren Holt's nephew) peers out through a gap between two stakes.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-war-camp.webp"
+      ]
+    },
+    {
+      "id": "fire-circle",
+      "type": "scene",
+      "entity": "fire-circle",
+      "title": "Break the Shaman's Rite",
+      "subject": "the Ember Shaman: a thin old man in a cloak of ash-grey feathers, a bone necklace, hands full of glowing cinders, swaying beside a crackling fire and throwing a pinch of something into it that makes the flames flare; a scorched black hound with embers in its fur lifts its head towards the viewer.",
+      "alt": "The shaman throws something into his fire while his ash hound lifts its head.",
+      "altPl": "Szaman wrzuca coś do ognia, a jego popielny ogar unosi łeb.",
+      "path": "images/fire-circle.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: the Ember Shaman: a thin old man in a cloak of ash-grey feathers, a bone necklace, hands full of glowing cinders, swaying beside a crackling fire and throwing a pinch of something into it that makes the flames flare; a scorched black hound with embers in its fur lifts its head towards the viewer.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes the same shaman, ash hound, and camp setting. Create a closer new composition of only the shaman and hound, with no captives or guard.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/camp-arrival.webp"
+      ]
+    },
+    {
+      "id": "summit-standoff",
+      "type": "scene",
+      "entity": "summit-standoff",
+      "title": "The Warlord at the Beacon",
+      "subject": "On the summit ring of standing stones: Gharra Ashmane, the Cinder Warlord: a tall, powerful woman in scorched fur and ring-mail, face and long braids streaked with ash, a huge two-handed axe, seated on a stone with the axe across her knees, smiling at the viewer; behind her a bowman stands on the base of the tall unlit pyre. Clouds below.",
+      "alt": "Gharra Ashmane waits on a standing stone with her axe across her knees, a bowman behind her.",
+      "altPl": "Gharra Ashmane czeka na kamieniu z toporem na kolanach, a za nią stoi łucznik.",
+      "path": "images/summit-standoff.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: On the summit ring of standing stones: Gharra Ashmane, the Cinder Warlord: a tall, powerful woman in scorched fur and ring-mail, face and long braids streaked with ash, a huge two-handed axe, seated on a stone with the axe across her knees, smiling at the viewer; behind her a bowman stands on the base of the tall unlit pyre. Clouds below.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-beacon-summit.webp"
+      ]
+    },
+    {
+      "id": "beacon-lighting",
+      "type": "scene",
+      "entity": "beacon-lighting",
+      "title": "Light the Ember Beacon",
+      "subject": "Low angle at the foot of the towering unlit pyre of split pine inside the standing stones; a hand at the bottom edge holds a smouldering brand. Far horizon of night hills beyond the clouds. The pyre is NOT yet burning.",
+      "alt": "A smouldering brand is held up at the foot of the towering, still unlit beacon.",
+      "altPl": "Tląca się głownia uniesiona u stóp wysokiego, wciąż niezapalonego stosu.",
+      "path": "images/beacon-lighting.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the fantasy RPG scenario The Ember Pass. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: low-fantasy highland mountain pass in a cold, late-autumn night or dusk; dry-stone villages, heather, scree, granite, pine, timber palisades, hide tents, smoke and firelight suggested only by white paper and sparse hatching. The Cinder Clan raiders wear soot-blackened leather, scorched furs and ash-smeared faces; no horned helmets, no orcs. Action is tense but restrained: no gore, no blood spatter, no visible wounds. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.\n\nSubject and composition: Low angle at the foot of the towering unlit pyre of split pine inside the standing stones; a hand at the bottom edge holds a smouldering brand. Far horizon of night hills beyond the clouds. The pyre is NOT yet burning.\nInput images 1 and 2 are drawing-technique references only. Input image 3 establishes this location's architecture only; use a new viewpoint and show only the requested characters. Create this single new scenario asset.",
+      "references": [
+        "tmp/Architectural Sketches.png",
+        "tmp/Sketches Landscapes.jpg",
+        "scenarios/the-ember-pass/images/loc-beacon-summit.webp"
+      ]
+    }
+  ],
+  "generatedOn": "2026-10-13"
+}

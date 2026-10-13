@@ -1,0 +1,76 @@
+schemaVersion: 1
+id: the-ember-pass
+title: The Ember Pass
+description: Fight your way up a mountain road held by the Cinder Clan, free the captives
+  of Kessford and light the beacon that calls the king's riders. Expect steel at every turn.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+intro: |
+  Three nights ago the beacon on the Ember Pass went dark. Since then no caravan has come
+  down the mountain road, and the shepherds of Kessford have stopped counting their flocks.
+
+  The Cinder Clan has come south over the burnt hills: raiders in soot-blackened leather,
+  wolves that follow their fires, and a warlord who wears the ash of every village she
+  has taken. If the beacon is lit again, the king's riders at Varrow will see it and come.
+  Someone has to carry the fire up the pass first.
+startLocation: kessford
+deathEnding: death
+flags:
+  - commissioned
+  - wolves-fed
+  - troll-bargain
+  - tower-stormed
+  - tower-climbed
+  - tower-taken
+  - gate-fought
+  - gate-bluffed
+  - tunnel-open
+  - captives-freed
+  - warlord-slain
+locations:
+  - locations/kessford.yaml
+  - locations/south-road.yaml
+  - locations/troll-ford.yaml
+  - locations/greywatch.yaml
+  - locations/old-mine.yaml
+  - locations/pass-gate.yaml
+  - locations/ember-shrine.yaml
+  - locations/war-camp.yaml
+  - locations/beacon-summit.yaml
+scenes:
+  - scenes/kessford-arrival.yaml
+  - scenes/reeve-briefing.yaml
+  - scenes/healer-ysolde.yaml
+  - scenes/smith-dunric.yaml
+  - scenes/wolves-on-road.yaml
+  - scenes/caravan-wreck.yaml
+  - scenes/troll-toll.yaml
+  - scenes/tower-approach.yaml
+  - scenes/greywatch-lookout.yaml
+  - scenes/greywatch-rest.yaml
+  - scenes/mine-mouth.yaml
+  - scenes/mine-depths.yaml
+  - scenes/mine-vault.yaml
+  - scenes/gate-standoff.yaml
+  - scenes/shrine-defiler.yaml
+  - scenes/shrine-blessing.yaml
+  - scenes/camp-arrival.yaml
+  - scenes/captive-pens.yaml
+  - scenes/fire-circle.yaml
+  - scenes/summit-standoff.yaml
+  - scenes/beacon-lighting.yaml
+items:
+  - items.yaml
+enemies:
+  - enemies.yaml
+encounters:
+  - encounters.yaml
+templates:
+  - templates.yaml
+endings:
+  - endings.yaml
+translations:
+  - translations/pl/translation.yaml
+images:
+  - images.yaml

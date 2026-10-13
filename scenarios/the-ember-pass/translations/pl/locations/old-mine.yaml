@@ -1,0 +1,11 @@
+id: old-mine
+name: Kopalnia Greywatch
+description: |
+  Wąska sztolnia biegnie w głąb góry, podparta stemplami zmiękłymi ze starości. Twoja
+  latarnia wydobywa z mroku stare ślady kilofów, zardzewiałe szyny, a tu i ówdzie
+  zadrapania, których nie zostawił żaden kilof.
+connections:
+  - to: greywatch
+    label: Wróć do wieży
+  - to: war-camp
+    label: Wespnij się starym szybem do obozu wojennego

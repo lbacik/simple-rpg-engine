@@ -1,0 +1,34 @@
+- id: pass-reclaimed
+  kind: victory
+  title: The Pass Reclaimed
+  text: |
+    The beacon roars up into the night, and the captives of Kessford cheer from the rocks
+    below it. Long before dawn an answering fire burns on the Varrow hills.
+
+    The king's riders come up the road two days later. They find the gate open, the war
+    camp empty and the people of Kessford already walking home, with {name} at their head.
+
+- id: lone-flame
+  kind: victory
+  title: A Lone Flame
+  text: |
+    The beacon roars up into the night, and an answering fire burns on the Varrow hills
+    before dawn. The pass is open again.
+
+    But the pens of the war camp are empty when the riders arrive. The surviving raiders
+    drove their captives north while you fought on the summit. The riders promise to
+    follow. Kessford lights candles in its windows and waits.
+
+- id: turned-back
+  kind: defeat
+  title: Turned Back
+  text: |
+    You leave Kessford by the valley road. Behind you, the beacon on the Ember Pass stays
+    dark, and the smoke of the Cinder Clan's fires comes a little lower every night.
+
+- id: death
+  kind: defeat
+  title: Fallen on the Pass
+  text: |
+    The mountain is cold and the stones are hard, and then neither matters. The Cinder
+    Clan leaves you where you fell, and the beacon stays dark.

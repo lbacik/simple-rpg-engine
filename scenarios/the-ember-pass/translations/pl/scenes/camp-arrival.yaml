@@ -1,0 +1,17 @@
+id: camp-arrival
+title: Obóz wojenny
+text: |
+  W obozie wojennym jest ciszej, niż można się było spodziewać. Większość łupieżców
+  poszła z Gharrą na szczyt albo śpi przy ogniskach. Pośrodku obozu szaman w płaszczu
+  z popielatych piór intonuje pieśń przy ogniu, który płonie nienaturalną czerwienią,
+  a u jego stóp leży zwinięty popielny ogar.
+
+  Po północnej stronie, w kręgu pali, tulą się do siebie mieszkańcy Kessford. Przy
+  furtce zagrody siedzi na stołku jeden ogromny strażnik z młotem na kolanach.
+choices:
+  - id: observe
+    text: Trzymaj się cienia i obserwuj.
+    outcome:
+      text: |
+        Nad obozem ścieżka wspina się na szczyt. Ognisko sygnałowe to ciemny kształt na tle
+        gwiazd. Dopóki pieśń szamana nie umilknie, tak już zostanie.

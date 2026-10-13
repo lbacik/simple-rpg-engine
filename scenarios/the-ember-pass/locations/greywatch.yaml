@@ -1,0 +1,24 @@
+id: greywatch
+illustration: loc-greywatch
+name: Greywatch Tower
+description: |
+  A square watchtower of grey granite, three storeys tall, guarding the road where it
+  leaves the heather for bare rock. From its roof you can see the whole lower pass, and
+  the black mouth of an old mine in the slope to the east.
+map: { x: 46, y: 56 }
+scenes:
+  - tower-approach
+  - greywatch-lookout
+  - greywatch-rest
+connections:
+  - to: south-road
+    label: Go back down the road
+  - to: pass-gate
+    label: Climb the switchbacks to the pass gate
+    when: { flag: tower-taken }
+  - to: old-mine
+    label: Enter the old Greywatch mine
+    when:
+      all:
+        - { flag: tower-taken }
+        - { has: { item: miners-lantern } }

@@ -1,0 +1,22 @@
+id: south-road
+illustration: loc-south-road
+name: The Mountain Road
+description: |
+  The road climbs through heather and loose scree in long zigzags. Cart ruts run up it,
+  but nothing has come down for days. A side track drops to the river ford; higher up,
+  the squat shape of Greywatch tower stands against the sky.
+map: { x: 32, y: 72 }
+scenes:
+  - wolves-on-road
+  - caravan-wreck
+connections:
+  - to: kessford
+    label: Walk back down to Kessford
+  - to: troll-ford
+    label: Follow the side track to the ford
+  - to: greywatch
+    label: Climb to Greywatch tower
+    when:
+      any:
+        - { defeated: road-wolves }
+        - { flag: wolves-fed }

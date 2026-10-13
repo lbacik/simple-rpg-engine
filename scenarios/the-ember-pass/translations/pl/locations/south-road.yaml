@@ -1,0 +1,13 @@
+id: south-road
+name: Górska droga
+description: |
+  Droga wspina się długimi zakosami przez wrzosy i luźny piarg. Biegną nią koleiny wozów,
+  ale od wielu dni nic nie zjechało w dół. Boczna ścieżka schodzi do brodu na rzece; wyżej
+  na tle nieba stoi przysadzista sylwetka wieży Greywatch.
+connections:
+  - to: kessford
+    label: Zejdź z powrotem do Kessford
+  - to: troll-ford
+    label: Idź boczną ścieżką do brodu
+  - to: greywatch
+    label: Wespnij się do wieży Greywatch

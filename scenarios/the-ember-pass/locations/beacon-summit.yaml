@@ -1,0 +1,14 @@
+id: beacon-summit
+illustration: loc-beacon-summit
+name: The Ember Beacon
+description: |
+  The summit of the pass is a flat crown of rock above the clouds. The beacon is a tower
+  of split pine and pitch inside a ring of standing stones, built to be seen from Varrow,
+  forty miles away.
+map: { x: 82, y: 10 }
+scenes:
+  - summit-standoff
+  - beacon-lighting
+connections:
+  - to: war-camp
+    label: Go back down to the war camp

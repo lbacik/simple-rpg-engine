@@ -1,0 +1,9 @@
+id: ember-shrine
+name: Kapliczka Matki Ogniska
+description: |
+  Okrągła kamienna chata wbudowana w zbocze, z niszą paleniska, w której podróżni
+  podtrzymują mały ogień dłużej, niż ktokolwiek pamięta. Ściany pokrywają gliniane
+  płytki wotywne.
+connections:
+  - to: pass-gate
+    label: Wróć do bramy przełęczy

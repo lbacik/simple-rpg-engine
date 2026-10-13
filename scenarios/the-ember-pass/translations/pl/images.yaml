@@ -1,0 +1,91 @@
+# Package-local illustrations with alternative text in this catalog's language.
+- id: loc-kessford
+  alt: "Kamienne chaty z darniowymi dachami skupione wokół studni, a za nimi droga wspinająca się w chmury."
+
+- id: loc-south-road
+  alt: "Droga z koleinami wije się zakosami po wrzosowym zboczu ku przysadzistej wieży na horyzoncie."
+
+- id: loc-troll-ford
+  alt: "Bystra rzeka płynie po płaskich kamieniach brodu obok starego mostu, pod którym leży sterta kości."
+
+- id: loc-greywatch
+  alt: "Kwadratowa granitowa strażnica z postrzępionym sztandarem pilnuje drogi, a dalej w zboczu widać wejście do kopalni."
+
+- id: loc-old-mine
+  alt: "Latarnia oświetla wąską sztolnię ze starymi stemplami, zardzewiałymi szynami i dziwnymi zadrapaniami."
+
+- id: loc-pass-gate
+  alt: "Drewniana brama obwieszona końskimi czaszkami i osmalonymi tarczami zamyka drogę między skałami."
+
+- id: loc-ember-shrine
+  alt: "Okrągła kamienna kapliczka w zboczu z małym ogniem w niszy paleniska i glinianymi płytkami na ścianach."
+
+- id: loc-war-camp
+  alt: "Namioty ze skór i tlące się ogniska na górskim siodle pod ciemnym szczytem z niezapalonym stosem."
+
+- id: loc-beacon-summit
+  alt: "Wysoki, niezapalony stos z łupanej sosny w kręgu stojących kamieni ponad morzem chmur."
+
+- id: kessford-arrival
+  alt: "Sołtyska Maren Holt stoi przy studni z oszczepem na dziki na ramieniu."
+
+- id: reeve-briefing
+  alt: "Maren Holt wylicza na palcach niebezpieczeństwa, a za nią wznosi się przełęcz."
+
+- id: healer-ysolde
+  alt: "Stara Ysolde uciera zioła w moździerzu pod pękami suszącego się krwawnika."
+
+- id: smith-dunric
+  alt: "Kowal Dunric ostrzy kosę przy zimnym palenisku, a na ścianie wisi mosiężna latarnia."
+
+- id: wolves-on-road
+  alt: "Dwa chude wilki podnoszą łby znad martwego muła leżącego w poprzek drogi."
+
+- id: caravan-wreck
+  alt: "Wóz leży na boku w piargu, ładunek zniknął, a obok leżą polegli strażnicy."
+
+- id: troll-toll
+  alt: "Szary troll kuca na płyciźnie pod mostem i dłubie w zębach żebrem."
+
+- id: tower-approach
+  alt: "Łupieżca ostrzy tasak na schodach wieży, a łucznik obserwuje drogę z blanków."
+
+- id: greywatch-lookout
+  alt: "Z dachu wieży widać serpentyny drogi, bramę, kapliczkę i wylot kopalni."
+
+- id: greywatch-rest
+  alt: "Zaryglowane dębowe drzwi, przygotowany ogień i sterta koców w wartowni."
+
+- id: mine-mouth
+  alt: "Blade wielonogie stworzenie trzyma się stropu sztolni na skraju światła latarni."
+
+- id: mine-depths
+  alt: "Martwy górnik kuje kilofem skałę, a w bocznym chodniku porusza się blady kształt."
+
+- id: mine-vault
+  alt: "Drobna kolczuga wisi na stojaku obok żelaznej drabiny wznoszącej się w ciemny szyb."
+
+- id: gate-standoff
+  alt: "Dwaj łupieżcy z włóczniami prostują się przed bramą, jeden zerka w górę drogi."
+
+- id: shrine-defiler
+  alt: "Olbrzymi łupieżca w niedźwiedziej skórze rozbija młotem płytki wotywne w kapliczce."
+
+- id: shrine-blessing
+  alt: "Dłoń podsuwa podpałkę do dogasających węgli pod glinianym amuletem w niszy."
+
+- id: camp-arrival
+  alt: "Z cienia widać szamana w piórach przy ogniu i jeńców stłoczonych za palami."
+
+- id: captive-pens
+  alt: "Osiłek drzemie przy zagrodzie, a chłopak patrzy przez szparę między palami."
+
+- id: fire-circle
+  alt: "Szaman wrzuca coś do ognia, a jego popielny ogar unosi łeb."
+
+- id: summit-standoff
+  alt: "Gharra Ashmane czeka na kamieniu z toporem na kolanach, a za nią stoi łucznik."
+
+- id: beacon-lighting
+  alt: "Tląca się głownia uniesiona u stóp wysokiego, wciąż niezapalonego stosu."
+

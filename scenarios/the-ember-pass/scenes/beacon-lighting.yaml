@@ -1,0 +1,24 @@
+id: beacon-lighting
+illustration: beacon-lighting
+title: Light the Ember Beacon
+trigger: on-demand
+repeatable: true
+when: { flag: warlord-slain }
+text: |
+  The beacon stands over you, twenty feet of split pine and pitch-soaked brush. A brand
+  from the raiders' brazier smoulders in your hand. Far below, beyond forty miles of
+  dark, are the hills of Varrow.
+choices:
+  - id: light-together
+    text: Light the beacon with the people of Kessford around you.
+    when: { flag: captives-freed }
+    outcome:
+      end: pass-reclaimed
+  - id: light-alone
+    text: Light the beacon now, though the captives are still penned below.
+    when:
+      not: { flag: captives-freed }
+    outcome:
+      end: lone-flame
+  - id: wait
+    text: Not yet.

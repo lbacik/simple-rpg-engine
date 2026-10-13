@@ -1,0 +1,21 @@
+id: war-camp
+illustration: loc-war-camp
+name: The Cinder Clan War Camp
+description: |
+  Hide tents crowd a high, bare saddle of the pass. Cookfires smoulder between them, and
+  on the north side a ring of stakes holds the captives from Kessford. A path climbs from
+  the camp to the summit, where the great beacon stands cold.
+map: { x: 64, y: 22 }
+scenes:
+  - camp-arrival
+  - captive-pens
+  - fire-circle
+connections:
+  - to: pass-gate
+    label: Slip out through the gate
+  - to: old-mine
+    label: Climb down the old shaft into the mine
+    when: { flag: tunnel-open }
+  - to: beacon-summit
+    label: Climb to the beacon
+    when: { defeated: shaman-rite }

@@ -1,0 +1,23 @@
+id: mine-vault
+illustration: mine-vault
+title: Search the Dry Chamber
+trigger: on-demand
+when: { defeated: depths-pair }
+text: |
+  Behind the iron door is a dry, square chamber cut by dwarves long before Dunric's time.
+  A shirt of fine mail hangs on a stand of black wood, untouched by rust. Beside it, a
+  ladder of iron rungs climbs a shaft into the dark, and a faint smell of woodsmoke comes
+  down it.
+choices:
+  - id: take
+    text: Take the mail and climb the shaft.
+    outcome:
+      text: |
+        The mail is light as linen. Halfway up the shaft you find a miner's cache with a
+        red glass bottle in it. At the top, a rotten hatch opens under a pile of hides,
+        right at the edge of the Cinder Clan war camp.
+      effects:
+        - give-item: { item: deepdelver-mail }
+        - give-item: { item: ember-tonic }
+        - set-flag: tunnel-open
+        - reveal: war-camp

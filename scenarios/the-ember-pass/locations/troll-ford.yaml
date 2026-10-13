@@ -1,0 +1,12 @@
+id: troll-ford
+illustration: loc-troll-ford
+name: The Troll Ford
+description: |
+  The river runs fast and white here over a ford of flat stones. An old stone bridge
+  spans it a little upstream, and the space beneath the bridge stinks of fish and wet fur.
+map: { x: 10, y: 58 }
+scenes:
+  - troll-toll
+connections:
+  - to: south-road
+    label: Climb back to the road

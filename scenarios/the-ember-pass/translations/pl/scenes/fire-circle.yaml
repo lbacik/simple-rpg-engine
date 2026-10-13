@@ -1,0 +1,11 @@
+id: fire-circle
+title: Przerwij obrzęd szamana
+text: |
+  Szaman kołysze się przy czerwonym ogniu i wrzuca do niego szczypty czegoś, od czego
+  płomienie syczą. Za każdym razem chłód na szczycie zdaje się gęstnieć. Popielny ogar
+  unosi łeb i cię obserwuje.
+choices:
+  - id: fight
+    text: Wejdź w krąg światła i przerwij pieśń.
+  - id: back
+    text: Zostań jeszcze trochę w cieniu.

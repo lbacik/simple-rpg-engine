@@ -1,0 +1,29 @@
+id: healer-ysolde
+title: Odwiedź uzdrowicielkę Ysolde
+text: |
+  W chacie Ysolde pachnie gotowanym płótnem i suszonym krwawnikiem. Stara uzdrowicielka
+  uciera w moździerzu coś szarego i nie przerywa, gdy wchodzisz.
+
+  — Znowu ktoś idzie w górę drogą — mówi. — Siadaj. Pokaż, gdzie boli, albo powiedz,
+  czego ci trzeba.
+choices:
+  - id: draught
+    text: Poproś o coś na drogę.
+    outcome:
+      text: |
+        Wciska ci w dłoń zatkany róg, nawet nie podnosząc wzroku. — Wypij, kiedy będziesz
+        krwawić, nie wcześniej.
+  - id: tend-tower
+    text: Pozwól jej obejrzeć rany z Greywatch.
+    outcome:
+      text: |
+        Przemywa, szyje i bandażuje, mrucząc coś o łupieżcach i ich brudnych ostrzach.
+        Ciało masz zesztywniałe, ale całe.
+  - id: tend-camp
+    text: Pozwól jej porządnie się tobą zająć przed szczytem.
+    outcome:
+      text: |
+        Ysolde pracuje nad tobą godzinę przy ogniu i nie bierze nic za zioła. — Przyprowadź
+        ich do domu — mówi, gdy kończy. — Wtedy będziemy kwita.
+  - id: leave
+    text: Podziękuj i wyjdź.

@@ -1,0 +1,31 @@
+id: kessford-arrival
+illustration: kessford-arrival
+title: The Reeve of Kessford
+trigger: on-enter
+text: |
+  A woman in a mud-spattered riding coat is waiting for you by the well, a boar spear
+  leaning against her shoulder. She looks you over the way a farmer looks over a horse.
+
+  "Maren Holt, reeve of this place," she says. "You are {name}, and you carry steel, and
+  that is all I need to know. The Cinder Clan holds the road, the tower and the beacon.
+  They took eleven of our people three days ago. Will you go up?"
+choices:
+  - id: ask
+    text: Ask what you would be walking into.
+    outcome:
+      next: reeve-briefing
+  - id: accept
+    text: Tell her you will go up the pass tonight.
+    outcome:
+      text: |
+        Maren grips your forearm. "Then take this." She hands you a sack with a whole leg
+        of smoked mutton in it. "The wolves on the road are always hungry. So is the thing
+        under the ford bridge. Ysolde and Dunric will help you if you ask."
+      effects:
+        - set-flag: commissioned
+        - give-item: { item: smoked-mutton }
+        - reveal: south-road
+  - id: refuse
+    text: Tell her this is not your fight.
+    outcome:
+      end: turned-back

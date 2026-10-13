@@ -1,0 +1,11 @@
+id: mine-mouth
+title: Coś w sztolni
+text: |
+  Dziesięć kroków w głąb sztolni światło dnia się kończy i zastępuje je twoja latarnia.
+  Stemple skrzypią. Potem gdzieś tuż nad twoją głową rozlega się suchy grzechot, jakby
+  wiele małych nóg poruszyło się naraz.
+choices:
+  - id: fight
+    text: Unieś latarnię i broń.
+  - id: back
+    text: Wycofaj się na światło dnia.

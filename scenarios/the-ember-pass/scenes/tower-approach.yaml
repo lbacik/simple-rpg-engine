@@ -1,0 +1,71 @@
+id: tower-approach
+illustration: tower-approach
+title: Greywatch Held
+trigger: on-enter
+repeatable: true
+when:
+  not: { flag: tower-taken }
+text: |
+  Greywatch squats over the road with its door shut and a soot-black banner hanging from
+  the parapet. A raider sits on the step, honing a falchion. On the roof, a bowman leans
+  on the battlements and watches the road.
+
+  The north wall of the tower is rough granite in deep shadow. Someone quick could climb
+  it without being seen, and come over the parapet beside the bowman.
+choices:
+  - id: storm
+    text: Walk up the road and storm the door.
+    when:
+      all:
+        - not: { flag: tower-climbed }
+        - not: { defeated: tower-assault }
+    outcome:
+      effects:
+        - set-flag: tower-stormed
+      start-combat: tower-assault
+  - id: climb
+    text: Climb the north wall and take the bowman first.
+    when:
+      all:
+        - not: { flag: tower-stormed }
+        - not: { flag: tower-climbed }
+        - not: { defeated: tower-assault }
+        - not: { defeated: tower-roof }
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          Handhold by handhold you go up the shadowed wall. Nobody shouts. The parapet is
+          right above you.
+        effects:
+          - set-flag: tower-climbed
+        start-combat: tower-roof
+      failure:
+        text: |
+          A stone comes away in your hand and you fall the last few feet into the road.
+          The raider on the step looks up, grins, and shouts to the roof.
+        effects:
+          - damage: 2
+          - set-flag: tower-stormed
+        start-combat: tower-assault
+  - id: roof-again
+    text: Climb the north wall again.
+    when:
+      all:
+        - { flag: tower-climbed }
+        - not: { defeated: tower-roof }
+    outcome:
+      start-combat: tower-roof
+  - id: stairs-again
+    text: Climb back to the roof and finish the door guard.
+    when:
+      all:
+        - { defeated: tower-roof }
+        - not: { defeated: tower-stairs }
+    outcome:
+      start-combat: tower-stairs
+  - id: withdraw
+    text: Pull back down the road.
+    outcome:
+      move: south-road

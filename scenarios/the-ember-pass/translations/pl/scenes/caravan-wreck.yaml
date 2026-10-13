@@ -1,0 +1,24 @@
+id: caravan-wreck
+title: Przeszukaj rozbitą karawanę
+text: |
+  Poniżej drogi w piargu leży na boku wóz ze złamaną osią. Obok niego leży dwóch
+  strażników karawany, obaj z czarnopiórymi strzałami klanu w ciele. Ładunek zabrano,
+  ale łupieżcy grabią w pośpiechu.
+choices:
+  - id: search
+    text: Sprawdź, czy w wozie zostało coś przydatnego.
+    outcome:
+      text: |
+        Pod koźlem woźnicy znajdujesz róg napoju leczniczego, który przeoczyli łupieżcy.
+  - id: search-carefully
+    text: Starannie przeszukaj wóz i strażników.
+    test:
+      success:
+        text: |
+          Pod koźlem woźnicy znajdujesz róg napoju leczniczego. Jeden ze strażników ma
+          wszytą w kołnierz małą czerwoną buteleczkę: tonik żaru, jaki kupcy noszą na
+          czarną godzinę.
+      failure:
+        text: |
+          Strażnicy nie mają już przy sobie niczego. Pod koźlem woźnicy znajdujesz przynajmniej
+          róg napoju leczniczego.

@@ -1,0 +1,21 @@
+id: reeve-briefing
+title: Co czeka na przełęczy
+text: |
+  Maren wylicza na palcach. — Wilki na dolnej drodze; chodzą za ogniskami klanu.
+  Łupieżcy w wieży Greywatch. Brama w poprzek drogi nad nią. Ich obóz wojenny na wysokim
+  siodle, gdzie trzymają naszych ludzi. I sama Gharra Ashmane, która siedzi przy zimnym
+  ognisku ze swoimi najlepszymi łucznikami.
+
+  — Ich szaman rzucił na ognisko jakiś urok, żeby się nie zajęło. Zabij go, a ogień
+  chwyci. Zapal ognisko, a jeźdźcy z Varrow będą tu za dwa dni. Zabij Gharrę, a nie
+  zostanie nikt, kto mógłby cię powstrzymać.
+choices:
+  - id: accept
+    text: Powiedz, że to zrobisz.
+    outcome:
+      text: |
+        Maren ściska twoje przedramię. — To weź to. — Podaje ci worek z całym udźcem
+        wędzonej baraniny. — Wilki na drodze zawsze są głodne. Tak samo to coś pod mostem
+        przy brodzie. Ysolde i Dunric pomogą, jeśli poprosisz.
+  - id: refuse
+    text: Powiedz, że to za dużo jak na jedno ostrze.

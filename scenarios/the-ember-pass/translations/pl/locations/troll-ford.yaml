@@ -1,0 +1,8 @@
+id: troll-ford
+name: Bród trolla
+description: |
+  Rzeka płynie tu szybko i biało po brodzie z płaskich kamieni. Nieco w górę nurtu przerzucono
+  nad nią stary kamienny most, a pod mostem cuchnie rybą i mokrym futrem.
+connections:
+  - to: south-road
+    label: Wróć na drogę

@@ -1,0 +1,39 @@
+- id: ridge-wolf
+  name: Wilk z grani
+  description: Chudy szary wilk, który nauczył się chodzić za ogniskami klanu po resztki.
+
+- id: cinder-raider
+  name: Łupieżca Zgliszcz
+  description: Wojownik klanu w okopconej skórze, z wyszczerbionym tasakiem.
+
+- id: clan-bowman
+  name: Łucznik klanu
+  description: Łupieżca z krótkim łukiem rogowym, który lubi nie spieszyć się ze strzałem.
+
+- id: stone-troll
+  name: Troll z brodu
+  description: Powolny szary troll z wodorostami w brodzie i głazem zamiast maczugi.
+
+- id: tunnel-crawler
+  name: Pełzacz tunelowy
+  description: Blade, wielonogie stworzenie wielkości psa, które poluje dotykiem.
+
+- id: deep-ghoul
+  name: Ghul z głębin
+  description: Górnik, który nigdy nie wyszedł na powierzchnię i wciąż w coś wali kilofem.
+
+- id: clan-brute
+  name: Osiłek klanu
+  description: Olbrzym w osmalonej niedźwiedziej skórze, walczący kowalskim młotem.
+
+- id: ash-hound
+  name: Popielny ogar
+  description: Osmalony czarny ogar z żarzącymi się węgielkami w sierści.
+
+- id: ember-shaman
+  name: Szaman Żaru
+  description: Wróżbita klanu, który ciska garściami płonącego żużlu, przywierającego i parzącego.
+
+- id: gharra
+  name: Gharra Ashmane
+  description: Wodzini Klanu Zgliszcz, umazana popiołem i niestrudzona, z wielkim oburęcznym toporem.

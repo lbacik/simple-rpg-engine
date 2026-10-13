@@ -1,0 +1,58 @@
+id: gate-standoff
+illustration: gate-standoff
+title: The Gate Guards
+trigger: on-enter
+repeatable: true
+when:
+  all:
+    - not: { defeated: gate-guards }
+    - not: { defeated: gate-lone-guard }
+text: |
+  Two raiders lean on their spears in front of the gate, arguing about dice. When they
+  see you they straighten up and level their spears, but they glance up the road towards
+  the war camp as if hoping for orders.
+choices:
+  - id: fight
+    text: Take them both on.
+    when:
+      all:
+        - not: { flag: gate-bluffed }
+        - not: { defeated: gate-guards }
+    outcome:
+      effects:
+        - set-flag: gate-fought
+      start-combat: gate-guards
+  - id: bluff
+    text: Shout that Gharra wants a runner at the summit, now.
+    when:
+      all:
+        - not: { flag: gate-fought }
+        - not: { flag: gate-bluffed }
+        - not: { defeated: gate-guards }
+        - not: { defeated: gate-lone-guard }
+    test:
+      attribute: presence
+      difficulty: ordinary
+      success:
+        text: |
+          The nearer guard jumps as though stung and sprints off up the road. The other
+          one watches him go, then turns back to you, and his face changes.
+        effects:
+          - set-flag: gate-bluffed
+        start-combat: gate-lone-guard
+      failure:
+        text: |
+          The guards look at each other and laugh. Then they come for you together.
+        effects:
+          - set-flag: gate-fought
+        start-combat: gate-guards
+  - id: lone-again
+    text: Go back for the lone guard.
+    when:
+      all:
+        - { flag: gate-bluffed }
+        - not: { defeated: gate-lone-guard }
+    outcome:
+      start-combat: gate-lone-guard
+  - id: wait
+    text: Keep out of their reach for now.

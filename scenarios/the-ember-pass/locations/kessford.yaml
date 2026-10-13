@@ -1,0 +1,16 @@
+id: kessford
+illustration: loc-kessford
+name: Kessford
+description: |
+  A highland village of dry-stone houses and turf roofs, built where the valley road
+  meets the first climb of the pass. Shutters are barred in daylight. Behind the smithy,
+  the mountain road goes up into the cloud.
+map: { x: 14, y: 86 }
+scenes:
+  - kessford-arrival
+  - healer-ysolde
+  - smith-dunric
+connections:
+  - to: south-road
+    label: Take the mountain road
+    when: { flag: commissioned }

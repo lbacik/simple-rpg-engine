@@ -1,0 +1,51 @@
+id: troll-toll
+illustration: troll-toll
+title: The Toll of the Ford
+trigger: on-enter
+repeatable: true
+when:
+  all:
+    - not: { defeated: ford-troll }
+    - not: { flag: troll-bargain }
+text: |
+  A voice like rocks in a sack comes from under the bridge. "Toll," it says. A grey troll
+  squats in the shallows, picking its teeth with a rib bone. "Food. Or a riddle. Or you."
+choices:
+  - id: fight
+    text: Tell it you pay no tolls.
+    outcome:
+      start-combat: ford-troll
+  - id: mutton
+    text: Pay the toll with the smoked mutton.
+    when: { has: { item: smoked-mutton } }
+    outcome:
+      text: |
+        The troll sniffs the mutton, grins, and swallows it bone and all. "Good toll," it
+        says. It rummages under the bridge and tosses you a red glass bottle. "Take. Shiny,
+        but tastes bad."
+      effects:
+        - take-item: { item: smoked-mutton }
+        - set-flag: troll-bargain
+        - give-item: { item: ember-tonic }
+  - id: riddle
+    text: Offer it a riddle it cannot answer.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          The troll thinks so hard that its ears go red. At last it gives up, sulking, and
+          tosses you a red glass bottle from its hoard. "Take. Go. Do not come back with
+          more riddles."
+        effects:
+          - set-flag: troll-bargain
+          - give-item: { item: ember-tonic }
+      failure:
+        text: |
+          "Mountain," the troll says at once, and grins. "Now you pay." It comes out of the
+          water.
+        start-combat: ford-troll
+  - id: leave
+    text: Leave the ford.
+    outcome:
+      move: south-road
