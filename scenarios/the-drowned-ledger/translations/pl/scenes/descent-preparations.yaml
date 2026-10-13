@@ -1,0 +1,24 @@
+id: descent-preparations
+title: Otwórz schody inspekcyjne
+text: |
+  Drzwi na schody mają mosiężne gniazdo pieczęci i ręczne zwolnienie blokady. Instrukcja
+  ostrzega przed używaniem siły: najpierw trzeba wyrównać ciśnienie małym pokrętłem.
+
+  Plan Iva wskazuje trzy zadania na dole. Ustawić pompy ze sworzniem blokującym,
+  odlać nową przeciwwagę w odlewni i przeczytać księgę konserwacyjną w archiwum.
+  Suchy korytarz techniczny prowadzi na Wyspę Latarni, gdyby trzeba było odpocząć.
+choices:
+  - id: use-seal
+    text: Użyj pieczęci inspekcyjnej, by odblokować schody.
+    outcome:
+      text: |
+        Pieczęć obraca się, a rygle wycofują się po kolei. Z ciemności unosi się
+        strumień zimnego powietrza.
+  - id: manual-release
+    text: Wyrównaj ciśnienie i ręcznie zwolnij blokadę.
+    outcome:
+      text: |
+        Obracasz małe pokrętło, aż syczenie ustaje, po czym pociągasz zwalniacz.
+        Nic nie opiera się procedurze wykonanej we właściwej kolejności.
+  - id: return
+    text: Na razie zostaw drzwi.

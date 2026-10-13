@@ -1,0 +1,19 @@
+id: ferry-crossing
+title: Miejsce dla każdego pasażera
+text: |
+  Mercy jest bezpiecznie przycumowany do pływającego pomostu. Bram wypisał kredą
+  na ścianie kabiny listę: dzieci, ranni, wszyscy, którzy nie mogą wejść po schodach
+  technicznych. Na dole jest miejsce na kolejne imiona.
+
+  „Schronienie jest na Wyspie Latarni” — mówi. „Ze starego miasta prowadzi tam też
+  korytarz techniczny. Jeśli znajdziesz kogoś na dole, wyślij go tam. Jeśli wieża
+  sygnałowa błyśnie trzy razy, oczyszczę południowy kanał i zostanę na nim”.
+choices:
+  - id: ride
+    text: Popłyń z następnymi pasażerami na Wyspę Latarni.
+    outcome:
+      text: |
+        Pomagasz wyczerpanej kobiecie przejść po trapie. Mercy odbija od nabrzeża,
+        wioząc mniej dobytku niż wspomnień.
+  - id: leave
+    text: Pozwól Bramowi kontynuować przeprawy.

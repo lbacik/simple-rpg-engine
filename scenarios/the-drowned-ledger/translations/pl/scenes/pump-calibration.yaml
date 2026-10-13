@@ -1,0 +1,29 @@
+id: pump-calibration
+title: Przywróć obieg obejściowy
+text: |
+  Kolejność zaworów to wlot, powrót, wyrównanie. Sworzeń blokujący powstrzyma pokrętło
+  przed odskoczeniem, gdy będziesz przechodzić między nimi. Bez niego naprawa utrzyma
+  się tylko do chwili, kiedy puścisz.
+
+  Możesz wykonać tę sekwencję powoli albo wykorzystać zrozumienie schematu,
+  by poprawić przepływ. Po zamontowaniu sworznia obie metody ustabilizują pompy.
+choices:
+  - id: fit-pin
+    text: Zamontuj sworzeń i zastosuj zapisaną kolejność zaworów.
+    outcome:
+      text: |
+        Drugi tłok podejmuje pracę, a za nim trzeci. Ich rytm układa się w równy krok.
+        Po raz pierwszy wskazówka ciśnienia opuszcza czerwone pole.
+  - id: fine-tune
+    text: Zamontuj sworzeń i wyreguluj obieg, by usprawnić przepływ.
+    test:
+      success:
+        text: |
+          Kompensujesz zużycie zaworu powrotnego. Tłoki uspokajają się tak łagodnie,
+          że cień pracownika opuszcza klucz i odpoczywa. Do twoich dłoni wraca ciepło.
+      failure:
+        text: |
+          Pierwsza regulacja posyła drżenie przez obudowę. Wracasz do zapisanej kolejności,
+          która działa dokładnie tak, jak obiecał jej autor.
+  - id: fetch-pin
+    text: Odejdź od sterowania i poszukaj sworznia blokującego w zbiorniku.

@@ -1,0 +1,14 @@
+id: stairwell
+name: Suche schody
+description: |
+  Żelazne schody wiją się w dół szybu wyłożonego porcelanowymi znacznikami głębokości.
+  Powietrze jest wilgotne, ale można nim oddychać. Za ostatnim spocznikiem tunel
+  konserwacyjny prowadzi pod basen portowy.
+
+  Mokre ślady przecinają spocznik. Kończą się przy parze butów, których właściciel
+  zapomniał, że jego stopy nie dotykają już podłogi.
+connections:
+  - to: lockhouse
+    label: Wejdź do budynku śluzy
+  - to: sunken-square
+    label: Miń portiera i wejdź do starej dzielnicy

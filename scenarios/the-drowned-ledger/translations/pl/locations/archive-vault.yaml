@@ -1,0 +1,12 @@
+id: archive-vault
+name: Chroniona czytelnia
+description: |
+  Książki stoją na półkach z czarnego jak smoła dębu. Ślad wysokiej wody przecina ich
+  grzbiety, lecz nie plami ani jednej strony. Na środkowym biurku pod szklanym przyciskiem
+  leży rejestr.
+
+  Nie ma tu urzędnika, ale w pokoju panuje wyczekująca cisza, jakby ktoś właśnie
+  zadał pytanie.
+connections:
+  - to: archive
+    label: Wróć na schody archiwum

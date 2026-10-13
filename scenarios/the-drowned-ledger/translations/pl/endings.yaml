@@ -1,0 +1,91 @@
+- id: death
+  title: Kolejne imię pod wodą
+  text: |
+    Twoja podróż kończy się, zanim rachunek zostaje rozliczony. Miasto w dole przyjmuje cię
+    bez zdziwienia, co jest gorsze od okrucieństwa.
+
+    Przy targowej studni Ivo zostawia obok twojego imienia miejsce na raport, który nigdy
+    nie nadejdzie. Pod murem ochronnym cylinder nadal powoli się obraca. Istniał sposób,
+    by zmienić to, co utrzymywało Greyhaven w całości. Ktoś inny będzie musiał go odnaleźć.
+- id: abandoned
+  title: Droga ponad wodą
+  text: |
+    Opuszczasz Greyhaven suchą drogą. Wieczorem morska mgła skrywa miasto za twoimi
+    plecami. Przez pewien czas da się wierzyć, że odległość oznacza bezpieczeństwo.
+
+    Kilka tygodni później podróżny opisuje pusty port i dzwon słyszany daleko na morzu.
+    Nie pytasz, czyje imię tamtejsi ludzie zapisali pod zleceniem mierniczego.
+- id: covenant-renewed
+  title: Mur, który należy do wszystkich
+  text: |
+    Dzwon bije raz za każdą osobę wpisaną bez zgody. Z każdym dźwiękiem jedna z twarzy
+    pod wodą staje się mniej blada. Hester wspina się korytarzem technicznym i zastaje
+    Sellę czekającą z dwiema filiżankami herbaty. Żadna nie próbuje nadrobić
+    sześćdziesięciu lat w pierwszym zdaniu.
+
+    Morze wraca do zwykłego rytmu pływów. Lowwater pozostaje miejscem błota, zrujnowanych
+    domów i trudnych napraw; Greyhaven pozostaje miastem zdolnym zapominać. Księga trafia
+    na targ, gdzie każdy może ją przeczytać. Obok wywieszono nowy grafik konserwacji
+    oraz prawo do odmowy niebezpiecznej pracy.
+
+    Twoje imię zapisano jako imię świadka, nie właściciela. Jutro mur będzie potrzebował
+    rąk, narzędzi i sporów prowadzonych w świetle dnia. Dziś oba brzegi jedzą przy jednym
+    stole i niczyje puste krzesło nie jest liczone jako źródło mocy.
+- id: new-keeper
+  title: Dobrowolnie przyjęta warta
+  text: |
+    Hester zanosi poprawiony raport z inspekcji do swojej córki, ale sam rachunek
+    pozostaje nierozliczony. Twoje dobrowolnie wpisane imię zajmuje jej miejsce pod
+    rysikiem. Nad tobą wskaźnik pływów wraca na czarne pole.
+
+    Greyhaven przetrwało. Ivo wywiesza twoje warunki na targu i obiecuje zorganizować
+    nową wyprawę ze świadkami, zamiast szukać kolejnej samotnej osoby do pełnienia
+    warty. Niektórzy słuchają. Inni są tak wdzięczni, że przestają słuchać.
+
+    Trzymasz łańcuch w komorze pełnej pożyczonych godzin. To twój dobrowolny wybór,
+    i to ma znaczenie. Nie uwalnia jednak pozostałych. Ilekroć dzwon się porusza,
+    pamiętasz o tej różnicy i masz nadzieję, że miasto na górze też o niej pamięta.
+- id: city-evacuated
+  title: Port przeniesiony gdzie indziej
+  text: |
+    Mercy przemierza południowy kanał, aż ostatnia osoba dotrze na wyżej położony teren.
+    Straż opróżnia domy według potrzeb, nie wartości nieruchomości. Z Wyspy Latarni
+    ludzie widzą, jak mur ochronny osiada w morzu bez wielkiej, niszczycielskiej fali,
+    której się bali.
+
+    Hester puszcza łańcuch, gdy ciśnienie opada. Zmarli tracą rachunek, który ich więził;
+    żywi tracą ulice, sklepy i pokoje, na których framugach pokolenia zaznaczały wzrost.
+    To różne straty i nikt nie próbuje ich zrównywać.
+
+    Sella chroni księgę przed wodą, a Ivo zaczyna mapę następnej osady. Na pierwszej
+    stronie zapisuje imiona i nazwiska ludzi, których musi ona pomieścić. Odchodzisz
+    dopiero wtedy, gdy Mercy bezpiecznie cumuje przy nowej przystani,
+    a jego nazwa została świeżo odmalowana.
+- id: engine-broken
+  title: Wolność w spadającej wodzie
+  text: |
+    Klatka pęka i zatrzymane morze opada. Trzy długie błyski ostrzegają górne miasto.
+    Mercy zabiera ludzi z nabrzeża na wolny kanał, a straż kieruje wszystkich pozostałych
+    ku drodze. Domy znikają za nimi w huku zbyt potężnym, by pomylić go z pogodą.
+
+    Imiona uwięzione w maszynie zostają uwolnione naraz. Hester wznosi się przez wodę
+    z ludźmi, których ostatnie godziny próbowała zachować. Pod nimi nie ma już miasta,
+    tylko ruiny i trudna wolność bez miejsca, do którego można wrócić.
+
+    Na wyżej położonym terenie ocalali zaczynają liczyć siebie nawzajem. Żyją dzięki
+    przygotowanej przez ciebie drodze ucieczki; stracili dobytek i port, bo twój wybór
+    przyniósł nagły koniec. Księga przetrwała w twoich rękach. Będzie musiała przekazać
+    obie prawdy.
+- id: flood-unleashed
+  title: Brzeg bez ostrzeżenia
+  text: |
+    Klatka pęka, zanim port jest gotowy. Ostatni wysiłek Hester daje sekundy,
+    nie przeprawę. Woda dociera do nabrzeża, gdy ludzie wciąż czekają na polecenia,
+    które nigdy nie nadeszły.
+
+    Uciekasz szybem inspekcyjnym z księgą przyciśniętą do piersi. Jej suche strony
+    nie usprawiedliwiają tego, co wydarzyło się poza nimi. Zmarli pod murem są wolni;
+    ludzie, których można było wyprowadzić w bezpieczne miejsce, dołączyli do nich.
+
+    Daleko w górze drogi własnoręcznie zapisujesz ostatni wpis. Nie nazywasz tego
+    wypadkiem. Nie pozostał nikt, kogo należałoby obciążyć tym kłamstwem.

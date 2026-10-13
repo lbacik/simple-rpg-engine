@@ -1,0 +1,32 @@
+id: ledger-account
+title: Co znaczy zamknąć rachunek
+text: |
+  Notatki Hester opisują dawniejszą umowę. Mur podtrzymywała dobrowolna praca:
+  warty, naprawy, wspólne zapasy. Rada kryzysowa zastąpiła ten wkład imionami ludzi,
+  których nie zdołała ewakuować. Maszyna nie odróżnia obietnicy od długu wpisanego
+  do urzędowej księgi.
+
+  Aby uwolnić zmarłych bez zburzenia muru, trzeba ustabilizować pompy, zamontować
+  nową przeciwwagę i zanieść do komory serca poświadczoną korektę. Korekta musi
+  wymieniać ludzi usuniętych z publicznego rachunku. Mieszkańcy na górze muszą
+  przyjąć pracę, którą bezprawnie obciążono zmarłych.
+
+  W schronieniu są ocalali i ich potomkowie. Kamień pamiątkowy dostarcza imion
+  i nazwisk. Strażniczka przy dzwonie pływowym może otworzyć komorę serca,
+  ale Hester ostrzegała przed przyjęciem jej urzędu bez zrozumienia jego ceny.
+choices:
+  - id: keep-notes
+    text: Zachowaj notatki i poszukaj świadków na Wyspie Latarni.
+    outcome:
+      text: |
+        Zaznaczasz kolejne kroki konserwacji skrawkami czystego papieru.
+        Po raz pierwszy droga na dole jest czymś więcej niż listą napraw.
+  - id: consider-other-way
+    text: Rozważ ewakuację lub zajęcie miejsca strażniczki.
+    outcome:
+      text: |
+        Notatki opisują też dwie trudne możliwości. Osoba, która dobrowolnie obejmie wartę,
+        może samotnie podtrzymywać obecny rachunek. Albo, gdy Mercy działa, a latarnia jest
+        zapalona, miasto może zrezygnować z muru dzięki kontrolowanemu otwarciu południowego
+        kanału przelewowego. Całkowite zniszczenie maszyny wymaga takich samych
+        przygotowań do ewakuacji.

@@ -1,0 +1,15 @@
+id: causeway
+name: Grobla rachmistrzów
+description: |
+  Wąska kamienna grobla przecina najgłębszą część basenu portowego. Na jej parapetach
+  wyryto miary zboża, lin i drewna. Za nimi woda wisi pionową ścianą.
+
+  Na drugim końcu stoją wieża sygnałowa i drzwi z brązu. W mechanizmie nad drzwiami
+  rzuca się w oczy puste gniazdo przeciwwagi.
+connections:
+  - to: sunken-square
+    label: Wróć na plac
+  - to: signal-tower
+    label: Wejdź na wieżę sygnałową
+  - to: bell-chamber
+    label: Wejdź do komory dzwonu pływowego

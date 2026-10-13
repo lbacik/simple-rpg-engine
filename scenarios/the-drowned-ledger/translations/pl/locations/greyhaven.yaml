@@ -1,0 +1,17 @@
+id: greyhaven
+name: Targ w Greyhaven
+description: |
+  Greyhaven zbudowano na murze z jasnego kamienia nad basenem portowym. Handlarze
+  rybami porzucili stragany, by układać worki z piaskiem wokół targowej studni.
+  Między nimi stoi mosiężny wskaźnik pływów, którego wskazówka drży na czerwonym polu.
+
+  Po drugiej stronie basenu dachy wyłaniają się z wody jak grzbiety śpiących zwierząt.
+  Stara dzielnica jest zatopiona od sześćdziesięciu lat. Dziś rano z jednego
+  z jej kominów unosi się dym.
+connections:
+  - to: quay
+    label: Zejdź na nabrzeże robocze
+  - to: watch-house
+    label: Odwiedź straż portową
+  - to: lockhouse
+    label: Idź wzdłuż muru do budynku śluzy

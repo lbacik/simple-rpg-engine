@@ -1,0 +1,26 @@
+id: progress-report
+title: Porównaj notatki z Ivem
+text: |
+  Ivo przypiął plan pomiarowy do daszku nad studnią. Prosi o spostrzeżenia,
+  nie zapewnienia. Przy każdej wymienionej przez ciebie usterce rysuje mały kwadrat.
+
+  „Droga nadal jest otwarta. Pompy potrzebują sworznia blokującego ze zbiornika.
+  Odlewnia może wykonać przeciwwagę. Księga jest w archiwum. Gdy wszystko będzie
+  gotowe, idź groblą do strażniczki. Jeśli trzeba będzie ewakuować miasto,
+  Mercy i wieża sygnałowa muszą działać”.
+choices:
+  - id: report-ledger
+    text: Pokaż mu oryginalną księgę.
+    outcome:
+      text: |
+        Ivo czyta imiona i nazwiska dwa razy. „Moja babka mówiła, że Lowwater było jej domem.
+        Myślałem, że chodziło jej o ulicę, nie o ludzi, których zostawiliśmy pod nią”.
+        Odwraca plan i zaczyna publiczny spis utopionych.
+  - id: report-diver
+    text: Powiedz mu, że zaginiona nurkini żyje.
+    outcome:
+      text: |
+        Ivo na chwilę zamyka oczy. „Tamsin nauczyła mnie odczytywać ciśnieniomierz.
+        To ja wysłałem ją na dół. Gdy skończymy, odszukam ją w schronieniu”.
+  - id: continue-work
+    text: Wróć do badania sprawy.

@@ -1,0 +1,23 @@
+id: resolution-evacuation
+title: Otwarcie południowego kanału
+text: |
+  Układ sygnałowy jest gotowy. Trzy długie błyski wezwą Mercy na południowy kanał
+  i wyślą straż portową od drzwi do drzwi. Otwieranie kanału przelewowego etapami
+  obniży zatrzymaną wodę, zanim zawiedzie zewnętrzny mur.
+
+  Hester sprawdza raport promowy Brama i zapaloną latarnię. „Zdołamy wyprowadzić ludzi.
+  Lowwater znów stanie się wodą. Greyhaven będzie miało czas odejść, ale nie będzie
+  miasta, do którego można wrócić”.
+
+  Księga może popłynąć z ewakuowanymi. Imiona pozostaną w pamięci, nawet jeśli zniknie
+  miejsce, które je przechowywało.
+choices:
+  - id: open-spillway
+    text: Wyślij sygnał ewakuacji i otwieraj kanał przelewowy etapami.
+    outcome:
+      text: |
+        Wysyłasz trzy błyski, czekasz na odpowiedź lampy Mercy, a potem przesuwasz dźwignię
+        ciśnienia po jednym ząbku. Hester puszcza łańcuch dopiero wtedy,
+        gdy woda ma bezpieczną drogę odpływu.
+  - id: reconsider
+    text: Zostaw kanał przelewowy zamknięty i wróć do biurka.

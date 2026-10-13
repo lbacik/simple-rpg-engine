@@ -1,0 +1,20 @@
+id: quay-arrival
+title: Prom pod żurawiem
+text: |
+  Starszy przewoźnik leży płasko na nabrzeżu, sięgając po linę tuż poza zasięgiem
+  palców. Ludzie na dachu magazynu trwają w bezruchu. Nadchodząca woda dotyka już
+  najniższych dachówek.
+
+  „Bram” — przedstawia się, gdy klękasz obok. „Prowadziłem Mercy przy gorszej pogodzie.
+  Nigdy nie sądziłem, że stracę go na własnym stanowisku. Zdejmij z niego żuraw,
+  a zabiorę tych ludzi na Wyspę Latarni”.
+
+  Ma dobry plan: przywiązać żuraw do pachoła cumowniczego, a potem użyć magazynowej
+  wciągarki. To wymaga cierpliwości, nie bohaterskich czynów.
+choices:
+  - id: prepare
+    text: Pomóż Bramowi rozłożyć liny do holowania.
+    outcome:
+      text: |
+        Rozdzielasz liny i oznaczasz tę, której pod żadnym pozorem nie wolno przeciąć.
+        Bram kiwa głową w stronę wciągarki; prom można uwolnić, gdy tylko zechcesz.

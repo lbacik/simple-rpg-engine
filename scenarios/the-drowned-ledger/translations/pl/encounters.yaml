@@ -1,0 +1,48 @@
+- id: porter-fight
+  text: |
+    Elias zamyka księgę gości i unosi kasownik do biletów jak ostrze.
+    „Nie ma twojego podpisu” — mówi niemal błagalnie.
+  victory:
+    text: |
+      Mundur zapada się wokół suchej księgi gości. Kładziesz ją na spoczniku,
+      zanim przejdziesz do Lowwater.
+  escape:
+    text: |
+      Wspinasz się poza jego zasięg. Portier podnosi księgę i wraca na stanowisko;
+      do wejścia nadal można podejść pokojowo.
+- id: foundry-fight
+  text: |
+    Brygadzista unosi młot, starannie omijając niedokończone formy. Nawet teraz
+    próbuje ocalić warsztat.
+  victory:
+    text: |
+      Maska pęka i spada obok pieca. Nera patrzy, jak odkładasz młot,
+      zanim zaprosi cię do stołu roboczego.
+  escape:
+    text: |
+      Wycofujesz się wzdłuż torów tramwajowych. Brygadzista pozostaje przy piecu,
+      ranny, ale wciąż gotowy wysłuchać, jakie uprawnione zadanie cię tu sprowadza.
+- id: tower-fight
+  text: |
+    Strażnik cofa się do balustrady latarni i napina łuk. Grot jego strzały
+    jest bladym kształtem z soli, wystarczająco ostrym, by był prawdziwy.
+  victory:
+    text: |
+      Łuk zamienia się w odcinek mokrej liny. Opierasz go o balustradę
+      i zwracasz się ku lampie awaryjnej.
+  escape:
+    text: |
+      Schodzisz poniżej linii strzału. Strażnik pozostaje na posterunku,
+      a ty nadal możesz wrócić z planem pomiarowym lub zgłoszeniem zagrożenia.
+- id: auditor-fight
+  text: |
+    Rewident rozkłada się w klatkę z karbowników. Jego mosiężne klamry
+    otwierają się i zamykają w rytmie skopiowanym z maszyny.
+  victory:
+    text: |
+      Karbowniki rozsypują się po podłodze. Żaden nie nosi imienia.
+      Przechodzisz obok nich do biurka rachunkowego.
+  escape:
+    text: |
+      Wycofujesz się przez właz. Hester przytrzymuje drzwi, aż rewident wróci
+      do rejestru; oba dokumenty uprawnień nadal zapewnią ci wejście.

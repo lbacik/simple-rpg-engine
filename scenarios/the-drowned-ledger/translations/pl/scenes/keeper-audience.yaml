@@ -1,0 +1,18 @@
+id: keeper-audience
+title: Hester Marr pełni ostatnią wartę
+text: |
+  Strażniczka odwraca się, gdy wchodzisz. Jej dłonie są z ciała, ale woda za płaszczem
+  przepływa przez krzesło. Rozpoznajesz jej nazwisko z archiwum: Hester Marr.
+
+  „Dzięki tobie ciśnienie jest właściwe, a przeciwwaga sprawna” — mówi. „Mur wytrzyma dość
+  długo, by podjąć decyzję. Przynosisz też księgę. To było trudniejsze zadanie”.
+
+  Patrzy na twoją twarz, nie na broń. „Zanim dotkniesz maszyny, masz prawo wiedzieć,
+  dlaczego zostałam”.
+choices:
+  - id: hear-hester
+    text: Wysłuchaj, dlaczego Hester pozostała pod wodą.
+  - id: request-options
+    text: Poproś ją o wyjaśnienie dostępnych możliwości.
+  - id: leave
+    text: Wróć do dalszych przygotowań.

@@ -1,0 +1,25 @@
+id: foundry-sentinel
+title: Brygadzista niedokończonej pracy
+text: |
+  Postać w skórzanym fartuchu odchodzi od pieca. Jej twarz zasłania żelazna maska.
+  „Żadnych szabrowników” — mówi. „Każdy odlew należy do zadania. Podaj swoje zadanie”.
+
+  Za maską kryje się niepokój brygadzisty, który został odpowiedzialny za warsztat,
+  gdy wszyscy inni poszli do domu. Przyjmie plan pomiarowy lub po prostu dokładne
+  wyjaśnienie usterki przeciwwagi grobli.
+choices:
+  - id: show-chart
+    text: Pokaż plan pomiarowy i schemat przeciwwagi.
+    outcome:
+      text: |
+        Brygadzista porównuje schemat z formą. „Naprawa. Dobrze”. Odkłada młot obok pieca.
+  - id: explain-repair
+    text: Wyjaśnij, że grobla potrzebuje nowej przeciwwagi.
+    outcome:
+      text: |
+        Opisujesz puste gniazdo i zawodzący rachunek. Brygadzista wskazuje właściwą formę.
+        „Najpierw praca. Potem szukanie winnych”.
+  - id: fight
+    text: Walcz z brygadzistą o dostęp do pieca.
+  - id: withdraw
+    text: Opuść warsztat.

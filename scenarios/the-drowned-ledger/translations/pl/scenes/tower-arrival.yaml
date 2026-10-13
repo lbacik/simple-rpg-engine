@@ -1,0 +1,17 @@
+id: tower-arrival
+title: Port w miniaturze
+text: |
+  Z platformy widać ludzi czekających na murze, unieruchomione łodzie i schronienie
+  na wyspie. Targowa studnia jest punkcikiem światła. Trudno nienawidzić miasta,
+  gdy widzi się jego sznury z praniem.
+
+  Łucznik w przemoczonym płaszczu straży pilnuje latarni. „Żadnego sygnału bez
+  upoważnienia” — mówi. Umarł, dbając o drożność kanału. Nie zauważył,
+  że teraz to jego rozkazy stały się przeszkodą.
+choices:
+  - id: observe
+    text: Poznaj sygnał ostrzegawczy i drogę do latarni.
+    outcome:
+      text: |
+        Trzy długie błyski rozpoczną ewakuację. Najpierw trzeba przekonać strażnika,
+        by pozwolił przygotować lampę.

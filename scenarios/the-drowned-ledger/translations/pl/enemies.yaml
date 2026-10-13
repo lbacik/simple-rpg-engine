@@ -1,0 +1,12 @@
+- id: drowned-porter
+  name: Elias Rook
+  description: Przerażony portier związany ostatnim otrzymanym poleceniem.
+- id: iron-foreman
+  name: Żelazny brygadzista
+  description: Strażnik warsztatu złożony ze sprzętu ochronnego i niedokończonych rozkazów.
+- id: channel-watchman
+  name: Strażnik kanału
+  description: Martwy łucznik próbujący utrzymać port drożny zgodnie z nieaktualnymi rozkazami.
+- id: brass-auditor
+  name: Mosiężny rewident
+  description: Strażnik rachunku złożony z karbowników, mosiężnych klamer i pożyczonej władzy.

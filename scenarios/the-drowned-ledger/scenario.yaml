@@ -108,3 +108,5 @@ endings:
   - endings.yaml
 images:
   - images.yaml
+translations:
+  - translations/pl/translation.yaml

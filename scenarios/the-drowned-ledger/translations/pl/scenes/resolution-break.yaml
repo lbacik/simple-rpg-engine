@@ -1,0 +1,28 @@
+id: resolution-break
+title: Czerwona dźwignia
+text: |
+  Czerwona dźwignia rozerwie klatkę podtrzymującą cylinder. Mur natychmiast straci
+  ochronę maszyny. Zmarli zostaną wraz z nią uwolnieni, ale woda nadejdzie
+  jako gwałtowna fala zamiast stopniowego przypływu.
+
+  Przygotowana latarnia może ostrzec górne miasto, a działający Mercy zabrać ludzi
+  z nabrzeża na wolny południowy kanał. Oba przygotowania są konieczne. Hester kładzie
+  dłoń obok twojej, nie udzielając błogosławieństwa ani nie stając na przeszkodzie.
+
+  „Docierasz do tej części rachunku” — mówi — „w której czynu nie da się poprawić
+  ładniejszym pismem”.
+choices:
+  - id: break-prepared
+    text: Wyślij sygnał ewakuacji, a potem zniszcz maszynę.
+    outcome:
+      text: |
+        Czekasz, aż odpowie lampa Mercy, a straż zacznie opróżniać nabrzeże. Potem ciągniesz.
+        Pierwszy trzask jest na tyle cichy, że mógłby być odgłosem upuszczonej filiżanki.
+  - id: break-unprepared
+    text: Zniszcz maszynę mimo brakujących przygotowań do ewakuacji.
+    outcome:
+      text: |
+        Ciągniesz, zanim port jest gotowy. Hester chwyta łańcuch, próbując dać ludziom
+        na górze jeszcze kilka oddechów.
+  - id: reconsider
+    text: Puść czerwony uchwyt i wróć do biurka.

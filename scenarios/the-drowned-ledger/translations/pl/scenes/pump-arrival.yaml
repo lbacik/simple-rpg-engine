@@ -1,0 +1,16 @@
+id: pump-arrival
+title: Rytm z dwoma brakującymi uderzeniami
+text: |
+  Pracujący tłok opada z łoskotem, który przenika aż do twoich zębów. Cień za maszyną
+  powtarza ten sam ruch kluczem, nie mogąc skończyć dokręcania śruby, której już nie ma.
+
+  Tablica obiegu obejściowego jest czytelna. Nakazuje przynieść sworzeń blokujący
+  ze zbiornika, a następnie obrócić trzy zawory w kolejności ze schematu. Nie potrzeba
+  ukrytej formuły; ktoś zakładał, że zmęczony pracownik poradzi sobie z tym w ciemności.
+choices:
+  - id: inspect
+    text: Przeczytaj tablicę konserwacyjną.
+    outcome:
+      text: |
+        Przepisujesz kolejność zaworów i odnajdujesz gniazdo sworznia.
+        Za drzwiami zbiornika lśni światło.

@@ -1,0 +1,18 @@
+id: lockhouse-arrival
+title: Trzy wskazówki na czerwonym polu
+text: |
+  Praktykantka konserwacji wsunęła stołek pod dźwignię alarmową. „Ciągle dzwonił” —
+  wyjaśnia ze wstydem. „Nikt przez to nie przychodził szybciej”.
+
+  Wskazuje ręczne zwolnienie blokady schodów pod ciśnieniomierzami. Drzwi inspekcyjne
+  można otworzyć pieczęcią lub postępując według procedury wydrapanej na osłonie.
+
+  „Na dole jest powietrze” — mówi. „Sprawdziłam. Nie potrafię tylko wyjaśnić,
+  kto odpowiedział, gdy zapukałam”.
+choices:
+  - id: read-gauges
+    text: Przyjrzyj się wskaźnikom i instrukcji zwolnienia blokady.
+    outcome:
+      text: |
+        Usterka ciśnienia sama się nie naprawi, ale mechanizm schodów jest sprawny.
+        Zostawiasz praktykantce instrukcje, by utrzymywała galerię drożną.

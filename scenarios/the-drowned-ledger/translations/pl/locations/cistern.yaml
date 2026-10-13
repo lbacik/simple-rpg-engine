@@ -1,0 +1,12 @@
+id: cistern
+name: Zbiornik przelewowy
+description: |
+  Podłogę komory pokrywa płytka warstwa czarnej wody. Wysepki z krat pomostowych
+  prowadzą do klatki z narzędziami i kołyski nurkowej. Linka sygnałowa kołyski
+  jest napięta.
+
+  Za szybą zalanego kanału inspekcyjnego widać postać w hełmie. Obok kołyski
+  z pozostawionej bez nadzoru rury głosowej dobiega czasem bardzo ludzki kaszel.
+connections:
+  - to: pump-hall
+    label: Wróć do hali tłoków

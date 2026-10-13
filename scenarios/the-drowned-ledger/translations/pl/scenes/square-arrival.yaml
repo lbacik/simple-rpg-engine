@@ -1,0 +1,20 @@
+id: square-arrival
+title: Miasto zatrzymane na dole
+text: |
+  Pośrodku placu stoi tramwaj, na którego tablicy docelowej wciąż widnieje DOM.
+  Pasażerowie są bladymi zarysami. Obserwują cię bez głodu, którego można by
+  spodziewać się po zmarłych.
+
+  Kobieta przy fontannie myje filiżankę w pustej niecce. „Nowa inspekcja?” — pyta.
+  „Ostatni inspektor powiedział, że przeniosą nas do rana. Na który poranek
+  cię wysłali?”
+
+  Gdy nie znajdujesz odpowiedzi, wskazuje przewrócony kamień pamiątkowy.
+  „Możesz zacząć tam. Ktoś sporo zapłacił, żeby nie dało się go odczytać”.
+choices:
+  - id: look-around
+    text: Zapytaj o drogę do archiwum, pomp i odlewni.
+    outcome:
+      text: |
+        Podaje dokładne wskazówki, dodając drogę do korytarza technicznego na Wyspę Latarni.
+        „Niektórzy z nas nadal mogą nim odejść. Imiona innych utknęły w maszynie”.

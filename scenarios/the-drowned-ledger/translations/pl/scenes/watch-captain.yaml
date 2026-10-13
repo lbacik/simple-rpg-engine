@@ -1,0 +1,31 @@
+id: watch-captain
+title: Zamknięta szafa kapitan Venn
+text: |
+  Mara Venn wygląda starzej niż na portrecie wiszącym nad biurkiem. Słucha bez
+  przerywania, po czym kładzie mosiężną pieczęć inspekcyjną obok pieca.
+
+  „Stara dzielnica należy do miasta. Wszystko, co odzyskasz, ma wrócić tutaj”.
+  Jej dłoń pozostaje na pieczęci. „Takie mam rozkazy. Wykonuję je od dwudziestu lat.
+  Dziś jestem mniej pewna, czy to czyni je dobrymi rozkazami”.
+choices:
+  - id: take-seal
+    text: Poproś o dostęp i obiecaj uczciwy raport.
+    outcome:
+      text: |
+        Venn puszcza pieczęć. „Uczciwy raport. Dopilnuję tej obietnicy i ty możesz dopilnować
+        jej z mojej strony”. Otwiera szafę z zapasami.
+  - id: ask-history
+    text: Zapytaj, dlaczego oficjalna wersja pomija imiona utopionych.
+  - id: press-captain
+    text: Poproś ją o pomoc, zanim nadejdzie kolejny rozkaz.
+    test:
+      success:
+        text: |
+          „Dość czekania” — mówi Venn. Przekazuje pieczęć i nakazuje pozostałym strażnikom
+          pomóc przy stole z zapasami ratunkowymi.
+      failure:
+        text: |
+          Kręci głową na twój pośpiech, ale i tak daje ci pieczęć. „Idź ostrożnie.
+          Moje wątpliwości nie są powodem, by utrudniać ci zejście”.
+  - id: leave
+    text: Zostaw ją z raportami portowymi.

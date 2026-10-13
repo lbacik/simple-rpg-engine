@@ -1,0 +1,16 @@
+id: cistern-cache
+title: Klatka z narzędziami konserwacyjnymi
+text: |
+  Klatkę z narzędziami pozostawiono otwartą dla osoby, która miała pracować na następnej
+  zmianie. W środku leżą sworzeń blokujący z brązu, dwie zapieczętowane puszki
+  z medykamentami i zwój czystego sznurka.
+
+  Na tabliczce napisano: WEŹ TO, CZEGO WYMAGA PRACA. UZUPEŁNIJ PO JEJ SKOŃCZENIU.
+  Nie ma podpisu; zasada najwyraźniej wystarczała.
+choices:
+  - id: take-tools
+    text: Weź sworzeń i puszki z medykamentami.
+    outcome:
+      text: |
+        Owijasz sworzeń blokujący tak, by nie wytoczył się z plecaka. Na tabliczce zostawiasz
+        krótką notatkę wyjaśniającą, dokąd trafiły zapasy.

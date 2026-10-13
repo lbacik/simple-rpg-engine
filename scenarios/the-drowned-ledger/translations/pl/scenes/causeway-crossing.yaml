@@ -1,0 +1,20 @@
+id: causeway-crossing
+title: Przeciwwaga nad drzwiami
+text: |
+  Grobla jest wystawiona na napór całego zatrzymanego morza. Każdy krok przypomina
+  o ciężarze w plecaku i jeszcze większym ciężarze nad głową.
+
+  Przy drzwiach hamulec połączony z układem cięgien pozostaje zwolniony. Zamontowanie
+  odlewu Nery przywróci jego działanie i przeniesie siłę do fundamentów. Pompy muszą
+  już pracować równo; inaczej układ sam by się rozerwał. Księgę musisz zachować
+  przy sobie, by zanieść ją do biurka rachunkowego za drzwiami.
+choices:
+  - id: install-weight
+    text: Zamontuj nową przeciwwagę i włącz hamulec.
+    outcome:
+      text: |
+        Odlew wpada do gniazda z uspokajającym kliknięciem. Cięgna przejmują obciążenie,
+        a drzwi z brązu odchylają się do środka. Nad nimi osobne schody prowadzą
+        na wieżę sygnałową.
+  - id: back
+    text: Zostaw przeciwwagę owiniętą i wróć na plac.

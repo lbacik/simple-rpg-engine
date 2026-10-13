@@ -1,0 +1,30 @@
+id: town-briefing
+title: Zlecenie mierniczego
+text: |
+  Ivo rozkłada plan na pustym straganie rybnym. Sześćdziesiąt lat temu Greyhaven
+  zalało dolną dzielnicę, by osłabić napór zimowego sztormu. Później maszyna pod murem
+  ochronnym zapewniała bezpieczeństwo górnemu miastu. Oficjalna wersja głosi,
+  że Lowwater było puste, gdy otwarto wrota.
+
+  „Maszyna traci ciśnienie. Potrzebuję kogoś, kto ustawi pompy, wymieni uszkodzoną
+  przeciwwagę i odzyska oryginalną księgę konserwacyjną. Księga powie nam,
+  jak zamknąć rachunek”.
+
+  Wskazuje budynek śluzy. „Schody inspekcyjne są suche. Dalej niczego nie mogę obiecać.
+  Kapitan Venn ma pieczęć inspekcyjną. Ludzie na nabrzeżu też potrzebują pomocy.
+  Wolę stracić dzień, niż udawać, że są ładunkiem”.
+choices:
+  - id: accept
+    text: Przyjmij zlecenie i weź jego plan.
+    outcome:
+      text: |
+        Ivo zapisuje twoje imię pod swoim. „Dziękuję, {name}. Zajrzyj do strażnicy, jeśli
+        potrzebujesz ich zapasów. W budynku śluzy jest ręczne zwolnienie blokady,
+        gdyby kapitan nie chciała pomóc”.
+  - id: ask-payment
+    text: Zapytaj, czy Greyhaven może zapewnić zapasy.
+    outcome:
+      text: |
+        „Zapasy tak. Nagrodę, jeśli potem jeszcze będzie jakieś Greyhaven”. Dokłada do planu
+        dwa napoje ratunkowe. Zgadzasz się zbadać sprawę, bez obietnicy posłuszeństwa wobec
+        tego, kto zbudował maszynę.

@@ -1,0 +1,14 @@
+id: refuge
+name: Schronienie na Wyspie Latarni
+description: |
+  Kamienny korytarz techniczny kończy się wewnątrz starej chaty latarnika na Wyspie
+  Latarni. Wyżej wyspa jest pełna koców, schnących ubrań i ludzi próbujących ustalić,
+  kogo brakuje.
+
+  Przez okno widać oba miasta: Greyhaven na murze i Lowwater pod kopułą zatrzymanej
+  wody. Przy długim stole przygotowano miejsca dla ludzi z obu stron.
+connections:
+  - to: sunken-square
+    label: Wróć suchym korytarzem technicznym
+  - to: quay
+    label: Wróć promem Mercy na nabrzeże

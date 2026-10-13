@@ -1,0 +1,16 @@
+id: refuge-rest
+title: Miska gorącego bulionu
+text: |
+  W kuchni schronienia jest piec, cierpliwy kucharz i czajnik, który niemal nigdy
+  nie przestaje wrzeć. Dostajesz miskę bulionu i suche miejsce do siedzenia.
+
+  Przez chwilę ludzie pytają tylko, czy potrzebujesz koca. Woda na zewnątrz robi swoje,
+  nie wymagając, by pilnować każdej fali.
+choices:
+  - id: rest
+    text: Odpocznij, zjedz i pozwól kucharzowi opatrzyć rany.
+    outcome:
+      text: |
+        Dłonie przestają ci drżeć. Zanim wstaniesz, kucharz wkłada do twojego plecaka
+        zapieczętowaną puszkę z medykamentami. „Może znów ktoś będzie cię potrzebować.
+        To nie znaczy, że musisz głodować”.

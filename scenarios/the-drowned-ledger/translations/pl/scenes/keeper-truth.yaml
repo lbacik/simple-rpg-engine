@@ -1,0 +1,22 @@
+id: keeper-truth
+title: Inżynierka, która nie zdołała zatrzymać wrót
+text: |
+  „Zaprojektowałam mur, który potrzebował konserwacji” — mówi Hester. „Rada chciała
+  muru, który potrzebował posłuszeństwa. Gdy nadszedł sztorm, otworzyli wrota,
+  zanim wróciła ostatnia łódź. Potem dali maszynie imiona ludzi, których zabili”.
+
+  „Zostałam, by ciśnienie ich nie zmiażdżyło. Mówiłam sobie, że naprawię rachunek
+  w następnym tygodniu. Potem w następnym roku. Trzymałam go tak długo,
+  że moja córka zdążyła się zestarzeć”.
+
+  Dotyka unieruchomionego serca dzwonu. „Byłam użyteczna. Użyteczność ułatwiała
+  odkładanie tego, co słuszne. Nie dziedzicz tej wymówki razem z moim urzędem”.
+choices:
+  - id: ask-daughter
+    text: Powiedz jej, że Sella czeka na Wyspie Latarni.
+    outcome:
+      text: |
+        Hester chwyta łańcuch obiema dłońmi. „Więc wciąż jest dokąd pójść”.
+        Bierze oddech, którego już nie potrzebuje.
+  - id: ask-release
+    text: Zapytaj, jak uwolnić ją i utopionych.

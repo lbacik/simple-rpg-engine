@@ -1,0 +1,22 @@
+id: ledger-discovery
+title: Księga, która nigdy się nie bilansowała
+text: |
+  Rejestr zapisuje koszt muru ochronnego: drewno, kamień, mosiądz, płace. Potem zmienia
+  się charakter pisma. Pod ostatnią sumą widnieją imiona i nazwiska mieszkańców
+  Lowwater, a każdej osobie przypisano godzinę ochrony Greyhaven.
+
+  Na marginesie inżynierka Hester Marr napisała: ŻYCIE NIE JEST MIARĄ CIŚNIENIA.
+  Ktoś przekreślił to zdanie i zastąpił je słowami: UPRAWNIENIA NADZWYCZAJNE.
+
+  Ostatnia strona zawiera instrukcję konserwacji. Uszkodzona przeciwwaga i zawodzące
+  pompy wyjaśniają bezpośrednie zagrożenie. Księga wyjaśnia, dlaczego same naprawy
+  nigdy go nie zażegnają.
+choices:
+  - id: read-account
+    text: Przeczytaj notatki Hester na marginesach i weź oryginalną księgę.
+    outcome:
+      text: |
+        Szklany przycisk unosi się pod twoim dotykiem. Owijasz księgę jej suchą okładką;
+        półka za nią wydycha powietrze.
+  - id: leave
+    text: Na razie zostaw rejestr nietknięty.

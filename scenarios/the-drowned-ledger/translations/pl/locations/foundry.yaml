@@ -1,0 +1,11 @@
+id: foundry
+name: Solna odlewnia
+description: |
+  Tory tramwajowe znikają w warsztacie, którego piece płoną zimnym, pomarańczowym
+  światłem. Formy na podłodze mają kształty dzwonów, zawiasów i ludzkich dłoni.
+
+  Przy najbliższym kowadle kobieta z sadzy i wspomnień wciąż uderza w ten sam
+  niedokończony odlew. Każdy cios posyła iskry w górę, ku morzu.
+connections:
+  - to: sunken-square
+    label: Wróć wzdłuż torów tramwajowych

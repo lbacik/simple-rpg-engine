@@ -1,0 +1,26 @@
+id: tower-watch
+title: Strażnik przy latarni
+text: |
+  Martwy strażnik trzyma łuk opuszczony, ale gotowy. Jego rozkazy wymagają uznanej
+  inspekcji albo zagrożenia na południowym kanale.
+
+  W dole widać, jak przypływ napiera na zewnętrzny mur. Możesz pokazać plan albo
+  poprosić go, by sam ocenił zagrożenie. Chce chronić port; potrzebuje tylko
+  pozwolenia, by przestać chronić dawną instrukcję.
+choices:
+  - id: show-survey
+    text: Pokaż mu plan pomiarowy.
+    outcome:
+      text: |
+        Czyta nazwisko Iva i odsuwa się na bok. „Inspekcja upoważniona.
+        Południowy kanał pozostanie wolny”.
+  - id: show-danger
+    text: Wskaż zawodzący mur ochronny i poproś o sygnał alarmowy.
+    outcome:
+      text: |
+        Strażnik spogląda na zatłoczony mur. Coś zmienia się w jego postawie.
+        „Zagrożenie” — mówi. „Tak. To właśnie jest zagrożenie”.
+  - id: fight
+    text: Walcz ze strażnikiem o kontrolę nad latarnią.
+  - id: leave
+    text: Zejdź, nie ruszając latarni.
