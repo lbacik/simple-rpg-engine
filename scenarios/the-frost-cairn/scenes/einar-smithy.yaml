@@ -1,0 +1,38 @@
+id: einar-smithy
+title: Visit Einar the Smith
+trigger: on-demand
+repeatable: true
+text: |
+  Einar the one-eyed blacksmith stands by his cold stone forge, hammering an iron rivet into a splinted wooden shield. Frost coats the rim of his leather apron.
+choices:
+  - id: ask-supplies
+    text: Ask for pitch torches and climbing rope to enter the cairn.
+    when:
+      not:
+        flag: torches-lit
+    outcome:
+      text: |
+        Einar unhooks a bundle of pitch-soaked staves from a rafter and drops a coil of stout seal-gut rope beside your pack.
+
+        "The dark in Harek's tomb is cold enough to freeze blood. These torches carry enough pitch to burn through mist and draft. And if you take the sea-crevice, this rope will hold two warriors in full harness."
+      effects:
+        - set-flag: torches-lit
+        - set-flag: rope-secured
+        - give-item: { item: torch-bundle }
+        - give-item: { item: fissure-rope }
+  - id: ask-blade
+    text: Ask if he has a spare axe for a sworn warrior.
+    when:
+      attribute:
+        name: might
+        atLeast: 2
+    once: true
+    outcome:
+      text: |
+        Einar smiles grimly, pulls a broad bearded axe from a vat of tallow, and tests its edge against his thumb.
+
+        "Forged from bog iron and quenched in seal fat. It will bite deep through frozen bone."
+      effects:
+        - give-item: { item: bearded-axe }
+  - id: leave-einar
+    text: Leave the smith to his work.

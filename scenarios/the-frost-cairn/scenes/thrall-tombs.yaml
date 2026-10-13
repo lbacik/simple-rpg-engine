@@ -1,0 +1,23 @@
+id: thrall-tombs
+title: Search the Side Tombs
+trigger: on-demand
+repeatable: true
+text: |
+  The side galleries house the remains of Jarl Harek's thralls and oarsmen. Rusted iron collars and decayed oars lie scattered across stone biers.
+choices:
+  - id: search-relics
+    text: Search an open stone casket near the tunnel bend.
+    once: true
+    outcome:
+      text: |
+        Tucked beneath a rotting wool cloak, you find Astrid the Skald's carved birch lyre, dropped by her captors, alongside a flask of elder runic tincture!
+      effects:
+        - give-item: { item: skald-lyre }
+        - give-item: { item: runic-tincture }
+  - id: read-runes
+    text: Scrape the frost from an ancient grave-marker.
+    outcome:
+      text: |
+        The runes warn of Jarl Harek's unholy power: his sepulchre is sealed with the Dragon-Coil Key, and his blade bites with the eternal winter of Niflheim.
+  - id: step-away
+    text: Step back into the central corridor.

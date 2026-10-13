@@ -1,0 +1,17 @@
+id: sepulchre-victory
+title: The Fall of the Draugr Lord
+trigger: on-enter
+repeatable: false
+when:
+  flag: harek-slain
+text: |
+  Silence crashes down upon the chamber like an avalanche, broken only by the rapid dripping of thawing ice.
+
+  Jarl Harek lies vanquished upon the dais, his ancient armour dissolving into grey dust and foul-smelling steam. Resting upon the shattered seat of the throne, the Hearth-Rune of Skallavik pulses with deep, warm golden light.
+choices:
+  - id: claim-rune
+    text: Step up to the throne and lift the sacred Hearth-Rune.
+    outcome:
+      text: |
+        As your hands grasp the warm granite slab, a deep shudder tears through the foundation of the barrow. The ancient support stones groan and fracture, and tonnes of ice and rock begin to collapse from the dome!
+      next: cairn-collapse

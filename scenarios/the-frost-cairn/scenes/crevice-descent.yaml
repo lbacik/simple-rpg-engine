@@ -1,0 +1,28 @@
+id: crevice-descent
+title: Descent into the Sea-Fissure
+trigger: on-enter
+repeatable: false
+text: |
+  You scramble down your knotted rope into the vertical basalt cleft. The black sea foams violently twenty paces beneath your boots, throwing icy spray against the slick stone walls.
+
+  Ahead on a narrow frozen ledge, an ancient draugr archer perches silently, its empty eye-sockets staring down into the surging surf.
+choices:
+  - id: attack-archer
+    text: Draw your weapon and leap across the icy gap to strike!
+    outcome:
+      start-combat: crevice-skulker
+  - id: sneak-past
+    text: Shimmy along the freezing ledge beneath the cover of mist and spray.
+    test:
+      attribute: agility
+      difficulty: hard
+      success:
+        text: |
+          Moving as silently as a hunting seal, you slip beneath the archer's sightline. Slipping through an icy cleft behind the ledge, you discover a silver raven feather caught in the stone, and unbar a wet tunnel leading into the sunken shrine!
+        effects:
+          - set-flag: crevice-entered
+          - give-item: { item: valkyrie-feather }
+      failure:
+        text: |
+          Your boot slips on black ice! A loose boulder clatters down into the roaring surf, and the dead archer swivels with a bone shaft nocked to the string!
+        start-combat: crevice-skulker

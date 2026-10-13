@@ -1,0 +1,22 @@
+id: ridge-lookout
+title: Survey the High Barrow
+trigger: on-demand
+repeatable: true
+text: |
+  From a high granite outcrop above the stunted pine line, you peer through the blowing gale at the Frost Cairn. The barrow mound sits on a sheer bluff like a black crown above the frozen fjord.
+choices:
+  - id: scout-gate
+    text: Study the main gate of the cairn through the blowing rime.
+    outcome:
+      text: |
+        Two guardians stand at the stone portal: a spearman standing watch on the threshold and an archer perched on an upright monolith above. Charging the front gate directly will force you to face both at once.
+  - id: scout-crevice
+    text: Look down toward the seaward cliffs and the narrow volcanic crevice.
+    when:
+      has:
+        item: fissure-rope
+    outcome:
+      text: |
+        With your climbing rope anchored to a twisted pine root, you could descend into the narrow sea-crevice below, bypassing the guardians at the main gate entirely.
+  - id: step-away
+    text: Pull your mantle tight and step back into the lee of the ridge.

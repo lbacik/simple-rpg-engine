@@ -1,0 +1,20 @@
+id: cairn-collapse
+title: Escape from the Collapsing Cairn
+text: |
+  The burial mound is collapsing inward! Stone arches fracture under the crushing weight of the bluff, and freezing seawater rushes through ruptured fissures in the walls.
+
+  Dust, shattered ice, and falling boulders choke the passageway ahead. You must make a desperate break for the open air before the mountain entombs you forever!
+choices:
+  - id: escape-with-astrid
+    text: Shield Astrid with your body and sprint together through the collapsing archway.
+    when:
+      all:
+        - flag: astrid-rescued
+        - has:
+            item: hearth-rune
+    outcome:
+      end: cairn-sealed
+  - id: scramble-alone
+    text: Clutch the Hearth-Rune to your chest and dive through the falling rubble.
+    outcome:
+      end: frost-broken

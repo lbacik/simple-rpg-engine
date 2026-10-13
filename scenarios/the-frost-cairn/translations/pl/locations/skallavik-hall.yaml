@@ -1,0 +1,7 @@
+id: skallavik-hall
+name: Długi dom w Skallavik
+description: |
+  Drewniane słupy rzeźbione w smocze sploty podtrzymują niski, okopcony dach wielkiej sali. Gasnące ognisko skwierczy w centralnym rowie, rzucając długie, rozedrgane cienie na przelęknięte twarze klanu.
+connections:
+  - to: fjord-strand
+    label: Wyjdź na lodowaty wiatr w stronę brzegu

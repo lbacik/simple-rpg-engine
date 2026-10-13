@@ -1,0 +1,107 @@
+- id: loc-skallavik-hall
+  path: images/loc-skallavik-hall.webp
+  alt: "A low-roofed timber longhouse with carved pillars and a stone hearth trench containing dying embers."
+
+- id: loc-fjord-strand
+  path: images/loc-fjord-strand.webp
+  alt: "A frozen pebble strand under a dark winter sky, with dark waves and the broken ribs of a longboat in the snow."
+
+- id: loc-howling-ridge
+  path: images/loc-howling-ridge.webp
+  alt: "A windswept granite mountain ridge with gnarled pines and a stone beacon tower overlooking a frozen fjord."
+
+- id: loc-cliff-crevice
+  path: images/loc-cliff-crevice.webp
+  alt: "A narrow vertical cliff fissure above crashing ocean waves, coated in sea-spray ice."
+
+- id: loc-barrow-threshold
+  path: images/loc-barrow-threshold.webp
+  alt: "Massive carved standing stones framing the sealed stone portal of an ancient burial mound."
+
+- id: loc-burial-gallery
+  path: images/loc-burial-gallery.webp
+  alt: "A subterranean stone corridor lined with open burial niches containing ancient bones and rusted shields."
+
+- id: loc-sunken-shrine
+  path: images/loc-sunken-shrine.webp
+  alt: "A subterranean cavern with a still black pool and an ancient rune-carved stone altar."
+
+- id: loc-jarl-barrow
+  path: images/loc-jarl-barrow.webp
+  alt: "A grand vaulted ice chamber with an enormous megalithic throne surrounded by frozen hoard-chests."
+
+- id: skallavik-arrival
+  path: images/skallavik-arrival.webp
+  alt: "Jarl Torvald seated with an injured arm on his high seat in the smoky hall, facing the embers."
+
+- id: torvald-briefing
+  path: images/torvald-briefing.webp
+  alt: "Jarl Torvald leaning on an ash staff beside a carved post, speaking with grim resolve."
+
+- id: hilda-runewife
+  path: images/hilda-runewife.webp
+  alt: "Blind Hilda the Runewife offering a steaming horn and an amber talisman over a simmering kettle."
+
+- id: einar-smithy
+  path: images/einar-smithy.webp
+  alt: "One-eyed smith Einar in a leather apron holding pitch torches and a coil of rope beside an anvil."
+
+- id: strand-ambush
+  path: images/strand-ambush.webp
+  alt: "Two snarling winter hounds with frost-matted fur crouching before an overturned boat on the shingle."
+
+- id: whale-wreck
+  path: images/whale-wreck.webp
+  alt: "A dagger blade prying open a frost-covered wooden locker in the hold of a wrecked ship."
+
+- id: ridge-climb
+  path: images/ridge-climb.webp
+  alt: "An undead Norse warrior in rusted mail and ragged cloak clutching a spear on a snowy ridge."
+
+- id: ridge-lookout
+  path: images/ridge-lookout.webp
+  alt: "A viewpoint from a high snowy crag looking across a gorge at the dark mound of the Frost Cairn."
+
+- id: beacon-ruin
+  path: images/beacon-ruin.webp
+  alt: "A stone fire-beacon on a rocky summit, with a pitch torch being brought to dry pine kindling."
+
+- id: crevice-descent
+  path: images/crevice-descent.webp
+  alt: "An undead archer standing on a narrow icy ledge within a vertical sea cleft above surging waves."
+
+- id: threshold-approach
+  path: images/threshold-approach.webp
+  alt: "Two undead guards, one with a spear and one with a bow, guarding the monolithic stone entrance to the barrow."
+
+- id: barrow-doors
+  path: images/barrow-doors.webp
+  alt: "Carved stone portal doors with serpent relief, and fingers pressing a hidden stone release."
+
+- id: gallery-entrance
+  path: images/gallery-entrance.webp
+  alt: "Two undead warriors in rusted armour advancing down a dark burial corridor with spears."
+
+- id: thrall-tombs
+  path: images/thrall-tombs.webp
+  alt: "A carved wooden lyre and an ancient medicine bottle resting inside an open stone burial casket."
+
+- id: shrine-pool
+  path: images/shrine-pool.webp
+  alt: "A giant undead berserker raising a great axe over a captive woman chained to a stone altar in a flooded cavern."
+
+- id: astrid-rescue
+  path: images/astrid-rescue.webp
+  alt: "Astrid the Skald resting on a stone altar after having her iron chains severed, looking up with gratitude."
+
+- id: sepulchre-approach
+  path: images/sepulchre-approach.webp
+  alt: "Ancient undead Jarl Harek rising from an ice throne, holding a frosted sword with a glowing runestone beside him."
+
+- id: sepulchre-victory
+  path: images/sepulchre-victory.webp
+  alt: "An empty stone throne holding a warm glowing runestone, with rusted armour dissolved on the steps below."
+
+- id: cairn-collapse
+  path: images/cairn-collapse.webp
+  alt: "A collapsing stone tunnel with falling rocks and water pouring in, with light breaking through the exit ahead."

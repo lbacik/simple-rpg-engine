@@ -1,0 +1,17 @@
+id: barrow-threshold
+name: The Cairn Threshold
+description: |
+  Towering upright stones carved with weathered, snarling dragon runes frame the entrance of the burial mound. Snow eddies across the threshold, refusing to settle upon the cursed earth.
+map:
+  x: 58
+  y: 48
+scenes:
+  - threshold-approach
+  - barrow-doors
+connections:
+  - to: howling-ridge
+    label: Retreat down the path to the howling ridge
+  - to: burial-gallery
+    label: Pass between the great stone doors into the dark
+    when:
+      flag: gate-opened

@@ -1,0 +1,155 @@
+- id: shore-wolves
+  participants:
+    - id: hound-a
+      enemy: fen-hound
+    - id: hound-b
+      enemy: fen-hound
+  startRange: far
+  text: |
+    Two gaunt shore-hounds break from behind a frost-shattered longboat, snapping with yellow fangs.
+  victory:
+    text: |
+      The beasts lie still on the freezing shingle. Among the driftwood of the wreck, you uncover a horn of spiced winter mead.
+    effects:
+      - set-flag: wolves-cleared
+      - give-item: { item: spiced-mead }
+  escape:
+    text: |
+      You scramble backward onto the spray-slick stones until the hounds lose interest in the surf.
+    move: fjord-strand
+
+- id: ridge-sentry
+  enemy: draugr-sentry
+  startRange: near
+  text: |
+    A withered shape in frozen mail steps out from the stunted pines, lowering an ancient spear.
+  victory:
+    text: |
+      The draugr shatters into dry rime and rusted iron. You find a pot of tallow salve tucked in its decayed pouch.
+    effects:
+      - set-flag: ridge-scouted
+      - give-item: { item: tallow-salve }
+  escape:
+    text: |
+      You tumble down the snowy slope into the shelter of the wind-bent pines.
+    move: howling-ridge
+
+- id: gate-guards
+  participants:
+    - enemy: draugr-sentry
+    - enemy: frost-archer
+  startRange: far
+  text: |
+    Before the cavernous mouth of the cairn, two undead sentinels guard the stones: one with spear raised, the other drawing a frost-glazed bow.
+  victory:
+    text: |
+      Both corpses collapse into cold dust upon the threshold stones. You unbar the heavy stone gate and pry the Dragon-Coil Key from a rusted iron neck-chain.
+    effects:
+      - set-flag: gate-opened
+      - set-flag: cairn-key-found
+      - give-item: { item: cairn-key }
+  escape:
+    text: |
+      Bone arrows clatter against stone as you retreat down the snowy ridge path.
+    move: barrow-threshold
+
+- id: gate-sentry-lone
+  enemy: draugr-sentry
+  startRange: near
+  text: |
+    Having lured away the archer with a thrown stone, you confront the lone spearguard at close quarters before the stone gate.
+  victory:
+    text: |
+      The spearman falls. You unbar the heavy stone gate and pry the Dragon-Coil Key from the fallen sentry's belt.
+    effects:
+      - set-flag: gate-opened
+      - set-flag: cairn-key-found
+      - give-item: { item: cairn-key }
+  escape:
+    text: |
+      You roll backward into the shadow of the monoliths while the sentry stamps on the snow.
+    move: barrow-threshold
+
+- id: gallery-patrol
+  participants:
+    - id: sentry-a
+      enemy: draugr-sentry
+    - id: sentry-b
+      enemy: draugr-sentry
+  startRange: near
+  text: |
+    In the narrow, pitch-dark burial gallery, two rusted figures step down from open niches, blocking your way deeper into the cairn.
+  victory:
+    text: |
+      The undead crash against the flagged floor. Behind an open wall niche, you discover an old warrior's tomb holding an ancient warded byrnie and a flask of runic tincture.
+    effects:
+      - give-item: { item: grave-linen-mail }
+      - give-item: { item: runic-tincture }
+  escape:
+    text: |
+      You duck into an empty side chamber until the shuffle of iron boots passes into the darkness.
+    move: burial-gallery
+
+- id: crevice-skulker
+  enemy: frost-archer
+  startRange: far
+  text: |
+    As you traverse the sea-crevice, an ancient frost-archer perches on an icy ledge above the crashing waves, notching a bone shaft.
+  victory:
+    text: |
+      The archer falls from the ledge, tumbling into the frothing sea below. On its abandoned perch lies a silver raven feather.
+    effects:
+      - give-item: { item: valkyrie-feather }
+  escape:
+    text: |
+      You press yourself flat against the frozen rock wall until the whistling shafts cease.
+    move: cliff-crevice
+
+- id: shrine-berserker
+  enemy: draugr-berserker
+  startRange: near
+  text: |
+    In the torchlight of the sunken shrine, a monstrous draugr berserker roars with the voice of grinding ice, swinging a massive iron war-axe to defend the captive skald.
+  victory:
+    text: |
+      The giant collapses into the black water of the pool with a tremendous splash. Astrid gasps in relief from her chains upon the altar stones.
+    effects:
+      - give-item: { item: frost-cleaver }
+  escape:
+    text: |
+      You dodge under the crushing blow of the war-axe and scramble back into the dripping tunnel.
+    move: sunken-shrine
+
+- id: harek-duel
+  enemy: jarl-harek
+  startRange: far
+  text: |
+    In the vaulted ice of the sepulchre, Jarl Harek rises from his stone seat. Astrid's song of binding echoes through the vault, warding off his lesser thralls. The Sea-King descends the dais to meet you alone.
+  victory:
+    text: |
+      Harek's frosty crown shatters across the stone floor. The ancient draugr lord dissolves into frozen vapour, leaving the glowing Hearth-Rune resting upon his shattered throne.
+    effects:
+      - set-flag: harek-slain
+      - give-item: { item: hearth-rune }
+  escape:
+    text: |
+      You leap backward through the freezing mist as Harek's frosted blade bites stone. You retreat to the gallery to gather your breath.
+    move: burial-gallery
+
+- id: harek-and-guard
+  participants:
+    - enemy: jarl-harek
+    - enemy: draugr-sentry
+  startRange: far
+  text: |
+    Jarl Harek rises from his throne of rime, and with no song to stay their hands, an undead spearman steps forward to fight at his flank.
+  victory:
+    text: |
+      Harek's frosty crown shatters across the stone floor. The ancient draugr lord dissolves into frozen vapour, leaving the glowing Hearth-Rune resting upon his shattered throne.
+    effects:
+      - set-flag: harek-slain
+      - give-item: { item: hearth-rune }
+  escape:
+    text: |
+      You break away through the blinding frost-smoke as iron blades clash behind you, retreating to the burial gallery.
+    move: burial-gallery

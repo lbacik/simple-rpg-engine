@@ -1,0 +1,25 @@
+id: skallavik-arrival
+title: The Gathering in the Great Hall
+trigger: on-enter
+repeatable: true
+when:
+  not:
+    flag: oath-sworn
+text: |
+  The great hall of Skallavik is heavy with cedar smoke and cold dread. Outside, an unnatural blizzard howls across the fjord, frosting the wooden shingles with black rime.
+
+  Jarl Torvald sits slumped on his high seat, an arm bound in splints. "Last night the barrow opened," he rasps, staring at the dying fire. "The dead came with the tide. They stole the Hearth-Rune that keeps our fires alive, and dragged my daughter Astrid into the frozen dark. Without the rune, the cold will kill every soul in Skallavik before the moon turns."
+choices:
+  - id: swear-oath
+    text: Cut your palm with your blade and swear the blood oath before the hearth.
+    outcome:
+      text: |
+        You draw your blade across your skin and press red blood to the cold hearthstone. The flame flares bright for a heartbeat, casting fierce shadows across the gathered warriors.
+
+        Torvald clasps your forearm with trembling strength. "Take what our hall can give, {name}. May the ravens watch over your path."
+      effects:
+        - set-flag: oath-sworn
+  - id: refuse
+    text: Turn away from the hearth and refuse the hopeless mission.
+    outcome:
+      end: oath-forsaken

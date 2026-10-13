@@ -1,0 +1,17 @@
+id: skallavik-hall
+name: The Longhouse of Skallavik
+description: |
+  Timber pillars carved with serpent coils support the low, smoke-blackened roof of the Great Hall. A dying hearthfire sputters in the central trench, casting long, trembling shadows across the frightened faces of the clan.
+map:
+  x: 15
+  y: 75
+scenes:
+  - skallavik-arrival
+  - torvald-briefing
+  - hilda-runewife
+  - einar-smithy
+connections:
+  - to: fjord-strand
+    label: Step out into the freezing wind toward the strand
+    when:
+      flag: oath-sworn

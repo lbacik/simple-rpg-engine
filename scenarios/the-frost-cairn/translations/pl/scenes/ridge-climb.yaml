@@ -1,0 +1,18 @@
+id: ridge-climb
+title: Strażnik na grani
+text: |
+  Wyjący wicher ciska lodowatym śniegiem w oczy, gdy osiągasz wierzchołek grzbietu. Przez wirującą zadymkę dostrzegasz samotną postać stojącą obok oszronionej sosny.
+
+  To strażnik draugrów: wysuszone ciało napięte na szarych kościach, ściskające pradawną szczerbatą włócznię, wpatrujące się w dolne zakosy ścieżki.
+choices:
+  - id: ambush-sentry
+    text: Podkradnij się przez głębokie zaspy, by ściąć strażnika od tyłu.
+    test:
+      success:
+        text: |
+          Przemierzasz śnieżny zasp w absolutnej ciszy. Twoja broń uderza w kark strażnika, nim ten zdąży wydać dźwięk, rozbijając kruche kości w lodowe odłamki. Zabierasz z jego pasa słoik maści łojowej.
+      failure:
+        text: |
+          Sucha gałąź sosny pęka pod twoim butem. Martwy wojownik odwraca się z nieludzką szybkością, wymierzając włócznię w twoje gardło!
+  - id: face-sentry
+    text: Zaszarżuj na strażnika z okrzykiem, z wysoko uniesionym ostrzem.

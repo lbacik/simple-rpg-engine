@@ -1,0 +1,21 @@
+id: torvald-briefing
+title: Porozmawiaj z jarlem Torvaldem
+text: |
+  Jarl Torvald opiera się na ciężkim jesionowym kosturze, patrząc na dym ulatujący ku powale. Jego szare oczy są zapadnięte ze zmęczenia.
+choices:
+  - id: ask-history
+    text: Zapytaj o jarla Hareka Żelaznozębego i Kurhan Mrozu.
+    outcome:
+      text: |
+        "Harek był przeklętym królem mórz, który siał postrach na północnych wybrzeżach trzysta zim temu" - mówi cicho Torvald. "Zawarł krwawe przymierza z istotami starszymi niż bogowie i został pogrzebany wraz z całym swym skarbem.
+
+        Kurhan na urwisku zapieczętowano smoczymi kamieniami. Prowadzą tam dwie drogi: potężna kamienna brama na szczycie grani albo zdradliwa morska szczelina nad rozbijającymi się falami."
+  - id: ask-astrid
+    text: Zapytaj o Astrid i skradzioną Runę Ogniska.
+    outcome:
+      text: |
+        "Astrid to skaldka naszego klanu" - szepcze Torvald, a głos łamie mu się z żalu. "Zna prastare pieśni spętania, które trzymają niespokojne duchy na dystans. Jeśli wciąż oddycha, jej pieśń może powstrzymać dłonie draugrów Hareka.
+
+        Odnajdź ją, {name}. I przynieś naszą Runę Ogniska, inaczej nasz długi dom stanie się naszym grobem."
+  - id: leave-briefing
+    text: Skinij głową z powagą i odejdź od tronu.

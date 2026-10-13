@@ -1,0 +1,320 @@
+{
+  "generator": "any text-to-image model (built-in image_gen recommended)",
+  "format": {
+    "width": 1536,
+    "height": 1024,
+    "file": "WebP, under 2 MiB"
+  },
+  "styleReferences": [
+    "tmp/Architectural Sketches.png",
+    "tmp/Sketches Landscapes.jpg"
+  ],
+  "stylePrompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. If style reference images are supplied, match their drawing technique only, never their subject. Strictly monochrome, no colour except that the paper is warm ivory. A handmade field sketch: no painting, no digital render, no cartoon, no photorealism, no solid black masses. Setting: authentic early-medieval Norse Viking fjord in the depths of a bitter, unearthly winter; rough timber longhouses with turf roofs, carved dragon heads, pine-clad cliffs, frozen black beaches, whale bones, ancient basalt standing stones, snowdrifts, and frost-crusted barrows. The draugar are desiccated Norse warriors in rusted ring-mail and linen shrouds, frosted with rime; no horned fantasy helmets, no glowing neon magic. Action is tense and grim: no gore, no blood spatter. Horizontal landscape 3:2, 1536x1024. One full composition, no panels, no captions, no lettering, no frame, no signature, no watermark. Human anatomy and perspective plausible. Compose clearly so it reads at small game-UI size. Show the narrated moment before the player's choice, without depicting a completed outcome. Only depict characters explicitly called for in this asset; never add the cast as a group. Do not invent a specific appearance for the player character: use an observer's over-the-shoulder viewpoint, a silhouette from behind, or only a hand or a weapon when needed.",
+  "cast": {
+    "torvald": "Jarl Torvald Bear-Cheek: a grizzled Norse chieftain in his late fifties, braided grey beard, one arm bound in wooden splints, wearing a wolf-skin mantle over a faded wool tunic, face etched with grief",
+    "astrid": "Astrid the Skald: a young Norse woman in her twenties with long plaited blonde hair, sharp defiant eyes, a torn dark wool gown, wearing rusted iron shackles",
+    "hilda": "Hilda the Runewife: an ancient, stooped woman with milky blind eyes, a dark wool shawl pinned with an amber tortoise brooch, gnarled hands stained with pine-pitch",
+    "einar": "Einar the Smith: a burly one-eyed blacksmith in a scarred leather apron, thick grey beard, holding an iron hammer by a cold hearth",
+    "harek": "Jarl Harek Iron-Tooth: an ancient draugr sea-king of terrifying stature, crowned with frosted bone, blackened ring-mail crusted in blue rime, seated upon an ancient megalithic throne",
+    "berserker": "Draugr Berserker: a hulking undead Norse warrior with skin like grey sea-slate, clutching a massive two-handed iron war-axe"
+  },
+  "assets": [
+    {
+      "id": "loc-skallavik-hall",
+      "type": "location",
+      "entity": "skallavik-hall",
+      "title": "The Longhouse of Skallavik",
+      "subject": "Interior wide view of an authentic Norse great hall: heavy carved timber pillars with dragon knotwork, low turf-insulated roof rafters darkened by smoke, a central stone hearth trench with dying embers, empty carved wooden benches. No people.",
+      "alt": "A low-roofed timber longhouse with carved pillars and a stone hearth trench containing dying embers.",
+      "altPl": "Niski drewniany długi dom z rzeźbionymi słupami i kamiennym rowem paleniska z gasnącym żarem.",
+      "path": "images/loc-skallavik-hall.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. Interior wide view of an authentic Norse great hall: heavy carved timber pillars with dragon knotwork, low turf-insulated roof rafters darkened by smoke, a central stone hearth trench with dying embers, empty carved wooden benches. No people."
+    },
+    {
+      "id": "loc-fjord-strand",
+      "type": "location",
+      "entity": "fjord-strand",
+      "title": "The Frozen Strand",
+      "subject": "Establishing wide landscape of a bleak northern pebble beach at twilight: dark icy waves breaking on black shingle, snow-covered driftwood, the skeletal wooden ribs of an overturned longboat protruding from ice drifts. No people.",
+      "alt": "A frozen pebble strand under a dark winter sky, with dark waves and the broken ribs of a longboat in the snow.",
+      "altPl": "Zamarznięty kamienisty brzeg pod ciemnym zimowym niebem, z ciemnymi falami i strzaskanymi wręgami drakkara w śniegu.",
+      "path": "images/loc-fjord-strand.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. Establishing wide landscape of a bleak northern pebble beach at twilight: dark icy waves breaking on black shingle, snow-covered driftwood, the skeletal wooden ribs of an overturned longboat protruding from ice drifts. No people."
+    },
+    {
+      "id": "loc-howling-ridge",
+      "type": "location",
+      "entity": "howling-ridge",
+      "title": "The Howling Ridge",
+      "subject": "Dramatic landscape of a steep, windswept granite mountain ridge: stunted, twisted northern pines bent double by gale winds, deep snowdrifts, and a ruined stone beacon platform perched on the edge of a sheer cliff overlooking the frozen sea. No people.",
+      "alt": "A windswept granite mountain ridge with gnarled pines and a stone beacon tower overlooking a frozen fjord.",
+      "altPl": "Smagana wichrem granitowa grań z karłowatymi sosnami i kamienną wieżą sygnałową nad zamarzniętym fiordem.",
+      "path": "images/loc-howling-ridge.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. Dramatic landscape of a steep, windswept granite mountain ridge: stunted, twisted northern pines bent double by gale winds, deep snowdrifts, and a ruined stone beacon platform perched on the edge of a sheer cliff overlooking the frozen sea. No people."
+    },
+    {
+      "id": "loc-cliff-crevice",
+      "type": "location",
+      "entity": "cliff-crevice",
+      "title": "The Sea-Fissure",
+      "subject": "Vertiginous view looking down a narrow volcanic rock crevice in a sea cliff: black basalt walls glazed in ice, frothing white waves crashing far below, a hanging braided rope with iron hook anchored to a gnarled pine root above. No people.",
+      "alt": "A narrow vertical cliff fissure above crashing ocean waves, coated in sea-spray ice.",
+      "altPl": "Wąska pionowa szczelina skalna nad rozbijającymi się falami oceanicznymi, pokryta lodem z morskiej piany.",
+      "path": "images/loc-cliff-crevice.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. Vertiginous view looking down a narrow volcanic rock crevice in a sea cliff: black basalt walls glazed in ice, frothing white waves crashing far below, a hanging braided rope with iron hook anchored to a gnarled pine root above. No people."
+    },
+    {
+      "id": "loc-barrow-threshold",
+      "type": "location",
+      "entity": "barrow-threshold",
+      "title": "The Cairn Threshold",
+      "subject": "External view of the entrance to a megalithic burial mound: massive upright basalt standing stones carved with Nordic serpent knotwork, framing a sealed double slab of iron-banded stone. Wind swirls dry snow across the forecourt. No people.",
+      "alt": "Massive carved standing stones framing the sealed stone portal of an ancient burial mound.",
+      "altPl": "Potężne rzeźbione menhiry otaczające zapieczętowany kamienny portal prastarego kurhanu.",
+      "path": "images/loc-barrow-threshold.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. External view of the entrance to a megalithic burial mound: massive upright basalt standing stones carved with Nordic serpent knotwork, framing a sealed double slab of iron-banded stone. Wind swirls dry snow across the forecourt. No people."
+    },
+    {
+      "id": "loc-burial-gallery",
+      "type": "location",
+      "entity": "burial-gallery",
+      "title": "The Outer Crypts",
+      "subject": "Interior view of an ancient subterranean burial passage: rough-hewn stone lintels, earthen side walls with open rectangular niches holding shrouded skeletons, decayed wooden shield-bosses, and cracked pottery urns. Flickering torchlight suggested by sparse shading. No living people.",
+      "alt": "A subterranean stone corridor lined with open burial niches containing ancient bones and rusted shields.",
+      "altPl": "Podziemny kamienny korytarz z otwartymi niszami grobowymi kryjącymi pradawne kości i zardzewiałe tarcze.",
+      "path": "images/loc-burial-gallery.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. Interior view of an ancient subterranean burial passage: rough-hewn stone lintels, earthen side walls with open rectangular niches holding shrouded skeletons, decayed wooden shield-bosses, and cracked pottery urns. No living people."
+    },
+    {
+      "id": "loc-sunken-shrine",
+      "type": "location",
+      "entity": "sunken-shrine",
+      "title": "The Sunken Shrine",
+      "subject": "A wide subterranean cavern with a still, mirror-like black pool in the center. Pale icicles and stalactites hang from the ceiling. A crude megalithic altar stone stands beside the water, carved with ancient Futhark runes. No people.",
+      "alt": "A subterranean cavern with a still black pool and an ancient rune-carved stone altar.",
+      "altPl": "Podziemna jaskinia z nieruchomą czarną sadzawką i pradawnym ołtarzem pokrytym runami Futhark.",
+      "path": "images/loc-sunken-shrine.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. A wide subterranean cavern with a still, mirror-like black pool in the center. Pale icicles and stalactites hang from the ceiling. A crude megalithic altar stone stands beside the water, carved with ancient Futhark runes. No people."
+    },
+    {
+      "id": "loc-jarl-barrow",
+      "type": "location",
+      "entity": "jarl-barrow",
+      "title": "The Jarl's Sepulchre",
+      "subject": "A vaulted megalithic chamber encased in thick blue glacial ice. In the center upon a raised stone dais sits a colossal throne of rough-cut sea-granite, surrounded by ancient rotting hoard-chests half-swallowed by ice. No people.",
+      "alt": "A grand vaulted ice chamber with an enormous megalithic throne surrounded by frozen hoard-chests.",
+      "altPl": "Sklepiona lodowa komora grobowa z olbrzymim megalitycznym tronem otoczonym zamarzniętymi skrzyniami skarbów.",
+      "path": "images/loc-jarl-barrow.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper; loose irregular hand-drawn lines, hesitant construction marks, selective crosshatching, light pencil shading and plentiful untouched paper, edges fading naturally into blank paper. Setting: authentic early-medieval Norse Viking fjord in winter. A vaulted megalithic chamber encased in thick blue glacial ice. In the center upon a raised stone dais sits a colossal throne of rough-cut sea-granite, surrounded by ancient rotting hoard-chests half-swallowed by ice. No people."
+    },
+    {
+      "id": "skallavik-arrival",
+      "type": "scene",
+      "entity": "skallavik-arrival",
+      "title": "The Gathering in the Great Hall",
+      "subject": "Medium shot inside the longhouse: Jarl Torvald Bear-Cheek slumps on his carved high seat, arm bound in splints, grey beard unkempt, gazing mournfully into the dying embers of the hearth. In the foreground, an observer's hand draws a seax blade.",
+      "alt": "Jarl Torvald seated with an injured arm on his high seat in the smoky hall, facing the embers.",
+      "altPl": "Jarl Torvald z opatrzonym ramieniem na tronie w zadymionym długim domu, wpatrzony w palenisko.",
+      "path": "images/skallavik-arrival.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Jarl Torvald Bear-Cheek: a grizzled Norse chieftain in his late fifties, braided grey beard, one arm bound in wooden splints, wearing a wolf-skin mantle over a faded wool tunic, face etched with grief. Medium shot inside the longhouse: Jarl Torvald slumps on his carved high seat, looking at dying embers."
+    },
+    {
+      "id": "torvald-briefing",
+      "type": "scene",
+      "entity": "torvald-briefing",
+      "title": "Speak with Jarl Torvald",
+      "subject": "Torvald standing by an upright carved timber post, leaning upon an ash walking staff, speaking with quiet intensity, an engraved drinking horn on a low table nearby.",
+      "alt": "Jarl Torvald leaning on an ash staff beside a carved post, speaking with grim resolve.",
+      "altPl": "Jarl Torvald opierający się na jesionowym kosturze obok rzeźbionego słupa, przemawiający z powagą.",
+      "path": "images/torvald-briefing.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Torvald standing by an upright carved timber post, leaning upon an ash walking staff, speaking with quiet intensity."
+    },
+    {
+      "id": "hilda-runewife",
+      "type": "scene",
+      "entity": "hilda-runewife",
+      "title": "Consult Hilda the Runewife",
+      "subject": "Close scene of Hilda the Runewife: an ancient stooped woman with milky blind eyes, holding a polished horn of steaming mead and an amber knot amulet toward the viewer, a bubbling clay kettle beside her.",
+      "alt": "Blind Hilda the Runewife offering a steaming horn and an amber talisman over a simmering kettle.",
+      "altPl": "Niewidoma runiczna wiedźma Hilda podająca parujący róg i bursztynowy amulet nad bulgoczącym kociołkiem.",
+      "path": "images/hilda-runewife.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Hilda the Runewife: an ancient, stooped woman with milky blind eyes, a dark wool shawl pinned with an amber tortoise brooch. She offers a steaming horn and an amber knot amulet."
+    },
+    {
+      "id": "einar-smithy",
+      "type": "scene",
+      "entity": "einar-smithy",
+      "title": "Visit Einar the Smith",
+      "subject": "Burly one-eyed blacksmith Einar in a leather apron, holding a bundle of pitch torches and a coil of stout rope over an iron anvil, a cold hearth in the background.",
+      "alt": "One-eyed smith Einar in a leather apron holding pitch torches and a coil of rope beside an anvil.",
+      "altPl": "Jednooki kowal Einar w skórzanym fartuchu trzymający smolne pochodnie i zwój liny przy kowadle.",
+      "path": "images/einar-smithy.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Einar the Smith: a burly one-eyed blacksmith in a scarred leather apron, thick grey beard. He sets out a bundle of pitch torches and a coil of climbing rope beside an anvil."
+    },
+    {
+      "id": "strand-ambush",
+      "type": "scene",
+      "entity": "strand-ambush",
+      "title": "Ambush on the Frozen Strand",
+      "subject": "Tense confrontation on the pebble shore: two gaunt fen-hounds with frost-matted fur and bared yellow fangs crouched in front of an overturned longboat, snarling toward the observer.",
+      "alt": "Two snarling winter hounds with frost-matted fur crouching before an overturned boat on the shingle.",
+      "altPl": "Dwa warczące zimowe ogary o oszronionej sierści czające się przed przewróconą łodzią na kamienistym brzegu.",
+      "path": "images/strand-ambush.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Two gaunt shore fen-hounds with frost-matted coats and snarling jaws crouching on black shingle before the frozen ribs of a shipwreck."
+    },
+    {
+      "id": "whale-wreck",
+      "type": "scene",
+      "entity": "whale-wreck",
+      "title": "Search the Wrecked Longboat",
+      "subject": "Close view inside the shattered hold of a longship: frost-covered timbers, broken iron crates, a dagger prying open a wooden locker beneath an icy deck beam.",
+      "alt": "A dagger blade prying open a frost-covered wooden locker in the hold of a wrecked ship.",
+      "altPl": "Ostrze sztyletu podważające oszroniony drewniany schowek w ładowni rozbitego statku.",
+      "path": "images/whale-wreck.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Still life inside an icy longship wreck: a dagger prying open a frost-covered oak locker, revealing an ointment pot and an amber spar."
+    },
+    {
+      "id": "ridge-climb",
+      "type": "scene",
+      "entity": "ridge-climb",
+      "title": "The Ridge Sentry",
+      "subject": "A draugr sentry in frozen, rusted mail standing sentinel beside a bent pine on a snowy ridge, clutching a notched spear as blizzard winds blow its hair.",
+      "alt": "An undead Norse warrior in rusted mail and ragged cloak clutching a spear on a snowy ridge.",
+      "altPl": "Nieumarły wojownik w zardzewiałej kolczudze i poszarpanym płaszczu ściskający włócznię na ośnieżonej grani.",
+      "path": "images/ridge-climb.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. A draugr sentry: a desiccated Norse warrior in rusted chainmail, holding an ancient notched spear, standing against blizzard winds beside a snow-laden pine."
+    },
+    {
+      "id": "ridge-lookout",
+      "type": "scene",
+      "entity": "ridge-lookout",
+      "title": "Survey the High Barrow",
+      "subject": "Over-the-shoulder view from a high cliff edge: looking out across a chasm at the high barrow mound of the Frost Cairn, crowned with dark standing stones against the grey blizzard.",
+      "alt": "A viewpoint from a high snowy crag looking across a gorge at the dark mound of the Frost Cairn.",
+      "altPl": "Widok z wysokiej ośnieżonej skały ponad wąwozem na ciemny nasyp Kurhanu Mrozu.",
+      "path": "images/ridge-lookout.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Over-the-shoulder view looking out across a snowy gorge at the massive stone barrow on the bluff."
+    },
+    {
+      "id": "beacon-ruin",
+      "type": "scene",
+      "entity": "beacon-ruin",
+      "title": "Inspect the Ruined Beacon",
+      "subject": "A circular stone fire-brazier on a windy cliff top, filled with blackened pine logs and ice, with a hand holding a glowing pitch torch toward the kindling.",
+      "alt": "A stone fire-beacon on a rocky summit, with a pitch torch being brought to dry pine kindling.",
+      "altPl": "Kamienna wieża ogniowa na skalistym szczycie, z pochodnią zbliżaną do suchej podpałki.",
+      "path": "images/beacon-ruin.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. A circular stone fire-brazier on a cliff summit, with a pitch torch being held to frozen pine branches."
+    },
+    {
+      "id": "crevice-descent",
+      "type": "scene",
+      "entity": "crevice-descent",
+      "title": "Descent into the Sea-Fissure",
+      "subject": "A dramatic view within a vertical rock fissure: an undead archer poised on an icy ledge above turbulent foaming surf, clutching a bone-strung bow.",
+      "alt": "An undead archer standing on a narrow icy ledge within a vertical sea cleft above surging waves.",
+      "altPl": "Nieumarły łucznik stojący na wąskiej oblodzonej półce w morskiej szczelinie nad kłębiącymi się falami.",
+      "path": "images/crevice-descent.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. An undead draugr archer perched on an ice-covered ledge inside a dark vertical sea cliff fissure above crashing surf."
+    },
+    {
+      "id": "threshold-approach",
+      "type": "scene",
+      "entity": "threshold-approach",
+      "title": "Guardians of the Threshold",
+      "subject": "Two draugar guard the grand stone entrance to the barrow: a withered spearguard on the snowy threshold and an archer perched on a carved monolith above.",
+      "alt": "Two undead guards, one with a spear and one with a bow, guarding the monolithic stone entrance to the barrow.",
+      "altPl": "Dwaj nieumarli strażnicy, jeden z włócznią, drugi z łukiem, pilnujący wejścia do kurhanu.",
+      "path": "images/threshold-approach.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Two draugar guarding the entrance to an ancient barrow: a spearguard on the threshold and an archer on a rune-carved megalith above."
+    },
+    {
+      "id": "barrow-doors",
+      "type": "scene",
+      "entity": "barrow-doors",
+      "title": "Unseal the Barrow Portal",
+      "subject": "Close view of massive double stone doors carved with coiled serpent knots, with a hand pressing against an intricate carved serpent eye mechanism in the lintel.",
+      "alt": "Carved stone portal doors with serpent relief, and fingers pressing a hidden stone release.",
+      "altPl": "Rzeźbione kamienne wrota z płaskorzeźbą węża i dłoń naciskająca ukryty mechanizm zwalniający.",
+      "path": "images/barrow-doors.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Close view of massive double stone slabs carved with Norse serpent reliefs, with hands searching the stone seams for a release."
+    },
+    {
+      "id": "gallery-entrance",
+      "type": "scene",
+      "entity": "gallery-entrance",
+      "title": "The Crypt Gallery",
+      "subject": "A dark subterranean tunnel lined with stone niches: two draugr sentries in ancient rusted mail marching toward the foreground with leveled spears.",
+      "alt": "Two undead warriors in rusted armour advancing down a dark burial corridor with spears.",
+      "altPl": "Dwaj nieumarli wojownicy w zardzewiałych zbrojach idący ciemnym korytarzem grobowym z włóczniami.",
+      "path": "images/gallery-entrance.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Two draugr sentries marching through a narrow stone crypt corridor lined with open burial niches."
+    },
+    {
+      "id": "thrall-tombs",
+      "type": "scene",
+      "entity": "thrall-tombs",
+      "title": "Search the Side Tombs",
+      "subject": "Still life inside an ancient burial recess: an open stone sarcophagus containing a carved birch lyre with bone inlays, beside an old glass vial of dark tincture.",
+      "alt": "A carved wooden lyre and an ancient medicine bottle resting inside an open stone burial casket.",
+      "altPl": "Rzeźbiona drewniana lira i flasza z lekarstwem spoczywające w otwartym kamiennym sarkofagu.",
+      "path": "images/thrall-tombs.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Still life inside an ancient crypt: a carved wooden lyre with bone runes and an old tincture flask resting on an open stone bier."
+    },
+    {
+      "id": "shrine-pool",
+      "type": "scene",
+      "entity": "shrine-pool",
+      "title": "The Sunken Shrine",
+      "subject": "Dramatic cavern scene: a hulking draugr berserker raising a huge two-handed iron axe over Astrid the Skald, who is chained to a central megalithic altar in shallow black water.",
+      "alt": "A giant undead berserker raising a great axe over a captive woman chained to a stone altar in a flooded cavern.",
+      "altPl": "Olbrzymi nieumarły berserk unoszący wielki topór nad uwięzioną kobietą przykutą do ołtarza w zalanej pieczarze.",
+      "path": "images/shrine-pool.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. A hulking draugr berserker raising a massive iron war-axe above Astrid the Skald, who is bound in rusted chains to a stone altar in a subterranean pool."
+    },
+    {
+      "id": "astrid-rescue",
+      "type": "scene",
+      "entity": "astrid-rescue",
+      "title": "Free Astrid the Skald",
+      "subject": "Close emotional scene: Astrid the Skald sitting on the edge of the altar stone, rubbing her chafed wrists as an observer wraps a warm wool mantle around her shoulders.",
+      "alt": "Astrid the Skald resting on a stone altar after having her iron chains severed, looking up with gratitude.",
+      "altPl": "Skaldka Astrid odpoczywająca na kamiennym ołtarzu po rozbiciu łańcuchów, patrząca z wdzięcznością.",
+      "path": "images/astrid-rescue.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Astrid the Skald: young Norse woman with long braided hair, resting against a stone altar, rubbing her bruised wrists as a warm mantle is placed over her."
+    },
+    {
+      "id": "sepulchre-approach",
+      "type": "scene",
+      "entity": "sepulchre-approach",
+      "title": "The Sepulchre of Jarl Harek",
+      "subject": "Grand confrontation scene: Jarl Harek Iron-Tooth, crowned in frosted bone and clad in black mail, rising from an ice-encrusted stone throne, with a glowing runestone resting on the arm of the seat.",
+      "alt": "Ancient undead Jarl Harek rising from an ice throne, holding a frosted sword with a glowing runestone beside him.",
+      "altPl": "Pradawny nieumarły jarl Harek wstający z lodowego tronu, trzymający oszroniony miecz z jarzącą się runą obok.",
+      "path": "images/sepulchre-approach.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Jarl Harek Iron-Tooth: ancient draugr sea-king of terrifying stature, crowned with frosted bone, rising from a colossal stone throne in a vaulted dome of blue glacial ice."
+    },
+    {
+      "id": "sepulchre-victory",
+      "type": "scene",
+      "entity": "sepulchre-victory",
+      "title": "The Fall of the Draugr Lord",
+      "subject": "Aftermath on the dais: Harek's crown and shattered mail dissolving into grey dust on the steps, while the glowing Hearth-Rune stone pulses with warm amber light on the empty throne.",
+      "alt": "An empty stone throne holding a warm glowing runestone, with rusted armour dissolved on the steps below.",
+      "altPl": "Pusty kamienny tron, na którym spoczywa ciepło jarząca się runa, ze zniszczoną zbroją na stopniach poniżej.",
+      "path": "images/sepulchre-victory.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. Quiet aftermath in the ice sepulchre: shattered armour and a bone crown dissolved into dust on the stone dais, while a glowing carved granite runestone rests on the throne."
+    },
+    {
+      "id": "cairn-collapse",
+      "type": "scene",
+      "entity": "cairn-collapse",
+      "title": "Escape from the Collapsing Cairn",
+      "subject": "Urgent action scene: a crumbling stone passageway with falling boulders, crashing slabs of ice, and sea water gushing through cracks, with a silhouette running toward daylight ahead.",
+      "alt": "A collapsing stone tunnel with falling rocks and water pouring in, with light breaking through the exit ahead.",
+      "altPl": "Walący się kamienny tunel ze spadającymi głazami i wdzierającą się wodą, ze światłem przebijającym się przy wyjściu.",
+      "path": "images/cairn-collapse.webp",
+      "prompt": "Use case: illustration-story. Asset type: original illustration for the Norse RPG scenario The Frost Cairn. Style and medium: an observational sketchbook drawing in broken black ink and graphite on subtly warm ivory paper. A collapsing subterranean stone corridor with fracturing megaliths, crashing ice blocks, and flooding sea water, with sunlight breaking through the exit."
+    }
+  ]
+}

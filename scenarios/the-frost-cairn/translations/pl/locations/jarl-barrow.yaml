@@ -1,0 +1,9 @@
+id: jarl-barrow
+name: Grobowiec jarla
+description: |
+  Potężna sklepiona kopuła z błękitnego lodu lodowcowego i megalitycznych bloków skalnych. Na podwyższeniu komory wznosi się olbrzymi kamienny tron obrośnięty szronem, przy którym dawne skrzynie ze skarbami leżą w połowie zagrzebane w błękitnym lodzie.
+connections:
+  - to: burial-gallery
+    label: Wyjdź przez żelazny łuk do galerii krypt
+  - to: sunken-shrine
+    label: Wróć przez sekretny łuk do sadzawki w świątyni

@@ -1,0 +1,28 @@
+id: sepulchre-approach
+title: The Sepulchre of Jarl Harek
+trigger: on-enter
+repeatable: false
+when:
+  not:
+    flag: harek-slain
+text: |
+  You step through the iron arch into the heart of the barrow. The sepulchre is an immense vaulted dome carved from blue glacial ice and megalithic stone blocks.
+
+  Upon an enormous stone chair sits Jarl Harek Iron-Tooth. A crown of frosted bone rests atop his horned skull, and blue rime smokes from the joints of his blackened ring-mail. In his frozen lap lies the glowing Hearth-Rune of Skallavik.
+choices:
+  - id: challenge-with-astrid
+    text: Step forward as Astrid begins her chanting verses of binding.
+    when:
+      flag: astrid-rescued
+    outcome:
+      text: |
+        Astrid's voice soars into the ice vault like silver bells, weaving the elder verses of binding. The shadowy thralls flanking the dais shriek and dissolve into grey mist!
+
+        Jarl Harek rises from his throne alone, lifting a massive frost-covered broadsword that crackles with cold lightning!
+      start-combat: harek-duel
+  - id: challenge-alone
+    text: Draw your steel and advance alone toward the throne.
+    outcome:
+      text: |
+        With no sacred song to hold the dead at bay, an undead spearguard steps from the freezing shadows to fight at Jarl Harek's side!
+      start-combat: harek-and-guard

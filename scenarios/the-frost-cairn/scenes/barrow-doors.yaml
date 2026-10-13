@@ -1,0 +1,40 @@
+id: barrow-doors
+title: Unseal the Barrow Portal
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: gate-opened
+text: |
+  Two massive slabs of blue basalt seal the entrance of the cairn. Frost glazes the deep runes carved along their seams.
+choices:
+  - id: force-doors
+    text: Put your shoulder to the stone slab and heave with brute force.
+    test:
+      attribute: might
+      difficulty: hard
+      success:
+        text: |
+          Your muscles strain against the freezing rock. Stone grinds against stone with a thunderous groan, and the heavy portal swings inward on hidden basalt pivots!
+        effects:
+          - set-flag: gate-opened
+      failure:
+        text: |
+          The frozen stone slab does not yield, and something in your shoulder sprains under the immense weight.
+        effects:
+          - damage: 1
+  - id: examine-mechanism
+    text: Search the carved dragon knots for a hidden counterweight release.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          You press the eye of a carved serpent. A concealed lead counterweight clunks deep in the lintel, and the stone slab glides open!
+        effects:
+          - set-flag: gate-opened
+      failure:
+        text: |
+          You trace the frost-bitten runes, but find no mechanism beneath the frozen moss.
+  - id: step-away
+    text: Step back from the unyielding stone.

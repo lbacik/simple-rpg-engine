@@ -1,0 +1,15 @@
+- id: huscarl
+  name: Zaprzysiężony huskarl
+  description: Doświadczony tarczownik ze straży przybocznej jarla Torvalda, okuty w ciężkie żelazo i niezłomny duchem.
+
+- id: scout
+  name: Zwiadowca fiordu
+  description: Zwinny tropiciel z zewnętrznych szkierów, pewnie stąpający po zdradliwych piargach i zabójczy z łukiem.
+
+- id: skald
+  name: Runiczny skald
+  description: Strażnik pradawnych pieśni, runicznych sekretów i pamięci o zmarłych, niewzruszony wobec niewidzialnych groźb.
+
+- id: berserk
+  name: Wilkołak berserk
+  description: Dziki wojownik czerpiący siłę z furiackiego gniewu północy, gardzący pancerzem, gdy stal tnie ciało.

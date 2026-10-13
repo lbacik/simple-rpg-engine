@@ -1,0 +1,18 @@
+id: threshold-approach
+title: Strażnicy progu
+text: |
+  Kamienna paszcza Kurhanu Mrozu wznosi się przed tobą, otoczona megalitycznymi menhirami pokrytymi wijącymi się wężowymi splotami. Ciężka kamienna płyta wejścia jest zaryglowana.
+
+  Dwaj strażnicy stoją na czatach na lodowatym wietrze: wysuszony włócznik przed wrotami oraz zwiotczały łucznik przycupnięty na menhirze powyżej. Obaj zwracają puste twarze w twoją stronę, gdy się zbliżasz.
+choices:
+  - id: charge-guards
+    text: Dobądź broni i rusz otwarcie do walki z oboma strażnikami.
+  - id: lure-archer
+    text: Rzuć ciężki kamień w piarg, by odciągnąć łucznika.
+    test:
+      success:
+        text: |
+          Kamień grzechocze o odległy głaz. Łucznik zeskakuje w śnieg, by sprawdzić hałas, pozostawiając włócznika osamotnionego przed portalem!
+      failure:
+        text: |
+          Kamień ląduje z głuchym stukiem wprost między strażnikami. Obaj dobywają broni i atakują jednocześnie!

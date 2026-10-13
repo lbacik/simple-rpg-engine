@@ -1,0 +1,154 @@
+- id: bearded-axe
+  kind: equipment
+  name: Bearded Axe
+  description: A balanced woodman's axe with a hooked beard, sturdy in the shield-wall.
+  slot: weapon
+  reach: melee
+  damage: 3
+  bonus: might
+
+- id: broad-axe
+  kind: equipment
+  name: Heavy Broad-Axe
+  description: A massive two-handed iron head that cleaves shields and bone with terrifying weight.
+  slot: weapon
+  reach: melee
+  damage: 4
+
+- id: yew-bow
+  kind: equipment
+  name: Fjord Yew Bow
+  description: A stiff coastal bow carved from seasoned yew, strung with waxed linen.
+  slot: weapon
+  reach: ranged
+  damage: 2
+  bonus: agility
+
+- id: seax-knife
+  kind: equipment
+  name: Rune-Carved Seax
+  description: A heavy single-edged fighting knife etched with protective knots along the spine.
+  slot: weapon
+  reach: melee
+  damage: 2
+  bonus: wits
+
+- id: frost-cleaver
+  kind: equipment
+  name: Frost-Cleaver
+  description: An ancient blade recovered from the burial mound, biting cold to the touch.
+  slot: weapon
+  reach: melee
+  damage: 4
+  bonus: might
+  magic: true
+
+- id: chain-hauberk
+  kind: equipment
+  name: Riveted Chain Hauberk
+  description: Iron rings closely linked over a padded wool tunic, tested against spear and blade.
+  slot: outfit
+  bonus: might
+
+- id: seal-pelt
+  kind: equipment
+  name: Seal-Pelt Gambeson
+  description: Greased hide and thick pelt that repels sea spray, salt wind, and glancing arrows.
+  slot: outfit
+  bonus: agility
+
+- id: wolf-mantle
+  kind: equipment
+  name: Grey Wolf Mantle
+  description: The heavy shoulders of a fjord wolf, lending grim stature before warriors and thralls.
+  slot: outfit
+  bonus: presence
+
+- id: grave-linen-mail
+  kind: equipment
+  name: Warded Byrnie
+  description: Fine silver-threaded chain found resting on an elder tomb, humming faintly with ancient wards.
+  slot: outfit
+  bonus: wits
+  magic: true
+
+- id: amber-knot
+  kind: equipment
+  name: Amber Sun-Knot
+  description: Baltic amber carved into a coiled knot, warming the senses against deceit and gloom.
+  slot: talisman
+  bonus: wits
+
+- id: bear-talisman
+  kind: equipment
+  name: Bear-Claw Amulet
+  description: A dried claw of an inland bear bound in rawhide, stirring primal endurance.
+  slot: talisman
+  bonus: might
+
+- id: valkyrie-feather
+  kind: equipment
+  name: Silver Raven Feather
+  description: A filigree raven feather forged of northern silver, making steps fleet and sure.
+  slot: talisman
+  bonus: agility
+  magic: true
+
+- id: sun-stone
+  kind: equipment
+  name: Fjord Sunstone
+  description: A translucent spar that catches hidden light through blizzard and storm, inspiring steadfast hope.
+  slot: talisman
+  bonus: presence
+  magic: true
+
+- id: tallow-salve
+  kind: consumable
+  name: Tallow Salve
+  description: A pot of rendered fat, crushed wintergreen and pine resin to soothe raw wounds and frostbite.
+  heal: 3
+
+- id: spiced-mead
+  kind: consumable
+  name: Spiced Winter Mead
+  description: Sweet fermented honey warmed with cloves and mountain bark, restoring fire to numb limbs.
+  heal: 5
+
+- id: runic-tincture
+  kind: consumable
+  name: Elder Runic Tincture
+  description: A bitter brew distilled by the runewives from moss collected beneath ancient menhirs.
+  heal: 8
+  magic: true
+
+- id: smoked-herring
+  kind: consumable
+  name: Smoked Fjord Herring
+  description: Dried salted fish wrapped in dock leaves, tough chewing but full of salt and fat.
+  heal: 2
+
+- id: hearth-rune
+  kind: key
+  name: Hearth-Rune of Skallavik
+  description: An ancient slab of river granite carved with the sacred binding rune that keeps the clan's hearthfires lit.
+  magic: true
+
+- id: cairn-key
+  kind: key
+  name: Dragon-Coil Key
+  description: A heavy iron key forged in the likeness of a coiled sea-serpent, matching the lock of the sepulchre.
+
+- id: fissure-rope
+  kind: key
+  name: Braided Climbing Rope
+  description: Thirty paces of stout seal-gut cord fitted with an iron grappling hook.
+
+- id: torch-bundle
+  kind: key
+  name: Pitch Torches
+  description: Birch staves soaked in pine pitch, ready to flare against the burial gloom.
+
+- id: skald-lyre
+  kind: key
+  name: Carved Birch Lyre
+  description: Astrid the Skald's six-stringed lyre, inlaid with bone runes along the soundbox.

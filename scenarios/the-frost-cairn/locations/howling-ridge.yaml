@@ -1,0 +1,20 @@
+id: howling-ridge
+name: The Howling Ridge
+description: |
+  A razor-backed granite crest where stunted northern pines bend double beneath the arctic gale. Far above on the bluff looms the great mound of the Frost Cairn, crowned with jagged monoliths.
+map:
+  x: 35
+  y: 52
+scenes:
+  - ridge-climb
+  - ridge-lookout
+  - beacon-ruin
+connections:
+  - to: fjord-strand
+    label: Descend the slope to the frozen strand
+  - to: barrow-threshold
+    label: Follow the high stone path to the barrow threshold
+  - to: cliff-crevice
+    label: Scramble along the seaward cliff to the cleft
+    when:
+      flag: rope-secured

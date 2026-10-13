@@ -1,0 +1,18 @@
+id: crevice-descent
+title: Zejście w morską szczelinę
+text: |
+  Schodzisz po zawiązanym w węzły rzemieniu w pionową bazaltową rozpadlinę. Czarne morze pieni się gwałtownie dwadzieścia kroków pod twoimi butami, ciskając lodowatą pianą o śliskie kamienne ściany.
+
+  Przed tobą na wąskiej oblodzonej półce tkwi bez ruchu pradawny łucznik draugrów, wpatrując się pustymi oczodołami w spienione fale przyboju.
+choices:
+  - id: attack-archer
+    text: Dobądź broni i przeskocz przez lodową rozpadlinę do ataku!
+  - id: sneak-past
+    text: Prześlizgnij się po zmrożonej półce pod osłoną mgły i morskiej piany.
+    test:
+      success:
+        text: |
+          Poruszając się bezszelestnie niczym polująca foka, przemykasz pod polem widzenia łucznika. Przeciskając się przez lodową szczelinę za półką, znajdujesz srebrne pióro kruka wbite w skałę i otwierasz mokry tunel prowadzący do zatopionej świątyni!
+      failure:
+        text: |
+          Twój but ślizga się na czarnym lodzie! Obluzowany głaz z łomotem spada w kipiel fal, a martwy łucznik obraca się z kościaną strzałą na cięciwie!

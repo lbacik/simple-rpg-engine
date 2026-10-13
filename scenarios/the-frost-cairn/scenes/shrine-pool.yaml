@@ -1,0 +1,22 @@
+id: shrine-pool
+title: The Sunken Shrine
+trigger: on-enter
+repeatable: false
+text: |
+  A massive natural cavern opens around a subterranean pool of still black water. Stalactites hang overhead like frozen spears.
+
+  In the center of the cavern, bound in rusted iron chains against a monolithic altar, stands Astrid the Skald! Looming over her is a towering draugr berserker, raising a massive iron war-axe to sever her bonds for the slaughter!
+choices:
+  - id: intercept-berserker
+    text: Leap across the pool and attack the berserker!
+    outcome:
+      start-combat: shrine-berserker
+  - id: distract-sing
+    text: Strike a chord on Astrid's carved birch lyre to disrupt the rite.
+    when:
+      has:
+        item: skald-lyre
+    outcome:
+      text: |
+        The resonant, crystalline chord of the birch lyre cuts through the cavern's gloom. The berserker stumbles in rage and agony, clutching its rotting ears! You seize the initiative as the beast howls!
+      start-combat: shrine-berserker

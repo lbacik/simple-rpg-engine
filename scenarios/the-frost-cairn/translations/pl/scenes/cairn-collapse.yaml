@@ -1,0 +1,11 @@
+id: cairn-collapse
+title: Ucieczka z walącego się kurhanu
+text: |
+  Kurhan zapada się do środka! Kamienne łuki pękają pod miażdżącym ciężarem urwiska, a lodowata morska woda wdziera się przez pęknięte szczeliny w ścianach.
+
+  Pył, strzaskany lód i spadające głazy tarasują korytarz z przodu. Musisz podjąć desperacką próbę ucieczki ku otwartemu niebu, nim góra pogrzebie cię na zawsze!
+choices:
+  - id: escape-with-astrid
+    text: Osłoń Astrid własnym ciałem i pędźcie razem przez walący się łuk.
+  - id: scramble-alone
+    text: Przyciśnij Runę Ogniska do piersi i rzuć się przez spadający gruz.

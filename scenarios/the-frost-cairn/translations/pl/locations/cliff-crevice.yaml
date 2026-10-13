@@ -1,0 +1,9 @@
+id: cliff-crevice
+name: Morska szczelina
+description: |
+  Pionowy wulkaniczny rozpadlinowy żleb opadający prosto ku ryczącym, czarnym falom przyboju. Morska piana natychmiast zamarza na bazaltowych ścianach, pokrywając skałę zdradliwą warstwą szronu.
+connections:
+  - to: howling-ridge
+    label: Wespnij się z powrotem na sosnową grań
+  - to: sunken-shrine
+    label: Przeciśnij się przez podtopioną szczelinę do jaskini świątynnej

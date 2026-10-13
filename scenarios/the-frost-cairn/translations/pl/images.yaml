@@ -1,0 +1,80 @@
+- id: loc-skallavik-hall
+  alt: "Niski drewniany długi dom z rzeźbionymi słupami i kamiennym rowem paleniska z gasnącym żarem."
+
+- id: loc-fjord-strand
+  alt: "Zamarznięty kamienisty brzeg pod ciemnym zimowym niebem, z ciemnymi falami i strzaskanymi wręgami drakkara w śniegu."
+
+- id: loc-howling-ridge
+  alt: "Smagana wichrem granitowa grań z karłowatymi sosnami i kamienną wieżą sygnałową nad zamarzniętym fiordem."
+
+- id: loc-cliff-crevice
+  alt: "Wąska pionowa szczelina skalna nad rozbijającymi się falami oceanicznymi, pokryta lodem z morskiej piany."
+
+- id: loc-barrow-threshold
+  alt: "Potężne rzeźbione menhiry otaczające zapieczętowany kamienny portal prastarego kurhanu."
+
+- id: loc-burial-gallery
+  alt: "Podziemny kamienny korytarz z otwartymi niszami grobowymi kryjącymi pradawne kości i zardzewiałe tarcze."
+
+- id: loc-sunken-shrine
+  alt: "Podziemna jaskinia z nieruchomą czarną sadzawką i pradawnym ołtarzem pokrytym runami Futhark."
+
+- id: loc-jarl-barrow
+  alt: "Sklepiona lodowa komora grobowa z olbrzymim megalitycznym tronem otoczonym zamarzniętymi skrzyniami skarbów."
+
+- id: skallavik-arrival
+  alt: "Jarl Torvald z opatrzonym ramieniem na tronie w zadymionym długim domu, wpatrzony w palenisko."
+
+- id: torvald-briefing
+  alt: "Jarl Torvald opierający się na jesionowym kosturze obok rzeźbionego słupa, przemawiający z powagą."
+
+- id: hilda-runewife
+  alt: "Niewidoma runiczna wiedźma Hilda podająca parujący róg i bursztynowy amulet nad bulgoczącym kociołkiem."
+
+- id: einar-smithy
+  alt: "Jednooki kowal Einar w skórzanym fartuchu trzymający smolne pochodnie i zwój liny przy kowadle."
+
+- id: strand-ambush
+  alt: "Dwa warczące zimowe ogary o oszronionej sierści czające się przed przewróconą łodzią na kamienistym brzegu."
+
+- id: whale-wreck
+  alt: "Ostrze sztyletu podważające oszroniony drewniany schowek w ładowni rozbitego statku."
+
+- id: ridge-climb
+  alt: "Nieumarły wojownik w zardzewiałej kolczudze i poszarpanym płaszczu ściskający włócznię na ośnieżonej grani."
+
+- id: ridge-lookout
+  alt: "Widok z wysokiej ośnieżonej skały ponad wąwozem na ciemny nasyp Kurhanu Mrozu."
+
+- id: beacon-ruin
+  alt: "Kamienna wieża ogniowa na skalistym szczycie, z pochodnią zbliżaną do suchej podpałki."
+
+- id: crevice-descent
+  alt: "Nieumarły łucznik stojący na wąskiej oblodzonej półce w morskiej szczelinie nad kłębiącymi się falami."
+
+- id: threshold-approach
+  alt: "Dwaj nieumarli strażnicy, jeden z włócznią, drugi z łukiem, pilnujący wejścia do kurhanu."
+
+- id: barrow-doors
+  alt: "Rzeźbione kamienne wrota z płaskorzeźbą węża i dłoń naciskająca ukryty mechanizm zwalniający."
+
+- id: gallery-entrance
+  alt: "Dwaj nieumarli wojownicy w zardzewiałych zbrojach idący ciemnym korytarzem grobowym z włóczniami."
+
+- id: thrall-tombs
+  alt: "Rzeźbiona drewniana lira i flasza z lekarstwem spoczywające w otwartym kamiennym sarkofagu."
+
+- id: shrine-pool
+  alt: "Olbrzymi nieumarły berserk unoszący wielki topór nad uwięzioną kobietą przykutą do ołtarza w zalanej pieczarze."
+
+- id: astrid-rescue
+  alt: "Skaldka Astrid odpoczywająca na kamiennym ołtarzu po rozbiciu łańcuchów, patrząca z wdzięcznością."
+
+- id: sepulchre-approach
+  alt: "Pradawny nieumarły jarl Harek wstający z lodowego tronu, trzymający oszroniony miecz z jarzącą się runą obok."
+
+- id: sepulchre-victory
+  alt: "Pusty kamienny tron, na którym spoczywa ciepło jarząca się runa, ze zniszczoną zbroją na stopniach poniżej."
+
+- id: cairn-collapse
+  alt: "Walący się kamienny tunel ze spadającymi głazami i wdzierającą się wodą, ze światłem przebijającym się przy wyjściu."

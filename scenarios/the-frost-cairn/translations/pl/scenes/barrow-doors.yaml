@@ -1,0 +1,25 @@
+id: barrow-doors
+title: Otwórz wrota kurhanu
+text: |
+  Dwie potężne płyty z błękitnego bazaltu zamykają wejście do kurhanu. Szron pokrywa głębokie runy wyryte wzdłuż ich łączenia.
+choices:
+  - id: force-doors
+    text: Naprzyj barkiem na kamienną płytę i pchnij z całej siły.
+    test:
+      success:
+        text: |
+          Twoje mięśnie napinają się przeciw lodowatej skale. Kamień zgrzyta o kamień z grzmiącym jękiem, a ciężkie wrota uchylają się na ukrytych bazaltowych czopach!
+      failure:
+        text: |
+          Zamarznięta płyta ani drgnie, za to coś w twoim barku strzyka pod olbrzymim ciężarem.
+  - id: examine-mechanism
+    text: Poszukaj ukrytej dźwigni przeciwwagi w rzeźbionych splotach smoka.
+    test:
+      success:
+        text: |
+          Naciskasz oko wyrzeźbionego węża. Ukryta ołowiana przeciwwaga opada z głuchym stukiem w nadprożu, a kamienna płyta rozsuwa się z sykiem!
+      failure:
+        text: |
+          Wodzisz palcami po oszronionych runach, lecz nie znajdujesz żadnego mechanizmu pod zmrożonym mchem.
+  - id: step-away
+    text: Odstąp od nieustępliwego kamienia.

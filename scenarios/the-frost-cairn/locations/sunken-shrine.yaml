@@ -1,0 +1,24 @@
+id: sunken-shrine
+name: The Sunken Shrine
+description: |
+  A natural cavern hollowed by ancient seas. Pale stalactites drip into a still pool of black water surrounded by crude stone altars dedicated to forgotten northern spirits.
+map:
+  x: 68
+  y: 20
+scenes:
+  - shrine-pool
+  - astrid-rescue
+connections:
+  - to: cliff-crevice
+    label: Squeeze back out through the sea-fissure
+    when:
+      flag: crevice-entered
+  - to: burial-gallery
+    label: Climb the stone steps up to the crypt gallery
+  - to: jarl-barrow
+    label: Follow the secret rune-carved archway into the sepulchre
+    when:
+      all:
+        - flag: cairn-key-found
+        - has:
+            item: cairn-key

@@ -1,0 +1,19 @@
+id: hilda-runewife
+title: Poradź się runicznej wiedźmy Hildy
+text: |
+  Runiczna wiedźma Hilda pochyla się nad glinianym garnkiem, w którym pyrka sosnowa żywica i suszone zioła. Jej niewidzące, mleczne oczy zdają się przenikać belki długiego domu.
+choices:
+  - id: receive-blessing
+    text: Poproś o jej wywary i ochronę przed mogilnym chłodem.
+    outcome:
+      text: |
+        Hilda wciska w twoje dłonie ciepły róg korzennego miodu oraz bursztynowy węzeł. Jej sękate palce kreślą znak ochronny na twoim czole.
+
+        "Zmarli nie łakną chleba, {name}; łakną ciepła. Pij to, gdy mróz dotknie twojego kręgosłupa, a bursztyn niechaj wyostrza twoje zmysły."
+  - id: heal-wounds
+    text: Poproś Hildę o opatrzenie ran wywarem z kory cedrowej.
+    outcome:
+      text: |
+        Jej dłonie pracują sprawnie z gorącym płótnem i ostro pachnącą maścią, kojąc nacięcia i wyciągając odmrożenia.
+  - id: leave-hilda
+    text: Podziękuj runicznej wiedźmie i odejdź.

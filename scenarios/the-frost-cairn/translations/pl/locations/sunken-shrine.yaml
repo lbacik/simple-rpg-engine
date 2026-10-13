@@ -1,0 +1,11 @@
+id: sunken-shrine
+name: Zatopiona świątynia
+description: |
+  Naturalna pieczara wymyta przez dawne morza. Blade stalaktyty kapią do nieruchomej sadzawki z czarną wodą otoczonej surowymi kamiennymi ołtarzami poświęconymi zapomnianym duchom północy.
+connections:
+  - to: cliff-crevice
+    label: Przeciśnij się z powrotem przez morską szczelinę
+  - to: burial-gallery
+    label: Wejdź po kamiennych stopniach do galerii krypt
+  - to: jarl-barrow
+    label: Przejdź sekretnym runicznym łukiem do grobowca

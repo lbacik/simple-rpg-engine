@@ -1,0 +1,16 @@
+id: whale-wreck
+title: Przeszukaj wrak drakkara
+text: |
+  Strzaskane wręgi kupieckiego knarra leżą wmarznięte w żwirowy brzeg. Wodorosty i sople zwisają z poszarpanych świerkowych żeber.
+choices:
+  - id: search-hull
+    text: Wyważ zamarznięty schowek pod deskami pokładu.
+    test:
+      success:
+        text: |
+          Pracując cierpliwie sztyletem, podważasz oblodzone żelazne zawiasy. W środku leży zapieczętowany słoik maści łojowej oraz wypolerowany kamień słoneczny z fiordu zawinięty w naoliwione runo.
+      failure:
+        text: |
+          Zardzewiałe gwoździe ranią twoje knykcie w lodowatej brei. Udaje ci się wyciągnąć jedynie słoik maści łojowej, nim deski z trzaskiem się zaciskają.
+  - id: step-away
+    text: Odejdź od śliskiego wraku.

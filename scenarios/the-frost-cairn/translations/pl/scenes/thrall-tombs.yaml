@@ -1,0 +1,17 @@
+id: thrall-tombs
+title: Przeszukaj groby niewolników
+text: |
+  Boczne galerie mieszczą szczątki niewolników i wioślarzy jarla Hareka. Zardzewiałe żelazne obroże i zbutwiałe wiosła leżą rozrzucone na kamiennych marach.
+choices:
+  - id: search-relics
+    text: Przeszukaj otwarty kamienny sarkofag przy zakręcie tunelu.
+    outcome:
+      text: |
+        Ukrytą pod butwiejącym wełnianym płaszczem znajdujesz rzeźbioną brzozową lirę skaldki Astrid, porzuconą przez jej porywaczy, oraz flaszę starorunicznej nalewki!
+  - id: read-runes
+    text: Zeskrob szron ze starego kamienia nagrobnego.
+    outcome:
+      text: |
+        Runy ostrzegają przed bezbożną potęgą jarla Hareka: jego grobowiec zamknięty jest na klucz smoczego splotu, a jego ostrze kąsa wieczną zimą Niflheimu.
+  - id: step-away
+    text: Wróć do głównego korytarza.

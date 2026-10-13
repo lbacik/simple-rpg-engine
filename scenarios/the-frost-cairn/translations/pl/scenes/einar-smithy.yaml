@@ -1,0 +1,21 @@
+id: einar-smithy
+title: Odwiedź kowala Einara
+text: |
+  Jednooki kowal Einar stoi przy zimnym kamiennym palenisku kuźni, wbijając żelazny nit w pękniętą drewnianą tarczę. Szron pokrywa brzegi jego skórzanego fartucha.
+choices:
+  - id: ask-supplies
+    text: Poproś o smolne pochodnie i linę wspinaczkową do wejścia do kurhanu.
+    outcome:
+      text: |
+        Einar zdejmuje z krokwi wiązkę nasączonych smołą polan i rzuca zwój mocnego rzemienia z foczych jelit obok twojego worka.
+
+        "Mrok w grobowcu Hareka jest tak zimny, że krew zamarza w żyłach. Te pochodnie mają dość smoły, by palić się w mgle i przeciągu. A jeśli pójdziesz morską szczeliną, ta lina utrzyma dwóch wojowników w pełnym rynsztunku."
+  - id: ask-blade
+    text: Zapytaj, czy ma zapasowy topór dla zaprzysiężonego wojownika.
+    outcome:
+      text: |
+        Einar uśmiecha się ponuro, wyciąga szeroki topór brodaty z kadzi z łojem i sprawdza ostrze na kciuku.
+
+        "Wykuty z darniowej rudy i hartowany w foczym tłuszczu. Wgryzie się głęboko w zamarznięte kości."
+  - id: leave-einar
+    text: Zostaw kowala przy jego pracy.

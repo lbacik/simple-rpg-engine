@@ -1,0 +1,16 @@
+id: skallavik-arrival
+title: Zgromadzenie w wielkiej sali
+text: |
+  Wielka sala w Skallavik tonie w cedrowym dymie i zimnym strachu. Na zewnątrz nienaturalna zamieć wyje nad fiordem, pokrywając drewniane gonty czarnym szronem.
+
+  Jarl Torvald siedzi zgarbiony na swoim tronie, z ramieniem w łubkach. "Ubiegłej nocy otworzył się kurhan" - rzęzi, wpatrując się w gasnący ogień. "Zmarli przyszli wraz z przypływem. Skradli Runę Ogniska, która utrzymuje nasze płomienie przy życiu, i zawlekli moją córkę Astrid w mroźną ciemność. Bez tej runy mróz zabije każdą duszę w Skallavik, nim minie księżyc."
+choices:
+  - id: swear-oath
+    text: Rozetnij dłoń ostrzem i złóż przysięgę krwi przed paleniskiem.
+    outcome:
+      text: |
+        Pociągasz ostrzem po skórze i przyciskasz czerwoną krew do zimnego kamienia paleniska. Płomień rozbłyska jaskrawo na uderzenie serca, rzucając groźne cienie na zebranych wojowników.
+
+        Torvald chwyta twoje przedramię z drżącą siłą. "Weź to, co może dać nasz długi dom, {name}. Niechaj kruki czuwają nad twoją ścieżką."
+  - id: refuse
+    text: Odwróć się od paleniska i odmów beznadziejnej misji.

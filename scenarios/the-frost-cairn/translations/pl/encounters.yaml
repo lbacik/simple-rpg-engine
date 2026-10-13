@@ -1,0 +1,89 @@
+- id: shore-wolves
+  text: |
+    Dwa wychudzone ogary wybrzeżne wypadają zza strzaskanego mrozem drakkara, kłapiąc żółtymi kłami.
+  victory:
+    text: |
+      Bestie leżą bez ruchu na zmarzniętym żwirze. Wśród szczątków wraku znajdujesz róg korzennego miodu zimowego.
+  escape:
+    text: |
+      Cofasz się po oślizgłych od piany kamieniach, aż ogary tracą zainteresowanie w huku fal.
+
+- id: ridge-sentry
+  text: |
+    Wysuszona postać w zamarzniętej kolczudze wyłania się spośród karłowatych sosen, opuszczając pradawną włócznię.
+  victory:
+    text: |
+      Draugr rozsypuje się w suchy szron i zardzewiałe żelazo. W jego sparciałej sakwie znajdujesz słoik maści łojowej.
+  escape:
+    text: |
+      Staczasz się po zaśnieżonym zboczu pod osłonę ugiętych od wiatru sosen.
+
+- id: gate-guards
+  text: |
+    Przed pieczarowatą paszczą kurhanu dwaj nieumarli strażnicy strzegą przejścia: jeden z uniesioną włócznią, drugi napinający pokryty lodem łuk.
+  victory:
+    text: |
+      Oba trupy rozsypują się w zimny proch na głazach progu. Odsunięto ciężką kamienną zasuwę i zdejmujesz klucz smoczego splotu ze zardzewiałego naszyjnika.
+  escape:
+    text: |
+      Kościane strzały grzechoczą o kamienie, gdy wycofujesz się w dół ośnieżonej ścieżki na grani.
+
+- id: gate-sentry-lone
+  text: |
+    Odciągnąwszy łucznika rzuconym kamieniem, stajesz do walki w zwarciu z samotnym włócznikiem przed kamienną bramą.
+  victory:
+    text: |
+      Włócznik pada. Zdejmujesz rygiel z wrót przed powrotem łucznika i odpinasz klucz smoczego splotu z pasa wartownika.
+  escape:
+    text: |
+      Rzucasz się w tył pod cień menhirów, podczas gdy strażnik tupie ciężko po śniegu.
+
+- id: gallery-patrol
+  text: |
+    W wąskiej, smoliście ciemnej galerii grobowej dwie zardzewiałe sylwetki zstępują z otwartych nisz, zagradzając ci drogę w głąb kurhanu.
+  victory:
+    text: |
+      Nieumarli z łomotem uderzają o posadzkę. W otwartej niszy ściennej odkrywasz grób dawnego wojownika, a w nim pancerz z grobowego srebra oraz flaszę starorunicznej nalewki.
+  escape:
+    text: |
+      Wskakujesz do pustej bocznej komory, dopóki szuranie żelaznych butów nie ucichnie w mroku.
+
+- id: crevice-skulker
+  text: |
+    Podczas przejścia przez morską szczelinę pradawny mroźny łucznik czai się na oblodzonej półce nad rozbijającymi się falami, nakładając kościaną strzałę.
+  victory:
+    text: |
+      Łucznik spada z półki skalnej, koziołkując w spienione morze poniżej. Na jego opuszczonym stanowisku znajdujesz srebrne pióro kruka.
+  escape:
+    text: |
+      Przylegasz płasko do zamarzniętej ściany skalnej, dopóki świst strzał nie ustanie.
+
+- id: shrine-berserker
+  text: |
+    W blasku pochodni w zatopionej świątyni potworny berserk draugrów ryczy głosem pękającego lodu, zamachując się potężnym żelaznym toporem w obronie uwięzionej skaldki.
+  victory:
+    text: |
+      Olbrzym zwala się w czarną wodę sadzawki z ogłuszającym rozbryzgiem. Astrid wzdycha z ulgą ze swych okowów na kamiennym ołtarzu.
+  escape:
+    text: |
+      Robisz unik pod miażdżącym ciosem topora i umykasz z powrotem w ociekający wodą tunel.
+
+- id: harek-duel
+  text: |
+    W sklepionej lodem komorze grobowej jarl Harek wstaje ze swego kamiennego tronu. Pieśń spętania śpiewana przez Astrid niesie się echem, odstraszając pomniejszych niewolników. Król mórz schodzi z podwyższenia, by zmierzyć się z tobą sam na sam.
+  victory:
+    text: |
+      Mroźna korona Hareka rozpryskuje się po kamiennej posadzce. Pradawny władca draugrów rozwiewa się w lodowatą parę, pozostawiając jarzącą się Runę Ogniska na strzaskanym tronie.
+  escape:
+    text: |
+      Wyskakujesz w tył przez lodowy opar, gdy oszronione ostrze Hareka krzesze iskry z kamienia. Wycofujesz się do galerii, by złapać oddech.
+
+- id: harek-and-guard
+  text: |
+    Jarl Harek podnosi się z oszronionego tronu, a ponieważ żadna pieśń nie powstrzymuje jego sług, nieumarły włócznik występuje naprzód, by walczyć u jego boku.
+  victory:
+    text: |
+      Mroźna korona Hareka rozpryskuje się po kamiennej posadzce. Pradawny władca draugrów rozwiewa się w lodowatą parę, pozostawiając jarzącą się Runę Ogniska na strzaskanym tronie.
+  escape:
+    text: |
+      Przedzierasz się przez oślepiający lodowy dym, podczas gdy żelazne ostrza szczękają za twoimi plecami, i uciekasz do galerii grobowej.

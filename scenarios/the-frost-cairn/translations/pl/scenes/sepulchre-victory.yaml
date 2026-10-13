@@ -1,0 +1,12 @@
+id: sepulchre-victory
+title: Upadek władcy draugrów
+text: |
+  Cisza opada na komorę niczym lawina, przerywana jedynie szybkim kapaniem topniejącego lodu.
+
+  Jarl Harek leży pokonany na podwyższeniu, a jego pradawna zbroja rozsypuje się w szary proch i cuchnącą parę. Na strzaskanym siedzeniu tronu Runa Ogniska ze Skallavik pulsuje głębokim, ciepłym złotym światłem.
+choices:
+  - id: claim-rune
+    text: Podejdź do tronu i unieś świętą Runę Ogniska.
+    outcome:
+      text: |
+        Gdy twoje dłonie chwytają ciepłą granitową płytę, głęboki wstrząs rozdziera fundamenty kurhanu. Pradawne kamienne podpory jęczą i pękają, a tony lodu i głazów zaczynają walić się z kopuły!
