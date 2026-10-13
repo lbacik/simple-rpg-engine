@@ -52,6 +52,14 @@ export {
   type SelectionParticipant,
   type Speed,
 } from './tactical';
+// Version-aware validation and the deterministic v1 migration live in
+// `migrate.ts` so the read and turn layers share them (issue #124).
+export {
+  migratePlaythroughState,
+  parseVersionedState,
+  type MigrationResult,
+  type VersionedState,
+} from './migrate';
 export {
   MAP_ASPECT_RATIO,
   MAP_CENTRE,
