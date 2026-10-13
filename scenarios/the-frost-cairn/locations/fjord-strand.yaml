@@ -1,0 +1,18 @@
+id: fjord-strand
+illustration: loc-fjord-strand
+name: The Frozen Strand
+description: |
+  Black pebbles and sharp slabs of sea-ice line the shore where dark waves break with the sound of grinding glass. The frozen rib-timbers of longships protrude from the snowdrifts like the skeletons of great whales.
+map:
+  x: 32
+  y: 78
+scenes:
+  - strand-ambush
+  - whale-wreck
+connections:
+  - to: skallavik-hall
+    label: Return to the warmth of the Great Hall
+  - to: howling-ridge
+    label: Climb the frozen track up the pine ridge
+    when:
+      flag: wolves-cleared

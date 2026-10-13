@@ -1,0 +1,32 @@
+id: ridge-climb
+illustration: ridge-climb
+title: The Ridge Sentry
+trigger: on-enter
+repeatable: false
+when:
+  not:
+    flag: ridge-scouted
+text: |
+  The howling gale whips icy snow into your eyes as you reach the crest. Through the swirling whiteout, you spot a lone figure standing beside a frost-covered pine.
+
+  It is a draugr sentry: flesh withered tight against grey bone, clutching an ancient notched spear, gazing down the lower switchbacks.
+choices:
+  - id: ambush-sentry
+    text: Stalk through the deep drifts to fell the sentry from behind.
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          You glide silently across the snow crust. Your weapon crashes into the sentry's neck before it can utter a sound, shattering the brittle bone into icy shards. You claim a pot of tallow salve from its belt.
+        effects:
+          - set-flag: ridge-scouted
+          - give-item: { item: tallow-salve }
+      failure:
+        text: |
+          A brittle pine branch snaps under your boot. The dead warrior whips around with uncanny speed, spear leveled at your throat!
+        start-combat: ridge-sentry
+  - id: face-sentry
+    text: Charge the sentry with a shout, blade held high.
+    outcome:
+      start-combat: ridge-sentry

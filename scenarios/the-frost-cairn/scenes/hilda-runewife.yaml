@@ -1,0 +1,34 @@
+id: hilda-runewife
+illustration: hilda-runewife
+title: Consult Hilda the Runewife
+trigger: on-demand
+repeatable: true
+text: |
+  Hilda the runewife hunches over a clay pot simmering with pine resin and dried herbs. Her blind, milky eyes seem to see right through the longhouse timber.
+choices:
+  - id: receive-blessing
+    text: Ask for her draughts and protection against the barrow-chill.
+    when:
+      not:
+        flag: blessing-received
+    outcome:
+      text: |
+        Hilda places a warm horn of spiced winter mead and an amber knot into your hands. Her gnarled fingers trace a warding sign upon your brow.
+
+        "The dead do not hunger for bread, {name}; they hunger for heat. Drink this when the cold touches your spine, and let the amber keep your wits sharp."
+      effects:
+        - set-flag: blessing-received
+        - give-item: { item: spiced-mead }
+        - give-item: { item: amber-knot }
+  - id: heal-wounds
+    text: Ask Hilda to dress your wounds with boiled cedar bark.
+    when:
+      health:
+        atMost: 9
+    outcome:
+      text: |
+        Her hands work swiftly with hot linen and sharp-smelling salve, soothing your cuts and drawing out the frostbite.
+      effects:
+        - heal: 4
+  - id: leave-hilda
+    text: Thank the runewife and step back.

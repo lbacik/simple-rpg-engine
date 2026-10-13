@@ -1,0 +1,52 @@
+language: pl
+baseVersion: "1.0.0"
+translator: Simple RPG Engine contributors
+title: Kurhan Mrozu
+description: Zmierz się ze skutymi lodem fiordami i wyjącymi turniami Północy, wedrzyj się do prastarego kurhanu jarla Hareka Żelaznozębego i odzyskaj skradzioną Runę Ogniska, nim wieczny mróz pochłonie klan.
+intro: |
+  Zbliża się przesilenie zimowe, lecz to nie jest zwyczajna północna zima. Nienaturalny, czarny szron spływa z morskich urwisk Skallavik, gasząc ogniska i zamieniając morską wodę w poszarpany czarny lód.
+
+  Ubiegłej nocy prastary kurhan na wysokim klifie jęknął i rozwarł swe wrota. Draugry - zamarznięci, niespokojni zmarli zapomnianego króla mórz - wdarli się do osady, skradli świętą Runę Ogniska klanu i zawlekli skaldkę Astrid w głąb mogiły.
+
+  Jeśli runa nie zostanie odzyskana, a kurhan zapieczętowany, żadna żywa dusza w fiordzie nie doczeka wiosennego świtu.
+locations:
+  - translations/pl/locations/skallavik-hall.yaml
+  - translations/pl/locations/fjord-strand.yaml
+  - translations/pl/locations/howling-ridge.yaml
+  - translations/pl/locations/cliff-crevice.yaml
+  - translations/pl/locations/barrow-threshold.yaml
+  - translations/pl/locations/burial-gallery.yaml
+  - translations/pl/locations/sunken-shrine.yaml
+  - translations/pl/locations/jarl-barrow.yaml
+scenes:
+  - translations/pl/scenes/skallavik-arrival.yaml
+  - translations/pl/scenes/torvald-briefing.yaml
+  - translations/pl/scenes/hilda-runewife.yaml
+  - translations/pl/scenes/einar-smithy.yaml
+  - translations/pl/scenes/strand-ambush.yaml
+  - translations/pl/scenes/whale-wreck.yaml
+  - translations/pl/scenes/ridge-climb.yaml
+  - translations/pl/scenes/ridge-lookout.yaml
+  - translations/pl/scenes/beacon-ruin.yaml
+  - translations/pl/scenes/crevice-descent.yaml
+  - translations/pl/scenes/threshold-approach.yaml
+  - translations/pl/scenes/barrow-doors.yaml
+  - translations/pl/scenes/gallery-entrance.yaml
+  - translations/pl/scenes/thrall-tombs.yaml
+  - translations/pl/scenes/shrine-pool.yaml
+  - translations/pl/scenes/astrid-rescue.yaml
+  - translations/pl/scenes/sepulchre-approach.yaml
+  - translations/pl/scenes/sepulchre-victory.yaml
+  - translations/pl/scenes/cairn-collapse.yaml
+items:
+  - translations/pl/items.yaml
+enemies:
+  - translations/pl/enemies.yaml
+encounters:
+  - translations/pl/encounters.yaml
+templates:
+  - translations/pl/templates.yaml
+endings:
+  - translations/pl/endings.yaml
+images:
+  - translations/pl/images.yaml

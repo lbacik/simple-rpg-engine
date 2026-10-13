@@ -1,0 +1,28 @@
+id: gallery-entrance
+illustration: gallery-entrance
+title: The Crypt Gallery
+trigger: on-enter
+repeatable: false
+text: |
+  You enter the cold dark of the mound. The air smells of damp earth and centuries-old mold. Low stone lintels sag overhead, lined with open niches where the bones of ancient raiders lie shrouded in rotting burial-linen.
+
+  The scrape of iron against gravel echoes ahead: an undead patrol of two draugar rounds the corner, spears raised!
+choices:
+  - id: brace-combat
+    text: Stand your ground in the narrow gallery and meet the patrol head-on.
+    outcome:
+      start-combat: gallery-patrol
+  - id: hide-niche
+    text: Smother your light and squeeze into a shadow-filled burial niche.
+    test:
+      attribute: agility
+      difficulty: ordinary
+      success:
+        text: |
+          Holding your breath as the temperature plummets, you press flat against the ancient bones. The patrol marches past, unaware. Reaching into the back of the niche, your fingers brush against an intact warded byrnie!
+        effects:
+          - give-item: { item: grave-linen-mail }
+      failure:
+        text: |
+          A rotten ribcage splinters beneath your shoulder with a sharp snap! The two draugar halt instantly and turn their glowing gaze toward your alcove!
+        start-combat: gallery-patrol

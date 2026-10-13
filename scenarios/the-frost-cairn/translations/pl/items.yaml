@@ -1,0 +1,87 @@
+- id: bearded-axe
+  name: Topór brodaty
+  description: Wyważony topór ciesielski o wygiętym ostrzu, niezawodny w murze tarcz.
+
+- id: broad-axe
+  name: Ciężki topór dwuręczny
+  description: Potężny żelazny żeleziec, który z przerażającą siłą rozłupuje tarcze i kości.
+
+- id: yew-bow
+  name: Cisowy łuk fiordowy
+  description: Twardy łuk z sezonowanego cisu, ze cięciwą z woskowanego lnu.
+
+- id: seax-knife
+  name: Runiczny seaks
+  description: Ciężki jednosieczny nóż bojowy z wyrytymi na grzbiecie węzłami ochronnymi.
+
+- id: frost-cleaver
+  name: Mroźny tasak
+  description: Starożytne ostrze wydobyte z kurhanu, lodowato zimne w dotyku.
+
+- id: chain-hauberk
+  name: Nitowana kolczuga
+  description: Żelazne kółka gęsto splecione na wełnianym kaftanie, wypróbowane przeciw włóczniom i mieczom.
+
+- id: seal-pelt
+  name: Przeszywanica z foczej skóry
+  description: Natłuszczona skóra i gruba sierść chroniące przed morską pianą, słonym wiatrem i strzałami.
+
+- id: wolf-mantle
+  name: Płaszcz z szarego wilka
+  description: Grube futro fiordowego wilka, dodające groźnej postawy przed wojownikami i niewolnikami.
+
+- id: grave-linen-mail
+  name: Pancerz z grobowego srebra
+  description: Delikatna kolczuga przetykana srebrem, znaleziona na kurhanie przodków, cicho drżąca starożytnym czarem.
+
+- id: amber-knot
+  name: Bursztynowy węzeł słoneczny
+  description: Bałtycki bursztyn wyrzeźbiony w zwinięty węzeł, wyostrzający zmysły w mroku i chłodzie.
+
+- id: bear-talisman
+  name: Amulet z niedźwiedziego pazura
+  description: Wysuszony pazur leśnego niedźwiedzia na rzemieniu, budzący pierwotną wytrzymałość.
+
+- id: valkyrie-feather
+  name: Srebrne pióro kruka
+  description: Ażurowe krucze pióro wykute z północnego srebra, czyniące kroki zwinnymi i pewnymi.
+
+- id: sun-stone
+  name: Kamień słoneczny z fiordu
+  description: Półprzezroczysty szpat łapiący ukryte światło przez zadymkę i śnieżycę, wlewający niezłomną nadzieję.
+
+- id: tallow-salve
+  name: Maść łojowa
+  description: Słoik przetopionego łoju, zmiażdżonej golterii i żywicy sosnowej, łagodzący rany i odmrożenia.
+
+- id: spiced-mead
+  name: Korzenny miód zimowy
+  description: Słodki miód sycony z goździkami i górską korą, przywracający ogień w zdrętwiałych członkach.
+
+- id: runic-tincture
+  name: Nalewka staroruniczna
+  description: Gorzki wywar uwarzony przez runiczne wiedźmy z mchu zebranego pod prastarymi menhirami.
+
+- id: smoked-herring
+  name: Wędzony śledź fiordowy
+  description: Suszona solona ryba zawinięta w liście szczawiu, twarda do żucia, lecz sycąca solą i tłuszczem.
+
+- id: hearth-rune
+  name: Runa Ogniska ze Skallavik
+  description: Pradawna płyta z rzecznego granitu z wyrytą świętą runą, która podtrzymuje ogień w domach klanu.
+
+- id: cairn-key
+  name: Klucz smoczego splotu
+  description: Ciężki żelazny klucz odkuty na kształt zwiniętego węża morskiego, pasujący do zamka komory grobowej.
+
+- id: fissure-rope
+  name: Pleciona lina wspinaczkowa
+  description: Trzydzieści kroków mocnego rzemienia z foczych jelit, zakończonego żelaznym hakiem.
+
+- id: torch-bundle
+  name: Wiązka smolnych pochodni
+  description: Brzozowe polana nasączone sosnową smołą, gotowe rozświetlić grobowy mrok.
+
+- id: skald-lyre
+  name: Rzeźbiona brzozowa lira
+  description: Sześciostrunowa lira skaldki Astrid z kościanymi runami wmontowanymi w pudło rezonansowe.

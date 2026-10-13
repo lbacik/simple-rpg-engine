@@ -1,0 +1,24 @@
+id: torvald-briefing
+illustration: torvald-briefing
+title: Speak with Jarl Torvald
+trigger: on-demand
+repeatable: true
+text: |
+  Jarl Torvald leans upon a heavy ash staff, watching the smoke drift up toward the rafters. His grey eyes are sunken with exhaustion.
+choices:
+  - id: ask-history
+    text: Ask about Jarl Harek Iron-Tooth and the Frost Cairn.
+    outcome:
+      text: |
+        "Harek was a cursed sea-king who terrorised the northern coasts three centuries ago," Torvald says quietly. "He made blood pacts with things older than the gods and was entombed with all his hoard.
+
+        The barrow on the bluff was sealed with dragon stones. There are two ways within: the grand stone gate at the ridge summit, or a treacherous volcanic sea-crevice above the crashing waves."
+  - id: ask-astrid
+    text: Ask about Astrid and the stolen Hearth-Rune.
+    outcome:
+      text: |
+        "Astrid is our clan's skald," Torvald whispers, his voice thick with grief. "She knows the elder verses of binding that hold restless spirits at bay. If she still draws breath, her songs can stay the hands of Harek's draugar.
+
+        Find her, {name}. And bring back our Hearth-Rune, or our hall will be our tomb."
+  - id: leave-briefing
+    text: Nod solemnly and step away from the high seat.

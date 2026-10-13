@@ -1,0 +1,11 @@
+id: howling-ridge
+name: Wyjąca grań
+description: |
+  Ostry jak brzytwa granitowy grzbiet, gdzie skarłowaciałe północne sosny uginają się pod arktyczną wichurą. Wysoko w górze na urwisku majaczy wielki nasyp Kurhanu Mrozu, zwieńczony poszarpanymi menhirami.
+connections:
+  - to: fjord-strand
+    label: Zejdź po zboczu ku zamarzniętemu brzegowi
+  - to: barrow-threshold
+    label: Idź wysoką kamienną ścieżką ku progom kurhanu
+  - to: cliff-crevice
+    label: Przedrzyj się wzdłuż nadmorskiego urwiska ku szczelinie

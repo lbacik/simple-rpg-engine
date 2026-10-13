@@ -1,0 +1,9 @@
+id: fjord-strand
+name: Zamarznięty brzeg
+description: |
+  Czarne otoczaki i ostre kry morskiego lodu pokrywają brzeg, gdzie ciemne fale rozbijają się z dźwiękiem kruszonego szkła. Zmarznięte wręgi drakkarów sterczą ze śnieżnych zasp niczym szkielety wielkich wielorybów.
+connections:
+  - to: skallavik-hall
+    label: Wróć do ciepła wielkiej sali
+  - to: howling-ridge
+    label: Wejdź po zamarzniętej ścieżce na sosnową grań

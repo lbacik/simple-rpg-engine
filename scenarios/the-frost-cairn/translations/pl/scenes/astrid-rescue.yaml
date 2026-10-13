@@ -1,0 +1,14 @@
+id: astrid-rescue
+title: Uwolnij skaldkę Astrid
+text: |
+  Astrid osuwa się na granitowy ołtarz, dygocząc gwałtownie w postrzępionej wełnianej sukni. Jej nadgarstki krwawią od zardzewiałych żelaznych kajdan, lecz w jej oczach płonie niezłomna duma.
+choices:
+  - id: free-astrid
+    text: Rozetnij jej żelazne łańcuchy i owiń swój płaszcz wokół jej ramion.
+    outcome:
+      text: |
+        Mocnym uderzeniem w ogniwa rozłupujesz jej kajdany. Astrid wciąga łapczywie powietrze i chwyta twój karwasz.
+
+        "Klan cię przysłał... dzięki niech będą bogom, {name}. Harek zasiada w lodowym grobowcu powyżej. Trzyma Runę Ogniska naszego klanu na kolanach, karmiąc swe zimne nieżycie jej ciepłem. Pójdę z tobą. Mój głos zna pieśni spętania - będę śpiewać, by jego niewolnicy nie zaatakowali cię ze skrzydeł."
+  - id: leave-astrid
+    text: Każ jej czekać, podczas gdy zrobisz zwiad z przodu.

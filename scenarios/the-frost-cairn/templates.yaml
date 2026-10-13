@@ -1,0 +1,54 @@
+- id: huscarl
+  name: Sworn Huscarl
+  description: A veteran shield-warrior of Jarl Torvald's hearth-guard, clad in heavy iron and unbroken in resolve.
+  attributes:
+    might: 3
+    agility: 1
+    wits: 1
+    presence: 1
+  items:
+    - item: bearded-axe
+    - item: chain-hauberk
+    - item: tallow-salve
+      quantity: 2
+
+- id: scout
+  name: Fjord Scout
+  description: A swift pathfinder from the outer skerries, agile across treacherous scree and deadly with a bow.
+  attributes:
+    might: 1
+    agility: 3
+    wits: 1
+    presence: 1
+  items:
+    - item: yew-bow
+    - item: seal-pelt
+    - item: smoked-herring
+      quantity: 2
+
+- id: skald
+  name: Rune-Skald
+  description: A keeper of ancient verses, runic secrets, and the memory of the dead, steady before unseen terrors.
+  attributes:
+    might: 1
+    agility: 1
+    wits: 2
+    presence: 2
+  items:
+    - item: seax-knife
+    - item: wolf-mantle
+    - item: amber-knot
+    - item: tallow-salve
+
+- id: berserk
+  name: Bear-Shirt
+  description: A wild warrior who channels the ferocious fury of the north, caring nothing for armour when steel bites.
+  attributes:
+    might: 3
+    agility: 2
+    wits: 0
+    presence: 1
+  items:
+    - item: broad-axe
+    - item: bear-talisman
+    - item: spiced-mead

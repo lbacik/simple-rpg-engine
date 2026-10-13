@@ -1,0 +1,18 @@
+id: gallery-entrance
+title: Galeria krypt
+text: |
+  Wchodzisz w zimny mrok kurhanu. Powietrze pachnie wilgotną ziemią i stęchłym od stuleci grobem. Niskie kamienne nadproża uginają się nad głową, otoczone otwartymi niszami, gdzie kości dawnych najeźdźców spoczywają spowite w butwiejący grobowy całun.
+
+  Zgrzyt żelaza o żwir niesie się z przodu: nieumarły patrol dwóch draugrów wyłania się zza załomu korytarza z uniesionymi włóczniami!
+choices:
+  - id: brace-combat
+    text: Stań twardo w wąskiej galerii i stań do walki z patrolem.
+  - id: hide-niche
+    text: Zgaś światło i wciśnij się w spowitą cieniem niszę grobową.
+    test:
+      success:
+        text: |
+          Wstrzymując oddech, gdy temperatura gwałtownie spada, przylegasz płasko do pradawnych kości. Patrol mija cię bez słowa. Sięgając w głąb niszy, twoje palce trafiają na nienaruszony pancerz z grobowego srebra!
+      failure:
+        text: |
+          Zbutwiała klatka piersiowa pęka pod twoim ramieniem z głośnym trzaskiem! Obaj draugry zatrzymują się w miejscu i zwracają swe jarzące się spojrzenia w stronę twojej niszy!

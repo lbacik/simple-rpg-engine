@@ -1,0 +1,22 @@
+id: beacon-ruin
+illustration: beacon-ruin
+title: Inspect the Ruined Beacon
+trigger: on-demand
+repeatable: true
+text: |
+  An ancient stone beacon-tower stands on the windward bluff. Its iron grate is packed with frozen heather and snow, shielded from the worst of the gales by a circular stone parapet.
+choices:
+  - id: kindle-beacon
+    text: Use your pitch torches to light a sheltering fire in the stone hearth.
+    when:
+      has:
+        item: torch-bundle
+    once: true
+    outcome:
+      text: |
+        The resinous wood catches with a crackle and a plume of aromatic pine smoke. Crouching close to the embers, you thaw your frozen fingers, warm your rations, and find a side of dried smoked herring packed beneath the stones.
+      effects:
+        - heal: 4
+        - give-item: { item: smoked-herring }
+  - id: leave-beacon
+    text: Leave the cold stones undisturbed.

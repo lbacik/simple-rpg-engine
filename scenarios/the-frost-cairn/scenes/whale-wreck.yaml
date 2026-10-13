@@ -1,0 +1,28 @@
+id: whale-wreck
+illustration: whale-wreck
+title: Search the Wrecked Longboat
+trigger: on-demand
+repeatable: true
+text: |
+  The shattered timbers of a merchant knarr lie frozen into the pebble bank. Seaweed and icicles hang from the splintered spruce ribs.
+choices:
+  - id: search-hull
+    text: Pry open a frozen storage locker beneath the deck-planks.
+    once: true
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          Working patiently with your dagger, you pop the iced iron hinges. Inside lies a sealed jar of tallow salve and a polished fjord sunstone wrapped in oiled fleece.
+        effects:
+          - give-item: { item: tallow-salve }
+          - give-item: { item: sun-stone }
+      failure:
+        text: |
+          Rusted iron nails scrape your knuckles in the icy slush. You manage to drag out a jar of tallow salve before the wood cracks shut.
+        effects:
+          - damage: 1
+          - give-item: { item: tallow-salve }
+  - id: step-away
+    text: Step away from the slippery wreckage.

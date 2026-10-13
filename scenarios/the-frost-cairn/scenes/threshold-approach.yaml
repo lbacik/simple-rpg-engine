@@ -1,0 +1,30 @@
+id: threshold-approach
+illustration: threshold-approach
+title: Guardians of the Threshold
+trigger: on-enter
+repeatable: false
+when:
+  not:
+    flag: gate-opened
+text: |
+  The stone mouth of the Frost Cairn rises before you, flanked by monolithic menhirs carved with twisting serpent knots. The heavy stone slab of the entrance is bolted shut.
+
+  Two guardians stand watch in the freezing wind: a desiccated spearguard before the doors, and a withered archer perched on an upright monolith above. Both turn their hollow faces toward you as you approach.
+choices:
+  - id: charge-guards
+    text: Draw your steel and advance in the open to engage both guardians.
+    outcome:
+      start-combat: gate-guards
+  - id: lure-archer
+    text: Throw a heavy stone into the scree to lure the archer away.
+    test:
+      attribute: wits
+      difficulty: ordinary
+      success:
+        text: |
+          The stone clatters against a distant boulder. The archer hops down into the snow to investigate the sound, leaving the spearguard isolated before the portal!
+        start-combat: gate-sentry-lone
+      failure:
+        text: |
+          The stone lands with a dull thud right between the two sentinels. Both draw their weapons and attack simultaneously!
+        start-combat: gate-guards

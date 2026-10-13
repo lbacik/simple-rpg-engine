@@ -1,0 +1,23 @@
+id: burial-gallery
+illustration: loc-burial-gallery
+name: The Outer Crypts
+description: |
+  Low stone lintels sag beneath the weight of centuries. Niches carved into the earth-walls hold the crumbling remains of drowned warriors, their wooden shields rotten to green moss.
+map:
+  x: 72
+  y: 45
+scenes:
+  - gallery-entrance
+  - thrall-tombs
+connections:
+  - to: barrow-threshold
+    label: Return to the grey light of the threshold
+  - to: sunken-shrine
+    label: Follow the damp tunnel down toward the sound of dripping water
+  - to: jarl-barrow
+    label: Approach the heavy iron door of the sepulchre
+    when:
+      all:
+        - flag: cairn-key-found
+        - has:
+            item: cairn-key

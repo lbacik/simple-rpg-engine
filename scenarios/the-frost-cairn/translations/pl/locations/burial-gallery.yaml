@@ -1,0 +1,11 @@
+id: burial-gallery
+name: Zewnętrzne krypty
+description: |
+  Niskie kamienne nadproża uginają się pod ciężarem stuleci. Nisze wyciosane w ziemno-kamiennych ścianach kryją rozsypujące się szczątki utopionych wojowników, których drewniane tarcze zbutwiały w zielony mech.
+connections:
+  - to: barrow-threshold
+    label: Wróć ku szaremu światłu progu
+  - to: sunken-shrine
+    label: Idź wilgotnym tunelem w dół ku odgłosowi kapiącej wody
+  - to: jarl-barrow
+    label: Podejdź pod ciężkie żelazne wrota grobowca

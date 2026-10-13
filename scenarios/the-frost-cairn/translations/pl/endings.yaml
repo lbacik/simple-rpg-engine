@@ -1,0 +1,27 @@
+- id: cairn-sealed
+  title: Słońce powraca do Skallavik
+  text: |
+    Gdy jarl Harek został powalony, a Runa Ogniska spoczywa bezpiecznie w twojej dłoni, sprowadzasz Astrid w dół z mroźnych wyżyn. Za wami przeklęte głazy kurhanu drżą i zapadają się w lawinie gruzu i lodu.
+
+    Kiedy przekraczacie próg wielkiego długiego domu, Torvald płacze bez wstydu na widok żywej córki. Święta runa spoczywa na kamiennym palenisku, a złoty, pachnący dymem płomień strzela wysoko pod krokwie. Czarny mróz cofa się z fiordu, a skaldowie przysięgają, że dopóki klan oddycha, męstwo {name} będzie opiewane pod każdym dachem tej zimy.
+
+- id: frost-broken
+  title: Gorzkie ognisko
+  text: |
+    Schodzisz z urwiska w samotności, w gęstniejącą śnieżycę, niosąc Runę Ogniska w zdrętwiałych od mrozu dłoniach. Jarl Harek leży roztrzaskany w głębokim grobowcu, lecz Astrid nie zdołano ocalić z zaciskającej się ciemności.
+
+    W Skallavik wojownicy chylą czoła, gdy kładziesz prastarą granitową płytę na palenisku. Ogień chwyta, wypędzając lodowatą mgłę z drewnianych ścian, lecz tej nocy w długim domu nie rozbrzmiewa żaden śmiech. Torvald w ponurym milczeniu wciska ci w dłoń srebrny naramiennik. Ocaliłeś klan przed wieczną zimą, lecz pieśń o tej nocy na zawsze zachowa posmak popiołu i łez.
+
+- id: oath-forsaken
+  title: Krzywoprzysięzca w zaspach
+  text: |
+    Zimne słowa przysięgi więzną ci w gardle. Odwracasz się plecami do Torvalda, do długiego domu i do płaczących mieszkańców Skallavik, po czym wymykasz się przez ciężkie dębowe wrota w wyjącą zamieć.
+
+    Na mroźnej północy nie ma schronienia dla krzywoprzysięzcy. Nim nadejdzie noc, gryzący szron zasypuje ślady twoich butów, a wybrzeżne wilki krążą coraz bliżej w oślepiającej zawiei. Daleko za tobą czarny mróz zaciska lodowy uścisk wokół cichego fiordu.
+
+- id: death
+  title: Pochłonięty przez kurhan
+  text: |
+    Siły cię opuszczają. Chłód wkrada się w szpik kości, a gryzący północny mróz zamyka twoje rany lodem. Głazy kurhanu jęczą w bezdennej ciemności, a draugry zbliżają się, by zawlec twoje zmarznięte szczątki do swego wiecznego skarbca.
+
+    Skallavik będzie daremnie wypatrywać twojego powrotu na grani, dopóki ostatnie ognisko w osadzie nie zgaśnie pod bezlitosnym lodem.

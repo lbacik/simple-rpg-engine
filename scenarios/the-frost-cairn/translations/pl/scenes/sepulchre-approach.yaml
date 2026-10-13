@@ -1,0 +1,19 @@
+id: sepulchre-approach
+title: Grobowiec jarla Hareka
+text: |
+  Przekraczasz żelazny łuk, wkraczając do samego serca kurhanu. Grobowiec to olbrzymia sklepiona kopuła wykuta z błękitnego lodu lodowcowego i megalitycznych bloków skalnych.
+
+  Na potężnym kamiennym tronie zasiada jarl Harek Żelaznozęby. Korona ze zmrożonej kości spoczywa na jego rogatej czaszce, a błękitny szron dymi ze spojeniach jego czernionej kolczugi. Na jego zamarzniętych kolanach spoczywa jarząca się Runa Ogniska ze Skallavik.
+choices:
+  - id: challenge-with-astrid
+    text: Wystąp naprzód, gdy Astrid zaczyna śpiewać pieśni spętania.
+    outcome:
+      text: |
+        Głos Astrid wznosi się pod lodowe sklepienie niczym srebrne dzwony, tkając pradawne wersety spętania. Cienie niewolników flankujących podwyższenie wrzeszczą i rozwiewają się w szarą mgłę!
+
+        Jarl Harek podnosi się z tronu w samotności, unosząc potężny zmrożony miecz, który trzeszczy lodowymi błyskawicami!
+  - id: challenge-alone
+    text: Dobądź broni i rusz samotnie ku tronowi.
+    outcome:
+      text: |
+        Bez świętej pieśni, która powstrzymałaby zmarłych, nieumarły włócznik wyłania się z lodowatego cienia, by walczyć u boku jarla Hareka!

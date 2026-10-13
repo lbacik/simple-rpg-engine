@@ -1,0 +1,23 @@
+id: strand-ambush
+title: Zasadzka na zamarzniętym brzegu
+text: |
+  Gdy wchodzisz na czarny żwir, niski warkot wibruje pod chrzęstem morskiego lodu.
+
+  Dwa wychudzone wybrzeżne ogary wyłaniają się zza zaśnieżonych wręg przewróconego drakkara. Ich sierść jest skołtuniona od zamarzniętej soli, a żółte kły kłapią z głodu, gdy wyczuwają żywą krew.
+choices:
+  - id: fight-wolves
+    text: Dobądź broni i stań twardo przeciwko bestiom.
+  - id: feed-wolves
+    text: Rzuć suszonego wędzonego śledzia, by odwrócić uwagę zgłodniałej sfory.
+    outcome:
+      text: |
+        Rzucasz suszone ryby na żwir. Ogary rzucają się na solone mięso z żarłocznym warkotem, zupełnie cię ignorując, gdy przemykasz brzegiem morza.
+  - id: intimidate-wolves
+    text: Uderz bronią o pierś i wydaj dziki okrzyk wojenny.
+    test:
+      success:
+        text: |
+          Twój grzmiący ryk odbija się od zamarzniętych klifów morskich niczym ryk wściekłego niedźwiedzia. Ogary skamlą, podwijają ogony i pierzchają w szarą mgłę.
+      failure:
+        text: |
+          Ogary są zbyt obłąkane zimowym głodem, by zważać na twój krzyk; skaczą do gardła z wyszczerzonymi kłami!

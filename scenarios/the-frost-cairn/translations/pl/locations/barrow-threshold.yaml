@@ -1,0 +1,9 @@
+id: barrow-threshold
+name: Próg kurhanu
+description: |
+  Wznoszące się wysoko menhiry pokryte zwietrzałymi runami szczerzących się smoków okalają wejście do kurhanu. Śnieg wiruje nad progiem, nie chcąc opaść na przeklętą ziemię.
+connections:
+  - to: howling-ridge
+    label: Wycofaj się ścieżką na wyjącą grań
+  - to: burial-gallery
+    label: Przejdź między wielkimi kamiennymi wrotami w ciemność

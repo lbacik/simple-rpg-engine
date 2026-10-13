@@ -1,0 +1,23 @@
+id: astrid-rescue
+illustration: astrid-rescue
+title: Free Astrid the Skald
+trigger: on-demand
+repeatable: true
+when:
+  not:
+    flag: astrid-rescued
+text: |
+  Astrid slumps against the granite altar, shivering violently in her frayed wool dress. Her wrists are bloody from the rusted iron cuffs, but her eyes burn with unbroken pride.
+choices:
+  - id: free-astrid
+    text: Sever her iron chains and wrap your cloak around her shoulders.
+    outcome:
+      text: |
+        With a heavy strike against the links, you shatter her shackles. Astrid gasps, drawing in a ragged breath, and grips your vambrace.
+
+        "The clan sent you... thank the gods, {name}. Harek sits in the frost-sepulchre above. He holds our clan's Hearth-Rune upon his knees, feeding his cold unlife from its warmth. I will come with you. My voice knows the verses of binding—I will sing to keep his thralls from falling upon your flank."
+      effects:
+        - set-flag: astrid-rescued
+        - heal: 3
+  - id: leave-astrid
+    text: Tell her to wait while you scout ahead.

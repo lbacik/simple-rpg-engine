@@ -1,0 +1,42 @@
+id: strand-ambush
+illustration: strand-ambush
+title: Ambush on the Frozen Strand
+trigger: on-enter
+repeatable: false
+when:
+  not:
+    flag: wolves-cleared
+text: |
+  As you step onto the black shingle, low growls vibrate beneath the crunch of sea-ice.
+
+  Two lean shore fen-hounds emerge from behind the snow-heaped ribbing of an overturned longboat. Their coats are matted with frozen salt, and yellow fangs snap in hunger as they scent living blood.
+choices:
+  - id: fight-wolves
+    text: Draw your steel and stand firm against the beasts.
+    outcome:
+      start-combat: shore-wolves
+  - id: feed-wolves
+    text: Toss dried smoked herring to distract the starving pack.
+    when:
+      has:
+        item: smoked-herring
+    outcome:
+      text: |
+        You toss the dried fish across the shingle. The hounds tear into the salted meat with ravenous snarls, completely ignoring you as you slip past along the shoreline.
+      effects:
+        - take-item: { item: smoked-herring }
+        - set-flag: wolves-cleared
+  - id: intimidate-wolves
+    text: Bang your weapon against your chest and bellow a fierce war-cry.
+    test:
+      attribute: presence
+      difficulty: ordinary
+      success:
+        text: |
+          Your thunderous roar echoes off the frozen sea cliffs like the bellow of an enraged bear. The hounds whimper, tucking their tails between their legs, and scatter into the grey mist.
+        effects:
+          - set-flag: wolves-cleared
+      failure:
+        text: |
+          The hounds are too crazed with winter hunger to heed your shout; they spring with bared fangs!
+        start-combat: shore-wolves

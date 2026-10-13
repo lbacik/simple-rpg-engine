@@ -1,0 +1,70 @@
+schemaVersion: 1
+id: the-frost-cairn
+title: The Frost Cairn
+description: Brave the freezing fjords and howling crags of the North, breach the ancient burial mound of Jarl Harek Iron-Tooth, and reclaim the stolen Hearth-Rune before eternal frost engulfs the clan.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+intro: |
+  Winter solstice approaches, but this is no natural northern winter. An unnatural, black rime frost creeps down from the sea cliffs of Skallavik, snuffing hearthfires and turning seawater to jagged black ice.
+
+  Last night the ancient burial mound on the high bluff groaned open. Draugar—the frozen, restless dead of a forgotten sea-king—crept into the village, stole the clan's sacred Hearth-Rune, and dragged Astrid the Skald into the barrow depths.
+
+  If the rune is not recovered and the barrow sealed, no living soul in the fjord will survive to see the dawn of spring.
+startLocation: skallavik-hall
+deathEnding: death
+flags:
+  - oath-sworn
+  - blessing-received
+  - torches-lit
+  - rope-secured
+  - wolves-cleared
+  - ridge-scouted
+  - gate-opened
+  - crevice-entered
+  - astrid-rescued
+  - cairn-key-found
+  - harek-slain
+locations:
+  - locations/skallavik-hall.yaml
+  - locations/fjord-strand.yaml
+  - locations/howling-ridge.yaml
+  - locations/cliff-crevice.yaml
+  - locations/barrow-threshold.yaml
+  - locations/burial-gallery.yaml
+  - locations/sunken-shrine.yaml
+  - locations/jarl-barrow.yaml
+scenes:
+  - scenes/skallavik-arrival.yaml
+  - scenes/torvald-briefing.yaml
+  - scenes/hilda-runewife.yaml
+  - scenes/einar-smithy.yaml
+  - scenes/strand-ambush.yaml
+  - scenes/whale-wreck.yaml
+  - scenes/ridge-climb.yaml
+  - scenes/ridge-lookout.yaml
+  - scenes/beacon-ruin.yaml
+  - scenes/crevice-descent.yaml
+  - scenes/threshold-approach.yaml
+  - scenes/barrow-doors.yaml
+  - scenes/gallery-entrance.yaml
+  - scenes/thrall-tombs.yaml
+  - scenes/shrine-pool.yaml
+  - scenes/astrid-rescue.yaml
+  - scenes/sepulchre-approach.yaml
+  - scenes/sepulchre-victory.yaml
+  - scenes/cairn-collapse.yaml
+items:
+  - items.yaml
+enemies:
+  - enemies.yaml
+encounters:
+  - encounters.yaml
+templates:
+  - templates.yaml
+endings:
+  - endings.yaml
+images:
+  - images.yaml
+translations:
+  - translations/pl/translation.yaml

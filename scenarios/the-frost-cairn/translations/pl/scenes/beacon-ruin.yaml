@@ -1,0 +1,12 @@
+id: beacon-ruin
+title: Zbadaj zrujnowany posterunek ogniowy
+text: |
+  Pradawna kamienna wieża sygnałowa wznosi się na nawietrznym urwisku. Jej żelazny ruszt wypełniają zamarznięte wrzosy i śnieg, osłonięte przed najgorszym wichrem okrągłym kamiennym przedpiersiem.
+choices:
+  - id: kindle-beacon
+    text: Użyj smolnych pochodni, by rozpalić dające schronienie ognisko w kamiennym palenisku.
+    outcome:
+      text: |
+        Żywiczne drewno łapie ogień z trzaskiem i pióropuszem pachnącego dymu sosnowego. Kuląc się przy żarze, rozgrzewasz skostniałe palce, ogrzewasz prowiant i znajdujesz płat suszonego wędzonego śledzia ukryty pod kamieniami.
+  - id: leave-beacon
+    text: Zostaw zimne kamienie w spokoju.

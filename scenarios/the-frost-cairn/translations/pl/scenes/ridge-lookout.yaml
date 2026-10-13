@@ -1,0 +1,17 @@
+id: ridge-lookout
+title: Zlustruj wysoki kurhan
+text: |
+  Z wysokiego granitowego cypla nad linią karłowatych sosen spoglądasz przez wyjący wicher na Kurhan Mrozu. Nasyp wznosi się na urwistym cyplu niczym czarna korona nad zamarzniętym fiordem.
+choices:
+  - id: scout-gate
+    text: Zbadaj główną bramę kurhanu przez wirujący szron.
+    outcome:
+      text: |
+        Dwaj strażnicy stoją przy kamiennym portalu: włócznik na progu i łucznik na szczycie menhiru powyżej. Bezpośredni atak zmusi cię do walki z oboma naraz.
+  - id: scout-crevice
+    text: Spójrz w dół ku morskim klifom i wąskiej wulkanicznej szczelinie.
+    outcome:
+      text: |
+        Z liną wspinaczkową umocowaną o poskręcany korzeń sosny możesz zejść w wąską morską rozpadlinę poniżej, omijając całkowicie straże przy głównej bramie.
+  - id: step-away
+    text: Owiń się szczelniej płaszczem i wycofaj w zacisze grani.

@@ -1,0 +1,31 @@
+- id: cairn-sealed
+  kind: victory
+  title: The Sun Returns to Skallavik
+  text: |
+    With Jarl Harek broken and the Hearth-Rune safe in your grip, you guide Astrid back down from the freezing heights. Behind you, the cursed stones of the cairn shudder and collapse beneath a deluge of crushing rock and ice.
+
+    When you cross the threshold of the great hall, Torvald weeps openly upon seeing his daughter alive. The sacred rune is laid upon the hearth, and a golden, smoke-scented flame leaps high into the rafters. The dark winter freeze recedes from the fjord, and the skalds swear that so long as the clan breathes, the courage of {name} shall be sung beneath every winter roof.
+
+- id: frost-broken
+  kind: victory
+  title: The Bitter Hearth
+  text: |
+    You descend the cliff alone into the gathering blizzard, bearing the Hearth-Rune in your frostbitten hands. Jarl Harek lies shattered in the deep sepulchre, but Astrid could not be saved from the clutching dark.
+
+    In Skallavik, the warriors bow their heads as you place the ancient granite slab upon the hearth. The fire catches, driving the frost-mist from the longhouse walls, but no laughter echoes in the hall tonight. Torvald presses a silver ring into your palm in grim silence. You have preserved the clan from eternal winter, but the song of this night will forever taste of ash and tears.
+
+- id: oath-forsaken
+  kind: defeat
+  title: Oath-Breaker in the Drift
+  text: |
+    The cold words of the oath choke in your throat. You turn your back on Torvald, on the longhouse, and on the weeping folk of Skallavik, slipping out through the heavy timber doors into the howling storm.
+
+    There is no refuge for an oath-breaker in the north. By nightfall, the biting rime freezes the tracks of your boots, and the shore wolves circle close in the blinding blizzard. Far behind you, the black frost tightens its grip around the silent fjord.
+
+- id: death
+  kind: defeat
+  title: Claimed by the Barrow
+  text: |
+    Your strength fails. Cold creeps into your marrow as the biting northern frost claims your wounds. The barrow stones groan in the black dark, and the draugar close in to drag your cold remains into their eternal hoard.
+
+    Skallavik will watch the high ridge in vain for your return, until the last hearthfire flickers out under the relentless ice.

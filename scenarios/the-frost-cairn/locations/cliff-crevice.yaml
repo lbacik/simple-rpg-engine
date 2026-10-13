@@ -1,0 +1,17 @@
+id: cliff-crevice
+illustration: loc-cliff-crevice
+name: The Sea-Fissure
+description: |
+  A sheer volcanic cleft dropping straight toward the roaring black surf. Sea spray freezes instantly against the basalt walls, coating the rock in treacherous rime.
+map:
+  x: 45
+  y: 25
+scenes:
+  - crevice-descent
+connections:
+  - to: howling-ridge
+    label: Climb back up to the pine ridge
+  - to: sunken-shrine
+    label: Squeeze through the flooded fissure into the shrine cavern
+    when:
+      flag: crevice-entered

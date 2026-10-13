@@ -1,0 +1,14 @@
+id: shrine-pool
+title: Zatopiona świątynia
+text: |
+  Wielka naturalna jaskinia otwiera się wokół podziemnej sadzawki z czarną, nieruchomą wodą. Stalaktyty zwisają ze sklepienia niczym zamarznięte włócznie.
+
+  W centrum pieczary, przykuta zardzewiałymi żelaznymi łańcuchami do monolitycznego ołtarza, stoi skaldka Astrid! Nad nią wznosi się olbrzymi berserk draugrów, unosząc wielki żelazny topór bojowy!
+choices:
+  - id: intercept-berserker
+    text: Przeskocz przez sadzawkę i uderz na berserka!
+  - id: distract-sing
+    text: Uderz w struny rzeźbionej brzozowej liry Astrid, by zakłócić rytuał.
+    outcome:
+      text: |
+        Dźwięczny, krystaliczny akord brzozowej liry przeszywa mrok pieczary. Berserk zatacza się we wściekłości i bólu, chwytając się za gnijące uszy! Zyskujesz inicjatywę, gdy potwór wyje!

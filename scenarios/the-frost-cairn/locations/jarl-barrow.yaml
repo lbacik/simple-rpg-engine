@@ -1,0 +1,22 @@
+id: jarl-barrow
+illustration: loc-jarl-barrow
+name: The Jarl's Sepulchre
+description: |
+  A massive vaulted dome of blue glacial ice and megalithic stone blocks. At the chamber's apex sits an enormous stone chair encrusted with frost, where ancient hoard-chests lie half-buried in blue rime.
+map:
+  x: 88
+  y: 35
+scenes:
+  - sepulchre-approach
+  - sepulchre-victory
+connections:
+  - to: burial-gallery
+    label: Step back through the iron arch into the crypt gallery
+    when:
+      not:
+        flag: harek-slain
+  - to: sunken-shrine
+    label: Return down the secret arch to the shrine pool
+    when:
+      not:
+        flag: harek-slain

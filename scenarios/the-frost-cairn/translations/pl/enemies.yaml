@@ -1,0 +1,19 @@
+- id: fen-hound
+  name: Wybrzeżny ogar bagienny
+  description: Wychudzony, pokryty lodem pies o dzikich bursztynowych ślepiach i kłach kłapiących w wygłodniałej sforze.
+
+- id: draugr-sentry
+  name: Strażnik draugrów
+  description: Wysuszony wojownik w zardzewiałej kolczudze, dzierżący szczerbatą włócznię z bezduszną zaciętością.
+
+- id: frost-archer
+  name: Mroźny łucznik draugrów
+  description: Zmumifikowany trup ściskający rogowy łuk, szyjący strzałami z kościanymi grotami z wyjącej ciemności.
+
+- id: draugr-berserker
+  name: Berserk draugrów
+  description: Olbrzymi wojownik o skórze szarej niczym morski łupek, wymachujący oburęcznym żelaznym toporem bojowym.
+
+- id: jarl-harek
+  name: Jarl Harek Żelaznozęby
+  description: Pradawny król mórz spoczywający w kurhanie, w koronie ze zmrożonej kości, otoczony lodowatym oparem grobu.
