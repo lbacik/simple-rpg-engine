@@ -26,6 +26,8 @@ import {
   combatRoundLines,
   combatStartLine,
   enemyDefeatedLine,
+  tacticalParticipantName,
+  tacticalRoundHtml,
   wrapScenarioNames,
 } from './combat-text';
 
@@ -355,14 +357,6 @@ function tacticalParticipants(record: Record<string, unknown>): CombatParticipan
 }
 
 /**
- * One participant as presented in an interim tactical line: the Enemy name,
- * with the same-kind ordinal when the Encounter holds several of the kind.
- */
-function tacticalParticipantName(ref: CombatParticipantRef): string {
-  return ref.ordinal === undefined ? ref.name : `${ref.name} ${ref.ordinal}`;
-}
-
-/**
  * A Combat start entry: tactical (v2) rows carry every participant taking
  * part as presented and render the narration with one opponent line each;
  * v1 rows carry the opening narration plus the Enemy's name; legacy rows
@@ -394,11 +388,12 @@ function renderCombatStartEntry(
 
 /**
  * A Combat round entry: tactical (v2) rows carry every action of the Round as
- * events and render one line per executed action plus the roll chips (Prepare
- * and non-executed actions render nothing yet; the structured event retains
- * their data for the full report in I5); v1 rows carry the Round as events
- * (action, rolls, Damage, Range before and after, guard); legacy rows carry
- * English text and are shown verbatim.
+ * versioned events and render through the shared tactical report (ordered
+ * executed/cancelled/dropped/not-reached actions, rolls and results, the
+ * nested counterattack, defeats and the stop reason); v1 rows carry the Round
+ * as events (action, rolls, Damage, Range before and after, guard); legacy rows
+ * carry English text and are shown verbatim and are never reinterpreted as
+ * tactical events.
  */
 function renderCombatRoundEntry(
   record: Record<string, unknown>,
@@ -407,12 +402,15 @@ function renderCombatRoundEntry(
   characterName: string,
 ): string {
   if (Array.isArray(record.actions)) {
-    return renderTacticalRoundEntry(
-      record.actions as TacticalActionEvent[],
-      catalogue,
-      lang,
-      characterName,
-    );
+    const round = typeof record.round === 'number' ? record.round : undefined;
+    const stop =
+      record.stop === 'victory' || record.stop === 'death' || record.stop === 'escape'
+        ? record.stop
+        : undefined;
+    return tacticalRoundHtml(record.actions as TacticalActionEvent[], catalogue, lang, characterName, {
+      ...(round === undefined ? {} : { round }),
+      ...(stop === undefined ? {} : { stop }),
+    });
   }
   const enemyName = combatEnemyName(record);
   if (enemyName === undefined) {
@@ -437,77 +435,6 @@ function renderCombatRoundEntry(
     )
     .join('');
   return `${lines}${chips === '' ? '' : `<ul class="combat-rolls">${chips}</ul>`}`;
-}
-
-/**
- * One interim tactical Round: one line per executed action that fits an
- * existing line helper (Character attacks, Enemy Strikes and Heavy attacks,
- * Close in), plus one roll chip per roll. Prepare and non-executed actions
- * (cancelled, dropped, not reached) render nothing yet; the structured event
- * retains their data for the full report (I5).
- */
-function renderTacticalRoundEntry(
-  actions: TacticalActionEvent[],
-  catalogue: Catalogue,
-  lang: string,
-  characterName: string,
-): string {
-  const names = [characterName];
-  for (const action of actions) {
-    const actorName =
-      action.actor.kind === 'character' ? characterName : tacticalParticipantName(action.actor);
-    if (!names.includes(actorName)) names.push(actorName);
-    if (action.weaponName !== undefined && !names.includes(action.weaponName)) {
-      names.push(action.weaponName);
-    }
-  }
-  const lines: string[] = [];
-  const chips: string[] = [];
-  for (const action of actions) {
-    const actorName =
-      action.actor.kind === 'character' ? characterName : tacticalParticipantName(action.actor);
-    if (action.roll !== undefined) {
-      chips.push(
-        `<li>${wrapScenarioNames(combatRollLine(action.roll, catalogue, characterName, actorName), names, lang)}</li>`,
-      );
-    }
-    if (action.status !== 'executed' || action.roll === undefined) {
-      if (
-        action.status === 'executed' &&
-        action.actor.kind === 'participant' &&
-        action.kind === 'close-in'
-      ) {
-        const rangeAfter = catalogue.range[action.rangeAfter ?? 'near'];
-        lines.push(
-          `<p>${wrapScenarioNames(catalogue.combat.lineEnemyClosesIn(actorName, rangeAfter), names, lang)}</p>`,
-        );
-      }
-      continue;
-    }
-    const roll = action.roll;
-    const score = catalogue.combat.rollScore(
-      roll.die1,
-      roll.die2,
-      roll.modifier,
-      roll.total,
-      roll.target,
-    );
-    if (action.actor.kind === 'character') {
-      const weapon = action.weaponName ?? catalogue.combat.unarmed;
-      lines.push(
-        roll.hit
-          ? `<p>${wrapScenarioNames(catalogue.combat.lineAttackHit(weapon, score, catalogue.combat.damage(roll.damage)), names, lang)}</p>`
-          : `<p>${wrapScenarioNames(catalogue.combat.lineAttackMiss(weapon, score), names, lang)}</p>`,
-      );
-    } else if (action.kind === 'strike' || action.kind === 'heavy-attack') {
-      lines.push(
-        roll.hit
-          ? `<p>${wrapScenarioNames(catalogue.combat.lineEnemyAttackHit(actorName, score, catalogue.combat.damage(roll.damage)), names, lang)}</p>`
-          : `<p>${wrapScenarioNames(catalogue.combat.lineEnemyAttackMiss(actorName, score, false), names, lang)}</p>`,
-      );
-    }
-  }
-  return `${lines.join('')}${chips.length === 0 ? '' : `<ul class="combat-rolls">${chips.join('')}</ul>`}`;
 }
 
 /**
