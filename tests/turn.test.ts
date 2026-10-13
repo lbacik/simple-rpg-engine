@@ -247,7 +247,7 @@ describe('executeTurn', () => {
       const store = new PlaythroughStore(db);
       const stored = await store.findById(playthroughId);
       expect(stored?.step).toBe(0);
-      expect(stored?.state.currentLocationId).toBe('glade');
+      expect((stored?.state as PlaythroughState).currentLocationId).toBe('glade');
       // Nothing committed: state, pin, status and ending are untouched too.
       expect(stored?.status).toBe('active');
       expect(stored?.endingId).toBeNull();
