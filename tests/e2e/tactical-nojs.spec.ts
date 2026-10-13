@@ -117,6 +117,17 @@ test('no-JavaScript: intents, target B, every action group, escape, Continue, Jo
   await expect(page).toHaveURL(/\/journal$/);
   await expect(page.getByRole('heading', { name: 'Journal' })).toBeVisible();
   await expect(page.getByText(/Grey Wolf B/).first()).toBeVisible();
+  // The consumed item reached the stored Journal, not just the round report:
+  // walk the no-JS "Older entries" pages (a long fight paginates) until its
+  // `Use:` row shows. (The Journal inlines the use into its round entry as
+  // `Use: …`, while the round report's wording is what the arena asserts.)
+  for (let depth = 0; depth < 5; depth += 1) {
+    if ((await page.getByText(/Use: Healing Herbs/).count()) > 0) break;
+    const older = page.getByRole('link', { name: 'Older entries' });
+    if ((await older.count()) === 0) break;
+    await older.click();
+  }
+  await expect(page.getByText(/Use: Healing Herbs/).first()).toBeVisible();
 });
 
 test('no-JavaScript: a legacy active one-Enemy Combat save opens and plays a Round', async ({
@@ -140,4 +151,16 @@ test('no-JavaScript: a legacy active one-Enemy Combat save opens and plays a Rou
   // with the legacy rows kept below it (no duplicate Damage from writeback).
   await expect(page.getByText(/Last round/)).toHaveCount(1);
   expect((await laneHealth(page, 0)).trim()).toMatch(/\d+\/\d+/);
+  // The migrated Journal survived the new Round verbatim: the captured intro
+  // row ("Rain has followed you for three days…") is still on the journal
+  // pages, newest-first with no-JS "Older entries" paging.
+  await page.getByRole('link', { name: /Journal, \d+ entr/ }).click();
+  await expect(page).toHaveURL(/\/journal/);
+  for (let depth = 0; depth < 3; depth += 1) {
+    if ((await page.getByText(/Rain has followed you/).count()) > 0) break;
+    const older = page.getByRole('link', { name: 'Older entries' });
+    if ((await older.count()) === 0) break;
+    await older.click();
+  }
+  await expect(page.getByText(/Rain has followed you/).first()).toBeVisible();
 });

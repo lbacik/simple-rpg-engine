@@ -26,6 +26,15 @@ async function laneHealth(page: Page, index: number): Promise<string> {
   return (text ?? '').trim();
 }
 
+/** The stored Journal size from the side-panel launcher ("Journal4 entries" in text; the accessible name reads "Journal, 4 entries"). */
+async function journalCount(page: Page): Promise<number> {
+  const text =
+    (await page.getByRole('link', { name: /Journal, \d+ entr/ }).textContent()) ?? '';
+  const match = /Journal\D*(\d+)/.exec(text);
+  if (!match) throw new Error(`no journal count in launcher: ${text}`);
+  return Number(match[1]);
+}
+
 test('two tabs: the loser sees refreshed state with a stale notice, once', async ({
   browser,
 }) => {
@@ -42,6 +51,7 @@ test('two tabs: the loser sees refreshed state with a stale notice, once', async
     await expect(tabA).toHaveURL(/\/play\/[^/]+$/);
     expect(tabA.url()).not.toMatch(/notice=/);
     await expectRound(tabA, 2);
+    const journalAfterWinner = await journalCount(tabA);
 
     // The loser submits the same step: refreshed Round 2 state plus the
     // stale notice, and nothing applied twice.
@@ -57,6 +67,9 @@ test('two tabs: the loser sees refreshed state with a stale notice, once', async
     expect(await laneHealth(tabB, 0)).toBe(await laneHealth(tabA, 0));
     // No duplicate items: both Consumables are still held.
     await expect(tabB.getByText('No Consumables held.')).toHaveCount(0);
+    // No duplicate Journal: the stale submit appended nothing, so the loser
+    // reads the winner's stored size exactly.
+    expect(await journalCount(tabB)).toBe(journalAfterWinner);
     // Still mid-Combat: no result Continue from a phantom Outcome.
     await expect(tabB.getByRole('link', { name: 'Continue' })).toHaveCount(0);
     await expect(tabB.getByLabel('Combat arena')).toBeVisible();
