@@ -1,0 +1,31 @@
+id: ferry-rescue
+title: Uwolnij Mercy i uratuj ludzi z dachu
+text: |
+  Bram trzyma hamulec, gdy oglądasz wciągarkę. Żuraw uwięził Mercy, ale nie uszkodził
+  jego kadłuba. Nad tobą kobieta unosi małego chłopca, żeby zobaczył liny ratunkowe.
+
+  Powolna metoda jest pewna: obracać wciągarkę po jednym zębie i zabezpieczać każdy
+  postęp. Szybsze podejście mogłoby ocalić więcej zapasów z magazynu, lecz ześlizgnięta
+  lina będzie cię kosztować siniaki.
+choices:
+  - id: work-winch
+    text: Pracuj wciągarką powoli i sprowadź wszystkich na pokład.
+    outcome:
+      text: |
+        Żuraw podnosi się po kilka centymetrów. Bram ustawia Mercy pod dachem, a ty pomagasz
+        zejść każdemu pasażerowi, po czym zabierasz ostatni worek suchych ubrań. Chłopiec
+        pyta o twoje imię, a potem uroczyście obiecuje je zapamiętać.
+  - id: balance-beam
+    text: Przejdź po belce żurawia i uwolnij zaczepioną linę.
+    test:
+      success:
+        text: |
+          Uwalniasz zaczep bez poruszenia żurawia. Bram ratuje pasażerów i skrzynię lekarstw.
+          „Szybkie nogi” — mówi. „Dobre serce”.
+      failure:
+        text: |
+          Belka obraca się pod tobą. Wracając na nabrzeże, obcierasz rękę, a potem kończysz
+          akcję, powoli pracując wciągarką. Wszyscy docierają na Mercy, choć skrzynię lekarstw
+          porywa woda.
+  - id: later
+    text: Zostaw przygotowane liny i wróć później.

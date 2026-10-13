@@ -1,0 +1,24 @@
+id: smith-memory
+title: Kształt przeprosin
+text: |
+  Nera owija przeciwwagę mokrym płótnem workowym. „Ty możesz ją zanieść. Ja nie.
+  Maszyna ma moje imię i wciąż przyciąga mnie z powrotem na tę zmianę”.
+
+  Otwiera dłoń, pokazując odcisk dawnej obrączki. „Jeśli zmienisz rachunek,
+  nie rób z nas świętych. Niektórzy byli posłuszni. Niektórzy odwrócili wzrok.
+  Byliśmy ludźmi. To właśnie powinna mówić księga”.
+
+  Przeciwwaga jest ciepła przez owijające ją płótno. Mniej przypomina klucz,
+  a bardziej coś, za co zgadzasz się wziąć odpowiedzialność.
+choices:
+  - id: take-weight
+    text: Weź przeciwwagę i obiecaj zapisać prawdę.
+    outcome:
+      text: |
+        Nera kładzie młot na kowadle. „W takim razie mogę jeszcze trochę poczekać”.
+  - id: take-without-promise
+    text: Weź przeciwwagę bez obiecywania konkretnego wyniku.
+    outcome:
+      text: |
+        „Uczciwie” — mówi. „Szczera niepewność jest lepsza od kolejnego urzędowego
+        zapewnienia”. Patrzy, jak wynosisz przeciwwagę.

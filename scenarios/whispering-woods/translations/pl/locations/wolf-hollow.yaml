@@ -1,0 +1,10 @@
+id: wolf-hollow
+name: Wilcza kotlina
+description: |
+  Wilgotna kotlina porośnięta gęstymi paprociami. Między korzeniami
+  powalonego buka leżą ogryzione kości.
+connections:
+  - to: forest-edge
+    label: Wespnij się z powrotem na skraj lasu
+  - to: ruined-chapel
+    label: Idź ścieżką obok legowiska

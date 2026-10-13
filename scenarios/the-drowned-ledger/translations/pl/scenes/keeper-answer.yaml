@@ -1,0 +1,31 @@
+id: keeper-answer
+title: Cztery sposoby zakończenia warty
+text: |
+  „Możesz poprawić rachunek” — mówi Hester. „Przynieś imiona z kamienia pamiątkowego
+  i poświadczoną obietnicę ludzi z góry. Maszyna może działać dzięki wspólnej pracy.
+  Uwolni tych, których wpisano bez zgody”.
+
+  „Możesz dobrowolnie zająć moje miejsce. Mur będzie stał, ale ty zostaniesz tutaj.
+  Możesz też przeprowadzić ewakuację przez kontrolowane otwarcie kanału przelewowego,
+  jeśli Mercy jest gotowy, a latarnia zapalona. Miasto będzie ginąć na tyle powoli,
+  by ludzie zdążyli odejść”.
+
+  „Albo możesz zniszczyć maszynę. Z przygotowanym promem i sygnałem ludzie uciekną
+  przed falą, choć ich domy nie ocaleją. Bez nich powódź pochłonie zatłoczone
+  nabrzeże. Nie nazwę tego wypadkiem”.
+
+  Daje ci tabliczkę uprawnień. „Rewident w komorze serca ją rozpozna.
+  Nadal możesz wrócić na plac, zanim się zobowiążesz”.
+choices:
+  - id: accept-authority
+    text: Weź tabliczkę i zbadaj komorę serca.
+    outcome:
+      text: |
+        Hester odpina tabliczkę od płaszcza. „Uprawnienie do inspekcji, {name}.
+        Nie rozkaz przejęcia urzędu”.
+  - id: prepare-more
+    text: Weź tabliczkę, a potem wróć dokończyć przygotowania.
+    outcome:
+      text: |
+        „Decyzja podjęta z czasem do namysłu nadal jest decyzją” — mówi Hester.
+        Przytrzymuje serce dzwonu, gdy odchodzisz.

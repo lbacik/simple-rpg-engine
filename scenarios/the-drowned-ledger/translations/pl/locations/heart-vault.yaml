@@ -1,0 +1,13 @@
+id: heart-vault
+name: Serce muru ochronnego
+description: |
+  Mosiężny cylinder obraca się w klatce z belek. Wyryte na nim imiona i nazwiska
+  przesuwają się pod rysikiem, który nigdy się nie unosi. Z każdym obrotem mur powyżej
+  otrzymuje kolejną godzinę pożyczonej wytrzymałości.
+
+  Wokół znajdują się trzy stanowiska sterowania: układ cięgien przeciwwagi, dźwignia
+  ciśnienia i biurko z miejscem na księgę. Za kratą południowy kanał przelewowy
+  otwiera się wprost na morze.
+connections:
+  - to: bell-chamber
+    label: Wróć do strażniczki

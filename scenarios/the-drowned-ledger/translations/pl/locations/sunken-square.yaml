@@ -1,0 +1,23 @@
+id: sunken-square
+name: Plac Lowwater
+description: |
+  Pod sklepieniem z zawieszonej morskiej wody plac Lowwater jest suchy. Nad głową
+  pływają ryby pośród odbitych gwiazd lamp, których nie zapalano od dziesięcioleci.
+  Wokół placu drzwi zatopionych domów stoją uchylone.
+
+  Obok fontanny leży kamień pamiątkowy, odwrócony napisami do ziemi. Trzy ulice
+  prowadzą do archiwum, hali pomp i odlewni. Wyniesiona grobla biegnie ku staremu
+  dzwonowi pływowemu.
+connections:
+  - to: stairwell
+    label: Wróć na suche schody
+  - to: archive
+    label: Idź ulicą introligatorów
+  - to: pump-hall
+    label: Podążaj za drganiami pomp
+  - to: foundry
+    label: Idź wzdłuż żelaznych torów tramwajowych
+  - to: refuge
+    label: Idź suchym korytarzem technicznym do schronienia
+  - to: causeway
+    label: Zanieś księgę i przeciwwagę na groblę

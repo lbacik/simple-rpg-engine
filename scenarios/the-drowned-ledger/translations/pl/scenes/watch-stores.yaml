@@ -1,0 +1,15 @@
+id: watch-stores
+title: Otwórz magazyn straży
+text: |
+  Venn wykłada nóż portowy, watowany płaszcz i lampę z przesłoną. Lampa jest zwyczajna;
+  przypływ nie odróżnia odwagi od dobrze osłoniętego płomienia.
+
+  „Wybierz wyposażenie, zanim zejdziesz” — mówi. „Nic z tej szafy nie pomoże,
+  jeśli zostanie w twoim plecaku”.
+choices:
+  - id: take
+    text: Weź zapasowe wyposażenie i napój leczniczy.
+    outcome:
+      text: |
+        Kapitan zapisuje wydane zapasy pod nagłówkiem pomocy ratunkowej zamiast pod twoim
+        imieniem. Tym razem papierkowa robota coś ułatwia.

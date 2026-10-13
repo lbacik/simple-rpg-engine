@@ -1,0 +1,20 @@
+id: street-memorial
+title: Odwróć kamień pamiątkowy napisami do góry
+text: |
+  Kamień jest cięższy, niż wygląda. Podważasz go leżącą szyną tramwajową, bez pośpiechu.
+  Pod zaschniętym błotem widnieją imiona i nazwiska, zawody i wiek. Nikogo nie określono
+  jako nieuniknionej straty.
+
+  Elias Rook. Nera Vale. Hester Marr. Lista biegnie wzdłuż każdej krawędzi. U dołu
+  widnieje zdanie: WPUSZCZONO WODĘ, ZANIM WRÓCIŁA OSTATNIA ŁÓDŹ.
+
+  Obok kamienia zachowała się mała mosiężna tabliczka z nazwą. Należała do domu,
+  nie do grobu.
+choices:
+  - id: read-names
+    text: Odczytaj imiona i nazwiska na głos i zachowaj tabliczkę.
+    outcome:
+      text: |
+        W oknach gromadzą się twarze. Na niektóre imiona ktoś odpowiada; na inne odpowiada
+        cisza, która nie jest już tym samym co zapomnienie. Przepisujesz inskrypcję dla tych
+        na górze, którzy nadal wierzą, że Lowwater było puste.

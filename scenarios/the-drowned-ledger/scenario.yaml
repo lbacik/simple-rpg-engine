@@ -5,14 +5,17 @@ description: Descend beneath a failing sea wall, recover a city's hidden history
   decide what the living owe the dead. Repairs can buy time; only a choice can close the
   account.
 author: Simple RPG Engine contributors
-version: "1.0.0"
+version: "1.0.1"
 language: en
 intro: |
-  You reach Greyhaven on the morning the tide stops going out. The sea presses against
-  the harbour wall under a clear sky, rising without wind or rain.
+  You reach Greyhaven in the morning, when the tide should be going out. Something is
+  wrong: the ebb never comes. The sky is clear, with no wind or rain, yet the sea keeps
+  rising and pressing against the harbour wall.
 
-  Below the wall lies Lowwater, a district flooded sixty years ago. People above say it
-  was empty. Through the clear water, you can see someone setting a table.
+  Below the wall, under the water, lies Lowwater, a district flooded sixty years ago.
+  People in the upper city insist that nobody was there when it was flooded. Yet
+  through the clear water, you can see someone in one of the drowned houses setting a
+  table.
 startLocation: greyhaven
 deathEnding: death
 flags:
@@ -108,3 +111,5 @@ endings:
   - endings.yaml
 images:
   - images.yaml
+translations:
+  - translations/pl/translation.yaml

@@ -1,0 +1,30 @@
+id: witness-council
+title: Wysłuchaj ludzi pominiętych w rachunku
+text: |
+  Kładziesz oryginalną księgę na długim stole. Sella czyta pierwszą stronę,
+  a potem prosi zebranych o ciszę, by ludzie z Lowwater mogli mówić.
+
+  Bednarz pamięta ostrzeżenie wydane po podniesieniu trapów. Praczka pamięta,
+  że nie chciała zostawić sąsiada, który nie mógł chodzić. Sella pamięta,
+  jak na ostatniej łodzi czekała na matkę, która nigdy nie dotarła.
+
+  Ich historie różnią się drobnymi szczegółami. Zgadzają się, że nikt nie wyraził zgody
+  na zostanie częścią maszyny. Żywi przy stole oferują, że będą na zmianę dbać o mur,
+  jeśli uda się uwolnić skradzione imiona.
+choices:
+  - id: record-witnesses
+    text: Zapisz zeznania i propozycję wspólnej pracy żywych.
+    outcome:
+      text: |
+        Każdy świadek inaczej zaznacza margines: podpisem, odciskiem kciuka, nikłym śladem
+        soli. Zamykasz księgę dopiero wtedy, gdy ostatnia osoba skończy.
+  - id: ask-diver
+    text: Poproś Tamsin, by wyjaśniła, jak pracowały dawne ekipy konserwacyjne.
+    outcome:
+      text: |
+        Tamsin, z zabandażowaną nogą opartą na stołku, opisuje grafiki, części zapasowe
+        i pracowników, którzy mogli odmówić niebezpiecznej zmiany. Sella zapisuje te
+        zabezpieczenia obok nowych obietnic. Umowa, której nie można odmówić,
+        jest tylko kolejnym długiem.
+  - id: wait
+    text: Pozwól zebranym dalej rozmawiać, zanim sporządzisz zapis.

@@ -1,0 +1,25 @@
+id: captain-confession
+title: Rozkaz w szufladzie
+text: |
+  Venn otwiera szufladę zamiast szafy. W środku leży rozkaz ewakuacji z pustym miejscem
+  tam, gdzie powinna znajdować się lista pasażerów.
+
+  „Mój ojciec był kapitanem, gdy otwarto wrota. Rada twierdziła, że dzielnicę
+  opróżniono. Podpisał raport, nie policzywszy łodzi. Później zachował tę kopię.
+  Nigdy nie powiedział mi dlaczego”.
+
+  Kładzie ją obok twojej księgi. „Odziedziczyłam raport, krzesło i nawyk niezadawania
+  pytań. Jedną z tych rzeczy mogę dziś zmienić”.
+choices:
+  - id: publish
+    text: Poproś ją o udostępnienie rozkazu w schronieniu.
+    outcome:
+      text: |
+        „Sama go przyniosę” — mówi Venn. „Nikt nie powinien musieć wierzyć
+        w kolejną niepodpisaną opowieść”.
+  - id: keep-copy
+    text: Powiedz jej, że ocalali muszą usłyszeć jej relację.
+    outcome:
+      text: |
+        Wkłada złożony rozkaz do płaszcza. „W takim razie z nimi porozmawiam”.
+        Jej głos jest pewniejszy, odkąd przestała bronić szuflady.

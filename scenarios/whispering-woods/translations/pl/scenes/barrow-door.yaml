@@ -1,0 +1,36 @@
+id: barrow-door
+title: Zapieczętowane drzwi
+text: |
+  Szara płyta jest tak ciasno osadzona w kopcu, że między kamienie
+  nie weszłoby nawet ostrze noża. Pod pasem run widnieje otwór na klucz
+  w kształcie węża.
+choices:
+  - id: use-key
+    text: Przekręć klucz z brązu w wężowym zamku.
+    outcome:
+      text: |
+        Klucz obraca się z jękiem, a płyta odchyla się do wewnątrz
+        na ukrytych zawiasach. Wkraczasz w ciemność.
+  - id: read-runes
+    text: Odczytaj runy na głos.
+    test:
+      success:
+        text: |
+          Ostatnia sylaba opuszcza twoje usta i płyta zapada się w ziemię.
+          Wkraczasz w ciemność.
+      failure:
+        text: |
+          Mylisz się przy pradawnym słowie, a runy rozbłyskują chłodem,
+          który parzy.
+  - id: force-door
+    text: Naprzyj ramieniem na płytę.
+    test:
+      success:
+        text: |
+          Kamień zgrzyta o kamień, a płyta przesuwa się na tyle,
+          by dało się przecisnąć.
+      failure:
+        text: |
+          Płyta ani drgnie — za to coś przeskakuje w twoim barku.
+  - id: step-away
+    text: Odsuń się od drzwi.

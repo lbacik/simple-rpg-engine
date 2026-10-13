@@ -1,0 +1,24 @@
+- id: death
+  title: Las cię pochłonął
+  text: |
+    Siły opuszczają cię wśród korzeni i kamieni. W Ashford znów zabije
+    dzwon — tym razem dla ciebie.
+
+- id: walked-away
+  title: Droga wiedzie dalej
+  text: |
+    Stawiasz kołnierz, by osłonić się przed deszczem, i zostawiasz Ashford
+    z jego żałobą. Jeszcze przez długie lata podróżni opowiadają o lesie,
+    który szepcze imię dziewczynki.
+
+- id: mira-rescued
+  title: W domu przed zmrokiem
+  text: |
+    Wynosisz Mirę z kurhanu i schodzisz przez cichy las. Cała wioska
+    Ashford czeka przy bramie, a dzwon wreszcie bije z radości.
+
+- id: laid-to-rest
+  title: Uwolnienie od przysięgi
+  text: |
+    Na dźwięk swojego imienia Aldric opuszcza ostrze. „Wolny” — szepcze
+    i znika. Mira się budzi, a las wreszcie milknie.

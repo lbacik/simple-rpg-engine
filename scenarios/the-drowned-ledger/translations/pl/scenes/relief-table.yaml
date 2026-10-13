@@ -1,0 +1,16 @@
+id: relief-table
+title: Zapasy przy studni
+text: |
+  Aptekarka imieniem Ada rozłożyła bandaże na deskach przerzuconych przez targową
+  studnię. Przestała pobierać opłaty. Krótka kolejka czeka cierpliwie, gdy tnie
+  ostatnie czyste prześcieradło na pasy.
+
+  „Weź coś na zejście” — mówi. „Przynieś imię, jeśli nie zdołasz przyprowadzić
+  człowieka. Mamy już dość niewiadomych”.
+choices:
+  - id: take-supplies
+    text: Weź napój i zwój bandaży.
+    outcome:
+      text: |
+        Ada wciska ci pakunek w dłonie, po czym zwraca się do rybaka ze złamanym nadgarstkiem.
+        Ratowanie miasta już się tu zaczęło.

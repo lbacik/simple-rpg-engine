@@ -1,0 +1,45 @@
+- id: hunting-bow
+  name: Łuk myśliwski
+  description: Sprężysty łuk z cisu, dobry do polowania na jelenie i trzymania kłopotów na dystans.
+
+- id: sword
+  name: Miecz
+  description: Prosta żołnierska klinga, wyszczerbiona, lecz zadbana.
+
+- id: walking-staff
+  name: Kostur wędrowny
+  description: Jesionowy kostur okuty żelazem. Równie dobrze wspiera kroki, jak rozbija czaszki.
+
+- id: woodsman-axe
+  name: Topór drwala
+  description: Ciężki topór na długim trzonku, stworzony do ścinania dębów.
+
+- id: hunters-cloak
+  name: Płaszcz myśliwski
+  description: Wełniany płaszcz w plamistych odcieniach zieleni, który zlewa się z leśnym poszyciem.
+
+- id: chain-shirt
+  name: Kolczuga
+  description: Ciężkie ogniwa, które uczą ramiona dźwigać ciężar.
+
+- id: silver-charm
+  name: Srebrny amulet
+  description: >-
+    Zaśniedziały srebrny krążek z wyrytym jastrzębiem. Głos osoby,
+    która go nosi, zdaje się przyciągać uwagę zmarłych.
+
+- id: healing-herbs
+  name: Zioła lecznicze
+  description: Wiązka krwawnika i żywokostu do żucia i przykładania na rany.
+
+- id: elder-tonic
+  name: Tonik Brenny
+  description: Ciemny, gorzki napój. Brenna zarzeka się, że kiedyś przywrócił życie topielcowi.
+
+- id: barrow-key
+  name: Klucz do kurhanu
+  description: Zimny klucz z brązu, zazieleniony ze starości, w kształcie zwiniętego węża.
+
+- id: old-almanac
+  name: Stary almanach
+  description: Almanach uczonego o miejscowych legendach, z marginesami pełnymi notatek.

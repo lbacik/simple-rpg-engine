@@ -1,0 +1,14 @@
+id: quay
+name: Nabrzeże robocze
+description: |
+  W porcie pachnie mokrymi linami, rozlanym olejem do lamp i mulistym dnem morza.
+  Puste stanowisko promowe leży obok magazynu, którego dach mieni się od ludzi
+  odciętych przez wodę.
+
+  Między nabrzeżem a magazynem prom tkwi pod przewróconym żurawiem przeładunkowym.
+  Jego nazwę, Mercy, namalowano na rufie literami, które ktoś odnawia co roku.
+connections:
+  - to: greyhaven
+    label: Wejdź na targ
+  - to: refuge
+    label: Popłyń naprawionym promem do schronienia na wyspie

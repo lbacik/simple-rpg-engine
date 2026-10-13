@@ -1,0 +1,27 @@
+id: heart-threshold
+title: Rewident pożyczonych godzin
+text: |
+  Przed biurkiem rachunkowym podnosi się postać z karbowników. Nosi urzędniczy
+  kołnierz i nie ma twarzy. „Uprawnienia” — mówi, wyciągając dłoń nad obracającym
+  się cylindrem.
+
+  Tabliczka Hester zapewni ci wejście. Oryginalna księga też daje uprawnienie do
+  sprawdzania własnych wpisów. Z rewidentem można walczyć, ale jego celem jest
+  zapobieganie niezapisanym zmianom, nie żądanie śmierci.
+choices:
+  - id: show-plate
+    text: Okaż tabliczkę uprawnień Hester.
+    outcome:
+      text: |
+        Rewident porównuje tabliczkę ze swoim rejestrem. „Inspekcja dopuszczona.
+        Zmiany wymagają odpowiedzialności”. Składa się obok biurka.
+  - id: show-ledger
+    text: Otwórz oryginalną księgę na wpisie uprawnień konserwacyjnych.
+    outcome:
+      text: |
+        Karbowniki stukają o siebie. „Rachunek może sprawdzić sam siebie”.
+        Przechodzisz bez zakłócania pracy maszyny.
+  - id: fight
+    text: Zniszcz rewidenta, zanim podejdziesz do sterowania.
+  - id: withdraw
+    text: Wróć do Hester.

@@ -1,0 +1,16 @@
+- id: harbour-warden
+  name: Strażnik portowy
+  description: Od lat dbasz o bezpieczeństwo obcych ludzi na niebezpiecznych nabrzeżach. Wiesz, że
+    rozkaz i obowiązek nie zawsze znaczą to samo.
+- id: canal-runner
+  name: Kurier kanałowy
+  description: Nosisz wiadomości przez dachy i po linach. Przez miasto zawsze wiedzie jakaś droga,
+    jeśli zechcesz poszukać jej poza mapami.
+- id: tide-engineer
+  name: Inżynier pływów
+  description: Przyciągnął cię tu niezwykły mur ochronny. Naprawy są dla ciebie zrozumiałe; trudniej
+    zmierzyć ludzi, którzy je zlecają.
+- id: crew-advocate
+  name: Rzecznik załóg
+  description: Rozstrzygasz spory między pracownikami a armatorami. Wiesz, jak skłonić zebranych do
+    słuchania i kiedy słuchanie jest ważniejsze od wygranej.

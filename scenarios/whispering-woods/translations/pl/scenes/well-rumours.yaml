@@ -1,0 +1,21 @@
+id: well-rumours
+title: Plotki przy studni
+text: |
+  Dwaj starcy opierają się o studnię i spierają półgłosem o kurhan
+  po drugiej stronie lasu oraz o możnego, którego pochowano tam
+  „z przysięgą wciąż na ustach”.
+choices:
+  - id: listen-closely
+    text: Zatrzymaj się i posłuchaj uważnie.
+    test:
+      success:
+        text: |
+          Wśród ich pomrukiwań wyławiasz istotny szczegół: możny nosił
+          imię **Aldric**, a kaplica pielgrzymów stoi na drodze do jego
+          kurhanu.
+      failure:
+        text: |
+          Zauważają, że podsłuchujesz, i milkną. Patrzą spode łba,
+          aż wreszcie odchodzisz.
+  - id: leave
+    text: Zostaw ich z ich sprzeczką.

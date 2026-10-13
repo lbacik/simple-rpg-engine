@@ -1,0 +1,11 @@
+id: chapel-prayer
+title: Uklęknij przy ołtarzu
+text: |
+  Spokój zrujnowanej kaplicy zachęca do odpoczynku. Deszcz kapie przez
+  bluszcz, a las na chwilę milknie.
+choices:
+  - id: pray
+    text: Uklęknij i pomódl się.
+    outcome:
+      text: |
+        Ogarnia cię spokój, a ból ran słabnie.

@@ -1,0 +1,11 @@
+id: watch-house
+name: Strażnica portowa
+description: |
+  Wąski budynek opiera się o mur ochronny. Wewnątrz nad piecem wiszą mokre płaszcze,
+  a mapę zatopionej dzielnicy przybito na starszej mapie, z innymi nazwami ulic.
+
+  Na zamkniętej szafie widnieje pieczęć miasta. Kapitan Mara Venn ustawiła przed nią
+  krzesło, jakby krzesło mogło powstrzymać przypływ.
+connections:
+  - to: greyhaven
+    label: Wróć na targ

@@ -1,0 +1,27 @@
+id: drowned-porter
+title: Portier, który wciąż sprawdza bilety
+text: |
+  Portier nosi mundur pociemniały od wody i kasownik do biletów. Na jego plakietce
+  widnieje ELIAS ROOK. „Tylko osoby upoważnione” — mówi. Z ust wypływa mu strumień
+  bąbelków, które unoszą się przez kamień.
+
+  Boi się popełnić błąd, nie szuka walki. Plan pomiarowy spełni jego wymagania.
+  Możesz też wpisać swoje imię i cel wizyty do księgi gości, którą uchronił
+  przed wodą pod płaszczem.
+choices:
+  - id: show-chart
+    text: Pokaż mu plan pomiarowy Iva.
+    outcome:
+      text: |
+        Elias przygląda się podpisowi. „Inspekcja i pomoc. Obie dozwolone”.
+        Wybija równy otwór na marginesie i odsuwa się na bok.
+  - id: sign-book
+    text: Podpisz księgę gości i oświadcz, że przychodzisz z pomocą.
+    outcome:
+      text: |
+        Portier czyta twój wpis na głos. „{name}. Działania pomocowe”. Drugie wyrażenie
+        podkreśla dwa razy. „Takich mieliśmy bardzo mało”.
+  - id: fight
+    text: Przebij się siłą obok portiera.
+  - id: back
+    text: Wróć na górną część schodów.

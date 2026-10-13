@@ -1,0 +1,15 @@
+id: pump-hall
+name: Hala trzech tłoków
+description: |
+  Pod wodnym stropem wznoszą się i opadają trzy wielkie tłoki. Jeden pracuje samotnie,
+  a pozostałe dwa bezskutecznie obijają się o obudowy. Ich wspólny rytm przypomina
+  kogoś, kto utykając wchodzi po schodach.
+
+  Na tablicy konserwacyjnej widnieje schemat obiegu obejściowego. Obok znajduje się
+  pokrętło zbyt ciężkie, by jedna osoba mogła utrzymać je w miejscu bez sworznia
+  blokującego.
+connections:
+  - to: sunken-square
+    label: Wróć na plac
+  - to: cistern
+    label: Wejdź do zbiornika przelewowego

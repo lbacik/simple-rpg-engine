@@ -1,0 +1,60 @@
+- id: harbour-blade
+  name: Nóż portowy
+  description: Szeroki nóż roboczy z magazynu straży portowej.
+- id: boat-hook
+  name: Bosak
+  description: Długi hak wygładzony pracą pośród lin cumowniczych.
+- id: survey-staff
+  name: Laska miernicza
+  description: Laska pomiarowa wzmocniona na wyprawy po niepewnym gruncie.
+- id: signal-crossbow
+  name: Kusza sygnałowa
+  description: Niewielka kusza noszona przez strażników kanału.
+- id: foundry-pryblade
+  name: Łom z ostrzem Nery
+  description: Doskonale wyważone narzędzie do napraw z ostrą krawędzią.
+- id: watch-coat
+  name: Watowany płaszcz strażnika
+  description: Woskowane płótno na filcu, dobre na zimne rozbryzgi i ciężką pracę.
+- id: deck-coat
+  name: Płaszcz marynarza
+  description: Krótki płaszcz zapewniający swobodę rąk i ramion.
+- id: engineers-lens
+  name: Lupa inżynierska
+  description: Składana lupa do odczytywania drobnych oznaczeń na pracujących maszynach.
+- id: union-badge
+  name: Odznaka związku pracowników
+  description: Odznaka przypominająca noszącej ją osobie, by przemawiała w imieniu wielu.
+- id: salt-tonic
+  name: Solny tonik
+  description: Zapieczętowany napój ratunkowy przygotowany dla załóg portowych.
+- id: field-dressings
+  name: Opatrunki polowe
+  description: Czyste bandaże i puszka chłodzącej maści.
+- id: survey-chart
+  name: Plan pomiarowy Iva
+  description: Podpisana mapa z zaznaczonymi usterkami ciśnienia i korytarzami technicznymi.
+- id: survey-seal
+  name: Miejska pieczęć inspekcyjna
+  description: Mosiężna pieczęć straży uprawniająca do inspekcji i wglądu w miejskie dokumenty.
+- id: lamp-oil
+  name: Olej do lamp z promu Mercy
+  description: Zapieczętowana flaszka odzyskana z zapasami ratunkowymi promu.
+- id: house-nameplate
+  name: Tabliczka z nazwą domu w Lowwater
+  description: Mosiężna tabliczka z nazwą domostwa, zachowana przy przewróconym kamieniu pamiątkowym.
+- id: original-ledger
+  name: Oryginalna księga konserwacyjna
+  description: Miejskie rachunki muru ochronnego, z nieocenzurowanymi notatkami Hester Marr.
+- id: locking-pin
+  name: Sworzeń blokujący z brązu
+  description: Sworzeń konserwacyjny do unieruchomienia pokrętła obiegu obejściowego pomp.
+- id: counterweight
+  name: Nowa przeciwwaga
+  description: Odlew Nery Vale do hamulca grobli i układu cięgien w fundamentach.
+- id: witness-ribbon
+  name: Wstążka świadków
+  description: Wstążka oznaczająca w księdze zeznania i dobrowolne zobowiązania do konserwacji.
+- id: keeper-plate
+  name: Tabliczka uprawnień Hester
+  description: Uprawnienie do inspekcji komory serca, bez obowiązku przyjęcia związanego z nią urzędu.

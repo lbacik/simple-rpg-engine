@@ -1,0 +1,22 @@
+id: resolution-keeper
+title: Jedno dobrowolnie wpisane imię
+text: |
+  Hester kładzie pustą stronę pod rysikiem. „Maszyna przyjmie dobrowolnie wpisane imię.
+  Pozwoli mi odejść i będzie podtrzymywać mur, dopóki tu zostaniesz. Pozostałe imiona
+  pozostaną związane, aż ktoś poprawi rachunek”.
+
+  Nie ukrywa samotności. Ten urząd nie ma urlopów ani pewności, że przyjdzie kolejna
+  inspekcja. Greyhaven zyska czas, ale czas może stać się kolejną wymówką
+  ludzi na górze.
+
+  „Jeśli to wybierzesz, wybierz ze świadomością, czym jest. Ratujesz teraz żywych.
+  Zostawiasz też niedokończoną pracę”.
+choices:
+  - id: take-watch
+    text: Zapisz swoje imię i dobrowolnie przyjmij wartę.
+    outcome:
+      text: |
+        Rysik zatrzymuje się nad pustą stroną. Przejmujesz łańcuch z rąk Hester,
+        zanim złożysz podpis.
+  - id: reconsider
+    text: Zamknij księgę na pustej stronie i wróć do biurka.

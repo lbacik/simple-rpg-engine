@@ -1,0 +1,22 @@
+id: wight-awakens
+title: Przebudzenie upiora
+text: |
+  Postać na marach podnosi się do siadu. W pustych otworach jej hełmu
+  płonie błękitne światło. „Kto przychodzi wykraść mi oblubienicę?” —
+  chrypi, wysuwając zardzewiałą klingę z pochwy z metalicznym zgrzytem.
+choices:
+  - id: fight
+    text: Walcz z upiorem o Mirę.
+  - id: name-him
+    text: Unieś srebrny amulet i wezwij go po imieniu.
+    test:
+      success:
+        text: |
+          „Aldricu, twoja przysięga jest złamana, a twój pan obrócił się
+          w proch. Uwolnij ją”. Amulet rozbłyskuje, a ostrze się chwieje.
+      failure:
+        text: |
+          Głos załamuje ci się na jego imieniu. Upiór śmieje się
+          i rusza na ciebie.
+  - id: flee
+    text: Wycofaj się w górę korytarza.

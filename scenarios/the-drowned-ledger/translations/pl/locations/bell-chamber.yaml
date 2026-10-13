@@ -1,0 +1,14 @@
+id: bell-chamber
+name: Komora dzwonu pływowego
+description: |
+  Dzwon pływowy wisi poziomo nad studnią, z wylotem skierowanym w ciemność. Kobieta
+  w poplamionym wodą płaszczu inżynierskim siedzi obok łańcucha, który unieruchamia
+  jego serce.
+
+  Za nią wąski właz prowadzi do fundamentów. Nie ma zamka, tylko tabliczkę
+  z wyrytymi słowami: WŁADZĘ TRZEBA PRZYJĄĆ.
+connections:
+  - to: causeway
+    label: Wróć na groblę
+  - to: heart-vault
+    label: Wejdź do fundamentów

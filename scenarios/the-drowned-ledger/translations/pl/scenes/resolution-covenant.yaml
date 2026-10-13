@@ -1,0 +1,24 @@
+id: resolution-covenant
+title: Imiona przywrócone ludziom
+text: |
+  Kładziesz wstążkę świadków w poprzek księgi i odczytujesz imiona z kamienia
+  pamiątkowego. Cylinder zwalnia za każdym razem, gdy wypowiadasz imię.
+  Jeden po drugim wpisy odrywają się od mosiądzu i stają się głosami.
+
+  Korekta zastępuje przymusowy dług wspólną konserwacją: dobrowolnie ofiarowanymi
+  godzinami, bezpiecznymi warunkami pracy, wspólnymi zapasami, prawem do odmowy.
+  Hester czyta każdą klauzulę, zanim pozwala ci podpisać.
+
+  „Jutro mur będzie potrzebował pracy” — mówi. „To lepsza obietnica niż ta,
+  że już nigdy nie będzie nikogo potrzebował”. Gdy podpiszesz, zmarli będą mogli
+  opuścić maszynę.
+choices:
+  - id: sign
+    text: Podpisz korektę i uwolnij utopionych.
+    outcome:
+      text: |
+        Wpisujesz {name} wśród świadków, potwierdzając przekazanie rachunku.
+        Hester unosi rysik. Po raz pierwszy od sześćdziesięciu lat dzwon pływowy
+        może zadzwonić.
+  - id: reconsider
+    text: Zostaw korektę bez podpisu i wróć do biurka.

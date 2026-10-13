@@ -1,0 +1,143 @@
+- id: loc-archive-vault
+  alt: Półki suchych książek otaczają rejestr pod szklanym przyciskiem w chronionej czytelni.
+- id: loc-archive
+  alt: Oprószone solą schody archiwum prowadzą do kraty z brązu ozdobionej wstążką i papierowymi
+    łódkami.
+- id: loc-bell-chamber
+  alt: Dzwon pływowy wisi wylotem w dół nad ciemną studnią, obok unieruchomionego serca dzwonu i
+    siedzącej strażniczki.
+- id: loc-causeway
+  alt: Wąska kamienna grobla biegnie między ścianami zatrzymanej wody ku wieży sygnałowej i drzwiom z
+    brązu.
+- id: loc-cistern
+  alt: Wysepki z krat pomostowych przecinają zbiornik przelewowy, prowadząc do klatki z narzędziami i
+    kołyski nurkowej obok zalanego kanału za szybą.
+- id: loc-foundry
+  alt: Tory tramwajowe wchodzą do odlewni pełnej pieców i form odlewniczych, gdzie widmowa kowalka
+    pracuje przy kowadle.
+- id: loc-greyhaven
+  alt: Stragany rybne i worki z piaskiem otaczają targową studnię w Greyhaven nad basenem pełnym
+    zatopionych dachów.
+- id: loc-heart-vault
+  alt: Mosiężny cylinder obraca się pod rysikiem w klatce z belek, otoczony stanowiskami sterowania
+    maszyną i biurkiem z księgą.
+- id: loc-lockhouse
+  alt: Trzy ciśnieniomierze i zakratowane schody inspekcyjne wewnątrz budynku północnej śluzy.
+- id: loc-pump-hall
+  alt: Trzy ogromne tłoki, tablica konserwacyjna i pokrętło stoją pod stropem z zawieszonej wody.
+- id: loc-quay
+  alt: Przewrócony żuraw przeładunkowy więzi prom obok magazynu, na którego dachu utknęli ludzie.
+- id: loc-refuge
+  alt: Długi stół i schnące koce wypełniają schronienie na wyspie, a przez okno widać obie portowe
+    dzielnice.
+- id: loc-signal-tower
+  alt: Latarnia z sześcioma przesłonami wieńczy wieżę sygnałową nad morzem, a obok platformy znajduje
+    się rura głosowa.
+- id: loc-stairwell
+  alt: Żelazne schody inspekcyjne wiją się w dół głębokiego szybu ku suchemu tunelowi i unoszącemu się
+    portierowi.
+- id: loc-sunken-square
+  alt: Suchy plac z fontanną i przewróconym kamieniem pamiątkowym leży pod sklepieniem z morskiej wody
+    i pływających ryb.
+- id: loc-watch-house
+  alt: Mokre płaszcze schną nad piecem w strażnicy, obok map, biurka i zamkniętej szafy.
+- id: archive-door
+  alt: Papierowe łódki wiszą na kracie archiwum, za którą widać puste krzesło urzędnika.
+- id: beacon-lighting
+  alt: Flaszka oleju i szafka awaryjna znajdują się obok otwartego zbiornika lampy sygnałowej.
+- id: captain-confession
+  alt: Mara kładzie obok księgi dawny rozkaz ewakuacji z pustą listą pasażerów.
+- id: causeway-crossing
+  alt: Nowa przeciwwaga czeka pod pustym gniazdem układu hamulca przy drzwiach grobli.
+- id: cistern-arrival
+  alt: Tamsin daje znaki przez zalany kanał inspekcyjny obok całego przewodu powietrznego i rury
+    głosowej.
+- id: cistern-cache
+  alt: Sworzeń blokujący z brązu, dwie puszki z medykamentami i czysty sznurek czekają w otwartej
+    klatce z narzędziami.
+- id: cistern-diver
+  alt: Uwięziona nurkini patrzy zza szyby, gdy dłoń stabilizuje dźwignię odpływu obok ciśnieniomierza.
+- id: descent-preparations
+  alt: Gniazdo pieczęci, pokrętło ciśnienia i ręczne zwolnienie blokady zabezpieczają drzwi na schody
+    inspekcyjne.
+- id: drowned-porter
+  alt: Unoszący się portier podaje suchą księgę gości i kasownik do biletów, a z jego ust wydobywają
+    się bąbelki.
+- id: ferry-crossing
+  alt: Bram stoi obok uwolnionego promu przy pływającym pomoście, a pasażerowie czekają na wejście.
+- id: ferry-rescue
+  alt: Bram trzyma hamulec wciągarki, a matka z dzieckiem obserwują liny ratunkowe z dachu magazynu.
+- id: foundry-sentinel
+  alt: Brygadzista w żelaznej masce i skórzanym fartuchu stoi między piecem a stołem roboczym.
+- id: foundry-workbench
+  alt: Nera stoi obok przygotowanej formy przeciwwagi i ramy odlewniczej w Solnej odlewni.
+- id: heart-controls
+  alt: Otwarta księga czeka obok rysika, stabilnego ciśnieniomierza i dźwigni sterowania maszyną.
+- id: heart-threshold
+  alt: Pozbawiony twarzy rewident z karbowników wyciąga dłoń przed obracającym się mosiężnym cylindrem.
+- id: keeper-answer
+  alt: Hester podaje mosiężną tabliczkę uprawnień obok włazu do komory serca.
+- id: keeper-audience
+  alt: Hester odwraca się od łańcucha dzwonu, trzymając ludzkie dłonie na poplamionym wodą płaszczu
+    inżynierskim.
+- id: keeper-truth
+  alt: Hester dotyka unieruchomionego serca dzwonu, wspominając historię maszyny.
+- id: ledger-account
+  alt: Otwarte notatki konserwacyjne opisują połączenie pomp, przeciwwagi i muru ochronnego obok
+    oryginalnego rachunku.
+- id: ledger-discovery
+  alt: Oryginalna księga leży otwarta, a jej rachunki przechodzą w listy imion i nazwisk oraz
+    przekreślone notatki na marginesach.
+- id: lockhouse-arrival
+  alt: Praktykantka konserwacji stoi obok ciśnieniomierzy i stołka podpierającego dźwignię alarmową.
+- id: market-arrival
+  alt: Ivo zbliża się do targowej studni ze zwiniętym planem i herbatą, a matka przytula dziecko.
+- id: progress-report
+  alt: Ivo porównuje obserwacje na planie pomiarowym przypiętym do daszku nad targową studnią.
+- id: pump-arrival
+  alt: Cienisty pracownik powtarza ruch kluczem za jedynym pracującym tłokiem.
+- id: pump-calibration
+  alt: Sworzeń blokujący z brązu jest gotowy do zamontowania obok pokrętła i trzech zaworów obiegu
+    obejściowego.
+- id: quay-arrival
+  alt: Ranny Bram sięga po linę na mokrym nabrzeżu, a przewrócony żuraw więzi jego prom i blokuje
+    schody pod ludźmi uwięzionymi na dachu magazynu.
+- id: refuge-arrival
+  alt: Sella dostawia filiżanki, gdy półprzezroczyści goście wahają się przy wejściu do chaty na wyspie.
+- id: refuge-rest
+  alt: Miska gorącego bulionu i suchy koc czekają obok kuchennego pieca w schronieniu.
+- id: relief-table
+  alt: Ada tnie płótno na bandaże na deskach przerzuconych przez targową studnię, a obok czeka krótka
+    kolejka.
+- id: resolution-break
+  alt: Dwie dłonie spoczywają obok niszczycielskiej dźwigni, a klatka podtrzymująca maszynę pozostaje
+    cała.
+- id: resolution-covenant
+  alt: Wstążka świadków przecina księgę, a Hester sprawdza korektę przed podpisaniem.
+- id: resolution-evacuation
+  alt: Hester sprawdza raport promowy obok sterowania południowym kanałem przelewowym.
+- id: resolution-keeper
+  alt: Hester kładzie pustą stronę pod rysikiem na imię osoby dobrowolnie przyjmującej wartę.
+- id: smith-memory
+  alt: Nera podaje przeciwwagę w mokrym płótnie workowym, pokazując odcisk obrączki na otwartej dłoni.
+- id: square-arrival
+  alt: Widmowa kobieta myje filiżankę w suchej fontannie, a bladzi pasażerowie obserwują ją ze starego
+    tramwaju.
+- id: stairwell-descent
+  alt: Światło lampy ujawnia skorodowaną wyrwę w żelaznych schodach, obok której biegnie solidna poręcz.
+- id: street-memorial
+  alt: Szyna tramwajowa podważa kamień pamiątkowy napisami do góry, odsłaniając rzędy imion i nazwisk
+    obok małej mosiężnej tabliczki z domu.
+- id: tower-arrival
+  alt: Widmowy łucznik pilnuje latarni wieży nad portem pełnym łodzi, dachów i sznurów z praniem.
+- id: tower-watch
+  alt: Strażnik wieży trzyma łuk nisko, a plan pomiarowy kieruje uwagę ku podnoszącej się wodzie.
+- id: town-briefing
+  alt: Ivo rozkłada plan portu na pustym straganie rybnym i wskazuje budynek śluzy.
+- id: watch-captain
+  alt: Kapitan Venn trzyma dłoń na mosiężnej pieczęci inspekcyjnej obok pieca w strażnicy.
+- id: watch-stores
+  alt: Nóż portowy, watowany płaszcz i lampa z przesłoną leżą przygotowane na stole w strażnicy.
+- id: witness-council
+  alt: Żywi mieszkańcy i półprzezroczyści świadkowie gromadzą się wokół otwartej księgi przy stole w
+    schronieniu.

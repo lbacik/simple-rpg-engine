@@ -1,0 +1,12 @@
+id: forest-edge
+name: Skraj lasu
+description: |
+  Pola kończą się u ściany starych dębów. Nawet gdy nie ma wiatru, liście
+  szepczą, a ich szmer niemal układa się w słowa.
+connections:
+  - to: ashford
+    label: Wróć do wioski
+  - to: hunters-camp
+    label: Podążaj wydeptanym szlakiem na północ
+  - to: wolf-hollow
+    label: Zejdź do kotliny

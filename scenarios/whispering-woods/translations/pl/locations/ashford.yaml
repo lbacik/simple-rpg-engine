@@ -1,0 +1,8 @@
+id: ashford
+name: Ashford
+description: |
+  Skupisko chat krytych strzechą wokół błotnistego placu i kamiennej studni.
+  Mieszkańcy trzymają drzwi zamknięte, a wzrok kierują ku ciemnej linii lasu.
+connections:
+  - to: forest-edge
+    label: Idź drogą dla wozów w stronę lasu

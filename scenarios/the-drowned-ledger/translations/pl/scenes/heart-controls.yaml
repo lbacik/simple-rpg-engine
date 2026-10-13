@@ -1,0 +1,22 @@
+id: heart-controls
+title: Biurko rachunkowe
+text: |
+  Wskazówka pompy jest stabilna. Przeciwwaga Nery porusza się w układzie cięgien nad
+  klatką. Księga leży otwarta obok rysika, gotowa na wpis, który przetrwa tę godzinę.
+
+  Sterowanie pozwala poprawić rachunek, przekazać obowiązek straży lub otworzyć
+  południowy kanał przelewowy. Czwarta dźwignia rozerwie klatkę podtrzymującą cylinder.
+  Jej uchwyt pomalowano na czerwono.
+
+  Nadal możesz odejść. Samo podejście do biurka nie oznacza żadnego z tych wyborów.
+choices:
+  - id: correct-account
+    text: Przygotuj poświadczoną korektę, która uwolni utopionych.
+  - id: become-keeper
+    text: Rozważ samodzielne przejęcie warty Hester.
+  - id: evacuate
+    text: Przygotuj kontrolowaną ewakuację przez południowy kanał przelewowy.
+  - id: break-engine
+    text: Sprawdź czerwoną dźwignię i skutki jej użycia.
+  - id: return
+    text: Wróć do komory dzwonu i uzupełnij brakujące przygotowania.

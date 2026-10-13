@@ -1,0 +1,17 @@
+id: arrival
+title: Dzwon Ashford
+text: |
+  Siwowłosa kobieta w zabłoconym fartuchu spieszy przez plac w twoją
+  stronę. Lina dzwonu wciąż kołysze się za jej plecami.
+
+  „Masz broń i przychodzisz drogą przez las” — mówi. „To wymaga wielkiej
+  odwagi albo zupełnego zagubienia. Jestem Brenna, starsza wioski Ashford.
+  Czy zechcesz mnie wysłuchać?”
+choices:
+  - id: listen
+    text: Wysłuchaj jej.
+  - id: refuse
+    text: Pokręć głową i idź dalej.
+    outcome:
+      text: |
+        Ramiona Brenny opadają. Nie mówi już nic, gdy mijasz ostatnią chatę.

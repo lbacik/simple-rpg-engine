@@ -1,0 +1,30 @@
+id: archive-door
+title: Urzędnik za kratą
+text: |
+  Z pustego krzesła za kratą z brązu dobiega głos. „Podaj rachunek, który chcesz
+  sprawdzić”. Papierowe łódki drżą, jakby urzędnik na nie dmuchnął.
+
+  Pieczęć inspekcyjna otwiera miejskie dokumenty. Bez niej urzędnik przyjmie nazwisko
+  każdej osoby, której dom pojawia się w tych dokumentach. Można je znaleźć na kamieniu
+  pamiątkowym na placu; wystarczy też nazwisko z plakietki portiera.
+choices:
+  - id: show-seal
+    text: Okaż pieczęć inspekcyjną.
+    outcome:
+      text: |
+        Krata się cofa. „Zgoda na inspekcję. Żadnej strony nie wolno poprawiać
+        przez wymazywanie”.
+  - id: show-nameplate
+    text: Poproś o dokumenty domostwa wskazanego na mosiężnej tabliczce.
+    outcome:
+      text: |
+        „Rachunek domostwa pozostaje otwarty” — mówi urzędnik. Zatrzask się zwalnia,
+        a papierowe łódki przestają drżeć.
+  - id: name-porter
+    text: Poproś o wgląd w dokument ewakuacji Eliasa Rooka.
+    outcome:
+      text: |
+        Niewidzialny urzędnik długo nie odpowiada. „Nie ma ukończonego dokumentu ewakuacji.
+        Możesz sprawdzić rachunek, który go zastąpił”. Krata się otwiera.
+  - id: leave
+    text: Wróć, kiedy zechcesz czytać.

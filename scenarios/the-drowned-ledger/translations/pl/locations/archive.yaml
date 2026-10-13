@@ -1,0 +1,13 @@
+id: archive
+name: Archiwum miejskie
+description: |
+  Schody archiwum są oprószone solą, lecz sam budynek otacza ta sama niemożliwa suchość
+  co plac. Wejście do czytelni zasłania krata z brązu.
+
+  Ktoś przeplótł przez kratę białą wstążkę. Wzdłuż niej zawieszono małe papierowe łódki,
+  a na każdej widnieje odręcznie zapisane imię i nazwisko.
+connections:
+  - to: sunken-square
+    label: Wróć na plac Lowwater
+  - to: archive-vault
+    label: Wejdź do chronionej czytelni

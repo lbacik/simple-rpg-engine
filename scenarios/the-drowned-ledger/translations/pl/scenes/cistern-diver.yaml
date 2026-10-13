@@ -1,0 +1,31 @@
+id: cistern-diver
+title: Uwolnij kołyskę nurkową
+text: |
+  Dźwignia odpływu stawia opór, lecz porusza się nieco z każdym obrotem. Jej etykieta
+  ostrzega, że zbyt szybkie otwarcie może uderzyć kołyską o ścianę kanału.
+  Tamsin przywiązała uwięzioną nogę, by nie dopuścić do jej skręcenia.
+
+  Możesz opróżnić kanał etapami, według jej instrukcji. Mocniejsze pociągnięcie
+  mogłoby zadziałać szybciej, ale prosi, by patrzeć na ciśnieniomierz, nie na jej twarz.
+choices:
+  - id: drain-carefully
+    text: Opróżniaj kanał etapami i podnieś kołyskę razem z Tamsin.
+    outcome:
+      text: |
+        Trwa to dłużej, niż którekolwiek z was by chciało. Gdy kołyska wreszcie się unosi,
+        Tamsin uwalnia się z westchnieniem, które przechodzi w śmiech. Pomagasz jej wejść
+        do suchego korytarza technicznego w stronę schronienia.
+  - id: lift-cradle
+    text: Zaprzyj dźwignię i podnieś kołyskę jednym równym ruchem.
+    test:
+      success:
+        text: |
+          Kołyska podnosi się bez szarpnięcia. Tamsin uwalnia nogę i kieruje resztę powietrza
+          przez ogrzewacz awaryjny. Kanał opuszczacie w lepszej formie niż na początku.
+      failure:
+        text: |
+          Dźwignia wymyka się i uderza cię w bark. Zatrzymujesz się, ustawiasz ją ponownie
+          i wspólnie kończycie powolne opróżnianie. Tamsin dociera do korytarza żywa,
+          ciężko opierając się na twoim ramieniu.
+  - id: wait
+    text: Utrzymuj przewód powietrzny drożny i wróć niebawem.

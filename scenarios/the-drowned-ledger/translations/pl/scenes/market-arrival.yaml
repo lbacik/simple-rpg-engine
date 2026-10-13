@@ -1,0 +1,21 @@
+id: market-arrival
+title: Przypływ, który zapomniał o swojej porze
+text: |
+  Mosiężny wodowskaz przy studni dzwoni raz i milknie, choć jego wskazówka wciąż pnie
+  się w górę. Przez tłum przeciska się młody mierniczy portowy ze zwiniętym planem i filiżanką
+  herbaty, której zapomniał wypić.
+
+  „Przychodzisz suchą drogą” — mówi. „Więc wciąż możesz odejść. Nazywam się Ivo Pell.
+  Pod basenem portowym mamy usterkę i nikogo chętnego, by do niej zejść”.
+
+  Dziewczynka przy studni pyta matkę, dlaczego okna zatopionych domów są pełne światła.
+  Matka odpowiada, przyciągając dziecko bliżej.
+choices:
+  - id: hear-surveyor
+    text: Zapytaj Iva, co się dzieje.
+  - id: leave-city
+    text: Opuść Greyhaven suchą drogą.
+    outcome:
+      text: |
+        Zostawiasz za sobą drogę schodzącą ku miastu. Ivo nie próbuje cię zatrzymać;
+        już zwrócił się do następnej obcej osoby.

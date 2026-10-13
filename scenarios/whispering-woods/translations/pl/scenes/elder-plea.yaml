@@ -1,0 +1,27 @@
+id: elder-plea
+title: Prośba Brenny
+text: |
+  „Trzy noce temu moja wnuczka Mira poszła za głosem w głąb lasu.
+  Od tamtej pory drzewa *szepczą*. Myśliwi, którzy mogliby ją wytropić,
+  zniknęli. Jesteś naszą jedyną nadzieją, {name}”.
+choices:
+  - id: accept
+    text: Obiecaj odnaleźć Mirę.
+    outcome:
+      text: |
+        Brenna wciska ci w dłonie wiązkę ziół. „Droga dla wozów prowadzi
+        na skraj lasu. Niech święci cię strzegą”.
+  - id: haggle
+    text: Zapytaj, co wioska może zaoferować za twój trud.
+    test:
+      success:
+        text: |
+          Brenna przygląda ci się, po czym przynosi z chaty zakorkowaną
+          flaszkę. „Tonik mojej matki. Jest wart więcej niż nasze srebro.
+          Przyprowadź ją z powrotem”.
+      failure:
+        text: |
+          „Nie zostało nam nic prócz nadziei” — mówi chłodno. „Jeśli
+          zamierzasz iść, wybierz drogę dla wozów prowadzącą do lasu”.
+  - id: refuse
+    text: Powiedz jej, że to nie twoja sprawa.

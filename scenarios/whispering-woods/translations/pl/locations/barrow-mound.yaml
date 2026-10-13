@@ -1,0 +1,10 @@
+id: barrow-mound
+name: Kurhan
+description: |
+  Podłużny kopiec porośnięty trawą, zwieńczony stojącymi głazami. U jego
+  podnóża znajdują się drzwi z jednej szarej płyty, pokrytej runami.
+connections:
+  - to: ruined-chapel
+    label: Wróć do kaplicy
+  - to: barrow-tomb
+    label: Wejdź do kurhanu

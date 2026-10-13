@@ -1,0 +1,26 @@
+id: stairwell-descent
+title: Brakujący stopień
+text: |
+  W połowie szybu jeden ze stopni skorodował do cienkiej skorupy. Światło lampy
+  wyławia wyrwę tuż przed postawieniem na niej ciężaru ciała. Daleko w dole ktoś
+  odchrząkuje z wielką oficjalnością.
+
+  Poręcz jest solidna. Możesz powoli opuścić się obok wyrwy albo zaufać
+  szybkiemu krokowi ponad nią.
+choices:
+  - id: use-rail
+    text: Opuść się obok wyrwy, trzymając poręczy.
+    outcome:
+      text: |
+        Docierasz na spocznik z zimnymi dłońmi i całą kostką. Powrót będzie łatwiejszy,
+        skoro wiesz już, gdzie jest wyrwa.
+  - id: jump
+    text: Przestąp ponad wyrwą, zanim schody się poruszą.
+    test:
+      success:
+        text: |
+          Lądujesz pewnie za uszkodzonym stopniem.
+      failure:
+        text: |
+          But zahacza o krawędź. Poręcz ratuje cię przed upadkiem, ale goleń
+          przyjmuje uderzenie.

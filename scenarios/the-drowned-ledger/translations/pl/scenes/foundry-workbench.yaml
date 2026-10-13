@@ -1,0 +1,30 @@
+id: foundry-workbench
+title: Odlej nową przeciwwagę
+text: |
+  Kobieta przy kowadle podnosi wzrok, gdy wchodzisz. „Nera Vale” — przedstawia się.
+  „Kiedyś robiłam zawiasy. Potem rada potrzebowała urządzenia, które utrzyma ciężar
+  całego miasta. Zapytali, czy mogę je odlać. Nie zapytali, czy powinni”.
+
+  Forma nowej przeciwwagi jest gotowa. Nera może poprowadzić cię przez powolne,
+  solidne odlewanie. Jeśli pomożesz ustabilizować ramę, z ostatniej porcji dobrego
+  stopu powstanie też narzędzie na twoją dalszą drogę.
+choices:
+  - id: follow-smith
+    text: Postępuj według instrukcji Nery i odlej przeciwwagę.
+    outcome:
+      text: |
+        Zbierasz sól z powierzchni metalu i bez pośpiechu wypełniasz formę. Nera czeka,
+        aż powierzchnia ostygnie, zanim dotknie odlewu.
+  - id: brace-frame
+    text: Podeprzyj ramę odlewniczą, gdy Nera zalewa formę.
+    test:
+      success:
+        text: |
+          Rama trwa w całkowitym bezruchu. Zostaje dość stopu, by Nera odlała obok
+          przeciwwagi krótki, świetnie wyważony łom z ostrzem.
+      failure:
+        text: |
+          Rama drży, rozpryskując gorący metal na pożyczony przez ciebie fartuch.
+          Przeciwwaga pozostaje cała, choć twoje przedramię zapamięta to odlewanie.
+  - id: leave
+    text: Zostaw przygotowaną formę do następnej wizyty.

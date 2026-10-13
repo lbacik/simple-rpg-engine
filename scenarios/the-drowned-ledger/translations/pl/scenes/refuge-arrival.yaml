@@ -1,0 +1,18 @@
+id: refuge-arrival
+title: Dwa brzegi przy jednym stole
+text: |
+  Starsza kobieta imieniem Sella Marr porządkuje koce. Jako dziecko mieszkała
+  w Lowwater; jej matką była Hester, inżynierka, która pozostała na dole,
+  gdy otwarto wrota.
+
+  Przy wejściu do chaty stoi kilka półprzezroczystych postaci. Dotarły do korytarza
+  technicznego, ale wahają się przed wejściem między żywych. Sella dostawia filiżanki.
+
+  „Jeśli wrócili do domu” — mówi — „nie powinni czekać na zewnątrz”.
+choices:
+  - id: make-room
+    text: Przesuń ławy, by zrobić miejsce dla obu brzegów.
+    outcome:
+      text: |
+        W izbie robi się spokojniej, gdy pojawiają się nowe miejsca. Ktoś podaje filiżankę
+        dłoni, która ledwo zachowuje kształt, i nikt się nie śmieje.

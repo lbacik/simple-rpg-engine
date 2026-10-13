@@ -1,0 +1,17 @@
+id: cistern-arrival
+title: Żywy głos w wodzie
+text: |
+  Przez rurę głosową dobiegają trzy ostre stuknięcia. „Nie ciągnij kabla” — mówi
+  kobieta. „Kołyska się zaczepiła, a moja noga jest pod nią. Tamsin Reed,
+  nurkini portowa. Nadal żywa, wbrew dokumentom”.
+
+  Jej przewód powietrzny jest cały. W komorze oznaczono dźwignię odpływu, która może
+  obniżyć poziom wody wokół kołyski. Tamsin objaśnia sterowanie,
+  nie udając, że się nie boi.
+choices:
+  - id: answer
+    text: Powiedz Tamsin, że przygotujesz odpływ.
+    outcome:
+      text: |
+        „Dobrze. W klatce z narzędziami jest też sworzeń blokujący. Weź go, nawet jeśli
+        jeszcze nie zdołasz mnie wydostać. Całe miasto siedzi na tych pompach”.

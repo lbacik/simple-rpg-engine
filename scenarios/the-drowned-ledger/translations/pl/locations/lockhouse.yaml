@@ -1,0 +1,14 @@
+id: lockhouse
+name: Budynek północnej śluzy
+description: |
+  Mur ochronny rozszerza się tu w przysadzisty budynek śluzy. Ogólnodostępne
+  wejście prowadzi do suchej galerii inspekcyjnej; schody za kratą schodzą poniżej
+  poziomu wody.
+
+  Za pękniętą szybą drżą trzy wskazówki ciśnieniomierzy. Dwie opisano słowami POMPA
+  i PRZECIWWAGA. Przy trzeciej widnieje RACHUNEK, wydrapany ręcznie w mosiądzu.
+connections:
+  - to: greyhaven
+    label: Wróć wzdłuż muru ochronnego
+  - to: stairwell
+    label: Zejdź schodami inspekcyjnymi

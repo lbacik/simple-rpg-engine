@@ -4,7 +4,7 @@
     "description": "Defeated Encounter: hollow-wolf beaten, victory Outcome applied, back in the Location view.",
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "fb6068475fca68eb064cf8dd12100b5c1c0d016dbc3e66485f83e451e250759f",
+    "contentHash": "0afd18d4bcd19c12bd7debdac5110623e80a87a910a3cdb9e32023395be40827",
     "scenarioLanguage": "en",
     "capturedWith": "scripts/capture-state-v1-fixtures.ts"
   },
@@ -12,7 +12,7 @@
     "stateVersion": 1,
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "fb6068475fca68eb064cf8dd12100b5c1c0d016dbc3e66485f83e451e250759f",
+    "contentHash": "0afd18d4bcd19c12bd7debdac5110623e80a87a910a3cdb9e32023395be40827",
     "status": "active",
     "step": 9,
     "character": {

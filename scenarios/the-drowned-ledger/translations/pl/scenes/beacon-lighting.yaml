@@ -1,0 +1,24 @@
+id: beacon-lighting
+title: Przygotuj sygnał trzech błysków
+text: |
+  Zbiornik lampy jest pusty. Pod nim stoi zapieczętowana szafka z olejem na wypadek
+  zagrożenia. W zapasach ratunkowych Mercy też mogła znaleźć się flaszka.
+
+  Możesz przygotować latarnię bez zarządzania ewakuacji. Gdy lampa zapłonie,
+  sterowanie strażniczki pozwoli otworzyć jednocześnie przesłony sygnałowe
+  i południowy kanał przelewowy. Bram rozpozna trzy długie błyski.
+choices:
+  - id: use-oil
+    text: Napełnij zbiornik olejem z Mercy.
+    outcome:
+      text: |
+        Lampa zapala się. Ustawiasz układ przesłon na sygnał alarmowy. Rura głosowa niesie
+        twój raport do Greyhaven, gdzie ktoś odpowiada oddechem pełnym ulgi.
+  - id: open-locker
+    text: Otwórz szafkę awaryjną i użyj zapasowego oleju.
+    outcome:
+      text: |
+        Woskowa pieczęć pęka pod kciukiem. Napełniasz lampę i ustawiasz układ przesłon.
+        Zapasy awaryjne wreszcie napotkały zagrożenie, na które je zachowano.
+  - id: wait
+    text: Zostaw lampę przygotowaną do późniejszego napełnienia.

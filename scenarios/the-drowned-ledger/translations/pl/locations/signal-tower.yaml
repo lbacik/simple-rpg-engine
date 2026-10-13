@@ -1,0 +1,11 @@
+id: signal-tower
+name: Wieża sygnałowa
+description: |
+  Kręcone schody wznoszą się ponad zawieszone morze, ku latarni z sześcioma przesłonami.
+  Kiedyś jej światło prowadziło statki do portu; teraz może wyprowadzić z niego żywych.
+
+  Rura głosowa łączy platformę ze strażą portową. Na podstawie latarni widnieje
+  wyblakła instrukcja: TRZY DŁUGIE BŁYSKI. POŁUDNIOWY KANAŁ MUSI BYĆ WOLNY.
+connections:
+  - to: causeway
+    label: Zejdź na groblę

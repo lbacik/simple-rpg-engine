@@ -1,0 +1,87 @@
+language: pl
+baseVersion: 1.0.1
+title: Zatopiona księga
+description: Zejdź pod zawodzący mur ochronny, odkryj ukrytą historię miasta i zdecyduj, co żywi są
+  winni zmarłym. Naprawy mogą kupić czas; tylko wybór może zamknąć rachunek.
+intro: |
+  Docierasz do Greyhaven rankiem, w porze odpływu. Coś jednak jest nie tak — odpływ
+  nie nadchodzi. Niebo jest czyste, nie ma wiatru ani deszczu, a mimo to morze wciąż
+  się podnosi i napiera na mur portowy.
+
+  U stóp muru, pod wodą, leży Lowwater — dzielnica zatopiona sześćdziesiąt lat temu.
+  Ludzie z górnego miasta zapewniają, że gdy ją zalano, nikogo tam nie było. Tymczasem
+  przez przejrzystą wodę widzisz, jak w jednym z zatopionych domów ktoś nakrywa
+  do stołu.
+locations:
+  - translations/pl/locations/greyhaven.yaml
+  - translations/pl/locations/quay.yaml
+  - translations/pl/locations/watch-house.yaml
+  - translations/pl/locations/lockhouse.yaml
+  - translations/pl/locations/stairwell.yaml
+  - translations/pl/locations/sunken-square.yaml
+  - translations/pl/locations/archive.yaml
+  - translations/pl/locations/archive-vault.yaml
+  - translations/pl/locations/pump-hall.yaml
+  - translations/pl/locations/cistern.yaml
+  - translations/pl/locations/foundry.yaml
+  - translations/pl/locations/refuge.yaml
+  - translations/pl/locations/causeway.yaml
+  - translations/pl/locations/signal-tower.yaml
+  - translations/pl/locations/bell-chamber.yaml
+  - translations/pl/locations/heart-vault.yaml
+scenes:
+  - translations/pl/scenes/market-arrival.yaml
+  - translations/pl/scenes/town-briefing.yaml
+  - translations/pl/scenes/relief-table.yaml
+  - translations/pl/scenes/progress-report.yaml
+  - translations/pl/scenes/quay-arrival.yaml
+  - translations/pl/scenes/ferry-rescue.yaml
+  - translations/pl/scenes/ferry-crossing.yaml
+  - translations/pl/scenes/watch-captain.yaml
+  - translations/pl/scenes/captain-confession.yaml
+  - translations/pl/scenes/watch-stores.yaml
+  - translations/pl/scenes/lockhouse-arrival.yaml
+  - translations/pl/scenes/descent-preparations.yaml
+  - translations/pl/scenes/stairwell-descent.yaml
+  - translations/pl/scenes/drowned-porter.yaml
+  - translations/pl/scenes/square-arrival.yaml
+  - translations/pl/scenes/street-memorial.yaml
+  - translations/pl/scenes/archive-door.yaml
+  - translations/pl/scenes/ledger-discovery.yaml
+  - translations/pl/scenes/ledger-account.yaml
+  - translations/pl/scenes/pump-arrival.yaml
+  - translations/pl/scenes/pump-calibration.yaml
+  - translations/pl/scenes/cistern-arrival.yaml
+  - translations/pl/scenes/cistern-diver.yaml
+  - translations/pl/scenes/cistern-cache.yaml
+  - translations/pl/scenes/foundry-sentinel.yaml
+  - translations/pl/scenes/foundry-workbench.yaml
+  - translations/pl/scenes/smith-memory.yaml
+  - translations/pl/scenes/refuge-arrival.yaml
+  - translations/pl/scenes/witness-council.yaml
+  - translations/pl/scenes/refuge-rest.yaml
+  - translations/pl/scenes/causeway-crossing.yaml
+  - translations/pl/scenes/tower-arrival.yaml
+  - translations/pl/scenes/tower-watch.yaml
+  - translations/pl/scenes/beacon-lighting.yaml
+  - translations/pl/scenes/keeper-audience.yaml
+  - translations/pl/scenes/keeper-truth.yaml
+  - translations/pl/scenes/keeper-answer.yaml
+  - translations/pl/scenes/heart-threshold.yaml
+  - translations/pl/scenes/heart-controls.yaml
+  - translations/pl/scenes/resolution-covenant.yaml
+  - translations/pl/scenes/resolution-keeper.yaml
+  - translations/pl/scenes/resolution-evacuation.yaml
+  - translations/pl/scenes/resolution-break.yaml
+items:
+  - translations/pl/items.yaml
+enemies:
+  - translations/pl/enemies.yaml
+encounters:
+  - translations/pl/encounters.yaml
+templates:
+  - translations/pl/templates.yaml
+endings:
+  - translations/pl/endings.yaml
+images:
+  - translations/pl/images.yaml

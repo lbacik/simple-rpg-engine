@@ -1,0 +1,9 @@
+id: barrow-tomb
+name: Grobowiec w kurhanie
+description: |
+  Niska kamienna komnata rozświetlona zimną, błękitną poświatą. Na marach
+  spoczywa postać w zardzewiałej kolczudze; u jej stóp, w posłaniu
+  z całunów, śpi dziewczynka.
+connections:
+  - to: barrow-mound
+    label: Wespnij się z powrotem ku światłu dnia

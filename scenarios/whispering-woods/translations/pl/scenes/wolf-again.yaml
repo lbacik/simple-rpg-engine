@@ -1,0 +1,16 @@
+id: wolf-again
+title: Rozpraw się z wilkiem
+text: |
+  Wilk wciąż krąży przy powalonym buku, obserwując cię.
+choices:
+  - id: fight
+    text: Zaatakuj wilka.
+  - id: sneak
+    text: Spróbuj ponownie przemknąć obok niego.
+    test:
+      success:
+        text: |
+          Tym razem poruszasz się jak cień, a wilk nawet nie odwraca łba.
+      failure:
+        text: |
+          Wilk zna już twój zapach. Rzuca się do skoku.

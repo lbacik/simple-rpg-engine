@@ -1,0 +1,13 @@
+- id: grey-wolf
+  name: Szary wilk
+  description: Chudy i pokryty bliznami, z oczami, które lśnią w świetle jak monety.
+
+- id: bandit-archer
+  name: Rozbójnik z łukiem
+  description: Obdarty dezerter z długim łukiem, który nie ma już nic do stracenia.
+
+- id: barrow-wight
+  name: Aldric, upiór z kurhanu
+  description: >-
+    Możny dawnego królestwa, przykuty do grobu złamaną przysięgą.
+    Z jego zardzewiałej kolczugi rozpełza się szron.

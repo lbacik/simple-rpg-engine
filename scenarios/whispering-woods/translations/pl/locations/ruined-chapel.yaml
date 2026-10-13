@@ -1,0 +1,10 @@
+id: ruined-chapel
+name: Zrujnowana kaplica
+description: |
+  Cztery zniszczone ściany i niebo zamiast dachu. Bluszcz pochłonął
+  wyrzeźbione nad wejściem postacie świętych, ale ołtarz wciąż stoi.
+connections:
+  - to: wolf-hollow
+    label: Zejdź z powrotem do kotliny
+  - to: barrow-mound
+    label: Podążaj dawną drogą procesyjną
