@@ -23,12 +23,14 @@ import type { CompiledItem } from '../src/content/model';
 import {
   applyAction,
   startPlaythrough,
+  tacticalCombatRounds,
   view,
   type Action,
   type CombatRoll,
   type CombatRoundView,
   type PlaythroughState,
   type Rng,
+  type TacticalRoundView,
 } from '../src/engine/index';
 import { en } from '../src/i18n/en';
 import type { Catalogue } from '../src/i18n/index';
@@ -46,6 +48,7 @@ function render(
     selectedTargetId?: string;
     catalogue?: Catalogue;
     rounds?: CombatRoundView[];
+    tacticalRounds?: import('../src/engine/index').TacticalRoundView[];
   } = {},
 ): string {
   return renderToStaticMarkup(
@@ -54,6 +57,7 @@ function render(
       playthroughId="play-1"
       step={step}
       rounds={extra.rounds ?? []}
+      tacticalRounds={extra.tacticalRounds ?? []}
       formAction="#combat"
       catalogue={extra.catalogue ?? en}
       lang="en"
@@ -226,6 +230,7 @@ describe('combat panel header', () => {
         playthroughId="play-1"
         step={solo.step}
         rounds={[]}
+        tacticalRounds={[]}
         formAction="#combat"
         catalogue={en}
         lang="en"
@@ -342,8 +347,8 @@ describe('lanes, bubbles and badges (U1)', () => {
     };
     const markup = render(reordered, wolves.step, { selectedTargetId: 'wolf-b' });
     // Lane order follows content: wolf-b's medallion comes first.
-    expect(markup.indexOf('combat-name">Grey Wolf B')).toBeLessThan(
-      markup.indexOf('combat-name">Grey Wolf A'),
+    expect(markup.indexOf('combat-name" lang="en">Grey Wolf B')).toBeLessThan(
+      markup.indexOf('combat-name" lang="en">Grey Wolf A'),
     );
     // The strip still announces the saved order: wolf-a first.
     const strip = markup.indexOf('combat-order-list');
@@ -434,11 +439,13 @@ describe('action buttons (U3)', () => {
     const markup = render(wounded.combat, wounded.step, { selectedTargetId: 'wolf-a' });
     expect(markup).toContain('name="playthroughId" value="play-1"');
     expect(markup).toContain(`name="expectedStep" value="${wounded.step}"`);
-    // Targeted actions post the picker selection; untargeted ones post none.
-    expect(markup).toContain('name="combat" value="attack"');
-    // Attack, Distract and Advance post the picker selection; Defend,
+    // Attack needs Near Range, so at Far it is a described disabled button
+    // with the engine's reason, never a form.
+    expect(markup).not.toContain('name="combat" value="attack"');
+    expect(markup).toContain('needs Near Range');
+    // Distract and Advance post the picker selection; Defend,
     // Escape and the Consumable post no target.
-    expect(markup.match(/name="target" value="wolf-a"/g)?.length).toBe(3);
+    expect(markup.match(/name="target" value="wolf-a"/g)?.length).toBe(2);
     const defendForm = markup.slice(markup.indexOf('name="combat" value="defend"'));
     expect(defendForm.slice(0, defendForm.indexOf('</form>'))).not.toContain('name="target"');
     // The Consumable posts its id on an untargeted form.
@@ -540,7 +547,7 @@ describe('combat panel in Polish', () => {
     expect(renderPl('defeated')).toContain('Pokonany');
     const mixed = renderPl('mixed', 'grey-wolf');
     expect(mixed).toContain('Celowanie');
-    expect(mixed).toContain('następna runda: Wycelowany strzał, Wolna, 5 obrażeń');
+    expect(mixed).toContain('następna runda: Wycelowany strzał, wolna, 5 obrażeń');
     const advanced = advancedMixed();
     const prepared = render(advanced.combat, advanced.step, {
       selectedTargetId: 'bandit-archer',
@@ -643,6 +650,44 @@ describe('combat log', () => {
     );
     expect(markup).not.toContain('hunting knife');
     expect(markup).not.toContain('HUNTING KNIFE');
+  });
+
+  it('reports a resolved tactical round through the shared renderer', () => {
+    // Engine-driven: Robin advances on the wolf, which resolves a v2 round.
+    // The journal rows feed both readers exactly like page.tsx wires them, so
+    // a tactical Combat's log never reads "No rolls yet." after a round.
+    const { scenario } = loadTacticalFixture('pair-defaulted');
+    const started = startPlaythrough(scenario, 'hunter', 'Robin', silentRng());
+    if (!started.ok) throw new Error('tactical log example failed to start');
+    let state = started.state;
+    const rows: { type: string; payload: { encounterId?: unknown; guard?: unknown } }[] = [];
+    const submit = (action: Action, rng: Rng): void => {
+      const result = applyAction(scenario, state, action, rng);
+      if (!result.ok) throw new Error('tactical log example action failed');
+      state = result.state;
+      for (const entry of result.journal) {
+        rows.push({ type: entry.type, payload: entry as { encounterId?: unknown } });
+      }
+    };
+    submit({ kind: 'open-scene', sceneId: 'ambush', expectedStep: state.step }, silentRng());
+    submit({ kind: 'choose', choiceId: 'confront', expectedStep: state.step }, diceRng([1]));
+    submit(
+      {
+        kind: 'combat',
+        combatAction: 'advance',
+        targetParticipantId: 'grey-wolf',
+        expectedStep: state.step,
+      },
+      diceRng([]),
+    );
+    const gameView = view(scenario, state);
+    if (gameView.kind !== 'combat') throw new Error('tactical log example has no combat');
+    const tacticalRounds: TacticalRoundView[] = tacticalCombatRounds(rows, gameView.encounterId);
+    expect(tacticalRounds.length).toBeGreaterThan(0);
+    const markup = render(gameView, state.step, { tacticalRounds });
+    expect(markup).toContain('Last round · 1');
+    expect(markup).toContain('tactical-round');
+    expect(markup).not.toContain('No rolls yet.');
   });
 });
 

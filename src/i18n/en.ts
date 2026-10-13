@@ -417,7 +417,7 @@ export const en = {
     hitsYouOn: (hit: number, guarded: number) =>
       `hits you on ${whole(hit)}+, ${whole(guarded)}+ if you Defend`,
     preparesNext: (intent: string, speed: string, damage: number) =>
-      `next round: ${intent}, ${speed}, ${whole(damage)} Damage`,
+      `next round: ${intent}, ${speed.toLowerCase()}, ${whole(damage)} Damage`,
     arenaRange: (range: string) => `Range: ${range}`,
     farMarker: (range: string) => `‹ — — ${range} — — ›`,
     damage: (amount: number) => `${whole(amount)} Damage`,

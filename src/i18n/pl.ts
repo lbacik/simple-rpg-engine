@@ -428,7 +428,7 @@ export const pl: Catalogue = {
     hitsYouOn: (hit: number, guarded: number) =>
       `trafia na ${whole(hit)}+, ${whole(guarded)}+ w obronie`,
     preparesNext: (intent: string, speed: string, damage: number) =>
-      `następna runda: ${intent}, ${speed}, ${damageText(damage)}`,
+      `następna runda: ${intent}, ${speed.toLowerCase()}, ${damageText(damage)}`,
     arenaRange: (range: string) => `Dystans: ${range}`,
     farMarker: (range: string) => `‹ — — ${range} — — ›`,
     damage: damageText,

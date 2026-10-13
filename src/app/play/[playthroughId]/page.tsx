@@ -6,12 +6,12 @@ import {
   renderNarration,
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
+  tacticalCombatRounds,
   view,
 } from '@/engine/index';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { ScenarioFallbackBadge } from '@/app/flag';
 import { getInterfaceLanguage } from '@/app/lib/language';
-import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import {
   JOURNAL_BATCH_SIZE,
@@ -306,6 +306,8 @@ export default async function PlayPage({
   }));
   const combatLog =
     gameView.kind === 'combat' ? combatRounds(combatRows, gameView.encounterId) : [];
+  const tacticalLog =
+    gameView.kind === 'combat' ? tacticalCombatRounds(combatRows, gameView.encounterId) : [];
   // The target picker's selection (`?target=`): the survivor the targeted
   // forms post, defaulting to the first survivor. Resolving it here writes
   // nothing: no state change, no `step` change, no RNG.
@@ -522,6 +524,7 @@ export default async function PlayPage({
               playthroughId={playthrough.id}
               step={playthrough.step}
               rounds={combatLog}
+              tacticalRounds={tacticalLog}
               formAction={combatAction}
               catalogue={catalogue}
               lang={shown}
