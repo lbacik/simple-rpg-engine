@@ -14,6 +14,7 @@
 // Relative imports: vitest has no `@/` alias.
 import { escapeHtml } from '../../engine/narration';
 import type {
+  CombatArenaTarget,
   CombatAvailability,
   CombatParticipantRef,
   CombatRoll,
@@ -22,7 +23,93 @@ import type {
   TacticalActionEvent,
   TacticalActor,
 } from '../../engine/index';
+import type { IntentKind } from '../../engine/state';
 import type { Catalogue } from '../../i18n/index';
+
+/**
+ * A participant as shown (docs/spec/ui.md, participant names): its Enemy's
+ * name, followed by a capital letter from its ordinal when its Encounter has
+ * two participants of the same kind ("Grey Wolf A"). Letters never read as
+ * places in the order; a unique kind has no letter. Author ids are never
+ * shown.
+ */
+export function participantDisplayName(name: string, ordinal?: number): string {
+  if (ordinal === undefined) return name;
+  return `${name} ${String.fromCharCode(64 + ordinal)}`;
+}
+
+/** An Intent's name, which depends on its Reach (docs/spec/ui.md, lane arena). */
+export function intentDisplayName(
+  intent: IntentKind,
+  reach: 'melee' | 'ranged',
+  catalogue: Catalogue,
+): string {
+  switch (intent) {
+    case 'strike':
+      return reach === 'ranged'
+        ? catalogue.combat.intents.strikeRanged
+        : catalogue.combat.intents.strikeMelee;
+    case 'close-in':
+      return catalogue.combat.intents.closeIn;
+    case 'prepare':
+      return reach === 'ranged'
+        ? catalogue.combat.intents.prepareRanged
+        : catalogue.combat.intents.prepareMelee;
+    case 'heavy-attack':
+      return reach === 'ranged'
+        ? catalogue.combat.intents.heavyRanged
+        : catalogue.combat.intents.heavyMelee;
+    default: {
+      const _exhaustive: never = intent;
+      return _exhaustive;
+    }
+  }
+}
+
+/**
+ * The disabled reason for a targeted action against the selected target, from
+ * the engine's per-target code (docs/spec/ui.md, actions): it names the
+ * target ("Your Sword needs Near Range; Grey Wolf B is Far."). Undefined
+ * while the selected target allows the action. Scenario names are placed
+ * literally; callers wrap them with the Scenario language.
+ */
+export function combatTargetReasonText(
+  action: { id: string; weaponName?: string },
+  target: CombatArenaTarget,
+  options: { waryUntilRound?: number },
+  catalogue: Catalogue,
+): string | undefined {
+  if (target.enabled || target.reason === undefined) return undefined;
+  const targetName = participantDisplayName(target.name, target.ordinal);
+  switch (target.reason) {
+    case 'needs-near': {
+      const targetRange = catalogue.range[target.range];
+      return action.weaponName === undefined
+        ? catalogue.combat.reasonNeedsNearUnarmedTarget(
+            catalogue.range.near,
+            targetName,
+            targetRange,
+          )
+        : catalogue.combat.reasonNeedsNearTarget(
+            action.weaponName,
+            catalogue.range.near,
+            targetName,
+            targetRange,
+          );
+    }
+    case 'already-near':
+      return catalogue.combat.reasonAlreadyNearTarget(
+        targetName,
+        catalogue.range[target.range],
+      );
+    case 'wary':
+      return catalogue.combat.reasonWaryTarget(targetName, options.waryUntilRound ?? 0);
+    case 'already-far':
+      return catalogue.combat.reasonAlreadyAt(catalogue.range.far);
+    case 'full-health':
+      return catalogue.combat.reasonFullHealth;
+  }
+}
 
 /** The button label for an available action, from its code and names. */
 export function combatActionLabel(availability: CombatAvailability, catalogue: Catalogue): string {

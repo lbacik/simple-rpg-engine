@@ -19,6 +19,21 @@ import { selectPlural } from './plural';
 
 const whole = (value: number): string => formatNumber('en', value);
 
+/** An ordinal place ("1st", "2nd", "3rd"): the arena holds at most three actions. */
+const ordinal = (value: number): string => {
+  const mod100 = value % 100;
+  const mod10 = value % 10;
+  const suffix =
+    mod10 === 1 && mod100 !== 11
+      ? 'st'
+      : mod10 === 2 && mod100 !== 12
+        ? 'nd'
+        : mod10 === 3 && mod100 !== 13
+          ? 'rd'
+          : 'th';
+  return `${whole(value)}${suffix}`;
+};
+
 const itemsCount = (count: number): string =>
   selectPlural('en', count, {
     one: '1 item',
@@ -361,6 +376,48 @@ export const en = {
     reasonNeedsNearUnarmed: (range: string) => `Unarmed attacks need ${range} Range.`,
     reasonFullHealth: 'Already at full Health.',
     reasonWary: 'Wary: cannot be distracted.',
+    reasonNeedsNearTarget: (weapon: string, needRange: string, target: string, targetRange: string) =>
+      `Your ${weapon} needs ${needRange} Range; ${target} is ${targetRange}.`,
+    reasonNeedsNearUnarmedTarget: (needRange: string, target: string, targetRange: string) =>
+      `Unarmed attacks need ${needRange} Range; ${target} is ${targetRange}.`,
+    reasonAlreadyNearTarget: (target: string, range: string) =>
+      `You are already ${range} ${target}.`,
+    reasonWaryTarget: (target: string, round: number) =>
+      `${target} is wary of tricks until the end of round ${whole(round)}.`,
+    arenaLabel: 'Combat arena',
+    speeds: {
+      fast: 'Fast',
+      normal: 'Normal',
+      slow: 'Slow',
+    },
+    intents: {
+      strikeMelee: 'Strike',
+      strikeRanged: 'Shoot',
+      closeIn: 'Close in',
+      prepareMelee: 'Wind up',
+      prepareRanged: 'Take aim',
+      heavyMelee: 'Heavy blow',
+      heavyRanged: 'Aimed shot',
+    },
+    thisRound: 'This round',
+    orderHint: 'Focus an action to preview its place here.',
+    previewChip: (order: number, label: string) => `#${whole(order)} ${label} (preview)`,
+    placeOf: (position: number, total: number) => `${ordinal(position)} of ${whole(total)}`,
+    actsOrder: (position: number, total: number) =>
+      `acts ${ordinal(position)} of ${whole(total)}`,
+    needsThreshold: (threshold: number) => `needs ${whole(threshold)}+`,
+    towards: (target: string) => `→ ${target}`,
+    escapeBonus: (bonus: number) => `includes +${whole(bonus)} committed bonus`,
+    targetPicker: 'Target',
+    targetNote: 'Used by Attack, Distract and Advance.',
+    preparedMelee: 'Wound up',
+    preparedRanged: 'Aiming',
+    waryUntil: (round: number) => `Wary · to round ${whole(round)}`,
+    defeatedBadge: 'Defeated',
+    hitsYouOn: (hit: number, guarded: number) =>
+      `hits you on ${whole(hit)}+, ${whole(guarded)}+ if you Defend`,
+    preparesNext: (intent: string, speed: string, damage: number) =>
+      `next round: ${intent}, ${speed.toLowerCase()}, ${whole(damage)} Damage`,
     arenaRange: (range: string) => `Range: ${range}`,
     farMarker: (range: string) => `‹ — — ${range} — — ›`,
     damage: (amount: number) => `${whole(amount)} Damage`,

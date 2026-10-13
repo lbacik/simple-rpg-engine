@@ -12,7 +12,6 @@ import {
 import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { ScenarioFallbackBadge } from '@/app/flag';
 import { getInterfaceLanguage } from '@/app/lib/language';
-import type { Scenario } from '@/content/index';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import {
   JOURNAL_BATCH_SIZE,
@@ -24,11 +23,14 @@ import {
 import { JournalEntries } from './journal/journal-entries';
 import { JournalModalLink } from './journal/journal-modal';
 import {
+  combatTargetHref,
   continueHref,
+  parseCombatTarget,
   parsePanel,
   parseSeenStep,
   parseSelectedItem,
   playHref,
+  selectCombatTarget,
   shouldShowResultPanel,
 } from '@/app/lib/panel';
 import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
@@ -55,10 +57,6 @@ function noticeTextFor(catalogue: Catalogue, notice: string | undefined): string
   return undefined;
 }
 
-function itemName(scenario: Scenario, itemId: string): string {
-  return scenario.itemsById[itemId]?.name ?? itemId;
-}
-
 /** Query helpers shared by the compatible and incompatible game screens. */
 function mapToggleHrefFor(
   playthroughId: string,
@@ -67,6 +65,7 @@ function mapToggleHrefFor(
   showUnknownExits: boolean,
   seen?: number,
   selectedItem?: string,
+  target?: string,
 ): string {
   return playHref(
     playthroughId,
@@ -77,6 +76,8 @@ function mapToggleHrefFor(
     !showUnknownExits,
     // The selected inventory tile rides along while its modal is open.
     panel === 'inventory' ? selectedItem : undefined,
+    // The Combat target selection survives the map toggle.
+    target,
   );
 }
 
@@ -93,6 +94,7 @@ export default async function PlayPage({
     unknown?: string;
     seen?: string;
     item?: string;
+    target?: string;
   }>;
 }) {
   const { playthroughId } = await params;
@@ -103,6 +105,7 @@ export default async function PlayPage({
     unknown,
     seen: seenParam,
     item: itemParam,
+    target: targetParam,
   } = await searchParams;
   // The open side-panel modal. `?tab=` is the previous name of this parameter
   // and is still honoured so older links land on the same panel.
@@ -294,12 +297,9 @@ export default async function PlayPage({
                 (entry.type === 'combat-round' && gameView.kind !== 'combat')),
           )
           .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
-  // The Combat panel's log reads the stored round events of the Encounter,
-  // never the live Scenario: v1 rows through the legacy round reader,
-  // tactical (v2) rows through the versioned action report. The arena itself
-  // comes from state (the engine's view projection), never the Journal, and
-  // Guarded — round-scoped and never stored — appears only in the log of the
-  // round it applied to, never as an arena badge.
+  // The Combat panel reads the roll log from the Journal, never from stored
+  // state, so the log survives a reload. The arena (lanes, Intents, targets,
+  // order) comes from the engine's projection over state and current content.
   const combatRows = journal.map((entry) => ({
     type: entry.type,
     payload: entry.payload as { encounterId?: unknown; guard?: unknown },
@@ -308,12 +308,14 @@ export default async function PlayPage({
     gameView.kind === 'combat' ? combatRounds(combatRows, gameView.encounterId) : [];
   const tacticalLog =
     gameView.kind === 'combat' ? tacticalCombatRounds(combatRows, gameView.encounterId) : [];
-  const combatConsumables =
+  // The target picker's selection (`?target=`): the survivor the targeted
+  // forms post, defaulting to the first survivor. Resolving it here writes
+  // nothing: no state change, no `step` change, no RNG.
+  const requestedTarget = parseCombatTarget(targetParam);
+  const selectedTarget =
     gameView.kind === 'combat'
-      ? Object.keys(state.inventory)
-          .filter((itemId) => scenario.itemsById[itemId]?.kind === 'consumable')
-          .map((itemId) => ({ itemId, name: itemName(scenario, itemId) }))
-      : [];
+      ? selectCombatTarget(gameView.arena.legalTargets, requestedTarget)
+      : undefined;
   // Map travel is available only in the Location view of an active Playthrough
   // with no Scene or Combat running: the same legality as the Travel action.
   const canTravel =
@@ -349,6 +351,7 @@ export default async function PlayPage({
     showUnknownExits,
     preservedSeen,
     selectedItem,
+    selectedTarget,
   );
 
   // While the result panel is shown, the reading column holds only the panel
@@ -522,11 +525,24 @@ export default async function PlayPage({
               step={playthrough.step}
               rounds={combatLog}
               tacticalRounds={tacticalLog}
-              consumables={combatConsumables}
               formAction={combatAction}
               catalogue={catalogue}
               lang={shown}
               badge={badge}
+              selectedTargetId={selectedTarget}
+              targetHrefFor={(participantId) =>
+                combatTargetHref(
+                  playthrough.id,
+                  {
+                    panel: rawPanel,
+                    notice,
+                    seen: preservedSeen,
+                    showUnknownExits,
+                    item: selectedItem,
+                  },
+                  participantId,
+                )
+              }
             />
           ) : (
             <>

@@ -388,6 +388,47 @@ export const pl: Catalogue = {
     reasonNeedsNearUnarmed: (range: string) => `Bez broni: tylko ${range}.`,
     reasonFullHealth: 'Zdrowie już pełne.',
     reasonWary: 'Czujny: nie można rozproszyć.',
+    reasonNeedsNearTarget: (weapon: string, needRange: string, target: string, targetRange: string) =>
+      `${weapon}: tylko ${needRange}; ${target}: ${targetRange}.`,
+    reasonNeedsNearUnarmedTarget: (needRange: string, target: string, targetRange: string) =>
+      `Bez broni: tylko ${needRange}; ${target}: ${targetRange}.`,
+    reasonAlreadyNearTarget: (target: string, range: string) => `Już ${range}: ${target}.`,
+    reasonWaryTarget: (target: string, round: number) =>
+      `${target}: czujny do końca rundy ${whole(round)}.`,
+    arenaLabel: 'Arena walki',
+    speeds: {
+      fast: 'Szybka',
+      normal: 'Zwykła',
+      slow: 'Wolna',
+    },
+    intents: {
+      strikeMelee: 'Cios',
+      strikeRanged: 'Strzał',
+      closeIn: 'Zbliżenie',
+      prepareMelee: 'Zamach',
+      prepareRanged: 'Celowanie',
+      heavyMelee: 'Potężny cios',
+      heavyRanged: 'Wycelowany strzał',
+    },
+    thisRound: 'Ta runda',
+    orderHint: 'Wskaż akcję, aby zobaczyć jej miejsce.',
+    previewChip: (order: number, label: string) => `#${whole(order)} ${label} (podgląd)`,
+    placeOf: (position: number, total: number) => `${whole(position)}. z ${whole(total)}`,
+    actsOrder: (position: number, total: number) =>
+      `działa ${whole(position)}. z ${whole(total)}`,
+    needsThreshold: (threshold: number) => `wymaga ${whole(threshold)}+`,
+    towards: (target: string) => `→ ${target}`,
+    escapeBonus: (bonus: number) => `zawiera +${whole(bonus)} premii zadeklarowanej`,
+    targetPicker: 'Cel',
+    targetNote: 'Cel Ataku, Rozproszenia i Podejścia.',
+    preparedMelee: 'W zamachu',
+    preparedRanged: 'Celuje',
+    waryUntil: (round: number) => `Czujny · do rundy ${whole(round)}`,
+    defeatedBadge: 'Pokonany',
+    hitsYouOn: (hit: number, guarded: number) =>
+      `trafia na ${whole(hit)}+, ${whole(guarded)}+ w obronie`,
+    preparesNext: (intent: string, speed: string, damage: number) =>
+      `następna runda: ${intent}, ${speed.toLowerCase()}, ${damageText(damage)}`,
     arenaRange: (range: string) => `Dystans: ${range}`,
     farMarker: (range: string) => `‹ — — ${range} — — ›`,
     damage: damageText,
