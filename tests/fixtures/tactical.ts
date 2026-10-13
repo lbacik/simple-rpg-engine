@@ -10,6 +10,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { loadScenario, type Scenario } from '../../src/content/index';
+import {
+  applyAction,
+  combatArena,
+  startPlaythrough,
+  type Action,
+  type CombatArenaView,
+  type NewJournalEntry,
+  type PlaythroughState,
+  type Rng,
+} from '../../src/engine/index';
 
 export type TacticalFixtureKind =
   | 'legacy'
@@ -196,4 +206,146 @@ export function loadTacticalFixture(kind: TacticalFixtureKind): {
     throw new Error(`tactical fixture ${kind} failed to load: ${JSON.stringify(result.diagnostics)}`);
   }
   return { dir: scenarioDir, scenario: result.scenario };
+}
+
+// ---------------------------------------------------------------------------
+// Shared arena examples (R12, issue #123): scenario, live Combat state, the
+// projected arena and the Journal so far, for app and UI tests: one
+// participant, a same-kind pair, wolf + archer, and a pair with one defeated.
+// Built through real engine transitions with finite dice, never hand-built,
+// so the layouts stay honest as the rules evolve. The projection itself reads
+// no Journal: the entries ride along only as shared round-event layouts.
+// ---------------------------------------------------------------------------
+
+export type ArenaExampleKind = 'solo' | 'wolves' | 'mixed' | 'defeated';
+
+export type ArenaExample = {
+  scenario: Scenario;
+  state: PlaythroughState;
+  arena: CombatArenaView;
+  journal: NewJournalEntry[];
+};
+
+/** An rng that must never be called: proves a step draws no dice. */
+function silentRng(): Rng {
+  return () => {
+    throw new Error('no dice expected');
+  };
+}
+
+function diceRng(dice: number[]): Rng {
+  let index = 0;
+  return (min: number, max: number) => {
+    const die = dice[index];
+    if (die === undefined || die < min || die >= max) {
+      throw new Error(`die ${String(die)} outside [${min}, ${max})`);
+    }
+    index += 1;
+    return die;
+  };
+}
+
+/**
+ * Enter the fixture's Encounter: start a Playthrough as the Hunter, open the
+ * on-demand ambush Scene and confront it. `selectionDice` feeds the opening
+ * Intent selection (only a heavy participant draws there).
+ */
+function enterEncounter(
+  kind: TacticalFixtureKind,
+  selectionDice: number[] = [],
+): { scenario: Scenario; state: PlaythroughState; journal: NewJournalEntry[] } {
+  const { scenario } = loadTacticalFixture(kind);
+  const started = startPlaythrough(scenario, 'hunter', 'Robin', silentRng());
+  if (!started.ok) {
+    throw new Error('arena example failed to start');
+  }
+  let state = started.state;
+  let journal: NewJournalEntry[] = [...started.journal];
+  const submit = (action: Action, rng: Rng): void => {
+    const result = applyAction(scenario, state, action, rng);
+    if (!result.ok) {
+      throw new Error(`arena example action failed: ${JSON.stringify(action)}`);
+    }
+    state = result.state;
+    journal = [...journal, ...result.journal];
+  };
+  submit({ kind: 'open-scene', sceneId: 'ambush', expectedStep: state.step }, silentRng());
+  submit(
+    { kind: 'choose', choiceId: 'confront', expectedStep: state.step },
+    diceRng(selectionDice),
+  );
+  return { scenario, state, journal };
+}
+
+function arenaOf(
+  scenario: Scenario,
+  state: PlaythroughState,
+  journal: NewJournalEntry[],
+): ArenaExample {
+  const arena = combatArena(scenario, state);
+  if (arena === undefined) {
+    throw new Error('arena example has no active Combat');
+  }
+  return { scenario, state, arena, journal };
+}
+
+/**
+ * One shared layout per kind:
+ * - solo: one Grey Wolf (explicit id), opening Round at Far;
+ * - wolves: two Grey Wolves (wolf-a, wolf-b), opening Round at Far;
+ * - mixed: Grey Wolf + Bandit Archer at Far with the archer preparing
+ *   (selection die 1: Prepare), so the layout carries a preparation;
+ * - defeated: the wolves pair after Robin advances and defeats wolf-a in
+ *   three hits (all Enemy attacks miss), leaving wolf-a's grey lane.
+ */
+export function loadArenaExample(kind: ArenaExampleKind): ArenaExample {
+  if (kind === 'solo') {
+    const { scenario, state, journal } = enterEncounter('explicit-solo');
+    return arenaOf(scenario, state, journal);
+  }
+  if (kind === 'wolves') {
+    const { scenario, state, journal } = enterEncounter('pair-wolves');
+    return arenaOf(scenario, state, journal);
+  }
+  if (kind === 'mixed') {
+    const { scenario, state, journal } = enterEncounter('pair-defaulted', [1]);
+    return arenaOf(scenario, state, journal);
+  }
+  const entered = enterEncounter('pair-wolves');
+  const { scenario } = entered;
+  let state = entered.state;
+  let journal: NewJournalEntry[] = [...entered.journal];
+  const submit = (action: Action, dice: number[]): void => {
+    const result = applyAction(scenario, state, action, diceRng(dice));
+    if (!result.ok) {
+      throw new Error(`defeated example action failed: ${JSON.stringify(action)}`);
+    }
+    state = result.state;
+    journal = [...journal, ...result.journal];
+  };
+  // Round 1: Advance on wolf-a while both wolves close in (no rolls).
+  submit(
+    {
+      kind: 'combat',
+      combatAction: 'advance',
+      targetParticipantId: 'wolf-a',
+      expectedStep: state.step,
+    },
+    [],
+  );
+  // Rounds 2-4: Strike wolf-a for 3 Damage a hit (4+4+Might 1 hits on 9);
+  // both wolves Strike and miss (1+1+Might 2 misses on 10). The third hit
+  // defeats wolf-a; its queued action drops while wolf-b still acts.
+  for (let round = 0; round < 3; round += 1) {
+    submit(
+      {
+        kind: 'combat',
+        combatAction: 'attack',
+        targetParticipantId: 'wolf-a',
+        expectedStep: state.step,
+      },
+      [4, 4, 1, 1, 1, 1],
+    );
+  }
+  return arenaOf(scenario, state, journal);
 }

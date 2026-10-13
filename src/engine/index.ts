@@ -1445,13 +1445,9 @@ export type CombatAvailability = {
  * Wary nor already past in the Round's order, and one Use entry per held
  * Consumable while below full Health. Entries carry codes and names as
  * presented; the UI renders labels and reasons through the catalogue. The
- * engine rejects unavailable actions independently.
- *
- * Attack, Defend and Distract resolve (issues #120, #122); movement, Escape
- * and Consumables report their standing availability here, but submitting one
- * is rejected until its package lands (issue #121). The full per-target
- * projection (Speed, order, thresholds) arrives with the arena view
- * (issue #123).
+ * engine rejects unavailable actions independently. Per-target availability,
+ * Speed, predicted order and roll thresholds arrive with the arena view
+ * (`combatArena`, issue #123).
  */
 export function combatActions(
   scenario: Scenario,
@@ -1545,6 +1541,413 @@ export function combatActions(
     }),
     { id: 'escape', group: 'leave', enabled: true },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// The tactical arena projection (R12, issue #123; docs/spec/ui.md, combat
+// panel). Everything the arena needs, derived from state and current content
+// with no RNG and no mutation, so repeated calls are identical and the Journal
+// is never read (projection works with an empty Journal):
+//
+// - arena membership: one lane per participant that started this Combat, in
+//   current content (participant) order, including grey lanes for participants
+//   defeated since (no Range, no Intent, never a target). Saved Round ties do
+//   not move lanes; re-entry after an Escape starts a new membership.
+// - legal targets: the surviving participants with active state, in
+//   participant order.
+// - disabled-action reason codes: the global `combatActions` codes plus a
+//   per-target code for Attack, Distract and Advance.
+// - roll thresholds: the 2d6 total each rolled action needs — the Character's
+//   Attack/Distract per target, Fall back against the highest Agility among
+//   Near survivors, Escape against the highest Agility among survivors (with
+//   the +2 retained from the Round as shown at commitment), and each Enemy
+//   attack with its guarded threshold (9 + Agility instead of 7, for Defend).
+// - Speed and predicted order positions: each Intent's place among the Intents
+//   and each Character action's place with itself inserted (exact: ordering
+//   involves no roll).
+// - badges: prepared and Wary (with its last round). Guarded is round-scoped
+//   and never stored, so the arena never shows it: `guarded` is always false
+//   here and Guarded appears only in the round log.
+// - preparation descriptions: the slow Heavy attack (base Damage +3) a Prepare
+//   or a prepared state is building towards.
+//
+// Names and ordinals are carried as presented; letters, labels and sentences
+// render through the Interface Text catalogue in the app, so the engine
+// produces no Interface Text here.
+/** One arena lane: a surviving participant, or a grey lane for one defeated. */
+export type CombatArenaParticipant = {
+  participantId: string;
+  enemyId: string;
+  /** The Enemy name as presented. */
+  name: string;
+  /** 1-based position among same-kind participants; absent when unique. */
+  ordinal?: number;
+  /** Defeated lanes keep no Range, Intent, threshold or badges. */
+  defeated: boolean;
+  /** Absent on defeated lanes. */
+  range?: CombatRange;
+  /** Remaining Health: 0 on defeated lanes. */
+  health: number;
+  maxHealth: number;
+  damage: number;
+  reach: 'melee' | 'ranged';
+  /** The committed Intent; absent on defeated lanes. */
+  intent?: IntentKind;
+  intentSpeed?: Speed;
+  /** The 1-based place among the Round's Intents; absent on defeated lanes. */
+  order?: number;
+  /** An attack Intent's 2d6 threshold: 7 + the Character's effective Agility. */
+  threshold?: number;
+  /** The same attack against a Guarded Character: 9 + Agility. */
+  guardedThreshold?: number;
+  prepared: boolean;
+  /** The last round of Wary; present only while Wary. */
+  waryUntilRound?: number;
+  /** What a Prepare (or a prepared state) is building towards. */
+  preparation?: {
+    kind: 'heavy-attack';
+    speed: Speed;
+    /** The Heavy attack's Damage: the Enemy's base Damage +3. */
+    damage: number;
+  };
+};
+
+/** One surviving participant as the target of a targeted Character action. */
+export type CombatArenaTarget = {
+  participantId: string;
+  /** The Enemy name as presented. */
+  name: string;
+  /** 1-based position among same-kind participants; absent when unique. */
+  ordinal?: number;
+  range: CombatRange;
+  enabled: boolean;
+  reason?: CombatDisabledReason;
+  /** The 2d6 threshold against this target, on rolled actions. */
+  threshold?: number;
+};
+
+/** One Character action with its Speed, predicted order and thresholds. */
+export type CombatArenaAction = {
+  id: CombatAction;
+  group: CombatActionGroup;
+  enabled: boolean;
+  reason?: CombatDisabledReason;
+  /** The Consumable a `use-item` entry uses; absent on every other action. */
+  itemId?: string;
+  /** The Consumable's name as presented; present only on `use-item`. */
+  itemName?: string;
+  /** The equipped weapon's id; absent from Attack when unarmed. */
+  weaponId?: string;
+  /** The equipped weapon's name as presented; absent from Attack when unarmed. */
+  weaponName?: string;
+  speed: Speed;
+  /** The predicted 1-based place with this action inserted among the Intents. */
+  order: number;
+  /** The 2d6 threshold of an untargeted rolled action (Fall back, Escape). */
+  threshold?: number;
+  /** Escape only: the +2 retained from the Round as shown at commitment. */
+  escapeBonus?: number;
+  /** Per-target availability; present on Attack, Distract and Advance. */
+  targets?: CombatArenaTarget[];
+};
+
+/** One committed Intent in the Round's resolution order. */
+export type CombatArenaOrderEntry = {
+  participantId: string;
+  /** The Enemy name as presented. */
+  name: string;
+  /** 1-based position among same-kind participants; absent when unique. */
+  ordinal?: number;
+  intent: IntentKind;
+  speed: Speed;
+  order: number;
+};
+
+/** The full arena projection for an active Combat. */
+export type CombatArenaView = {
+  encounterId: string;
+  round: number;
+  /** One lane per starting participant, in content order; defeated lanes grey. */
+  participants: CombatArenaParticipant[];
+  /** Surviving participant ids with active state, in participant order. */
+  legalTargets: string[];
+  /** The committed Intents in resolution order. */
+  order: CombatArenaOrderEntry[];
+  /** Every Character action with its Speed, predicted order and thresholds. */
+  actions: CombatArenaAction[];
+  /**
+   * Guarded is round-scoped and never stored, so the arena never shows it.
+   * Always false; Guarded appears only in the round log.
+   */
+  guarded: false;
+};
+
+/**
+ * Derive the arena projection from state and current content. Pure: no RNG,
+ * no mutation, no Journal. Returns undefined outside an active Combat on a
+ * known Encounter.
+ */
+export function combatArena(
+  scenario: Scenario,
+  state: PlaythroughState,
+): CombatArenaView | undefined {
+  const combat = state.activeCombat;
+  if (combat == null) {
+    return undefined;
+  }
+  const encounter = scenario.encountersById[combat.encounterId];
+  if (encounter === undefined) {
+    return undefined;
+  }
+  const wounds = state.encounters[combat.encounterId] ?? {};
+  const effective = effectiveAttributes(scenario, state);
+  const attack = characterAttack(scenario, state);
+  const taken = (participantId: string): number => wounds[participantId] ?? 0;
+  const byId = new Map(encounter.participants.map((participant) => [participant.id, participant]));
+  const started = new Set(combat.startedParticipants);
+  // A lane is active while its participant survives by current wounds and
+  // still holds active Combat state; anything else that started this Combat
+  // keeps a grey lane (docs/spec/ui.md, lane arena; M3).
+  const isActive = (participant: CompiledParticipant): boolean =>
+    started.has(participant.id) &&
+    combat.participants[participant.id] !== undefined &&
+    taken(participant.id) < participant.enemy.health;
+  const survivors = encounter.participants.filter(isActive);
+  const rangeOf = (participantId: string): CombatRange =>
+    combat.participants[participantId]?.range ?? encounter.startRange;
+
+  // The Intents' places among themselves, in resolution order.
+  const intentQueued: QueuedAction[] = survivors.map(
+    (participant): QueuedAction => ({
+      key: participant.id,
+      actor: 'participant',
+      participantId: participant.id,
+      speed: INTENT_SPEED[combat.participants[participant.id]?.intent ?? 'strike'],
+      agility: participant.enemy.attributes.agility,
+    }),
+  );
+  const intentOrdered = orderActions(intentQueued, combat.roundParticipantOrder);
+  const intentPosition = new Map(
+    intentOrdered.map((queued, index) => [queued.participantId ?? '', index + 1]),
+  );
+
+  /** The predicted place of a Character action with itself among the Intents. */
+  const predictOrder = (speed: Speed): number => {
+    const queued: QueuedAction[] = [
+      ...intentQueued,
+      { key: 'character', actor: 'character', speed, agility: effective.agility },
+    ];
+    const ordered = orderActions(queued, combat.roundParticipantOrder);
+    return ordered.findIndex((queuedAction) => queuedAction.actor === 'character') + 1;
+  };
+
+  const refOf = (
+    participant: CompiledParticipant,
+  ): { name: string; ordinal?: number } => {
+    const ref = participantRefOf(encounter, participant);
+    return ref.ordinal === undefined ? { name: ref.name } : { name: ref.name, ordinal: ref.ordinal };
+  };
+
+  const participants: CombatArenaParticipant[] = [];
+  // Lanes follow the current content order; starting ids the content no
+  // longer lists keep a trailing grey lane each.
+  for (const participant of encounter.participants) {
+    if (!started.has(participant.id)) {
+      continue;
+    }
+    const ref = refOf(participant);
+    if (!isActive(participant)) {
+      participants.push({
+        participantId: participant.id,
+        enemyId: participant.enemy.id,
+        ...ref,
+        defeated: true,
+        health: 0,
+        maxHealth: participant.enemy.health,
+        damage: participant.enemy.damage,
+        reach: participant.enemy.reach,
+        prepared: false,
+      });
+      continue;
+    }
+    const record = combat.participants[participant.id];
+    if (record === undefined) {
+      throw new Error(`active participant "${participant.id}" has no Combat state`);
+    }
+    const intent = record.intent;
+    const intentSpeed = INTENT_SPEED[intent];
+    const isAttack = intent === 'strike' || intent === 'heavy-attack';
+    const waryUntilRound = record.waryUntilRound;
+    participants.push({
+      participantId: participant.id,
+      enemyId: participant.enemy.id,
+      ...ref,
+      defeated: false,
+      range: record.range,
+      health: Math.max(0, participant.enemy.health - taken(participant.id)),
+      maxHealth: participant.enemy.health,
+      damage: participant.enemy.damage,
+      reach: participant.enemy.reach,
+      intent,
+      intentSpeed,
+      order: intentPosition.get(participant.id) ?? 0,
+      ...(isAttack
+        ? {
+            threshold: 7 + effective.agility,
+            guardedThreshold: 9 + effective.agility,
+          }
+        : {}),
+      prepared: record.prepared,
+      ...(waryUntilRound !== undefined && waryUntilRound >= combat.round
+        ? { waryUntilRound }
+        : {}),
+      ...(intent === 'prepare' || record.prepared
+        ? {
+            preparation: {
+              kind: 'heavy-attack' as const,
+              speed: INTENT_SPEED['heavy-attack'],
+              damage: participant.enemy.damage + 3,
+            },
+          }
+        : {}),
+    });
+  }
+  for (const participantId of combat.startedParticipants) {
+    if (byId.has(participantId)) {
+      continue;
+    }
+    participants.push({
+      participantId,
+      enemyId: participantId,
+      name: participantId,
+      defeated: true,
+      health: 0,
+      maxHealth: 0,
+      damage: 0,
+      reach: 'melee',
+      prepared: false,
+    });
+  }
+
+  const order: CombatArenaOrderEntry[] = intentOrdered.flatMap((queued) => {
+    const participant =
+      queued.participantId === undefined ? undefined : byId.get(queued.participantId);
+    if (participant === undefined) {
+      return [];
+    }
+    const intent = combat.participants[participant.id]?.intent ?? 'strike';
+    return [
+      {
+        participantId: participant.id,
+        ...refOf(participant),
+        intent,
+        speed: INTENT_SPEED[intent],
+        order: intentPosition.get(participant.id) ?? 0,
+      },
+    ];
+  });
+
+  const legalTargets = survivors.map((participant) => participant.id);
+  const nearSurvivors = survivors.filter(
+    (participant) => rangeOf(participant.id) === 'near',
+  );
+  const allFar =
+    survivors.length > 0 &&
+    survivors.every((participant) => rangeOf(participant.id) !== 'near');
+  const opposingAll =
+    survivors.length === 0
+      ? 0
+      : Math.max(...survivors.map((participant) => participant.enemy.attributes.agility));
+  const opposingNear = Math.max(
+    0,
+    ...nearSurvivors.map((participant) => participant.enemy.attributes.agility),
+  );
+
+  const availability = combatActions(scenario, state);
+  const actions: CombatArenaAction[] = availability.map((entry) => {
+    const speed = CHARACTER_ACTION_SPEED[entry.id];
+    const base = { ...entry, speed, order: predictOrder(speed) };
+    if (entry.id === 'attack') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (participant): CombatArenaTarget => {
+            const range = rangeOf(participant.id);
+            const reachable = attack.reach === 'ranged' || range === 'near';
+            return {
+              participantId: participant.id,
+              ...refOf(participant),
+              range,
+              enabled: reachable,
+              ...(reachable ? {} : { reason: 'needs-near' as const }),
+              threshold: 7 + participant.enemy.attributes.agility,
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'distract') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (participant): CombatArenaTarget => {
+            const wary =
+              (combat.participants[participant.id]?.waryUntilRound ?? 0) >= combat.round;
+            return {
+              participantId: participant.id,
+              ...refOf(participant),
+              range: rangeOf(participant.id),
+              enabled: !wary,
+              ...(wary ? { reason: 'wary' as const } : {}),
+              threshold: 7 + participant.enemy.attributes.wits,
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'advance') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (participant): CombatArenaTarget => {
+            const range = rangeOf(participant.id);
+            const advanceable = range === 'far';
+            return {
+              participantId: participant.id,
+              ...refOf(participant),
+              range,
+              enabled: advanceable,
+              ...(advanceable ? {} : { reason: 'already-near' as const }),
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'fall-back') {
+      return {
+        ...base,
+        ...(nearSurvivors.length === 0 ? {} : { threshold: 7 + opposingNear }),
+      };
+    }
+    if (entry.id === 'escape') {
+      return {
+        ...base,
+        threshold: 7 + opposingAll,
+        escapeBonus: allFar ? 2 : 0,
+      };
+    }
+    return base;
+  });
+
+  return {
+    encounterId: encounter.id,
+    round: combat.round,
+    participants,
+    legalTargets,
+    order,
+    actions,
+    guarded: false,
+  };
 }
 
 /**
@@ -2775,6 +3178,12 @@ export type GameView =
         reach: 'melee' | 'ranged';
       };
       actions: CombatAvailability[];
+      /**
+       * The tactical arena projection (R12): membership, legal targets,
+       * reason codes, thresholds, Speed/order positions, badges and
+       * preparation descriptions, derived from state and current content.
+       */
+      arena: CombatArenaView;
       map: MapView;
     };
 
@@ -2810,11 +3219,14 @@ export function view(
       const location =
         scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
       const attack = characterAttack(scenario, state);
-      // Interim projection (issue #120): the Combat view keeps its old shape
-      // and shows the first surviving participant. The full arena projection
-      // (membership, targets, order, badges) arrives with the arena view
-      // (issue #123, R12).
+      // The Combat view keeps its single-participant summary shape for the
+      // legacy panel; the full arena projection (membership, targets, order,
+      // badges) rides alongside it (issue #123, R12).
       const wounds = state.encounters[combat.encounterId] ?? {};
+      const arena = combatArena(scenario, state);
+      if (arena === undefined) {
+        throw new Error(`combat on unknown encounter "${combat.encounterId}"`);
+      }
       const leadParticipant =
         survivorsOf(encounter, wounds)[0] ?? encounter.participants[0];
       if (leadParticipant === undefined) {
@@ -2849,6 +3261,7 @@ export function view(
           reach: lead.reach,
         },
         actions: combatActions(scenario, state),
+        arena,
         map: deriveMap(scenario, state, options),
       };
     }
