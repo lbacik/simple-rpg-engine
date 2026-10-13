@@ -1,0 +1,84 @@
+# The gate. Runs on every branch push and pull request, and release.yml reuses
+# it via workflow_call, so what blocks a production deploy is the same thing
+# that runs on every push. `branches: ['**']` matches no tag, so a `v*` tag
+# does not run the suite twice.
+name: Test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+  # src/persistence/db.ts defaults to data.sqlite in the cwd; keep it out of
+  # the checkout.
+  DATABASE_PATH: /tmp/simple-rpg-engine.sqlite
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      # Node 24 matches the production image (`node:24-bookworm-slim`) and
+      # package.json `engines`.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Type check first: code that does not compile fails here before lint
+      # and tests run.
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run validate scenarios/whispering-woods
+
+  # The production build is the slow check, so it gets its own job and runs in
+  # parallel with `checks`.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  # The suite builds its own schema; this replays the exact production
+  # migration command (docker-entrypoint.sh runs `npm run migrate` on every
+  # container start) against an empty database, twice to prove it is
+  # idempotent across restarts. There are no fixtures to load on top: the
+  # project ships none for the database.
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: rm -f "$DATABASE_PATH"*
+      - run: npm run migrate
+      - run: npm run migrate
+
+  # Deliberately not here:
+  #  - No `services:` block: the database is SQLite (a file), there is no
+  #    external DB or cache.
+  #  - Playwright E2E (`npm run test:e2e`) is not gating; it was not in the
+  #    previous CI either.

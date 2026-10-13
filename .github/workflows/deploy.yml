@@ -1,0 +1,115 @@
+# Reusable deploy to the Docker context `rum`. Called by release.yml after a
+# tag passes the gate, or run by hand (workflow_dispatch) to redeploy or roll
+# back to any existing tag: the image is rebuilt on the host from that tag.
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Git tag to deploy
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Git tag to deploy or roll back to (e.g. v0.1.0)
+        required: true
+        type: string
+
+# A deploy must never be killed halfway through a converge.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://${{ vars.APP_HOST }}
+    env:
+      DOCKER_HOST: ssh://rum
+      # --env-file /dev/null is load-bearing: without it compose would read a
+      # committed .env and the ${VAR:?} guards would resolve to those values
+      # instead of failing the deploy. The project name is explicit.
+      COMPOSE: docker compose --env-file /dev/null -p simple-rpg-engine -f compose.prod.yaml
+      # Built on the host by the "Build image" step; never pushed anywhere.
+      APP_IMAGE: simple-rpg-engine:${{ inputs.tag }}
+      # Non-secret inputs
+      APP_HOST: ${{ vars.APP_HOST }}
+      LETSENCRYPT_EMAIL: ${{ vars.LETSENCRYPT_EMAIL }}
+      # Secret inputs: compose.prod.yaml needs none; the SSH secrets are read
+      # only by the SSH step below.
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The tag being deployed, not HEAD: the compose file and Dockerfile
+          # must be the ones from that tag.
+          ref: ${{ inputs.tag }}
+
+      - name: Pre-flight check
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          missing=""
+          for name in APP_HOST LETSENCRYPT_EMAIL DEPLOY_SSH_KEY DEPLOY_SSH_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::unset in the production environment:$missing"
+            exit 1
+          fi
+
+      - name: Configure SSH access to rum
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/github-actions-deploy
+          chmod 600 ~/.ssh/github-actions-deploy
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'SSHCFG'
+          Host rum
+            HostName rum.host.luka.sh
+            Port 2211
+            User debian
+            IdentityFile ~/.ssh/github-actions-deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          SSHCFG
+
+      # No registry: the build context is sent over SSH and the image is built
+      # by the host's daemon, which is also the one that runs it.
+      - name: Build image on rum
+        run: docker build --target runner -t "$APP_IMAGE" .
+
+      # No separate migration step: docker-entrypoint.sh runs `npm run migrate`
+      # before the server starts, and `up --wait` fails if that fails.
+      - name: Deploy
+        run: $COMPOSE up -d --wait --wait-timeout 180
+
+      # `up --wait` proves health from inside the container only. This goes
+      # through the reverse proxy and TLS. `/` is force-dynamic and renders the
+      # Scenario cards loaded from /data/scenarios, so a proxy error page
+      # cannot satisfy the body check.
+      - name: Smoke test
+        run: |
+          url="https://${APP_HOST}/"
+          for i in $(seq 1 12); do
+            body=$(curl -fsS --max-time 10 "$url" 2>/dev/null) || body=""
+            if printf '%s' "$body" | grep -q 'class="card"'; then
+              echo "smoke test passed on attempt $i"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::smoke test failed: $url did not return the Scenario collection"
+          $COMPOSE logs --tail 100 app
+          exit 1

@@ -1,0 +1,22 @@
+# Tag to deploy. A `v*` tag runs the gate, then deploys.
+#
+# There is no build-and-push job and no registry: deploy.yml builds the image
+# directly on the target host's Docker daemon (DOCKER_HOST=ssh://rum). The
+# trade-off is no gha layer cache and no pushed provenance/SBOM; the image
+# exists only on the host, so a rollback rebuilds the chosen tag.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  deploy:
+    needs: test
+    uses: ./.github/workflows/deploy.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
