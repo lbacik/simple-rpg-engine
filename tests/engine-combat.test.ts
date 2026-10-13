@@ -960,14 +960,14 @@ describe('non-attack actions (INTERIM D2, #121 behaviour)', () => {
     const { scenario, state } = startArena();
     const started = startFight(scenario, state, 'fight-near', strictDice([]));
     // Both normal at agility 1: the Character wins the tie. Near at
-    // commitment, so no +2: 6+6+1 = 14 hits 7+1 = 8. No cleanup dice.
+    // commitment, so no +2: 6+6+1 = 13 hits 7+1 = 8. No cleanup dice.
     const rng = strictDice([6, 6]);
     const result = combat(scenario, started.state, 'escape', rng);
     rng.assertExhausted();
     const round = onlyRound(result.journal);
     expect(round.actions.map((action) => action.kind)).toEqual(['escape', 'strike']);
     expect(round.actions[0]).toMatchObject({ speed: 'normal', status: 'executed' });
-    expect(round.actions[0]?.roll).toMatchObject({ hit: true, total: 14, target: 8 });
+    expect(round.actions[0]?.roll).toMatchObject({ hit: true, total: 13, target: 8 });
     expect(round.actions[1]).toMatchObject({ status: 'not-reached' });
     expect(round.stop).toBe('escape');
     expect(result.state.activeCombat).toBeNull();

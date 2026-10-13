@@ -1608,9 +1608,7 @@ function applyCombat(
   targetParticipantId?: string,
 ): ApplyActionResult {
   // A Combat `use-item` names its Consumable; the other actions take none.
-  // The Consumable itself resolves with issue #121; until then the parameter
-  // only rides the transport.
-  void itemId;
+  // The Consumable resolves at its place in the order (issue #121).
   const combat = state.activeCombat;
   if (combat == null) {
     return { ok: false, reason: 'illegal-action' };
