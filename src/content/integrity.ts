@@ -576,12 +576,92 @@ function checkEncounterReferences(
     if (entry['enemy'] !== undefined) {
       checkReference(file, [...base, 'enemy'], entry['enemy'], 'enemy', index.enemies, 'ref/unknown-enemy', ctx);
     }
+    if (Array.isArray(entry['participants'])) {
+      entry['participants'].forEach((participant, participantIndex) => {
+        if (!isRecord(participant)) return;
+        const participantBase: (string | number)[] = [...base, 'participants', participantIndex];
+        if (participant['enemy'] !== undefined) {
+          checkReference(
+            file,
+            [...participantBase, 'enemy'],
+            participant['enemy'],
+            'enemy',
+            index.enemies,
+            'ref/unknown-enemy',
+            ctx,
+          );
+        }
+      });
+      checkParticipantIds(file, entry, entryIndex, ctx);
+    }
     if (entry['victory'] !== undefined) {
       checkOutcome(file, entry['victory'], [...base, 'victory'], index, sceneTriggers, ctx);
     }
     if (entry['escape'] !== undefined) {
       checkOutcome(file, entry['escape'], [...base, 'escape'], index, sceneTriggers, ctx);
     }
+  });
+}
+
+/**
+ * Participant ids within one Encounter (docs/spec/validation.md,
+ * ref/duplicate-participant-id): explicit or defaulted from `enemy` (two
+ * participants of the same Enemy kind without explicit ids). A defaulted id's
+ * syntax is already covered by the `enemy` reference check above, so only
+ * explicit ids are syntax-checked here; duplicates are only reported among
+ * well-formed ids, to avoid cascades.
+ */
+function checkParticipantIds(
+  file: ParsedFile,
+  entry: Record<string, unknown>,
+  entryIndex: number,
+  ctx: Ctx,
+): void {
+  const raw = entry['participants'];
+  if (!Array.isArray(raw)) return;
+  const seen = new Map<string, (string | number)[]>();
+  raw.forEach((participant, participantIndex) => {
+    const participantBase: (string | number)[] = [entryIndex, 'participants', participantIndex];
+    const idValue = isRecord(participant) ? participant['id'] : undefined;
+    const enemyValue = isRecord(participant) ? participant['enemy'] : undefined;
+    const explicit = typeof idValue === 'string';
+    const id = explicit ? idValue : typeof enemyValue === 'string' ? enemyValue : undefined;
+    if (id === undefined) return;
+    const idPath: (string | number)[] = explicit
+      ? [...participantBase, 'id']
+      : [...participantBase, 'enemy'];
+    if (explicit && !ID_PATTERN.test(id)) {
+      ctx.push({
+        severity: 'error',
+        code: 'ref/invalid-id',
+        message: `invalid participant id "${id}"; ids must match [a-z][a-z0-9-]*`,
+        file: file.file,
+        range: nodeRangeOf(file, idPath),
+        path: [...idPath],
+      });
+      return;
+    }
+    if (!ID_PATTERN.test(id)) return;
+    const first = seen.get(id);
+    if (!first) {
+      seen.set(id, idPath);
+      return;
+    }
+    ctx.push({
+      severity: 'error',
+      code: 'ref/duplicate-participant-id',
+      message: `duplicate participant id "${id}" within this encounter; give the participants explicit, distinct "id" values`,
+      file: file.file,
+      range: nodeRangeOf(file, idPath),
+      path: [...idPath],
+      related: [
+        {
+          file: file.file,
+          range: nodeRangeOf(file, first),
+          message: 'first declared here',
+        },
+      ],
+    });
   });
 }
 

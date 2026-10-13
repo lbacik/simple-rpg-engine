@@ -101,9 +101,16 @@ export type CompiledScene = {
   location: CompiledLocation | undefined;
 };
 
-export type CompiledEncounter = {
+export type CompiledParticipant = {
+  /** The participant's identity within its Encounter: explicit, or defaulted to its Enemy id. */
   id: string;
   enemy: CompiledEnemy;
+};
+
+export type CompiledEncounter = {
+  id: string;
+  /** The Encounter's participants in participant order (1-2 entries). */
+  participants: CompiledParticipant[];
   startRange: 'near' | 'far';
   text: string;
   victory?: CompiledOutcome;
@@ -447,14 +454,29 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   }));
   const sceneById = new Map(scenes.map((scene) => [scene.id, scene]));
 
-  const encounters: CompiledEncounter[] = parsedEncounters.map((parsed) => ({
-    id: parsed.id,
-    enemy: required(enemyById.get(parsed.enemy), `enemy "${parsed.enemy}"`),
-    startRange: parsed.startRange,
-    text: parsed.text,
-    victory: undefined,
-    escape: undefined as unknown as CompiledOutcome,
-  }));
+  // `enemy: X` is shorthand for `participants: [{ enemy: X }]` (a single
+  // participant with id `X`): both spellings normalise to the same ordered
+  // participant model. Phase 3 proved exactly one spelling and every
+  // reference, so the lookups below are total.
+  const encounters: CompiledEncounter[] = parsedEncounters.map((parsed) => {
+    const rawParticipants =
+      parsed.participants !== undefined
+        ? parsed.participants
+        : parsed.enemy !== undefined
+          ? [{ id: undefined as string | undefined, enemy: parsed.enemy }]
+          : [];
+    return {
+      id: parsed.id,
+      participants: rawParticipants.map((entry) => ({
+        id: entry.id ?? entry.enemy,
+        enemy: required(enemyById.get(entry.enemy), `enemy "${entry.enemy}"`),
+      })),
+      startRange: parsed.startRange,
+      text: parsed.text,
+      victory: undefined,
+      escape: undefined as unknown as CompiledOutcome,
+    };
+  });
   const encounterById = new Map(encounters.map((encounter) => [encounter.id, encounter]));
 
   const lookups: Lookups = {

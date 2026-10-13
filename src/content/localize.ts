@@ -264,7 +264,12 @@ function overlayTranslation(scenario: Scenario, translation: CompiledTranslation
     const translated = translation.encounters[encounter.id];
     return {
       ...encounter,
-      enemy: required(enemyById.get(encounter.enemy.id), `enemy "${encounter.enemy.id}"`),
+      // Participants carry no text (docs/spec/scenario-format.md): only the
+      // Enemy reference is re-pointed at the overlaid Enemy.
+      participants: encounter.participants.map((participant) => ({
+        id: participant.id,
+        enemy: required(enemyById.get(participant.enemy.id), `enemy "${participant.enemy.id}"`),
+      })),
       text: translated?.text ?? encounter.text,
       victory: undefined as CompiledOutcome | undefined,
       escape: undefined as unknown as CompiledOutcome,

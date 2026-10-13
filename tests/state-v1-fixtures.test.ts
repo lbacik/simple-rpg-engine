@@ -209,7 +209,7 @@ describe('state v1 fixtures', () => {
     expect(state.status).toBe('active');
     expect(state.activeCombat).toBeNull();
     const taken = state.encounterDamage['hollow-wolf'] ?? 0;
-    expect(taken).toBeGreaterThanOrEqual(scenario.encountersById['hollow-wolf']?.enemy.health ?? 0);
+    expect(taken).toBeGreaterThanOrEqual(scenario.encountersById['hollow-wolf']?.participants[0]?.enemy.health ?? 0);
     const end = fixture.journal.find((row) => row.type === 'combat-end');
     expect(end?.payload).toMatchObject({ encounterId: 'hollow-wolf', howEnded: 'victory' });
     expect(checkPlaythroughCompatibility(scenario, state)).toEqual({ ok: true });

@@ -34,7 +34,14 @@ export function effectiveAttributes(
 function isDefeated(scenario: Scenario, state: PlaythroughState, encounterId: string): boolean {
   const encounter = scenario.encountersById[encounterId];
   if (encounter === undefined) return false;
-  return (state.encounterDamage[encounterId] ?? 0) >= encounter.enemy.health;
+  // An Encounter is defeated when every participant is: each participant's
+  // recorded Damage taken reaches its Enemy's current maximum Health
+  // (docs/spec/content-semantics.md, conditions; docs/spec/mechanics.md,
+  // persistence of wounds). The stored record is still one Damage-taken
+  // number per Encounter (state v1); per-participant wounds arrive with the
+  // state-versions package, which reuses this predicate shape.
+  const taken = state.encounterDamage[encounterId] ?? 0;
+  return encounter.participants.every((participant) => taken >= participant.enemy.health);
 }
 
 /**

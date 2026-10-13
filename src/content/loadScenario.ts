@@ -38,6 +38,7 @@ export type {
   CompiledItem,
   CompiledLocation,
   CompiledOutcome,
+  CompiledParticipant,
   CompiledScene,
   CompiledTemplate,
   CompiledTemplateItem,

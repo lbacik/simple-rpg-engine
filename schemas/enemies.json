@@ -62,6 +62,14 @@
           "melee",
           "ranged"
         ]
+      },
+      "behaviour": {
+        "default": "steady",
+        "type": "string",
+        "enum": [
+          "steady",
+          "heavy"
+        ]
       }
     },
     "required": [
