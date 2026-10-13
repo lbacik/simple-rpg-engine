@@ -668,6 +668,14 @@ describe('latestJournalEnding', () => {
         { type: 'travel', payload: {} },
         { type: 'ending', payload: { endingId: 'b', kind: 'victory', title: 'B', text: 'b.' } },
       ]),
-    ).toEqual({ endingId: 'b', kind: 'victory', title: 'B', text: 'b.' });
+    ).toEqual({ endingId: 'b', kind: 'victory', title: 'B', text: 'b.', lang: 'en' });
+  });
+
+  it('carries the entry language into the Ending', () => {
+    expect(
+      latestJournalEnding([
+        { type: 'ending', lang: 'pl', payload: { endingId: 'b', kind: 'victory', title: 'B', text: 'b.' } },
+      ]),
+    ).toEqual({ endingId: 'b', kind: 'victory', title: 'B', text: 'b.', lang: 'pl' });
   });
 });

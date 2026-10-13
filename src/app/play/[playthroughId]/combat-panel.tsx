@@ -31,6 +31,7 @@ import {
   combatReasonText,
   combatRollLine,
   combatRoundLines,
+  wrapScenarioNames,
 } from '../../lib/combat-text';
 
 export type CombatView = Extract<GameView, { kind: 'combat' }>;
@@ -55,21 +56,32 @@ function CombatActionButton({
   step,
   formAction,
   catalogue,
+  lang,
 }: {
   availability: CombatAvailability;
   playthroughId: string;
   step: number;
   formAction: CombatFormAction;
   catalogue: Catalogue;
+  /** The language of the Scenario names shown in the label and reason. */
+  lang: string;
 }) {
   const reason = combatReasonText(availability, catalogue);
+  // Weapon and item names inside labels and reasons are Scenario text: each
+  // keeps its own element with the Scenario language (docs/spec/ui.md, shared
+  // presentation), the Interface Text around it does not.
+  const names = [availability.weaponName ?? '', availability.itemName ?? ''];
+  const label = { __html: wrapScenarioNames(combatActionLabel(availability, catalogue), names, lang) };
   if (!availability.enabled) {
     return (
       <div className="combat-action">
-        <button className="combat-button" type="button" disabled>
-          {combatActionLabel(availability, catalogue)}
-        </button>
-        {reason ? <p className="combat-reason">{reason}</p> : null}
+        <button className="combat-button" type="button" disabled dangerouslySetInnerHTML={label} />
+        {reason ? (
+          <p
+            className="combat-reason"
+            dangerouslySetInnerHTML={{ __html: wrapScenarioNames(reason, names, lang) }}
+          />
+        ) : null}
       </div>
     );
   }
@@ -82,9 +94,7 @@ function CombatActionButton({
         <input type="hidden" name="item" value={availability.itemId} />
       ) : null}
       <p>
-        <button className="combat-button" type="submit">
-          {combatActionLabel(availability, catalogue)}
-        </button>
+        <button className="combat-button" type="submit" dangerouslySetInnerHTML={label} />
       </p>
     </form>
   );
@@ -98,6 +108,7 @@ function Medallion({
   detail,
   guard,
   catalogue,
+  lang,
 }: {
   side: 'character' | 'enemy';
   name: string;
@@ -106,6 +117,8 @@ function Medallion({
   detail: string;
   guard?: boolean;
   catalogue: Catalogue;
+  /** The language of the name shown: set for the Enemy only, never the Character. */
+  lang?: string;
 }) {
   const percent = healthPercent(health, maxHealth);
   return (
@@ -120,7 +133,13 @@ function Medallion({
         </span>
         {guard ? <span className="combat-guard">{catalogue.combat.guardUp}</span> : null}
       </div>
-      <p className="combat-name">{name}</p>
+      {lang === undefined ? (
+        <p className="combat-name">{name}</p>
+      ) : (
+        <p className="combat-name" lang={lang}>
+          {name}
+        </p>
+      )}
       <p className="combat-health">
         {health}/{maxHealth}
       </p>
@@ -151,18 +170,29 @@ function RollChips({
   enemyName,
   characterName,
   catalogue,
+  lang,
 }: {
   rolls: CombatRoll[];
   enemyName: string;
   characterName: string;
   catalogue: Catalogue;
+  /** The language of the Scenario names shown in the roll lines. */
+  lang: string;
 }) {
   return (
     <>
       {rolls.map((roll, index) => (
-        <li key={index} className={roll.hit ? 'combat-roll hit' : 'combat-roll miss'}>
-          {combatRollLine(roll, catalogue, characterName, enemyName)}
-        </li>
+        <li
+          key={index}
+          className={roll.hit ? 'combat-roll hit' : 'combat-roll miss'}
+          dangerouslySetInnerHTML={{
+            __html: wrapScenarioNames(
+              combatRollLine(roll, catalogue, characterName, enemyName),
+              [characterName, enemyName],
+              lang,
+            ),
+          }}
+        />
       ))}
     </>
   );
@@ -177,6 +207,8 @@ export function CombatPanel({
   consumables,
   formAction,
   catalogue,
+  lang,
+  badge,
 }: {
   combat: CombatView;
   playthroughId: string;
@@ -189,6 +221,10 @@ export function CombatPanel({
   formAction: CombatFormAction;
   /** Interface Text: the game screen passes the current catalogue. */
   catalogue: Catalogue;
+  /** The language of the Scenario text shown. */
+  lang: string;
+  /** The fallback badge, shown after the Encounter name while the Scenario falls back. */
+  badge?: React.ReactNode;
 }) {
   const near = combat.range === 'near';
   const rangeWord = catalogue.range[combat.range];
@@ -196,6 +232,16 @@ export function CombatPanel({
   const enemyNameOf = (round: CombatRoundView): string => round.enemyName ?? combat.enemy.name;
   const roundLines = (round: CombatRoundView): string[] =>
     round.enemyName === undefined ? [round.text ?? ''] : combatRoundLines(round, catalogue);
+  // The Scenario names a round line can hold (participants, weapon, item):
+  // each keeps its own element with the Scenario language, as in the Journal
+  // (docs/spec/ui.md, shared presentation). Legacy rows are stored English
+  // text shown verbatim, so they carry `en`.
+  const roundNames = (round: CombatRoundView): string[] => [
+    combat.characterName,
+    enemyNameOf(round),
+    round.weaponName ?? '',
+    round.itemName ?? '',
+  ];
   // Legacy rows (stored English text, no event) render as their stored text
   // verbatim, one line per round (docs/spec/ui.md, Combat panel): no roll
   // chips, which would resolve the Enemy's name from the live Scenario instead
@@ -218,11 +264,16 @@ export function CombatPanel({
     <>
       <header className="combat-header">
         <p className="combat-kicker">
-          {catalogue.combat.title} · {combat.locationName} · {catalogue.combat.round(combat.round)}
+          {catalogue.combat.title} · <span lang={lang}>{combat.locationName}</span> ·{' '}
+          {catalogue.combat.round(combat.round)}
         </p>
-        <h1>{combat.encounterName}</h1>
+        <h1>
+          <span lang={lang}>{combat.encounterName}</span>
+          {badge === undefined ? null : <> {badge}</>}
+        </h1>
         <div
           className="combat-narration"
+          lang={lang}
           dangerouslySetInnerHTML={{
             __html: renderNarration(combat.text, combat.characterName),
           }}
@@ -259,6 +310,7 @@ export function CombatPanel({
             catalogue.reach[combat.enemy.reach],
           )}
           catalogue={catalogue}
+          lang={lang}
         />
         <div className="combat-range">{rangeWord}</div>
       </section>
@@ -271,6 +323,7 @@ export function CombatPanel({
             step={step}
             formAction={formAction}
             catalogue={catalogue}
+            lang={lang}
           />
           <CombatActionButton
             availability={actionById(combat.actions, 'fall-back')}
@@ -278,6 +331,7 @@ export function CombatPanel({
             step={step}
             formAction={formAction}
             catalogue={catalogue}
+            lang={lang}
           />
         </section>
         <section aria-label={catalogue.combat.groups.fight} className="combat-group">
@@ -288,6 +342,7 @@ export function CombatPanel({
             step={step}
             formAction={formAction}
             catalogue={catalogue}
+            lang={lang}
           />
           <CombatActionButton
             availability={actionById(combat.actions, 'defend')}
@@ -295,6 +350,7 @@ export function CombatPanel({
             step={step}
             formAction={formAction}
             catalogue={catalogue}
+            lang={lang}
           />
         </section>
         <section aria-label={catalogue.combat.groups.items} className="combat-group">
@@ -310,6 +366,7 @@ export function CombatPanel({
                 step={step}
                 formAction={formAction}
                 catalogue={catalogue}
+                lang={lang}
               />
             ))
           )}
@@ -322,6 +379,7 @@ export function CombatPanel({
             step={step}
             formAction={formAction}
             catalogue={catalogue}
+            lang={lang}
           />
         </section>
       </div>
@@ -333,9 +391,20 @@ export function CombatPanel({
           <>
             <div className="combat-latest">
               <p className="combat-kicker">{catalogue.combat.lastRound(latest.round)}</p>
-              {roundLines(latest).map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
+              {showChips(latest)
+                ? roundLines(latest).map((line, index) => (
+                    <p
+                      key={index}
+                      dangerouslySetInnerHTML={{
+                        __html: wrapScenarioNames(line, roundNames(latest), lang),
+                      }}
+                    />
+                  ))
+                : roundLines(latest).map((line, index) => (
+                    <p key={index} lang="en">
+                      {line}
+                    </p>
+                  ))}
               {showChips(latest) && latest.rolls.length > 0 ? (
                 <ul className="combat-rolls">
                   <RollChips
@@ -343,6 +412,7 @@ export function CombatPanel({
                     enemyName={enemyNameOf(latest)}
                     characterName={combat.characterName}
                     catalogue={catalogue}
+                    lang={lang}
                   />
                 </ul>
               ) : null}
@@ -351,21 +421,37 @@ export function CombatPanel({
               <ol className="combat-older">
                 {older.map((round) => (
                   <li key={round.round}>
-                    <strong>{round.round}.</strong> {roundLines(round).join(' · ')}
+                    <strong>{round.round}.</strong>{' '}
+                    {showChips(round) ? (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: wrapScenarioNames(roundLines(round).join(' · '), roundNames(round), lang),
+                        }}
+                      />
+                    ) : (
+                      <span lang="en">{roundLines(round).join(' · ')}</span>
+                    )}
                     {showChips(round) && round.rolls.length > 0 ? (
                       <span className="combat-reason">
-                        {' '}
-                        ·{' '}
-                        {round.rolls
-                          .map((roll) =>
-                            combatRollLine(
-                              roll,
-                              catalogue,
-                              combat.characterName,
-                              enemyNameOf(round),
+                        {' '}·{' '}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: wrapScenarioNames(
+                              round.rolls
+                                .map((roll) =>
+                                  combatRollLine(
+                                    roll,
+                                    catalogue,
+                                    combat.characterName,
+                                    enemyNameOf(round),
+                                  ),
+                                )
+                                .join(' · '),
+                              roundNames(round),
+                              lang,
                             ),
-                          )
-                          .join(' · ')}
+                          }}
+                        />
                       </span>
                     ) : null}
                   </li>

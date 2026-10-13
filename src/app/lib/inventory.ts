@@ -21,6 +21,7 @@ import type { Action } from '@/engine/index';
 import { isEquipmentSlot } from '@/engine/inventory';
 import { getDatabase } from '@/persistence/index';
 import { cleanParam, parseSeenStep, playHref } from './panel';
+import { getInterfaceLanguage } from './language';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -69,6 +70,7 @@ async function runInventoryTurn(form: InventoryForm, action: Action): Promise<ne
     sessionHash,
     action,
     randomInt,
+    await getInterfaceLanguage(),
   );
   const path = `/play/${form.playthroughId}`;
   if (result.ok) {

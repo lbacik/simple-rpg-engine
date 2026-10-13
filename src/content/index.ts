@@ -10,3 +10,5 @@ export type { LoadScenarioFailure, LoadScenarioResult, LoadScenarioSuccess, Reje
 export { getScenario, listScenarios, loadAllScenarios, scenarioDirectory } from './registry';
 export { checkPlaythroughCompatibility } from './compatibility';
 export type { CompatibilityResult } from './compatibility';
+export { displayLanguages, localizeScenario, selectScenarioText } from './localize';
+export type { LocalizedScenario, ScenarioTextSelection } from './localize';

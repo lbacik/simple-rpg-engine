@@ -169,9 +169,18 @@ export function CharacterSheet({
         <div className="sheet-hero-text">
           <h2 className="sheet-name">{state.character.name}</h2>
           <p className="meta">
-            {template ? template.name : state.character.templateId} · {locationName}
+            {template ? (
+              <span lang={scenario.language}>{template.name}</span>
+            ) : (
+              state.character.templateId
+            )}{' '}
+            · <span lang={scenario.language}>{locationName}</span>
           </p>
-          {template?.description ? <p className="sheet-lede">{template.description}</p> : null}
+          {template?.description ? (
+            <p className="sheet-lede" lang={scenario.language}>
+              {template.description}
+            </p>
+          ) : null}
         </div>
       </header>
       <div className="sheet-cols">
@@ -224,7 +233,11 @@ export function CharacterSheet({
                   <li key={slot} className={equippedName === undefined ? 'empty' : ''}>
                     <SlotIcon slot={slot} />
                     <span className="meta">{catalogue.slots[slot]}</span>
-                    <span>{equippedName ?? '—'}</span>
+                    {equippedName === undefined ? (
+                      <span>—</span>
+                    ) : (
+                      <span lang={scenario.language}>{equippedName}</span>
+                    )}
                   </li>
                 );
               })}

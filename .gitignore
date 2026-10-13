@@ -10,3 +10,4 @@ next-env.d.ts
 *.db
 test-results/
 playwright-report/
+tests/e2e/.tmp-scenarios/

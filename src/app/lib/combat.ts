@@ -17,6 +17,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import type { Action, CombatAction } from '@/engine/index';
 import { getDatabase } from '@/persistence/index';
+import { getInterfaceLanguage } from './language';
 import { ensureSessionId, getSessionHash } from './session';
 import { executeTurn } from './turn';
 
@@ -62,6 +63,7 @@ export async function combatAction(formData: FormData): Promise<never> {
     sessionHash,
     action,
     randomInt,
+    await getInterfaceLanguage(),
   );
   if (result.ok) {
     revalidatePath(path);

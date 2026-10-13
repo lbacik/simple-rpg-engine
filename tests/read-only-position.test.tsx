@@ -74,6 +74,7 @@ describe('ReadOnlyPosition', () => {
         gameView={locationView()}
         characterName="Robin"
         recordedEnding={undefined}
+        lang="en"
       />,
     );
     expect(html).toContain('no longer part of this Scenario');
@@ -88,6 +89,7 @@ describe('ReadOnlyPosition', () => {
         gameView={locationView()}
         characterName="Robin"
         recordedEnding={undefined}
+        lang="en"
       />,
     );
     expect(html).toContain('Startville');
@@ -108,7 +110,8 @@ describe('ReadOnlyPosition', () => {
         state={{ ...baseState(), status: 'ended', endingId: 'gone' }}
         gameView={gameView}
         characterName="Robin"
-        recordedEnding={{ endingId: 'w', kind: 'victory', title: 'Recorded Triumph', text: 'Won.' }}
+        recordedEnding={{ endingId: 'w', kind: 'victory', title: 'Recorded Triumph', text: 'Won.', lang: 'en' }}
+        lang="en"
       />,
     );
     expect(html).toContain('Recorded Triumph');
@@ -124,6 +127,7 @@ describe('ReadOnlyPosition', () => {
         characterName="Robin"
         recordedEnding={undefined}
         catalogue={pl}
+        lang="en"
       />,
     );
     expect(gap).toContain('nie jest już częścią tego scenariusza');
@@ -142,6 +146,7 @@ describe('ReadOnlyPosition', () => {
         characterName="Robin"
         recordedEnding={undefined}
         catalogue={pl}
+        lang="en"
       />,
     );
     expect(ended).toContain('Porażka');
@@ -164,6 +169,7 @@ describe('ReadOnlyPosition', () => {
         gameView={gameView}
         characterName="Robin"
         recordedEnding={undefined}
+        lang="en"
       />,
     );
     expect(html).toContain('no longer part of this Scenario');

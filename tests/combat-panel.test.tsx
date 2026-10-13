@@ -145,6 +145,7 @@ function render(view: CombatView, extra: Record<string, unknown> = {}): string {
       consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
       formAction="#combat"
       catalogue={en}
+      lang="en"
       {...extra}
     />,
   );
@@ -153,9 +154,23 @@ function render(view: CombatView, extra: Record<string, unknown> = {}): string {
 describe('combat panel header', () => {
   it('shows the kicker, the Encounter name and the opening narration', () => {
     const markup = render(combat());
-    expect(markup).toContain('Combat · Whispering Woods · Round 3');
-    expect(markup).toContain('<h1>The Grey Wolf</h1>');
+    expect(markup).toContain('Combat · <span lang="en">Whispering Woods</span> · Round 3');
+    expect(markup).toContain('<h1><span lang="en">The Grey Wolf</span></h1>');
     expect(markup).toContain('A wolf blocks the path.');
+  });
+
+  it('shows no badge without one, and the badge after the Encounter name with one', () => {
+    expect(render(combat())).not.toContain('lang-chip');
+    const markup = render(combat(), { badge: <span className="lang-chip">Text: Polish</span> });
+    expect(markup).toContain(
+      '<h1><span lang="en">The Grey Wolf</span> <span class="lang-chip">Text: Polish</span></h1>',
+    );
+  });
+
+  it('marks the Enemy name with the Scenario language, never the Character name', () => {
+    const markup = render(combat());
+    expect(markup).toContain('<p class="combat-name" lang="en">Grey Wolf</p>');
+    expect(markup).toContain('<p class="combat-name">Robin</p>');
   });
 });
 
@@ -211,8 +226,8 @@ describe('combat actions', () => {
 
   it('labels actions from their codes and the names as presented', () => {
     const markup = render(combat());
-    expect(markup).toContain('Attack: Hunting Knife');
-    expect(markup).toContain('Use: Berry Poultice');
+    expect(markup).toContain('Attack: <span lang="en">Hunting Knife</span>');
+    expect(markup).toContain('Use: <span lang="en">Berry Poultice</span>');
     expect(markup).toContain('Fall back');
   });
 
@@ -244,7 +259,7 @@ describe('combat actions', () => {
       ],
     });
     const markup = render(view);
-    expect(markup).toContain('Your Hunting Knife needs Near Range.');
+    expect(markup).toContain('Your <span lang="en">Hunting Knife</span> needs Near Range.');
     expect(markup).toContain('Already at full Health.');
   });
 
@@ -273,7 +288,7 @@ describe('combat log', () => {
     const latest = markup.indexOf('Last round');
     // The parenthesised roll score only appears in the log's round lines, not
     // in the action buttons.
-    const older = markup.indexOf('Attack: Hunting Knife (4+3+2=9 vs 8)');
+    const older = markup.indexOf('Attack: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8)');
     expect(latest).toBeGreaterThanOrEqual(0);
     expect(older).toBeGreaterThan(latest);
     expect(markup.indexOf('Fall back (2+2+1=5 vs 4): success')).toBeLessThan(older);
@@ -281,11 +296,20 @@ describe('combat log', () => {
 
   it('derives round lines and roll chips from events, not stored text', () => {
     const markup = render(combat());
-    expect(markup).toContain('Attack: Hunting Knife (4+3+2=9 vs 8) — hit, 3 Damage.');
-    expect(markup).toContain('Robin: 4+3+2=9 vs 8 — hit, 3 Damage');
-    expect(markup).toContain('Grey Wolf: 1+2+1=4 vs 8 — miss');
-    expect(markup).toContain('Robin: 2+2+1=5 vs 4 — success');
+    expect(markup).toContain(
+      'Attack: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8) — hit, 3 Damage.',
+    );
+    expect(markup).toContain('<span lang="en">Robin</span>: 4+3+2=9 vs 8 — hit, 3 Damage');
+    expect(markup).toContain('<span lang="en">Grey Wolf</span>: 1+2+1=4 vs 8 — miss');
+    expect(markup).toContain('<span lang="en">Robin</span>: 2+2+1=5 vs 4 — success');
     expect(markup).not.toContain('hit, 0 Damage');
+  });
+
+  it('wraps every Scenario name in the log with the Scenario language', () => {
+    const markup = render(combat());
+    // The Interface Text around the names carries no lang of its own.
+    expect(markup).toContain('Last round · 2');
+    expect(markup).not.toContain('lang="en">Fall back (2+2+1=5 vs 4): success');
   });
 
   it('shows legacy rows verbatim, one line per round, with no roll chips', () => {
@@ -312,7 +336,7 @@ describe('combat log', () => {
       },
     ];
     const markup = render(combat(), { rounds: legacy });
-    expect(markup).toContain('Robin closes in and strikes.');
+    expect(markup).toContain('<p lang="en">Robin closes in and strikes.</p>');
     // Chips would resolve the Enemy's name from the live Scenario instead of
     // the entry, so legacy rows show their stored text only.
     expect(markup).not.toContain('combat-roll');
@@ -382,6 +406,7 @@ describe('combat panel in Polish', () => {
         consumables={[{ itemId: 'poultice', name: 'Berry Poultice' }]}
         formAction="#combat"
         catalogue={pl}
+        lang="en"
         {...extra}
       />,
     );
@@ -389,20 +414,22 @@ describe('combat panel in Polish', () => {
 
   it('shows the kicker, groups, arena and reasons in Polish', () => {
     const markup = renderPl(combat());
-    expect(markup).toContain('Walka · Whispering Woods · Runda 3');
+    expect(markup).toContain('Walka · <span lang="en">Whispering Woods</span> · Runda 3');
     for (const group of ['Pozycja', 'Walka', 'Przedmioty', 'Ucieczka']) {
       expect(markup).toContain(`aria-label="${group}"`);
     }
     expect(markup).toContain('aria-label="Dystans: Blisko"');
     expect(markup).toContain('Już: Blisko.');
-    expect(markup).toContain('Atak: Hunting Knife');
+    expect(markup).toContain('Atak: <span lang="en">Hunting Knife</span>');
     expect(markup).toContain('Ostatnia runda · 2');
   });
 
   it('keeps the label shape with untransformed names and plural Damage', () => {
     const markup = renderPl(combat());
     // Label-shaped with the weapon name as presented, never case-transformed.
-    expect(markup).toContain('Atak: Hunting Knife (4+3+2=9 vs 8) — trafienie, 3 obrażenia.');
+    expect(markup).toContain(
+      'Atak: <span lang="en">Hunting Knife</span> (4+3+2=9 vs 8) — trafienie, 3 obrażenia.',
+    );
     expect(markup).not.toContain('hunting knife');
     expect(markup).not.toContain('HUNTING KNIFE');
   });

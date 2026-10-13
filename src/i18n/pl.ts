@@ -13,6 +13,7 @@
 
 import type { Catalogue } from './en';
 import { formatNumber } from './format';
+import { primaryLanguageSubtag } from './languages';
 import { selectPlural } from './plural';
 
 const whole = (value: number): string => formatNumber('pl', value);
@@ -43,6 +44,18 @@ const damageText = (amount: number): string =>
     other: `${formatNumber('pl', amount)} obrażenia`,
   });
 
+/** The name of a Scenario language in Polish; other tags read as their primary subtag in capitals. */
+function scenarioLanguageName(language: string): string {
+  const primary = primaryLanguageSubtag(language);
+  if (primary === 'en') return 'angielski';
+  if (primary === 'pl') return 'polski';
+  return primary.toUpperCase();
+}
+
+function cap(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export const pl: Catalogue = {
   app: {
     title: 'Simple RPG Engine',
@@ -59,6 +72,25 @@ export const pl: Catalogue = {
       en: 'English',
       pl: 'Polski',
     },
+  },
+  scenarioLanguage: {
+    name: (language: string): string => scenarioLanguageName(language),
+    flagName: (language: string, original: boolean): string =>
+      original
+        ? `${cap(scenarioLanguageName(language))} (oryginał)`
+        : cap(scenarioLanguageName(language)),
+    inInterfaceLanguage: (language: string): string => {
+      const primary = primaryLanguageSubtag(language);
+      if (primary === 'pl') return 'Po polsku';
+      if (primary === 'en') return 'Po angielsku';
+      return primary.toUpperCase();
+    },
+    otherLanguages: 'W innych językach',
+    otherLanguagesNote: (language: string): string =>
+      `Te scenariusze nie mają jeszcze tłumaczenia na język ${scenarioLanguageName(language)}. Grasz w nie w oryginale.`,
+    notTranslated: (shown: string, ui: string): string =>
+      `Brak tłumaczenia na język ${scenarioLanguageName(ui)}. Tekst w języku: ${scenarioLanguageName(shown)}.`,
+    textBadge: (shown: string): string => `Tekst: ${scenarioLanguageName(shown)}`,
   },
   collection: {
     title: 'Scenariusze',
@@ -88,6 +120,10 @@ export const pl: Catalogue = {
       slotName === null
         ? `${itemName} × ${whole(quantity)}`
         : `${itemName} × ${whole(quantity)} (${slotName})`,
+    templateItemSuffix: (quantity: number, slotName: string | null): string =>
+      slotName === null
+        ? ` × ${whole(quantity)}`
+        : ` × ${whole(quantity)} (${slotName})`,
   },
   startForm: {
     templateLegend: 'Szablon postaci',

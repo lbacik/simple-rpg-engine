@@ -14,6 +14,7 @@
 
 import type { EquipmentSlot } from '../engine/inventory';
 import { formatNumber } from './format';
+import { primaryLanguageSubtag } from './languages';
 import { selectPlural } from './plural';
 
 const whole = (value: number): string => formatNumber('en', value);
@@ -29,6 +30,14 @@ const entriesCount = (count: number): string =>
     one: '1 entry',
     other: `${formatNumber('en', count)} entries`,
   });
+
+/** The name of a Scenario language in English; other tags read as their primary subtag in capitals. */
+function scenarioLanguageName(language: string): string {
+  const primary = primaryLanguageSubtag(language);
+  if (primary === 'en') return 'English';
+  if (primary === 'pl') return 'Polish';
+  return primary.toUpperCase();
+}
 
 export const en = {
   app: {
@@ -46,6 +55,23 @@ export const en = {
       en: 'English',
       pl: 'Polski',
     },
+  },
+  scenarioLanguage: {
+    /** The name of a Scenario language in English. */
+    name: (language: string): string => scenarioLanguageName(language),
+    /** The accessible name of a standalone language flag. */
+    flagName: (language: string, original: boolean): string =>
+      original
+        ? `${scenarioLanguageName(language)} (original)`
+        : scenarioLanguageName(language),
+    /** The collection group heading for Scenarios shown in the Interface Language. */
+    inInterfaceLanguage: (language: string): string => `In ${scenarioLanguageName(language)}`,
+    otherLanguages: 'In other languages',
+    otherLanguagesNote: (language: string): string =>
+      `These Scenarios are not translated into ${scenarioLanguageName(language)} yet. You play them in their original language.`,
+    notTranslated: (shown: string, ui: string): string =>
+      `Not translated into ${scenarioLanguageName(ui)}. Shown in ${scenarioLanguageName(shown)}.`,
+    textBadge: (shown: string): string => `Text: ${scenarioLanguageName(shown)}`,
   },
   collection: {
     title: 'Scenarios',
@@ -75,6 +101,10 @@ export const en = {
       slotName === null
         ? `${itemName} × ${whole(quantity)}`
         : `${itemName} × ${whole(quantity)} (${slotName})`,
+    templateItemSuffix: (quantity: number, slotName: string | null): string =>
+      slotName === null
+        ? ` × ${whole(quantity)}`
+        : ` × ${whole(quantity)} (${slotName})`,
   },
   startForm: {
     templateLegend: 'Character Template',
