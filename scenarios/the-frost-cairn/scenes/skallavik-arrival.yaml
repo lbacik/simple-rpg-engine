@@ -1,4 +1,5 @@
 id: skallavik-arrival
+illustration: skallavik-arrival
 title: The Gathering in the Great Hall
 trigger: on-enter
 repeatable: true

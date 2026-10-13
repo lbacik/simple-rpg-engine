@@ -13,7 +13,7 @@ The package contains:
 - **4 Endings** (2 victory, 2 defeat including the required death ending)
 - **11 Declared Flags** tracking story decisions and progress
 - **Complete Polish Translation** (`translations/pl/`)
-- Comprehensive illustration prompts for all 27 assets in [`images/prompts.json`](images/prompts.json)
+- **27 Illustrations** (8 Locations and 19 Scenes), with bilingual alt text and generation prompts in [`images/prompts.json`](images/prompts.json)
 
 ---
 
@@ -83,29 +83,16 @@ The package contains:
 
 ## Illustrations & Generation Prompts
 
-The scenario ships **without image binaries**, as requested. Everything needed to generate and wire them is in place:
+The scenario includes **27 generated illustrations**, connected to all 8 Locations and 19 Scenes in both language versions.
 
 - [`images/prompts.json`](images/prompts.json): Complete prompt catalog containing:
   - Shared ink-and-graphite sketchbook `stylePrompt` matching the engine's visual aesthetic
   - Consistent character cast sheet (Torvald, Astrid, Hilda, Einar, Harek, Berserker)
   - 27 prompt specifications (8 Locations and 19 Scenes) with target resolution (1536 × 1024 WebP) and bilingual alt text (`alt` and `altPl`).
-- [`images.yaml`](images.yaml) and [`translations/pl/images.yaml`](translations/pl/images.yaml): Manifest-ready image mappings.
+- [`images/`](images/): 1536 × 1024 WebP illustrations, each under 2 MiB, generated with the built-in `image_gen` tool from the shared style prompt, individual prompts, scene details, and relevant cast descriptions. The two images listed in `styleReferences` were used as drawing-technique references only; ice and magical light are rendered in monochrome.
+- [`images.yaml`](images.yaml) and [`translations/pl/images.yaml`](translations/pl/images.yaml): Active image catalogs with English and Polish alt text, loaded by their respective manifests.
 
-### How to Activate Images After Generation:
-1. Generate the WebP files and save them to `images/<id>.webp` (under 2 MiB each).
-2. In `scenario.yaml`, add:
-   ```yaml
-   images:
-     - images.yaml
-   ```
-3. In `translations/pl/translation.yaml`, add:
-   ```yaml
-   images:
-     - translations/pl/images.yaml
-   ```
-4. In each Location file, add `illustration: loc-<location-id>`.
-5. In each Scene file, add `illustration: <scene-id>`.
-6. Run `npm run validate scenarios/the-frost-cairn`.
+Each Location references `illustration: loc-<location-id>`, and each Scene references `illustration: <scene-id>`. The Polish Translation reuses these illustrations with localized alt text.
 
 ---
 

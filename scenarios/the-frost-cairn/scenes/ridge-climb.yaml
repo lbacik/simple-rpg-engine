@@ -1,4 +1,5 @@
 id: ridge-climb
+illustration: ridge-climb
 title: The Ridge Sentry
 trigger: on-enter
 repeatable: false

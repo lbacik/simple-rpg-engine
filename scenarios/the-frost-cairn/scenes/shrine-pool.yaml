@@ -1,4 +1,5 @@
 id: shrine-pool
+illustration: shrine-pool
 title: The Sunken Shrine
 trigger: on-enter
 repeatable: false

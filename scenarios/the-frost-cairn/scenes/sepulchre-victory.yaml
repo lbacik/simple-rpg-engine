@@ -1,4 +1,5 @@
 id: sepulchre-victory
+illustration: sepulchre-victory
 title: The Fall of the Draugr Lord
 trigger: on-enter
 repeatable: false

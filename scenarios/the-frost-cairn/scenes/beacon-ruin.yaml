@@ -1,4 +1,5 @@
 id: beacon-ruin
+illustration: beacon-ruin
 title: Inspect the Ruined Beacon
 trigger: on-demand
 repeatable: true

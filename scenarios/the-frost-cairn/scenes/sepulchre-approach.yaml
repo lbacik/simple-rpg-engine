@@ -1,4 +1,5 @@
 id: sepulchre-approach
+illustration: sepulchre-approach
 title: The Sepulchre of Jarl Harek
 trigger: on-enter
 repeatable: false

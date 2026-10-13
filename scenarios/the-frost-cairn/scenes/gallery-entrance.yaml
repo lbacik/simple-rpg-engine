@@ -1,4 +1,5 @@
 id: gallery-entrance
+illustration: gallery-entrance
 title: The Crypt Gallery
 trigger: on-enter
 repeatable: false

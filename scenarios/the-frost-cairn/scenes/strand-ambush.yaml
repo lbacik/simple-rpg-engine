@@ -1,4 +1,5 @@
 id: strand-ambush
+illustration: strand-ambush
 title: Ambush on the Frozen Strand
 trigger: on-enter
 repeatable: false

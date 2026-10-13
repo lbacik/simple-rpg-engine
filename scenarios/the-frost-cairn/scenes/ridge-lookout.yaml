@@ -1,4 +1,5 @@
 id: ridge-lookout
+illustration: ridge-lookout
 title: Survey the High Barrow
 trigger: on-demand
 repeatable: true

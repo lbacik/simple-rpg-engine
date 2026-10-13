@@ -1,4 +1,5 @@
 id: torvald-briefing
+illustration: torvald-briefing
 title: Speak with Jarl Torvald
 trigger: on-demand
 repeatable: true

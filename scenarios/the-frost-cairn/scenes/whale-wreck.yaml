@@ -1,4 +1,5 @@
 id: whale-wreck
+illustration: whale-wreck
 title: Search the Wrecked Longboat
 trigger: on-demand
 repeatable: true

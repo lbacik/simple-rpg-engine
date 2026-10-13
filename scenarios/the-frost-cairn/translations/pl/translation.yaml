@@ -48,3 +48,5 @@ templates:
   - translations/pl/templates.yaml
 endings:
   - translations/pl/endings.yaml
+images:
+  - translations/pl/images.yaml

@@ -1,4 +1,5 @@
 id: barrow-doors
+illustration: barrow-doors
 title: Unseal the Barrow Portal
 trigger: on-demand
 repeatable: true
