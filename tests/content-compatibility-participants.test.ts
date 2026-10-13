@@ -1097,4 +1097,15 @@ describe('M9 mechanical edits and Combat state shape', () => {
     };
     expect(checkPlaythroughCompatibility(scenario, broken).ok).toBe(false);
   });
+
+  it('fails closed with reasons on a partially written Combat shape', () => {
+    const { scenario, state } = roundOneWolves();
+    const broken = structuredClone(state);
+    if (broken.activeCombat == null) throw new Error('expected an active Combat');
+    broken.activeCombat.startedParticipants = undefined as unknown as string[];
+    const result = checkPlaythroughCompatibility(scenario, broken);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected incompatible');
+    expect(result.reasons.length).toBeGreaterThan(0);
+  });
 });

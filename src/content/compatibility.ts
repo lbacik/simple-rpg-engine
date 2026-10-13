@@ -151,31 +151,43 @@ export function checkPlaythroughCompatibility(
     if (encounter === undefined) {
       fail(`unknown encounter "${combat.encounterId}"`);
     } else if (!isLegacyCombatShape(combat)) {
+      // A partially written v2 shape (a membership field missing) fails
+      // closed: the coerced empties trip the membership checks below instead
+      // of throwing on `undefined`. Production reads never reach this branch
+      // (the strict v2 schema requires every field), so this only hardens the
+      // function's verdict contract for direct callers.
+      const startedParticipants: string[] = Array.isArray(combat.startedParticipants)
+        ? combat.startedParticipants
+        : [];
+      const roundOrder: string[] = Array.isArray(combat.roundParticipantOrder)
+        ? combat.roundParticipantOrder
+        : [];
+      const actionState = combat.participants ?? {};
       const byId = new Map(encounter.participants.map((participant) => [participant.id, participant]));
-      for (const participantId of combat.startedParticipants) {
+      for (const participantId of startedParticipants) {
         if (!byId.has(participantId)) {
           fail(
             `unknown participant "${participantId}" in the starting membership of encounter "${encounter.id}"`,
           );
         }
       }
-      for (const participantId of combat.roundParticipantOrder) {
+      for (const participantId of roundOrder) {
         if (!byId.has(participantId)) {
           fail(
             `unknown participant "${participantId}" in the Round tie-break order of encounter "${encounter.id}"`,
           );
         }
       }
-      if (combat.startedParticipants.length === 0) {
+      if (startedParticipants.length === 0) {
         fail(`encounter "${encounter.id}" has no starting membership`);
       }
-      if (combat.roundParticipantOrder.length === 0) {
+      if (roundOrder.length === 0) {
         fail(`encounter "${encounter.id}" has no Round tie-break order`);
       }
-      if (new Set(combat.startedParticipants).size !== combat.startedParticipants.length) {
+      if (new Set(startedParticipants).size !== startedParticipants.length) {
         fail(`encounter "${encounter.id}" repeats a participant in its starting membership`);
       }
-      if (new Set(combat.roundParticipantOrder).size !== combat.roundParticipantOrder.length) {
+      if (new Set(roundOrder).size !== roundOrder.length) {
         fail(`encounter "${encounter.id}" repeats a participant in its Round tie-break order`);
       }
       const wounds = state.encounters?.[combat.encounterId] ?? {};
@@ -190,7 +202,7 @@ export function checkPlaythroughCompatibility(
           .filter((participant) => participant.enemy.health > (wounds[participant.id] ?? 0))
           .map((participant) => participant.id),
       );
-      const active = Object.keys(combat.participants);
+      const active = Object.keys(actionState);
       const activeSet = new Set(active);
       for (const participantId of active) {
         const participant = byId.get(participantId);
@@ -211,7 +223,7 @@ export function checkPlaythroughCompatibility(
           `the active Combat state of encounter "${encounter.id}" no longer matches its surviving participants`,
         );
       }
-      const startedSet = new Set(combat.startedParticipants);
+      const startedSet = new Set(startedParticipants);
       for (const participantId of active) {
         if (!startedSet.has(participantId)) {
           fail(
@@ -220,7 +232,7 @@ export function checkPlaythroughCompatibility(
         }
       }
       const orderCounts = new Map<string, number>();
-      for (const participantId of combat.roundParticipantOrder) {
+      for (const participantId of roundOrder) {
         orderCounts.set(participantId, (orderCounts.get(participantId) ?? 0) + 1);
       }
       for (const participantId of active) {
@@ -230,7 +242,7 @@ export function checkPlaythroughCompatibility(
           );
         }
       }
-      for (const participantId of combat.roundParticipantOrder) {
+      for (const participantId of roundOrder) {
         if (!startedSet.has(participantId)) {
           fail(
             `participant "${participantId}" in the Round tie-break order is not in the starting membership of encounter "${encounter.id}"`,
