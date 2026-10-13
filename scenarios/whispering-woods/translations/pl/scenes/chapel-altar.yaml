@@ -1,0 +1,14 @@
+id: chapel-altar
+title: Ołtarz
+text: |
+  Na pękniętym ołtarzu leży mały srebrny krążek na łańcuszku,
+  nietknięty mchem ani rdzą. Na jego powierzchni wyryto jastrzębia.
+choices:
+  - id: take-charm
+    text: Weź amulet.
+    outcome:
+      text: |
+        Srebro jest ciepłe w twojej dłoni. Przez wyrwę w murze dostrzegasz
+        stojące głazy na kopcu na wschodzie.
+  - id: step-back
+    text: Na razie zostaw go na miejscu.

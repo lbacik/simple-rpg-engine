@@ -1,0 +1,20 @@
+id: wolf-den
+title: Oczy wśród paproci
+text: |
+  Coś porusza się wśród paproci. Szary wilk podnosi się przy powalonym
+  buku, odgradzając cię od drugiego krańca kotliny.
+choices:
+  - id: fight
+    text: Nie ustępuj i walcz.
+  - id: sneak
+    text: Przekradnij się obok niego przez paprocie.
+    test:
+      success:
+        text: |
+          Trzymasz się po zawietrznej i przemykasz obok, gdy wilk
+          ogryza kość.
+      failure:
+        text: |
+          Pod twoim butem trzaska gałązka. Wilk podnosi łeb.
+  - id: retreat
+    text: Wespnij się z powrotem na skraj kotliny.

@@ -1,0 +1,27 @@
+id: chapel-threshold
+title: Zapadnięta posadzka
+text: |
+  Posadzka kaplicy zapadła się do krypty poniżej. Kamienne płyty między
+  drzwiami a ołtarzem przechylają się i zgrzytają pod najmniejszym ciężarem.
+choices:
+  - id: step-carefully
+    text: Przejdź ostrożnie, stąpając z kamienia na kamień.
+    test:
+      success:
+        text: |
+          Przeskakujesz z kamienia na kamień i docierasz bez szwanku
+          do stopni ołtarza.
+      failure:
+        text: |
+          Jedna z płyt ustępuje i wpadasz do krypty po pas, obcierając
+          żebra o jej wyszczerbioną krawędź.
+  - id: test-floor
+    text: Sprawdź stabilność kamieni, zanim na nich staniesz.
+    test:
+      success:
+        text: |
+          Wzdłuż starej ściany znajdujesz pas stabilnych kamieni
+          i podążasz nim do ołtarza.
+      failure:
+        text: |
+          Kamień, który wydaje ci się stabilny, pęka pod tobą jako pierwszy.

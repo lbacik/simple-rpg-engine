@@ -1,0 +1,106 @@
+- id: arrival
+  alt: >-
+    Brenna spieszy przez plac w wiosce Ashford, a za jej plecami
+    kołysze się lina dzwonu z wieży.
+
+- id: elder-plea
+  alt: >-
+    Brenna, starsza wioski, błaga przed swoją chatą o pomoc,
+    podając wiązkę ziół leczniczych.
+
+- id: village-return
+  alt: >-
+    Brenna, starsza wioski, poważnym wzrokiem obserwuje spowity mgłą plac
+    z otwartych drzwi swojej chaty.
+
+- id: well-rumours
+  alt: >-
+    Dwaj wiejscy starcy opierają się o kamienną studnię w Ashford
+    i rozmawiają półgłosem.
+
+- id: whispers
+  alt: >-
+    Stare, sękate dęby na skraju lasu, z liśćmi wirującymi
+    w szepczącym wietrze.
+
+- id: camp-standoff
+  alt: >-
+    Myśliwy w podartym płaszczu celuje z napiętego łuku,
+    kryjąc się za leśnym szałasem.
+
+- id: search-camp
+  alt: >-
+    Topór drwala i sakiewki z ziołami leżą na ceracie
+    wewnątrz obozowego szałasu.
+
+- id: wolf-den
+  alt: >-
+    Szary wilk czujnie obserwuje otoczenie z gęstych paproci
+    przy powalonym pniu drzewa.
+
+- id: wolf-again
+  alt: >-
+    Warczący szary wilk krąży wśród paproci, zagradzając leśną ścieżkę.
+
+- id: chapel-threshold
+  alt: >-
+    Zapadnięta kamienna posadzka zrujnowanej kaplicy osuwa się
+    do ciemnej krypty, a jej płyty przechylają się.
+
+- id: chapel-altar
+  alt: >-
+    Kamienna kaplica bez dachu, porośnięta bluszczem; na pękniętym
+    ołtarzu mały srebrny krążek odbija promień światła.
+
+- id: chapel-prayer
+  alt: >-
+    Poszukiwacz przygód klęczy w cichej modlitwie przed kamiennym
+    ołtarzem w zrujnowanej kaplicy.
+
+- id: barrow-door
+  alt: >-
+    Masywne drzwi z kamiennej płyty, szczelnie osadzone w porośniętym
+    trawą kurhanie, z runami węży i otworem na klucz w kształcie węża.
+
+- id: wight-awakens
+  alt: >-
+    Nieumarły wojownik podnosi się z kamiennych mar w grobowcu,
+    z rozświetlonymi otworami hełmu i dobytą zardzewiałą klingą.
+
+- id: loc-ashford
+  alt: >-
+    Wioska Ashford pod pochmurnym niebem: chaty kryte strzechą,
+    błotniste koleiny i stara kamienna studnia, a w oddali mroczny las.
+
+- id: loc-forest-edge
+  alt: >-
+    Skraj lasu: stare dęby górują nad końcem drogi dla wozów,
+    a liście wirują w szepczącym wietrze.
+
+- id: loc-hunters-camp
+  alt: >-
+    Opuszczony obóz myśliwych na polanie w sosnowym lesie, z szałasem
+    z gałęzi i kręgiem osmalonych kamieni paleniska.
+
+- id: loc-wolf-hollow
+  alt: >-
+    Wilgotna leśna kotlina porośnięta gęstymi paprociami, gdzie potężny
+    powalony buk i jego splątane korzenie skrywają ogryzione kości.
+
+- id: loc-ruined-chapel
+  alt: >-
+    Widok z zewnątrz na zrujnowaną kamienną kaplicę bez dachu,
+    z kruszącymi się gotyckimi oknami, łukami oplecionymi bluszczem
+    i widocznym w głębi ołtarzem.
+
+- id: loc-barrow-mound
+  alt: >-
+    Wysoki grobowy kopiec porośnięty trawą, zwieńczony stojącymi,
+    zwietrzałymi megalitami, z drzwiami z kamiennej płyty pokrytej
+    runami, osadzonymi w zboczu.
+
+- id: loc-barrow-tomb
+  alt: >-
+    Wnętrze niskiej kamiennej krypty rozświetlonej zimną, nieziemską
+    poświatą, gdzie upiór w zbroi spoczywa na kamiennych marach,
+    a śpiąca dziewczynka leży w całunach.

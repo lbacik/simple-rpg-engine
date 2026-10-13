@@ -1,0 +1,22 @@
+id: camp-standoff
+title: Strzała w pogotowiu
+text: |
+  Zza szałasu podnosi się mężczyzna w podartym wojskowym płaszczu,
+  z łukiem na wpół napiętym. „Ani kroku dalej. Czegokolwiek tu szukasz,
+  teraz należy do mnie”.
+choices:
+  - id: fight
+    text: Dobądź broni.
+  - id: parley
+    text: Powiedz mu, czego naprawdę szukasz.
+    test:
+      success:
+        text: |
+          Słucha, a jego łuk opada. „Dziecko? Tam?” Rzuca ci klucz z brązu.
+          „Zabrałem go martwemu człowiekowi przy kurhanie. Nie chcę mieć
+          z tym miejscem nic wspólnego”. Zarzuca tobołek na ramię i odchodzi.
+      failure:
+        text: |
+          „Ładna bajeczka” — drwi i wypuszcza strzałę.
+  - id: withdraw
+    text: Wycofaj się powoli.

@@ -1,0 +1,8 @@
+id: hunters-camp
+name: Obóz myśliwych
+description: |
+  Polana z szałasem z gałęzi i kręgiem osmalonych kamieni. Myśliwych,
+  którzy go zbudowali, nikt nie widział od wiosny.
+connections:
+  - to: forest-edge
+    label: Wróć na skraj lasu

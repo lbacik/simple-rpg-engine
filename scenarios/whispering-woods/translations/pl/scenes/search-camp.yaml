@@ -1,0 +1,8 @@
+id: search-camp
+title: Przeszukaj obóz
+text: |
+  Pod szałasem, owinięte w ceratę, leżą rzeczy myśliwych: topór
+  na długim trzonku i sakiewka suszonych ziół.
+choices:
+  - id: take
+    text: Zabierz to, co przydatne.

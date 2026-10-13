@@ -1,0 +1,42 @@
+language: pl
+baseVersion: "1.0.0"
+title: Szepczący las
+description: >-
+  Z wioski Ashford zniknęła dziewczynka, a las za polami zaczął szeptać.
+  Odnajdź ją, zanim kurhan pochłonie ją na zawsze.
+intro: |
+  Od trzech dni deszcz towarzyszy ci w drodze starym traktem. Gdy dachy
+  Ashford wreszcie wyłaniają się z mgły, rozbrzmiewa wiejski dzwon,
+  choć nie nadeszło jeszcze ani południe, ani zmierzch.
+
+locations:
+  - translations/pl/locations/ashford.yaml
+  - translations/pl/locations/forest-edge.yaml
+  - translations/pl/locations/hunters-camp.yaml
+  - translations/pl/locations/wolf-hollow.yaml
+  - translations/pl/locations/ruined-chapel.yaml
+  - translations/pl/locations/barrow-mound.yaml
+  - translations/pl/locations/barrow-tomb.yaml
+
+scenes:
+  - translations/pl/scenes/arrival.yaml
+  - translations/pl/scenes/elder-plea.yaml
+  - translations/pl/scenes/village-return.yaml
+  - translations/pl/scenes/well-rumours.yaml
+  - translations/pl/scenes/whispers.yaml
+  - translations/pl/scenes/camp-standoff.yaml
+  - translations/pl/scenes/search-camp.yaml
+  - translations/pl/scenes/wolf-den.yaml
+  - translations/pl/scenes/wolf-again.yaml
+  - translations/pl/scenes/chapel-threshold.yaml
+  - translations/pl/scenes/chapel-altar.yaml
+  - translations/pl/scenes/chapel-prayer.yaml
+  - translations/pl/scenes/barrow-door.yaml
+  - translations/pl/scenes/wight-awakens.yaml
+
+items: [translations/pl/items.yaml]
+enemies: [translations/pl/enemies.yaml]
+encounters: [translations/pl/encounters.yaml]
+templates: [translations/pl/templates.yaml]
+endings: [translations/pl/endings.yaml]
+images: [translations/pl/images.yaml]

@@ -1,0 +1,26 @@
+id: whispers
+title: Szepczące drzewa
+text: |
+  Gdy wchodzisz pod pierwsze dęby, szmer liści narasta wokół ciebie.
+  Wznosi się i opada niczym głos powtarzający wciąż to samo słowo.
+choices:
+  - id: listen
+    text: Zatrzymaj się i spróbuj rozpoznać słowo.
+    test:
+      success:
+        text: |
+          Liście szeleszczą raz po raz: *Aldric... Aldric...* To imię,
+          i to bardzo stare.
+      failure:
+        text: |
+          Cokolwiek mówią drzewa, umyka ci tym bardziej, im uważniej
+          próbujesz słuchać.
+  - id: consult-almanac
+    text: Poszukaj wzmianki o szepczącym lesie w swoim almanachu.
+    outcome:
+      text: |
+        Na marginesie widnieje notatka wyblakłym atramentem: „Las wypowiada
+        imię pana Aldrica, krzywoprzysięzcy, złożonego w kurhanie
+        za kaplicą pielgrzymów”.
+  - id: press-on
+    text: Zignoruj głosy i idź dalej.

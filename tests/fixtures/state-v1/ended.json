@@ -4,7 +4,7 @@
     "description": "Ended save: refused the plea, ended on the walked-away Ending.",
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "9ebdd5e3a5a40d8a02d52f54c50ddab21a2a4749afaf2b1636d02e3a8ff043d1",
+    "contentHash": "322690254731c64bc8397dce639a3b1f2b37d285ff120afcccbcaaf7cba692ff",
     "scenarioLanguage": "en",
     "capturedWith": "scripts/capture-state-v1-fixtures.ts"
   },
@@ -12,7 +12,7 @@
     "stateVersion": 1,
     "scenarioId": "whispering-woods",
     "scenarioVersion": "1.0.0",
-    "contentHash": "9ebdd5e3a5a40d8a02d52f54c50ddab21a2a4749afaf2b1636d02e3a8ff043d1",
+    "contentHash": "322690254731c64bc8397dce639a3b1f2b37d285ff120afcccbcaaf7cba692ff",
     "status": "ended",
     "step": 1,
     "character": {

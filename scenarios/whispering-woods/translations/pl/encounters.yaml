@@ -1,0 +1,34 @@
+- id: camp-bandit
+  text: |
+    Łucznik cofa się w stronę drzew i napina łuk ze strzałą już na cięciwie.
+  victory:
+    text: |
+      Rozbójnik osuwa się przy wygasłym palenisku. U jego pasa wisi
+      na rzemieniu klucz z brązu.
+  escape:
+    text: |
+      Przedzierasz się z powrotem przez zarośla, a strzały ze świstem
+      wpadają między paprocie.
+
+- id: hollow-wolf
+  text: |
+    Wilk opuszcza łeb i rzuca się ku tobie długimi, bezgłośnymi susami.
+  victory:
+    text: |
+      Wilk pada między korzeniami. Za jego legowiskiem ścieżka wspina się
+      ku zniszczonym kamiennym murom.
+  escape:
+    text: |
+      Wdrapujesz się na zbocze i biegniesz, aż warczenie cichnie za tobą.
+
+- id: wight-fight
+  text: |
+    Aldric podnosi się z mar, a grobowy chłód zalewa cię falą.
+  victory:
+    text: |
+      Upiór rozsypuje się w pył i rdzę. Mira otwiera oczy i wyciąga rękę
+      ku twojej dłoni.
+  escape:
+    text: |
+      Potykając się, wracasz korytarzem ku szaremu światłu dnia. Upiór
+      nie rusza za tobą; nigdy nie opuszcza grobowca.

@@ -1,0 +1,11 @@
+- id: hunter
+  name: Myśliwy
+  description: Znasz las, jego ścieżki i jego ciszę.
+
+- id: soldier
+  name: Żołnierz
+  description: Masz za sobą marsze pod trzema sztandarami. Żaden z nich już cię nie wiąże.
+
+- id: scholar
+  name: Uczony
+  description: Do Ashford przyciągnęły cię legendy. Teraz być może przyjdzie ci przeżyć jedną z nich.
