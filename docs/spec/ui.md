@@ -43,15 +43,15 @@ Languages are marked with small flag icons:
 
 Layout **A, "Illustrated chronicle"** (selected from the [light UI prototype](https://github.com/lbacik/simple-rpg-engine/tree/codex/prototype-light-ui); the prototype branch stays archived and none of its variant switching, demo data, preview-only Choices or launch tooling ships):
 
-- **Desktop**: a light reading surface (a white card with the title block, the Scenario Illustration, the narration and the real actions) beside a side panel. The side panel orders the **Character status** first, the **Character**, **Inventory** and **Journal** launchers second, and the **compact Location map** last. A scenario brand (Interface-Language eyebrow plus Scenario title) and the current-Location badge sit above the grid.
-- **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind a fourth **Map** launcher that opens it in a modal.
+- **Desktop**: a light reading surface (a white card with the title block, the Scenario Illustration, the narration and the real actions) beside a side panel. The side panel orders the **Character status** first, the **Character**, **Inventory**, **Journal** and **Map** launchers second, and the **compact Location map** last. A scenario brand (Interface-Language eyebrow plus Scenario title) and the current-Location badge sit above the grid.
+- **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind the **Map** launcher that opens it in a modal.
 
 Explicit amendments to the prototype's variant A:
 
 - The Character and inventory modals keep their current content, structure and behaviour; their shared visual styling (light palette, typography, borders, spacing, icon treatment, focus styles and modal surface) follows the selected A layout.
-- The compact map card exposes an **Expand map** link, so the enlarged map modal is reachable on desktop too, not only behind the phone launcher.
+- The compact map card exposes an **Expand map** link, and the **Map** launcher opens the same enlarged map modal, so it is reachable on desktop and phones alike while the compact map stays visible on desktop.
 - The map keeps its current plain surface with authored/fallback coordinates, discovery and Connection semantics; the prototype's decorative terrain background is deferred.
-- The map keeps its app-level **"Show unseen exits"** control (off by default).
+- The compact map and the expanded modal each expose the app-level **"Show unseen exits" / "Hide unseen exits"** button-style toggle (off by default), staying consistent through the shared URL setting.
 - The Journal launcher opens the Journal in a modal over the game screen, with the standalone page as its new-tab fallback.
 
 ### Scenario language flags
@@ -93,18 +93,18 @@ The order within the column is always:
 
 ### Character and inventory panel
 
-The side panel holds, top to bottom: a status card, three launchers in a row, and the compact Location map (as above) with an Expand link to the enlarged modal.
+The side panel holds, top to bottom: a status card, four launchers in a row, and the compact Location map (as above) with an Expand link to the enlarged modal.
 
 - **Status card**: a medallion with the Character's initial inside a ring that fills with the Health fraction (as in the Combat arena; red when Health is low), the Character's name, the Template, a readable "Health N / 12" line, a 12-segment Health bar, and the four effective Attribute values.
-- **Launchers**: **Character** (sublabel "Health 9/12"), **Inventory** (sublabel "3 items") and **Journal** (sublabel "34 entries"), each with an icon, a label and a sublabel. The Journal launcher opens the Journal in a modal over the game screen; its trigger is this launcher.
+- **Launchers**: **Character** (sublabel "Health 9/12"), **Inventory** (sublabel "3 items"), **Journal** (sublabel "34 entries") and **Map** (sublabel "Travel"), each with an icon, a label and a sublabel. The Journal launcher opens the Journal in a modal over the game screen; its trigger is this launcher. The Map launcher opens the enlarged map modal on desktop and phones alike.
 - **Character** modal (the Character sheet): a header with a large Health medal (the Character's initial inside the Health ring, red when Health is low), the Character's name, the Template name, the current Location, and the Template description in italics; the four Attributes, each with five pips (● per point of base, then ◆ gold per counted Equipment bonus, so the filled pips equal the **effective** value), the effective value as a large number, and, when Equipment contributes, a source line (for example "base 2 · +1 Harbour Blade · +1 Padded Watch Coat"; bonuses beyond the +2 cap are struck through with a "bonus capped at +2" explanation), followed by the legend "● base ◆ equipment bonus (max +2)"; Health as a large "9 / 12" with a 12-segment bar (red when Health is low, labelled "Health N of 12"); and the equipped Weapon, Outfit and Talisman, each with an icon and the item's name, or "—" when empty. Two columns on desktop, one on phones. The pips are decorative: each Attribute's value and explanation are plain text.
 - **Inventory** modal: an **Equipped** "paper doll" of the three slots (Weapon, Outfit, Talisman) beside the **Carried** item tiles, with a detail pane for the selected tile below the tiles. A filled slot shows a dark icon tile, the slot name, the item name, its stats (bonus, Damage and Reach for weapons) and **Unequip**; an empty slot shows a dashed outline and "Empty" in italics. Each carried tile is a button (`aria-pressed`) showing an icon by kind (weapon, outfit, talisman, Consumable, key item) and the name, "×N" when the quantity is above 1, a ✦ marker for magic items and an "equipped" ribbon for items in a slot. The detail pane shows the selected tile (the first item by default): the name, quantity and magic marker, the description in italics, chips for kind/slot, bonus, Damage and Reach or healing, and the item's real action (Equip, Unequip or Use); a disabled action shows its reason, and key items have no action. The selected tile rides in the URL (`?panel=inventory&item=`), so Equip, Unequip and Use — and their rejection notices — land back with the modal still open and the same tile selected (or the first item, when the selected one is gone). Two columns on desktop, stacked on phones; focus order is slots, then tiles, then the pane.
 - **Magic** items carry a visual marker. It is not a separate kind or category.
 - Equip and unequip are available in the Location view and during a Scene, never in Combat. Using a Consumable outside Combat is available below full Health.
 
-The Character and Inventory modals open over the game screen. Each closes with a close button, Escape or a backdrop click; focus is trapped while open, returns to its launcher on close, and the background does not scroll. The open modal is part of the URL (for example `?panel=character|inventory`), replacing the previous `?tab=`: Equip, Unequip and Use, and their rejection notices, land back on the game screen with the Inventory modal still open and the notice visible. Without JavaScript the launchers are plain links and the requested panel renders open from the URL.
+The Character, Inventory and map modals open over the game screen. Each closes with a close button, Escape or a backdrop click; focus is trapped while open, returns to its launcher on close, and the background does not scroll. The open modal is part of the URL (for example `?panel=character|inventory|map`), replacing the previous `?tab=`: Equip, Unequip and Use, and their rejection notices, land back on the game screen with the Inventory modal still open and the notice visible. Without JavaScript the launchers are plain links and the requested panel renders open from the URL.
 
-On phones the status card and the launchers replace the compact summary, and a fourth **Map** launcher (phone only) opens the map in a modal. Map travel from that modal works as from the inline map. Modals are full-screen on phones.
+On phones the status card and the launchers replace the compact summary, and the **Map** launcher opens the map in a modal. Map travel from that modal works as from the inline map. Modals are full-screen on phones.
 
 There is no "View journal" link above the narration in the reading column; the Ending screen keeps its "View journal" button.
 
@@ -112,11 +112,11 @@ There is no "View journal" link above the narration in the reading column; the E
 
 - Nodes are placed by the Locations' `map` coordinates (0–100, origin top left, y down), scaled into a map area with a **fixed aspect ratio** set by the engine. A Location without coordinates gets a fallback placement: near the average position of the Locations it connects with in either direction, or the centre if none has coordinates.
 - The map is drawn on a plain surface. There is no background image.
-- **Nodes**: visited Locations, plus Locations revealed by `reveal`. A revealed but unvisited Location is drawn as "heard of" (dashed, muted label) and has no line to it until a known Connection leads there. Unvisited targets of Connections are not drawn.
+- **Nodes**: visited Locations, plus Locations revealed by `reveal`. A revealed but unvisited Location is drawn as "heard of" (dashed, muted label) and has no line to it until a known Connection leads there. Unvisited targets of Connections are not drawn unless the "Show unseen exits" setting is on.
 - **Lines**: one for each currently visible Connection from a **visited** Location to a Location on the map. A pair of opposite Connections is one plain line; a lone one-way Connection is an arrow. Connections hidden by an unmet Condition are not drawn.
 - **Current Location**: a pulsing ring and a "You are here" label.
-- **Travel**: in the Location view, the targets of visible Connections from the current Location are highlighted and clickable. A map click is exactly equivalent to the matching exit button, including on-enter Scene evaluation. No fast travel to non-adjacent Locations. No travel while a Scene or Combat is active.
-- **Option, off by default**: an app-level setting that draws unvisited targets of visible exits as "?" nodes. Whether to enable it will be decided after the first playtests. It is not a Scenario field.
+- **Travel**: in the Location view, the targets of visible Connections from the current Location are highlighted and clickable, in the compact map and in the expanded modal alike. A map click is exactly equivalent to the matching exit button, including on-enter Scene evaluation. No fast travel to non-adjacent Locations. No travel while a Scene or Combat is active.
+- **Option, off by default**: an app-level URL setting (`?unknown=1`) that draws unvisited targets of currently visible exits as "?" nodes. It never discloses Connections hidden by unmet Conditions and never marks Locations as visited or revealed. Both map presentations expose it as a button-style **"Show unseen exits" / "Hide unseen exits"** toggle with a clear current state. It is not a Scenario field.
 
 ### Combat panel
 

@@ -1,9 +1,10 @@
 // The game-screen side panel (docs/spec/ui.md, Character and inventory
 // panel): a status card (medal with a Health ring, name, Template, readable
 // Health line, segmented Health bar, effective Attributes), the Character /
-// Inventory / Journal launchers, then the compact Location map with an Expand
-// link. The Character sheet, the inventory and the Journal open in modals over
-// the game screen; on phones a fourth Map launcher opens the map in a modal.
+// Inventory / Journal / Map launchers, then the compact Location map with an
+// Expand link. The Character sheet, the inventory, the Journal and the expanded
+// map open in modals over the game screen; the compact map stays visible behind
+// the map modal on desktop.
 //
 // The Character, inventory and map modals are part of the URL (`?panel=`): the
 // server renders them open from the URL, so those launchers are plain links
@@ -13,6 +14,7 @@
 // full Journal page.
 
 import Link from 'next/link';
+import { travelAction } from '@/app/lib/travel';
 import type { Scenario } from '@/content/model';
 import {
   effectiveAttributes,
@@ -456,8 +458,9 @@ export function SidePanel({
   const inventoryName = catalogue.inventory.name(itemsCount);
   const journalName = catalogue.journal.name(entriesCount);
   // Variant A order: Character status, launchers, then the compact map.
-  // The compact map carries an Expand link so the enlarged modal is reachable
-  // on desktop too; on phones the inline map hides behind the Map launcher.
+  // The compact map carries an Expand link and the Map launcher opens the
+  // same enlarged modal, so it is reachable on desktop and phones alike; on
+  // phones the inline map hides behind the Map launcher.
   const expandHref = playHref(playthroughId, 'map', notice, seen, showUnknownExits);
   return (
     <aside className="side" aria-label={catalogue.character.panelLabel}>
@@ -506,7 +509,7 @@ export function SidePanel({
         </JournalModalLink>
         <Link
           id="launcher-map"
-          className="launcher map-only"
+          className="launcher"
           href={mapHref}
           aria-label={catalogue.map.title}
         >
@@ -521,6 +524,7 @@ export function SidePanel({
           playthroughId={playthroughId}
           step={step}
           canTravel={canTravel}
+          travelAction={travelAction}
           showUnknownExits={showUnknownExits}
           toggleHref={toggleHref}
           expandHref={expandHref}
@@ -595,6 +599,7 @@ export function SidePanel({
               playthroughId={playthroughId}
               step={step}
               canTravel={canTravel}
+              travelAction={travelAction}
               showUnknownExits={showUnknownExits}
               toggleHref={toggleHref}
               markerId="map-arrow-modal"

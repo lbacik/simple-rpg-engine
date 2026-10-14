@@ -22,4 +22,11 @@ describe('chronicle layout catalogue', () => {
     expect(en.map.expand).toBe('Expand map');
     expect(pl.map.expand).toBe('Powiększ mapę');
   });
+
+  it('labels the unseen-exits toggle in both languages', () => {
+    expect(en.map.showUnknown).toBe('Show unseen exits');
+    expect(en.map.hideUnknown).toBe('Hide unseen exits');
+    expect(pl.map.showUnknown).toBe('Pokaż niewidoczne wyjścia');
+    expect(pl.map.hideUnknown).toBe('Ukryj niewidoczne wyjścia');
+  });
 });

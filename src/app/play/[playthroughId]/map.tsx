@@ -5,10 +5,22 @@
 // buttons, so a map click and an exit button are exactly equivalent. There is
 // no fast travel: only adjacent Locations are ever clickable, and nothing is
 // clickable while a Scene or Combat is active.
+//
+// The compact map and the expanded modal share this module with the same
+// toggle: a button-style link flipping the app-level "?" setting. The Travel
+// server action is injected (page.tsx passes it through the side panel) and
+// the imports are relative, so tests can drive this module directly with
+// react-dom/server.
+//
+// Relative imports only: vitest has no `@/` alias, and tests drive this
+// module directly with react-dom/server.
 
-import { MAP_ASPECT_RATIO, type MapNode, type MapView } from '@/engine/index';
-import type { Catalogue } from '@/i18n/index';
-import { travelAction } from '@/app/lib/travel';
+import type { ComponentProps } from 'react';
+import { MAP_ASPECT_RATIO, type MapNode, type MapView } from '../../../engine/index';
+import type { Catalogue } from '../../../i18n/index';
+
+/** A form target: the Travel server action in production, a URL in tests. */
+export type MapTravelAction = ComponentProps<'form'>['action'];
 
 /** Trim a line end by `gap` map units so the endpoint sits outside the node. */
 function trimmed(
@@ -67,6 +79,7 @@ function PlacedNode({
   playthroughId,
   step,
   canTravel,
+  travelAction,
   catalogue,
   lang,
 }: {
@@ -74,6 +87,7 @@ function PlacedNode({
   playthroughId: string;
   step: number;
   canTravel: boolean;
+  travelAction: MapTravelAction;
   catalogue: Catalogue;
   /** The language of the Location names shown. */
   lang: string;
@@ -123,6 +137,7 @@ export function LocationMap({
   playthroughId,
   step,
   canTravel,
+  travelAction,
   showUnknownExits,
   toggleHref,
   expandHref,
@@ -135,6 +150,7 @@ export function LocationMap({
   step: number;
   /** False while a Scene or Combat is active, or after the end. */
   canTravel: boolean;
+  travelAction: MapTravelAction;
   showUnknownExits: boolean;
   /** Href flipping the app-level "?" setting, preserving tab and notice. */
   toggleHref: string;
@@ -203,6 +219,7 @@ export function LocationMap({
             playthroughId={playthroughId}
             step={step}
             canTravel={canTravel}
+            travelAction={travelAction}
             catalogue={catalogue}
             lang={lang}
           />
@@ -210,9 +227,13 @@ export function LocationMap({
       </div>
       <p className="map-toggle">
         {showUnknownExits ? (
-          <a href={toggleHref}>{catalogue.map.hideUnknown}</a>
+          <a className="button secondary" aria-pressed="true" href={toggleHref}>
+            {catalogue.map.hideUnknown}
+          </a>
         ) : (
-          <a href={toggleHref}>{catalogue.map.showUnknown}</a>
+          <a className="button secondary" aria-pressed="false" href={toggleHref}>
+            {catalogue.map.showUnknown}
+          </a>
         )}
       </p>
     </section>

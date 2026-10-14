@@ -26,11 +26,11 @@ import { JournalModalLink } from './journal/journal-modal';
 import {
   combatTargetHref,
   continueHref,
+  mapToggleHref,
   parseCombatTarget,
   parsePanel,
   parseSeenStep,
   parseSelectedItem,
-  playHref,
   selectCombatTarget,
   shouldShowResultPanel,
 } from '@/app/lib/panel';
@@ -59,28 +59,6 @@ function noticeTextFor(catalogue: Catalogue, notice: string | undefined): string
 }
 
 /** Query helpers shared by the compatible and incompatible game screens. */
-function mapToggleHrefFor(
-  playthroughId: string,
-  panel: string | null | undefined,
-  notice: string | undefined,
-  showUnknownExits: boolean,
-  seen?: number,
-  selectedItem?: string,
-  target?: string,
-): string {
-  return playHref(
-    playthroughId,
-    panel,
-    notice,
-    seen,
-    // The toggle flips the setting, so it carries the opposite value.
-    !showUnknownExits,
-    // The selected inventory tile rides along while its modal is open.
-    panel === 'inventory' ? selectedItem : undefined,
-    // The Combat target selection survives the map toggle.
-    target,
-  );
-}
 
 
 export default async function PlayPage({
@@ -276,14 +254,12 @@ export default async function PlayPage({
             noticeText={noticeText}
             gameView={incompatibleView}
             showUnknownExits={showUnknownExits}
-            toggleHref={mapToggleHrefFor(
-              resolved.playthrough.id,
-              rawPanel,
+            toggleHref={mapToggleHref(resolved.playthrough.id, {
+              panel: rawPanel,
               notice,
               showUnknownExits,
-              undefined,
-              selectedItem,
-            )}
+              item: selectedItem,
+            })}
             canTravel={false}
             forceReadOnly
             journalTotal={readOnlyModalJournal.total}
@@ -386,15 +362,14 @@ export default async function PlayPage({
     showUnknownExits,
     rawPanel === 'inventory' ? selectedItem : undefined,
   );
-  const mapToggleHref = mapToggleHrefFor(
-    playthrough.id,
-    rawPanel,
+  const mapToggle = mapToggleHref(playthrough.id, {
+    panel: rawPanel,
     notice,
+    seen: preservedSeen,
     showUnknownExits,
-    preservedSeen,
-    selectedItem,
-    selectedTarget,
-  );
+    item: selectedItem,
+    target: selectedTarget,
+  });
 
   // The chronicle header names the Scenario (Interface Text eyebrow) and the
   // current Location, matching variant A; the reading card below holds the
@@ -468,7 +443,7 @@ export default async function PlayPage({
             noticeText={noticeText}
             gameView={gameView}
             showUnknownExits={showUnknownExits}
-            toggleHref={mapToggleHref}
+            toggleHref={mapToggle}
             canTravel={canTravel}
             journalTotal={modalJournal.total}
             journalEntries={modalJournal.entries}
@@ -727,7 +702,7 @@ export default async function PlayPage({
           noticeText={noticeText}
           gameView={gameView}
           showUnknownExits={showUnknownExits}
-          toggleHref={mapToggleHref}
+          toggleHref={mapToggle}
           canTravel={canTravel}
           journalTotal={modalJournal.total}
           journalEntries={modalJournal.entries}
