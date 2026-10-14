@@ -211,6 +211,10 @@ export const en = {
     latestEvents: 'Latest events',
     afterEnding: 'After the ending',
     viewJournal: 'View journal',
+    adventure: 'Your adventure',
+    currentScene: 'Current scene',
+    currentLocation: 'Current location',
+    decide: 'What do you do next?',
     startNew: (title: string) => `Start a new Playthrough of ${title}`,
     returnToCollection: 'Return to the collection',
     scenarioGone:
@@ -274,6 +278,7 @@ export const en = {
     label: 'Location map',
     travelSub: 'Travel',
     youAreHere: 'You are here',
+    expand: 'Expand map',
     travelTo: (name: string) => `Travel to ${name}`,
     heardOf: (name: string) => `${name} (heard of)`,
     showUnknown: 'Show unvisited exits as “?”',
