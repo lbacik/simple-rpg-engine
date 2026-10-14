@@ -274,7 +274,7 @@ fieldset {
 }
 
 /* Game screen, variant A "Illustrated chronicle" (docs/spec/ui.md): a light
- * reading surface (the story card with title, Illustration, narration and
+ * reading surface (the reading card with title, Illustration, narration and
  * real actions) beside a side panel ordered Character status, launchers,
  * compact map. The palette, card hierarchy, typography and spacing follow the
  * selected prototype; the map keeps its plain surface and the Character and
@@ -382,7 +382,7 @@ main:has(.game) {
 }
 
 /* The reading card: title block, Illustration, then narration and actions. */
-.reading.story-card {
+.reading-card {
   background: #fff;
   border: 1px solid var(--chronicle-line);
   border-radius: 0.875rem;
@@ -390,53 +390,37 @@ main:has(.game) {
   min-width: 0;
 }
 
-.reading.story-card h1 {
+.reading-card h1 {
   font-size: 2.375rem;
 }
 
-.story-title {
+.reading-title {
   padding: 1.75rem 2.25rem 1.5625rem;
 }
 
-.story-art {
-  position: relative;
+/* No background, frame or caption on the figure itself: when the browser
+   removes an image that failed to load, nothing visible remains
+   (docs/spec/ui.md, scene illustration). */
+.reading-art {
   margin: 0;
-  background: #e1e7df;
-  overflow: hidden;
 }
 
-.story-art .illustration {
+.reading-art .illustration {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.story-art figcaption {
-  position: absolute;
-  bottom: 1rem;
-  left: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4375rem;
-  background: rgba(255, 254, 244, 0.91);
-  padding: 0.3125rem 0.75rem;
-  border-radius: 1.875rem;
-  font-size: 0.6875rem;
-  box-shadow: 0 2px 12px rgba(21, 56, 42, 0.07);
-  color: #284d40;
-  max-width: calc(100% - 2.5rem);
-}
-
-.story-body {
+.reading-body {
   padding: 1.75rem 2.25rem 2rem;
 }
 
-.story-card > .notice {
+.reading-card > .notice {
   margin: 1.5rem 2.25rem 0;
 }
 
 @media (max-width: 50rem) {
-  .story-card > .notice {
+  .reading-card > .notice {
     margin: 1.25rem 1.5rem 0;
   }
 }
@@ -552,7 +536,7 @@ main:has(.game) {
   }
 
   .game h1,
-  .reading.story-card h1 {
+  .reading-card h1 {
     font-size: 2rem;
   }
 
@@ -579,8 +563,8 @@ main:has(.game) {
     display: none;
   }
 
-  .story-title,
-  .story-body {
+  .reading-title,
+  .reading-body {
     padding: 1.5rem;
   }
 }
@@ -780,17 +764,12 @@ main:has(.game) {
   line-height: 1.25;
 }
 
+/* A readable sublabel under the launcher label ("Health 9/12", "3 items",
+   "34 entries"): plain text, never truncated into a badge. */
 .launcher-sub {
-  position: absolute;
-  top: 0;
-  right: 0.4375rem;
-  min-width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  background: #e6ecdf;
-  font-size: 0.5625rem;
-  line-height: 1rem;
-  padding: 0 0.15rem;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  color: var(--chronicle-sub, #66766c);
 }
 
 /* Phone: the launchers become a 2x2 grid with the Map launcher. */

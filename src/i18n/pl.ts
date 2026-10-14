@@ -213,6 +213,7 @@ export const pl: Catalogue = {
     viewJournal: 'Zobacz dziennik',
     adventure: 'Twoja przygoda',
     currentScene: 'Bieżąca scena',
+    currentLocation: 'Bieżąca lokacja',
     decide: 'Co robisz dalej?',
     startNew: (title: string) => `Nowa rozgrywka: ${title}`,
     returnToCollection: 'Wróć do kolekcji',

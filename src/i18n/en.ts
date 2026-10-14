@@ -213,6 +213,7 @@ export const en = {
     viewJournal: 'View journal',
     adventure: 'Your adventure',
     currentScene: 'Current scene',
+    currentLocation: 'Current location',
     decide: 'What do you do next?',
     startNew: (title: string) => `Start a new Playthrough of ${title}`,
     returnToCollection: 'Return to the collection',

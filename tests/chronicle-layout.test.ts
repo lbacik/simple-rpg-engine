@@ -7,12 +7,14 @@ import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
 
 describe('chronicle layout catalogue', () => {
-  it('names the adventure header, current scene and decisions prompt', () => {
+  it('names the adventure header, current scene/location and decisions prompt', () => {
     expect(en.game.adventure).toBe('Your adventure');
     expect(en.game.currentScene).toBe('Current scene');
+    expect(en.game.currentLocation).toBe('Current location');
     expect(en.game.decide).toBe('What do you do next?');
     expect(pl.game.adventure).toBe('Twoja przygoda');
     expect(pl.game.currentScene).toBe('Bieżąca scena');
+    expect(pl.game.currentLocation).toBe('Bieżąca lokacja');
     expect(pl.game.decide).toBe('Co robisz dalej?');
   });
 

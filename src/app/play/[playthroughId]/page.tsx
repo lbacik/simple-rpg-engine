@@ -203,6 +203,13 @@ export default async function PlayPage({
     const incompatibleView = view(incompatibleScenario, incompatibleState, {
       includeUnknownExits: showUnknownExits,
     });
+    const incompatibleLocation =
+      incompatibleView.kind === 'location'
+        ? incompatibleView.name
+        : incompatibleView.kind === 'scene' || incompatibleView.kind === 'combat'
+          ? incompatibleView.locationName
+          : (incompatibleScenario.locationsById[incompatibleState.currentLocationId]?.name ??
+            incompatibleState.currentLocationId);
     return (
       <main>
         <header className="chronicle-head">
@@ -212,10 +219,14 @@ export default async function PlayPage({
               <strong lang={incompatibleShown}>{incompatibleScenario.title}</strong>
             </div>
           </div>
+          <span className="location-badge">
+            <span aria-hidden="true" />
+            <span lang={incompatibleShown}>{incompatibleLocation}</span>
+          </span>
         </header>
         <div className="game">
-          <article className="reading story-card">
-            <div className="story-body">
+          <article className="reading-card">
+            <div className="reading-body">
               <p className="notice" role="status">
                 {catalogue.game.scenarioChanged}
               </p>
@@ -411,13 +422,13 @@ export default async function PlayPage({
       <main>
         {chronicleHead}
         <div className="game">
-          <article className="reading story-card">
+          <article className="reading-card">
             {noticeText ? (
               <p className="notice" role="status">
                 {noticeText}
               </p>
             ) : null}
-            <div className="story-body">
+            <div className="reading-body">
               <ResultPanel
                 entries={resultEntries}
                 continueHref={continueTo}
@@ -453,7 +464,7 @@ export default async function PlayPage({
     <main>
       {chronicleHead}
       <div className="game">
-        <article className="reading story-card">
+        <article className="reading-card">
           {noticeText ? (
             <p className="notice" role="status">
               {noticeText}
@@ -461,27 +472,24 @@ export default async function PlayPage({
           ) : null}
           {gameView.kind === 'location' ? (
             <>
-              <div className="story-title">
-                <p className="eyebrow">{catalogue.game.currentScene}</p>
+              <div className="reading-title">
+                <p className="eyebrow">{catalogue.game.currentLocation}</p>
                 <h1>
                   <span lang={shown}>{gameView.name}</span>
                   {badge === undefined ? null : <> {badge}</>}
                 </h1>
               </div>
               {gameView.illustration ? (
-                <figure className="story-art">
+                <figure className="reading-art">
                   <SceneIllustration
                     src={gameView.illustration.src}
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
                   />
-                  <figcaption>
-                    <span lang={shown}>{gameView.name}</span>
-                  </figcaption>
                 </figure>
               ) : null}
-              <div className="story-body">
+              <div className="reading-body">
                 {/* Location description: rendered narration subset. */}
                 <div
                   className="narration"
@@ -511,8 +519,11 @@ export default async function PlayPage({
                     ))}
                   </section>
                 ) : null}
+                {gameView.exits.length > 0 ? (
                 <section aria-label={catalogue.game.exits} className="decisions">
-                  <p className="eyebrow">{catalogue.game.decide}</p>
+                  {gameView.onDemandScenes.length > 0 ? null : (
+                    <p className="eyebrow">{catalogue.game.decide}</p>
+                  )}
                   {gameView.exits.map((exit, index) => (
                     <form key={exit.targetLocationId} action={travelAction}>
                       <input type="hidden" name="playthroughId" value={playthrough.id} />
@@ -530,11 +541,12 @@ export default async function PlayPage({
                     </form>
                   ))}
                 </section>
+                ) : null}
               </div>
             </>
           ) : gameView.kind === 'scene' ? (
             <>
-              <div className="story-title">
+              <div className="reading-title">
                 <p className="eyebrow">{catalogue.game.currentScene}</p>
                 <h1>
                   <span lang={shown}>{gameView.title}</span>
@@ -542,19 +554,16 @@ export default async function PlayPage({
                 </h1>
               </div>
               {gameView.illustration ? (
-                <figure className="story-art">
+                <figure className="reading-art">
                   <SceneIllustration
                     src={gameView.illustration.src}
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
                   />
-                  <figcaption>
-                    <span lang={shown}>{gameView.locationName}</span>
-                  </figcaption>
                 </figure>
               ) : null}
-              <div className="story-body">
+              <div className="reading-body">
                 <div
                   className="narration"
                   lang={shown}
@@ -612,7 +621,7 @@ export default async function PlayPage({
               </div>
             </>
           ) : gameView.kind === 'combat' ? (
-            <div className="story-body">
+            <div className="reading-body">
               <CombatPanel
               combat={gameView}
               playthroughId={playthrough.id}
@@ -641,10 +650,10 @@ export default async function PlayPage({
             </div>
           ) : (
             <>
-              <div className="story-title">
+              <div className="reading-title">
                 <p className="eyebrow">{catalogue.ending.title}</p>
               </div>
-              <div className="story-body">
+              <div className="reading-body">
                 <EndingBlock
                   kindLabel={catalogue.ending[gameView.endingKind]}
                   title={gameView.title}

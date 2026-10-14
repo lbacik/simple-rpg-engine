@@ -1,7 +1,8 @@
 // The game-screen side panel (docs/spec/ui.md, Character and inventory
-// panel): the Location map, a status card (medal with a Health ring, name,
-// Template, segmented Health bar) and the Character / Inventory / Journal
-// launchers. The Character sheet and the inventory open in modals over the
+// panel): a status card (medal with a Health ring, name, Template, readable
+// Health line, segmented Health bar, effective Attributes), the Character /
+// Inventory / Journal launchers, then the compact Location map with an Expand
+// link. The Character sheet and the inventory open in modals over the
 // game screen; on phones a fourth Map launcher opens the map in a modal.
 //
 // The open modal is part of the URL (`?panel=`): the server renders it open
