@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import { localizeScenario } from '@/content/index';
 import {
+  startPlaythrough,
   combatRounds,
   renderNarration,
   renderStoredText,
@@ -43,6 +44,7 @@ import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { ResultPanel } from './result-panel';
 import { SidePanel } from './side-panel';
+import { UiPrototype } from './ui-prototype';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +97,7 @@ export default async function PlayPage({
     seen?: string;
     item?: string;
     target?: string;
+    variant?: string;
   }>;
 }) {
   const { playthroughId } = await params;
@@ -106,6 +109,7 @@ export default async function PlayPage({
     seen: seenParam,
     item: itemParam,
     target: targetParam,
+    variant,
   } = await searchParams;
   // The open side-panel modal. `?tab=` is the previous name of this parameter
   // and is still honoured so older links land on the same panel.
@@ -122,6 +126,18 @@ export default async function PlayPage({
   const language = await getInterfaceLanguage();
   const catalogue = getCatalogue(language);
   const noticeText = noticeTextFor(catalogue, notice);
+  // THROWAWAY development demo: uses the actual Scenario in memory, no Session or DB.
+  if (process.env.NODE_ENV !== 'production' && playthroughId === 'prototype') {
+    const base = getScenario('the-drowned-ledger');
+    if (!base) notFound();
+    const scenario = localizeScenario(base, language).scenario;
+    const started = startPlaythrough(scenario, Object.keys(scenario.templatesById)[0]!, 'Mira', () => 1);
+    if (!started.ok) notFound();
+    // Seed a few discovered Locations only in the illustrative demo.
+    const state = { ...started.state, revealed: ['quay', 'watch-house', 'archive', 'signal-tower'] };
+    const journal = started.journal.map(({ type, lang, ...payload }, i) => ({ seq: i + 1, step: 0, type, lang, payload }));
+    return <UiPrototype scenario={scenario} state={state} gameView={view(scenario, state, { includeUnknownExits: true })} journal={journal} playthroughId={playthroughId} catalogue={catalogue} variant={variant ?? 'A'} demo />;
+  }
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
   const resolved = await resolvePlaythrough(getDatabase(), getScenario, playthroughId, sessionHash);
@@ -274,6 +290,9 @@ export default async function PlayPage({
   const journal = await store.listJournal(playthrough.id);
   const state = playthrough.state;
   const characterName = state.character.name;
+  if (process.env.NODE_ENV !== 'production' && ['A', 'B', 'C'].includes(variant ?? '')) {
+    return <UiPrototype scenario={scenario} state={state} gameView={gameView} journal={journal} playthroughId={playthrough.id} catalogue={catalogue} variant={variant!} />;
+  }
   // "View journal" opens the Journal in a modal over the game screen instead
   // of navigating away. The modal reuses the Journal already read here: the
   // newest batch, newest first, with the sequence cursor for older batches.
