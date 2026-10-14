@@ -4,6 +4,8 @@ Question: which layout makes illustrated play readable and keeps the Journal ava
 
 Primary-source branch: `codex/prototype-light-ui`.
 
+Design decision / implementation issue: [#155](https://github.com/lbacik/simple-rpg-engine/issues/155).
+
 ## Run
 
 ```sh
