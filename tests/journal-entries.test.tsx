@@ -8,10 +8,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   JournalEntries,
-  journalPositionText,
+  formatJournalText,
   journalProgress,
 } from '../src/app/play/[playthroughId]/journal/journal-entries';
-import type { RenderedJournalEntry } from '../src/app/lib/journal';
+import { journalEntriesText, type RenderedJournalEntry } from '../src/app/lib/journal';
+import { en } from '../src/i18n/en';
+import { pl } from '../src/i18n/pl';
+
+const enEntriesText = journalEntriesText(en);
 
 function entry(seq: number): RenderedJournalEntry {
   return {
@@ -40,6 +44,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(25), entry(24)]}
         initialNextCursor={24}
         total={25}
@@ -54,6 +59,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[flaggedEntry(2), entry(1)]}
         initialNextCursor={null}
         total={2}
@@ -69,6 +75,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(25)]}
         initialNextCursor={null}
         total={25}
@@ -82,6 +89,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(25)]}
         initialNextCursor={24}
         total={25}
@@ -96,6 +104,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(1)]}
         initialNextCursor={null}
         total={25}
@@ -107,7 +116,13 @@ describe('JournalEntries', () => {
 
   it('says nothing has happened yet for an empty journal', () => {
     const html = renderToStaticMarkup(
-      <JournalEntries playthroughId="pt-1" initialEntries={[]} initialNextCursor={null} total={0} />,
+      <JournalEntries
+        playthroughId="pt-1"
+        text={enEntriesText}
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={0}
+      />,
     );
     expect(html).toContain('Nothing has happened yet.');
   });
@@ -116,6 +131,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(25), entry(24)]}
         initialNextCursor={24}
         total={134}
@@ -133,6 +149,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[]}
         initialNextCursor={null}
         total={0}
@@ -146,6 +163,7 @@ describe('JournalEntries', () => {
     const html = renderToStaticMarkup(
       <JournalEntries
         playthroughId="pt-1"
+        text={enEntriesText}
         initialEntries={[entry(25)]}
         initialNextCursor={24}
         total={134}
@@ -156,10 +174,19 @@ describe('JournalEntries', () => {
   });
 });
 
-describe('journalPositionText and journalProgress', () => {
+describe('formatJournalText and journalProgress', () => {
   it('names the step and sequence position out of the total', () => {
-    expect(journalPositionText({ seq: 37, step: 12 }, 134)).toBe(
-      'Step 12 · entry 37 of 134',
+    expect(
+      formatJournalText(en.journal.position, { seq: 37, step: 12, total: 134 }),
+    ).toBe('Step 12 · entry 37 of 134');
+    expect(
+      formatJournalText(pl.journal.position, { seq: 37, step: 12, total: 134 }),
+    ).toBe('Krok 12 · wpis 37 z 134');
+  });
+
+  it('leaves unknown placeholders alone', () => {
+    expect(formatJournalText('Step {step} of {bogus}', { seq: 1, step: 2, total: 3 })).toBe(
+      'Step 2 of {bogus}',
     );
   });
 

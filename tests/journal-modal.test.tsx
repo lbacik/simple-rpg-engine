@@ -6,7 +6,11 @@
 
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { modalJournalBatch, newestJournalBatch } from '../src/app/lib/journal';
+import {
+  journalEntriesText,
+  modalJournalBatch,
+  newestJournalBatch,
+} from '../src/app/lib/journal';
 import {
   JournalModalLink,
   type JournalModalText,
@@ -15,6 +19,7 @@ import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
 
 const enText: JournalModalText = {
+  ...journalEntriesText(en),
   viewJournal: en.game.viewJournal,
   title: en.journal.title,
   total: en.journal.total(0),
@@ -113,6 +118,7 @@ describe('JournalModalLink', () => {
         initialNextCursor={null}
         total={0}
         text={{
+          ...journalEntriesText(pl),
           viewJournal: pl.game.viewJournal,
           title: pl.journal.title,
           total: pl.journal.total(0),

@@ -24,7 +24,7 @@ import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { playHref, type PanelId } from '@/app/lib/panel';
-import type { RenderedJournalEntry } from '@/app/lib/journal';
+import { journalEntriesText, type RenderedJournalEntry } from '@/app/lib/journal';
 import { CharacterSheet, healthPercent, initial, isLowHealth } from './character-sheet';
 import { LocationMap } from './map';
 import { PanelModal } from './panel-modal';
@@ -492,6 +492,7 @@ export function SidePanel({
           className="launcher"
           ariaLabel={journalName}
           text={{
+            ...journalEntriesText(catalogue),
             viewJournal: catalogue.game.viewJournal,
             title: catalogue.journal.title,
             total: catalogue.journal.total(journalTotal),

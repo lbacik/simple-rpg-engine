@@ -14,6 +14,7 @@ import {
   JournalModalLink,
   type JournalModalText,
 } from '../src/app/play/[playthroughId]/journal/journal-modal';
+import { journalEntriesText } from '../src/app/lib/journal';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
 
@@ -36,6 +37,7 @@ function cssBlock(selector: string): string {
 }
 
 const enLauncherText: JournalModalText = {
+  ...journalEntriesText(en),
   viewJournal: en.game.viewJournal,
   title: en.journal.title,
   total: en.journal.total(25),
@@ -63,6 +65,7 @@ describe('side-panel Journal launcher wiring', () => {
     expect(sidePanel).toContain('initialNextCursor={journalNextCursor}');
     expect(sidePanel).toContain('catalogue.journal.total(journalTotal)');
     expect(sidePanel).toContain('catalogue.journal.openInNewTab');
+    expect(sidePanel).toContain('journalEntriesText(catalogue)');
   });
 
   it('passes the modal batch on every game screen with a side panel', () => {
@@ -71,14 +74,24 @@ describe('side-panel Journal launcher wiring', () => {
     // the same side panel, so each passes the newest batch to it.
     const matches = playPage.match(/journalEntries=\{[^}]+entries\}/g) ?? [];
     expect(matches.length).toBeGreaterThanOrEqual(3);
-    expect(playPage).toContain('incompatibleModalJournal = modalJournalBatch(');
+    expect(playPage).toContain('readOnlyModalJournal = modalJournalBatch(');
     expect(playPage).toContain('journalEntries={modalJournal.entries}');
-    expect(playPage).toContain('journalEntries={incompatibleModalJournal.entries}');
+    expect(playPage).toContain('journalEntries={readOnlyModalJournal.entries}');
   });
 
   it('keeps the Ending modal trigger on its secondary button', () => {
     expect(playPage).toContain('className="button secondary"');
     expect(playPage).toContain('catalogue.journal.openInNewTab');
+  });
+
+  it('opens the Scenario-gone Journal through the same modal link', () => {
+    // With no Scenario there is no game screen or side panel, so the gone view
+    // feeds the modal directly from its first batch; the inline entries stay
+    // for readers without JavaScript.
+    expect(playPage).toContain('initialEntries={rendered}');
+    expect(playPage).toContain('initialNextCursor={batch.nextCursor ?? null}');
+    expect(playPage).toContain('total={journalTotal}');
+    expect(playPage).toContain('aria-label={catalogue.journal.title}');
   });
 });
 
@@ -110,6 +123,34 @@ describe('launcher trigger rendering', () => {
     expect(html).not.toContain('Open in new tab');
   });
 
+  it('renders the Ending and read-only trigger with its label and journal link', () => {
+    // The Ending screen and the Scenario-gone view render the same modal link
+    // with its default "View journal" content on a secondary button.
+    const html = renderToStaticMarkup(
+      <JournalModalLink
+        playthroughId="pt-1"
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={7}
+        className="button secondary"
+        text={{
+          ...journalEntriesText(en),
+          viewJournal: en.game.viewJournal,
+          title: en.journal.title,
+          total: en.journal.total(7),
+          openInNewTab: en.journal.openInNewTab,
+          close: en.journal.close,
+        }}
+      />,
+    );
+    expect(html).toContain('View journal');
+    expect(html).toContain('href="/play/pt-1/journal"');
+    expect(html).toContain('class="button secondary"');
+    // Closed on first paint: no dialog, so the Ending underneath stays as it was.
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain('Open in new tab');
+  });
+
   it('renders the launcher accessibly in Polish', () => {
     const html = renderToStaticMarkup(
       <JournalModalLink
@@ -121,6 +162,7 @@ describe('launcher trigger rendering', () => {
         className="launcher"
         ariaLabel={pl.journal.name(pl.journal.count(5))}
         text={{
+          ...journalEntriesText(pl),
           viewJournal: pl.game.viewJournal,
           title: pl.journal.title,
           total: pl.journal.total(5),

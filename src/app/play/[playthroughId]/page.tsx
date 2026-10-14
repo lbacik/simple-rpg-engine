@@ -15,6 +15,7 @@ import { getInterfaceLanguage } from '@/app/lib/language';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import {
   JOURNAL_BATCH_SIZE,
+  journalEntriesText,
   latestJournalEnding,
   modalJournalBatch,
   renderJournalEntries,
@@ -172,14 +173,29 @@ export default async function PlayPage({
             </section>
           ) : null}
           <p>
-            <a href={`/play/${resolved.playthrough.id}/journal`}>{catalogue.game.viewJournal}</a>
+            <JournalModalLink
+              playthroughId={resolved.playthrough.id}
+              initialEntries={rendered}
+              initialNextCursor={batch.nextCursor ?? null}
+              total={journalTotal}
+              className="button secondary"
+              text={{
+                ...journalEntriesText(catalogue),
+                viewJournal: catalogue.game.viewJournal,
+                title: catalogue.journal.title,
+                total: catalogue.journal.total(journalTotal),
+                openInNewTab: catalogue.journal.openInNewTab,
+                close: catalogue.journal.close,
+              }}
+            />
           </p>
-          <section aria-label="Journal">
+          <section aria-label={catalogue.journal.title}>
             <JournalEntries
               playthroughId={resolved.playthrough.id}
               initialEntries={rendered}
               initialNextCursor={batch.nextCursor ?? null}
               total={journalTotal}
+              text={journalEntriesText(catalogue)}
             />
           </section>
         </main>
@@ -189,7 +205,7 @@ export default async function PlayPage({
     const recordedEnding = latestJournalEnding(journal);
     // The Journal launcher opens the same modal as during play, reusing the
     // newest batch newest first with the sequence cursor for older batches.
-    const incompatibleModalJournal = modalJournalBatch(journal, catalogue, incompatibleName);
+    const readOnlyModalJournal = modalJournalBatch(journal, catalogue, incompatibleName);
     // The Scenario is still in the collection but its content changed: the
     // Character sheet, inventory and map render best effort from the current
     // content, and a new Playthrough is on offer.
@@ -270,9 +286,9 @@ export default async function PlayPage({
             )}
             canTravel={false}
             forceReadOnly
-            journalTotal={incompatibleModalJournal.total}
-            journalEntries={incompatibleModalJournal.entries}
-            journalNextCursor={incompatibleModalJournal.nextCursor}
+            journalTotal={readOnlyModalJournal.total}
+            journalEntries={readOnlyModalJournal.entries}
+            journalNextCursor={readOnlyModalJournal.nextCursor}
             selectedItem={selectedItem}
             catalogue={catalogue}
             language={language}
@@ -677,6 +693,7 @@ export default async function PlayPage({
                     total={modalJournal.total}
                     className="button secondary"
                     text={{
+                      ...journalEntriesText(catalogue),
                       viewJournal: catalogue.game.viewJournal,
                       title: catalogue.journal.title,
                       total: catalogue.journal.total(modalJournal.total),

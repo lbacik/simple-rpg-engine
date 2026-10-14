@@ -19,7 +19,11 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { journalHref, type RenderedJournalEntry } from '../../../lib/journal';
+import {
+  journalHref,
+  type JournalEntriesText,
+  type RenderedJournalEntry,
+} from '../../../lib/journal';
 import { JournalEntries } from './journal-entries';
 
 /**
@@ -27,7 +31,7 @@ import { JournalEntries } from './journal-entries';
  * these through the catalogue and passes them as props, so no catalogue is
  * shipped to the browser (docs/spec/architecture.md, interface text).
  */
-export type JournalModalText = {
+export type JournalModalText = JournalEntriesText & {
   viewJournal: string;
   title: string;
   total: string;
@@ -171,6 +175,7 @@ export function JournalModalLink({
                 initialEntries={initialEntries}
                 initialNextCursor={initialNextCursor}
                 total={total}
+                text={text}
               />
             </div>
           </div>

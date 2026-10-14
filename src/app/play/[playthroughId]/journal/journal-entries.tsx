@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   journalHref,
   type JournalBatchResponse,
+  type JournalEntriesText,
   type RenderedJournalEntry,
 } from '../../../lib/journal';
 import { LanguageFlag } from '../../../flag';
@@ -47,9 +48,21 @@ export function journalProgress(topmost: JournalPosition, total: number): number
   return Math.min(1, Math.max(0, position / total));
 }
 
-/** "Step 12 · entry 37 of 134" for the topmost visible entry. */
-export function journalPositionText(topmost: JournalPosition, total: number): string {
-  return `Step ${topmost.step} · entry ${topmost.seq} of ${total}`;
+/**
+ * Fill the `{step}`, `{seq}` and `{total}` placeholders of a catalogue Journal
+ * template ("Step {step} · entry {seq} of {total}"). Unknown placeholders stay
+ * as they are, so a catalogue typo never eats a number.
+ */
+export function formatJournalText(
+  template: string,
+  values: { step: number; seq: number; total: number },
+): string {
+  return template.replace(/\{(\w+)\}/g, (placeholder, key: string) => {
+    if (key === 'step') return String(values.step);
+    if (key === 'seq') return String(values.seq);
+    if (key === 'total') return String(values.total);
+    return placeholder;
+  });
 }
 
 /** Read the entry position back off a list item. */
@@ -65,12 +78,15 @@ export function JournalEntries({
   initialEntries,
   initialNextCursor,
   total,
+  text,
 }: {
   playthroughId: string;
   initialEntries: RenderedJournalEntry[];
   initialNextCursor: number | null;
   /** Total entry count at open; the progress bar reads against this, not the loaded count. */
   total: number;
+  /** Interface Text, rendered by the server through the catalogue. */
+  text: JournalEntriesText;
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const [nextCursor, setNextCursor] = useState(initialNextCursor);
@@ -181,7 +197,7 @@ export function JournalEntries({
   }, [entries.length, enhanced]);
 
   if (entries.length === 0) {
-    return <p>Nothing has happened yet.</p>;
+    return <p>{text.empty}</p>;
   }
   const done = nextCursor === null;
   const namedEntry = topmost ?? { seq: entries[0]!.seq, step: entries[0]!.step };
@@ -189,7 +205,13 @@ export function JournalEntries({
   return (
     <>
       <div ref={positionRef} className="journal-position" aria-live="off">
-        <p className="meta journal-position-text">{journalPositionText(namedEntry, total)}</p>
+        <p className="meta journal-position-text">
+          {formatJournalText(text.position, {
+            step: namedEntry.step,
+            seq: namedEntry.seq,
+            total,
+          })}
+        </p>
         <div className="journal-progress" aria-hidden="true">
           <div
             className="journal-progress-bar"
@@ -208,7 +230,11 @@ export function JournalEntries({
                   <LanguageFlag language={entry.flag} label={entry.flagLabel ?? undefined} />
                 </>
               ) : null}
-              {` · step ${entry.step}`}
+              {formatJournalText(text.stepNote, {
+                step: entry.step,
+                seq: entry.seq,
+                total,
+              })}
             </p>
             <div dangerouslySetInnerHTML={{ __html: entry.html }} />
           </li>
@@ -216,13 +242,13 @@ export function JournalEntries({
       </ol>
       <div ref={sentinelRef} aria-hidden="true" />
       <p className="meta" aria-live="polite">
-        {loading ? 'Loading older entries…' : null}
-        {!loading && failed && !done ? 'Could not load older entries.' : null}
-        {!loading && !failed && done ? 'Start of the Journal reached.' : null}
+        {loading ? text.loadingOlder : null}
+        {!loading && failed && !done ? text.loadFailed : null}
+        {!loading && !failed && done ? text.startReached : null}
       </p>
       {!enhanced && !done ? (
         <p>
-          <a href={journalHref(playthroughId, nextCursor)}>Older entries</a>
+          <a href={journalHref(playthroughId, nextCursor)}>{text.olderEntries}</a>
         </p>
       ) : null}
       {failed && !done ? (
@@ -232,7 +258,7 @@ export function JournalEntries({
             type="button"
             onClick={() => void loadOlder(nextCursor as number)}
           >
-            Retry loading older entries
+            {text.retryOlder}
           </button>
         </p>
       ) : null}
