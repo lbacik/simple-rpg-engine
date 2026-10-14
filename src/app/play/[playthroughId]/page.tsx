@@ -205,26 +205,36 @@ export default async function PlayPage({
     });
     return (
       <main>
+        <header className="chronicle-head">
+          <div className="chronicle-brand">
+            <div>
+              <p className="eyebrow">{catalogue.game.adventure}</p>
+              <strong lang={incompatibleShown}>{incompatibleScenario.title}</strong>
+            </div>
+          </div>
+        </header>
         <div className="game">
-          <article className="reading">
-            <p className="notice" role="status">
-              {catalogue.game.scenarioChanged}
-            </p>
-            <p>
-              <a className="button" href={`/scenarios/${incompatibleScenario.id}`}>
-                {catalogue.game.startNew(incompatibleScenario.title)}
-              </a>
-            </p>
-            <ReadOnlyPosition
-              scenario={incompatibleScenario}
-              state={incompatibleState}
-              gameView={incompatibleView}
-              characterName={incompatibleName}
-              recordedEnding={recordedEnding}
-              catalogue={catalogue}
-              lang={incompatibleShown}
-              badge={incompatibleBadge}
-            />
+          <article className="reading story-card">
+            <div className="story-body">
+              <p className="notice" role="status">
+                {catalogue.game.scenarioChanged}
+              </p>
+              <p>
+                <a className="button" href={`/scenarios/${incompatibleScenario.id}`}>
+                  {catalogue.game.startNew(incompatibleScenario.title)}
+                </a>
+              </p>
+              <ReadOnlyPosition
+                scenario={incompatibleScenario}
+                state={incompatibleState}
+                gameView={incompatibleView}
+                characterName={incompatibleName}
+                recordedEnding={recordedEnding}
+                catalogue={catalogue}
+                lang={incompatibleShown}
+                badge={incompatibleBadge}
+              />
+            </div>
           </article>
           <SidePanel
             scenario={incompatibleScenario}
@@ -354,26 +364,67 @@ export default async function PlayPage({
     selectedTarget,
   );
 
+  // The chronicle header names the Scenario (Interface Text eyebrow) and the
+  // current Location, matching variant A; the reading card below holds the
+  // title, Illustration, narration and actions.
+  const chronicleLocation =
+    gameView.kind === 'location'
+      ? gameView.name
+      : gameView.kind === 'scene' || gameView.kind === 'combat'
+        ? gameView.locationName
+        : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
+  const chronicleHead = (
+    <header className="chronicle-head">
+      <div className="chronicle-brand">
+        <svg
+          width={30}
+          height={30}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="m15 9-2 4-4 2 2-4Z" />
+        </svg>
+        <div>
+          <p className="eyebrow">{catalogue.game.adventure}</p>
+          <strong lang={shown}>{scenario.title}</strong>
+        </div>
+      </div>
+      <span className="location-badge">
+        <span aria-hidden="true" />
+        <span lang={shown}>{chronicleLocation}</span>
+      </span>
+    </header>
+  );
+
   // While the result panel is shown, the reading column holds only the panel
   // (with Continue) and the transient notice: the Location view, Scene and
-  // Combat panel wait for Continue. The side panel (map, status card,
-  // launchers) stays visible throughout.
+  // Combat panel wait for Continue. The side panel (status card, launchers,
+  // compact map) stays visible throughout.
   if (showResult) {
     return (
       <main>
+        {chronicleHead}
         <div className="game">
-          <article className="reading">
+          <article className="reading story-card">
             {noticeText ? (
               <p className="notice" role="status">
                 {noticeText}
               </p>
             ) : null}
-            <ResultPanel
-              entries={resultEntries}
-              continueHref={continueTo}
-              continueLabel={catalogue.game.continue}
-              label={catalogue.game.latestEvents}
-            />
+            <div className="story-body">
+              <ResultPanel
+                entries={resultEntries}
+                continueHref={continueTo}
+                continueLabel={catalogue.game.continue}
+                label={catalogue.game.latestEvents}
+              />
+            </div>
           </article>
           <SidePanel
             scenario={scenario}
@@ -400,8 +451,9 @@ export default async function PlayPage({
 
   return (
     <main>
+      {chronicleHead}
       <div className="game">
-        <article className="reading">
+        <article className="reading story-card">
           {noticeText ? (
             <p className="notice" role="status">
               {noticeText}
@@ -409,117 +461,159 @@ export default async function PlayPage({
           ) : null}
           {gameView.kind === 'location' ? (
             <>
-              <h1>
-                <span lang={shown}>{gameView.name}</span>
-                {badge === undefined ? null : <> {badge}</>}
-              </h1>
+              <div className="story-title">
+                <p className="eyebrow">{catalogue.game.currentScene}</p>
+                <h1>
+                  <span lang={shown}>{gameView.name}</span>
+                  {badge === undefined ? null : <> {badge}</>}
+                </h1>
+              </div>
               {gameView.illustration ? (
-                <SceneIllustration
-                  src={gameView.illustration.src}
-                  width={gameView.illustration.width}
-                  height={gameView.illustration.height}
-                  alt={gameView.illustration.alt}
-                />
+                <figure className="story-art">
+                  <SceneIllustration
+                    src={gameView.illustration.src}
+                    width={gameView.illustration.width}
+                    height={gameView.illustration.height}
+                    alt={gameView.illustration.alt}
+                  />
+                  <figcaption>
+                    <span lang={shown}>{gameView.name}</span>
+                  </figcaption>
+                </figure>
               ) : null}
-              {/* Location description: rendered narration subset. */}
-              <div
-                lang={shown}
-                dangerouslySetInnerHTML={{
-                  __html: renderNarration(gameView.description, characterName),
-                }}
-              />
-              {gameView.onDemandScenes.length > 0 ? (
-                <section aria-label={catalogue.game.scenes}>
-                  {gameView.onDemandScenes.map((scene) => (
-                    <form key={scene.sceneId} action={openSceneAction}>
+              <div className="story-body">
+                {/* Location description: rendered narration subset. */}
+                <div
+                  className="narration"
+                  lang={shown}
+                  dangerouslySetInnerHTML={{
+                    __html: renderNarration(gameView.description, characterName),
+                  }}
+                />
+                {gameView.onDemandScenes.length > 0 ? (
+                  <section aria-label={catalogue.game.scenes} className="decisions">
+                    <p className="eyebrow">{catalogue.game.decide}</p>
+                    {gameView.onDemandScenes.map((scene, index) => (
+                      <form key={scene.sceneId} action={openSceneAction}>
+                        <input type="hidden" name="playthroughId" value={playthrough.id} />
+                        <input type="hidden" name="expectedStep" value={playthrough.step} />
+                        <input type="hidden" name="scene" value={scene.sceneId} />
+                        <p>
+                          <button className="choice" type="submit">
+                            <span className="choice-number" aria-hidden="true">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <span lang={shown}>{scene.title}</span>
+                            <span aria-hidden="true">↗</span>
+                          </button>
+                        </p>
+                      </form>
+                    ))}
+                  </section>
+                ) : null}
+                <section aria-label={catalogue.game.exits} className="decisions">
+                  <p className="eyebrow">{catalogue.game.decide}</p>
+                  {gameView.exits.map((exit, index) => (
+                    <form key={exit.targetLocationId} action={travelAction}>
                       <input type="hidden" name="playthroughId" value={playthrough.id} />
                       <input type="hidden" name="expectedStep" value={playthrough.step} />
-                      <input type="hidden" name="scene" value={scene.sceneId} />
+                      <input type="hidden" name="target" value={exit.targetLocationId} />
                       <p>
-                        <button className="button" type="submit">
-                          <span lang={shown}>{scene.title}</span>
+                        <button className="choice" type="submit">
+                          <span className="choice-number" aria-hidden="true">
+                            {String(gameView.onDemandScenes.length + index + 1).padStart(2, '0')}
+                          </span>
+                          <span lang={shown}>{exit.label}</span>
+                          <span aria-hidden="true">↗</span>
                         </button>
                       </p>
                     </form>
                   ))}
                 </section>
-              ) : null}
-              <section aria-label={catalogue.game.exits}>
-                {gameView.exits.map((exit) => (
-                  <form key={exit.targetLocationId} action={travelAction}>
-                    <input type="hidden" name="playthroughId" value={playthrough.id} />
-                    <input type="hidden" name="expectedStep" value={playthrough.step} />
-                    <input type="hidden" name="target" value={exit.targetLocationId} />
-                    <p>
-                      <button className="button" type="submit">
-                        <span lang={shown}>{exit.label}</span>
-                      </button>
-                    </p>
-                  </form>
-                ))}
-              </section>
+              </div>
             </>
           ) : gameView.kind === 'scene' ? (
             <>
-              <h1>
-                <span lang={shown}>{gameView.title}</span>
-                {badge === undefined ? null : <> {badge}</>}
-              </h1>
+              <div className="story-title">
+                <p className="eyebrow">{catalogue.game.currentScene}</p>
+                <h1>
+                  <span lang={shown}>{gameView.title}</span>
+                  {badge === undefined ? null : <> {badge}</>}
+                </h1>
+              </div>
               {gameView.illustration ? (
-                <SceneIllustration
-                  src={gameView.illustration.src}
-                  width={gameView.illustration.width}
-                  height={gameView.illustration.height}
-                  alt={gameView.illustration.alt}
-                />
+                <figure className="story-art">
+                  <SceneIllustration
+                    src={gameView.illustration.src}
+                    width={gameView.illustration.width}
+                    height={gameView.illustration.height}
+                    alt={gameView.illustration.alt}
+                  />
+                  <figcaption>
+                    <span lang={shown}>{gameView.locationName}</span>
+                  </figcaption>
+                </figure>
               ) : null}
-              <div
-                lang={shown}
-                dangerouslySetInnerHTML={{
-                  __html: renderNarration(gameView.text, gameView.characterName),
-                }}
-              />
-              {gameView.choices.length > 0 ? (
-                <section aria-label={catalogue.game.choices}>
-                  {gameView.choices.map((choice) => (
-                    <form key={choice.id} action={chooseAction}>
+              <div className="story-body">
+                <div
+                  className="narration"
+                  lang={shown}
+                  dangerouslySetInnerHTML={{
+                    __html: renderNarration(gameView.text, gameView.characterName),
+                  }}
+                />
+                {gameView.choices.length > 0 ? (
+                  <section aria-label={catalogue.game.choices} className="decisions">
+                    <p className="eyebrow">{catalogue.game.decide}</p>
+                    {gameView.choices.map((choice, index) => (
+                      <form key={choice.id} action={chooseAction}>
+                        <input type="hidden" name="playthroughId" value={playthrough.id} />
+                        <input type="hidden" name="expectedStep" value={playthrough.step} />
+                        <input type="hidden" name="choice" value={choice.id} />
+                        <p>
+                          <button className="choice" type="submit">
+                            <span className="choice-number" aria-hidden="true">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <span lang={shown}>
+                              {choice.text}
+                              {choice.test ? (
+                                <small className="meta">
+                                  {' '}
+                                  (
+                                  {catalogue.game.testLabel(
+                                    catalogue.attributes[choice.test.attribute],
+                                    catalogue.difficulty[choice.test.difficulty],
+                                    choice.test.target,
+                                  )}
+                                  )
+                                </small>
+                              ) : null}
+                            </span>
+                            <span aria-hidden="true">↗</span>
+                          </button>
+                        </p>
+                      </form>
+                    ))}
+                  </section>
+                ) : (
+                  <section aria-label={catalogue.game.continue}>
+                    <form action={continueAction}>
                       <input type="hidden" name="playthroughId" value={playthrough.id} />
                       <input type="hidden" name="expectedStep" value={playthrough.step} />
-                      <input type="hidden" name="choice" value={choice.id} />
                       <p>
                         <button className="button" type="submit">
-                          <span lang={shown}>{choice.text}</span>
-                          {choice.test ? (
-                            <span className="meta">
-                              {' '}
-                              ({catalogue.game.testLabel(
-                                catalogue.attributes[choice.test.attribute],
-                                catalogue.difficulty[choice.test.difficulty],
-                                choice.test.target,
-                              )})
-                            </span>
-                          ) : null}
+                          {catalogue.game.continue}
                         </button>
                       </p>
                     </form>
-                  ))}
-                </section>
-              ) : (
-                <section aria-label={catalogue.game.continue}>
-                  <form action={continueAction}>
-                    <input type="hidden" name="playthroughId" value={playthrough.id} />
-                    <input type="hidden" name="expectedStep" value={playthrough.step} />
-                    <p>
-                      <button className="button" type="submit">
-                        {catalogue.game.continue}
-                      </button>
-                    </p>
-                  </form>
-                </section>
-              )}
+                  </section>
+                )}
+              </div>
             </>
           ) : gameView.kind === 'combat' ? (
-            <CombatPanel
+            <div className="story-body">
+              <CombatPanel
               combat={gameView}
               playthroughId={playthrough.id}
               step={playthrough.step}
@@ -543,17 +637,22 @@ export default async function PlayPage({
                   participantId,
                 )
               }
-            />
+              />
+            </div>
           ) : (
             <>
-              <EndingBlock
-                kindLabel={catalogue.ending[gameView.endingKind]}
-                title={gameView.title}
-                html={renderNarration(gameView.text, characterName)}
-                lang={shown}
-                badge={badge}
-              />
-              <section aria-label={catalogue.game.afterEnding}>
+              <div className="story-title">
+                <p className="eyebrow">{catalogue.ending.title}</p>
+              </div>
+              <div className="story-body">
+                <EndingBlock
+                  kindLabel={catalogue.ending[gameView.endingKind]}
+                  title={gameView.title}
+                  html={renderNarration(gameView.text, characterName)}
+                  lang={shown}
+                  badge={badge}
+                />
+                <section aria-label={catalogue.game.afterEnding}>
                 <p>
                   <JournalModalLink
                     playthroughId={playthrough.id}
@@ -580,7 +679,8 @@ export default async function PlayPage({
                     {catalogue.game.returnToCollection}
                   </a>
                 </p>
-              </section>
+                </section>
+              </div>
             </>
           )}
         </article>

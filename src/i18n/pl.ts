@@ -211,6 +211,9 @@ export const pl: Catalogue = {
     latestEvents: 'Ostatnie wydarzenia',
     afterEnding: 'Po zakończeniu',
     viewJournal: 'Zobacz dziennik',
+    adventure: 'Twoja przygoda',
+    currentScene: 'Bieżąca scena',
+    decide: 'Co robisz dalej?',
     startNew: (title: string) => `Nowa rozgrywka: ${title}`,
     returnToCollection: 'Wróć do kolekcji',
     scenarioGone:
@@ -274,6 +277,7 @@ export const pl: Catalogue = {
     label: 'Mapa lokacji',
     travelSub: 'Podróż',
     youAreHere: 'Tu jesteś',
+    expand: 'Powiększ mapę',
     travelTo: (name: string) => `Podróż: ${name}`,
     heardOf: (name: string) => `${name} (znane ze słyszenia)`,
     showUnknown: 'Pokaż nieodwiedzone wyjścia jako „?”',

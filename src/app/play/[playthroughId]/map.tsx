@@ -125,6 +125,7 @@ export function LocationMap({
   canTravel,
   showUnknownExits,
   toggleHref,
+  expandHref,
   markerId,
   catalogue,
   lang,
@@ -137,6 +138,8 @@ export function LocationMap({
   showUnknownExits: boolean;
   /** Href flipping the app-level "?" setting, preserving tab and notice. */
   toggleHref: string;
+  /** When set, an Expand link opens the enlarged map modal (desktop access). */
+  expandHref?: string;
   /** Unique SVG marker id: the map renders twice on the page (phone, desktop). */
   markerId: string;
   /** Interface Text: the game screen passes the current catalogue. */
@@ -146,8 +149,15 @@ export function LocationMap({
 }) {
   const byId = new Map(map.nodes.map((node) => [node.id, node]));
   return (
-    <section aria-label={catalogue.map.label}>
-      <h2>{catalogue.map.title}</h2>
+    <section aria-label={catalogue.map.label} className="map">
+      <div className="map-head">
+        <h2>{catalogue.map.title}</h2>
+        {expandHref === undefined ? null : (
+          <a className="map-expand" href={expandHref}>
+            {catalogue.map.expand}
+          </a>
+        )}
+      </div>
       <div className="map-area" style={{ aspectRatio: MAP_ASPECT_RATIO }} role="img">
         <svg
           className="map-lines"

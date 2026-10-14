@@ -41,10 +41,18 @@ Languages are marked with small flag icons:
 
 ## Game screen (`/play/[playthroughId]`)
 
-Layout **A, "Book & character"**:
+Layout **A, "Illustrated chronicle"** (selected from the [light UI prototype](https://github.com/lbacik/simple-rpg-engine/tree/codex/prototype-light-ui); the prototype branch stays archived and none of its variant switching, demo data, preview-only Choices or launch tooling ships):
 
-- **Desktop**: a reading column with the current narration and its actions, beside a side panel. The side panel holds the **map** at the top (always visible), a **status card**, and the **Character**, **Inventory** and **Journal** launchers.
-- **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind a fourth **Map** launcher.
+- **Desktop**: a light reading surface (a white card with the title block, the Scenario Illustration, the narration and the real actions) beside a side panel. The side panel orders the **Character status** first, the **Character**, **Inventory** and **Journal** launchers second, and the **compact Location map** last. A scenario brand (Interface-Language eyebrow plus Scenario title) and the current-Location badge sit above the grid.
+- **Phone**: a single reading column, with the status card and the launchers below the narration. The map moves behind a fourth **Map** launcher that opens it in a modal.
+
+Explicit amendments to the prototype's variant A:
+
+- The Character and inventory modals keep their current controls; only their shared visual styling adapts here, and their detailed visual adaptation follows separately.
+- The compact map card exposes an **Expand map** link, so the enlarged map modal is reachable on desktop too, not only behind the phone launcher.
+- The map keeps its current plain surface with authored/fallback coordinates, discovery and Connection semantics; the prototype's decorative terrain background is deferred.
+- The map keeps its app-level **"Show unseen exits"** control (off by default).
+- The Journal launcher keeps navigating to the full Journal page here; opening the Journal in a modal from that launcher follows separately.
 
 ### Scenario language flags
 
@@ -85,9 +93,9 @@ The order within the column is always:
 
 ### Character and inventory panel
 
-The side panel holds, top to bottom: the Location map (as above), a status card, and three launchers in a row.
+The side panel holds, top to bottom: a status card, three launchers in a row, and the compact Location map (as above) with an Expand link to the enlarged modal.
 
-- **Status card**: a medal with the Character's initial inside a ring that fills with the Health fraction (as in the Combat arena; red when Health is low), the Character's name, the Template, and a 12-segment Health bar.
+- **Status card**: a medallion with the Character's initial inside a ring that fills with the Health fraction (as in the Combat arena; red when Health is low), the Character's name, the Template, a readable "Health N / 12" line, a 12-segment Health bar, and the four effective Attribute values.
 - **Launchers**: **Character** (sublabel "Health 9/12"), **Inventory** (sublabel "3 items") and **Journal** (sublabel "34 entries"), each with an icon, a label and a sublabel. The Journal launcher goes to the full Journal page. (Once the Journal modal lands, it opens that modal instead; its trigger is this launcher.)
 - **Character** modal (the Character sheet): a header with a large Health medal (the Character's initial inside the Health ring, red when Health is low), the Character's name, the Template name, the current Location, and the Template description in italics; the four Attributes, each with five pips (● per point of base, then ◆ gold per counted Equipment bonus, so the filled pips equal the **effective** value), the effective value as a large number, and, when Equipment contributes, a source line (for example "base 2 · +1 Harbour Blade · +1 Padded Watch Coat"; bonuses beyond the +2 cap are struck through with a "bonus capped at +2" explanation), followed by the legend "● base ◆ equipment bonus (max +2)"; Health as a large "9 / 12" with a 12-segment bar (red when Health is low, labelled "Health N of 12"); and the equipped Weapon, Outfit and Talisman, each with an icon and the item's name, or "—" when empty. Two columns on desktop, one on phones. The pips are decorative: each Attribute's value and explanation are plain text.
 - **Inventory** modal: an **Equipped** "paper doll" of the three slots (Weapon, Outfit, Talisman) beside the **Carried** item tiles, with a detail pane for the selected tile below the tiles. A filled slot shows a dark icon tile, the slot name, the item name, its stats (bonus, Damage and Reach for weapons) and **Unequip**; an empty slot shows a dashed outline and "Empty" in italics. Each carried tile is a button (`aria-pressed`) showing an icon by kind (weapon, outfit, talisman, Consumable, key item) and the name, "×N" when the quantity is above 1, a ✦ marker for magic items and an "equipped" ribbon for items in a slot. The detail pane shows the selected tile (the first item by default): the name, quantity and magic marker, the description in italics, chips for kind/slot, bonus, Damage and Reach or healing, and the item's real action (Equip, Unequip or Use); a disabled action shows its reason, and key items have no action. The selected tile rides in the URL (`?panel=inventory&item=`), so Equip, Unequip and Use — and their rejection notices — land back with the modal still open and the same tile selected (or the first item, when the selected one is gone). Two columns on desktop, stacked on phones; focus order is slots, then tiles, then the pane.

@@ -11,7 +11,12 @@
 
 import Link from 'next/link';
 import type { Scenario } from '@/content/model';
-import { inventoryEquipReason, inventoryUseReason, type GameView } from '@/engine/index';
+import {
+  effectiveAttributes,
+  inventoryEquipReason,
+  inventoryUseReason,
+  type GameView,
+} from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
@@ -66,51 +71,80 @@ function LauncherIcon({ name }: { name: 'character' | 'inventory' | 'journal' | 
 }
 
 /**
- * The status card: a medal with the Character's initial inside a ring that
- * fills with the Health fraction (as in the Combat arena; red when Health is
- * low), the Character's name, the Template, and a segmented Health bar.
+ * The status card (variant A order: first in the side panel): a medallion with
+ * the Character's initial inside a ring that fills with the Health fraction
+ * (red when Health is low), the Character's name, the Template, a readable
+ * Health line, the segmented Health bar, and the effective Attribute values.
  */
 function StatusCard({
   scenario,
   state,
   catalogue,
+  language,
 }: {
   scenario: Scenario;
   state: PlaythroughState;
   catalogue: Catalogue;
+  language: InterfaceLanguage;
 }) {
   const template = scenario.templatesById[state.character.templateId];
   const percent = healthPercent(state.character.health, MAX_HEALTH);
   const low = isLowHealth(state.character.health, MAX_HEALTH);
+  const effective = effectiveAttributes(scenario, state);
+  const attributes = (
+    [
+      ['might', catalogue.attributes.might],
+      ['agility', catalogue.attributes.agility],
+      ['wits', catalogue.attributes.wits],
+      ['presence', catalogue.attributes.presence],
+    ] as const
+  ).map(([id, label]) => ({ id, label, value: effective[id] }));
   return (
     <section aria-label={catalogue.character.status} className="status-card">
-      <span
-        className={low ? 'status-medal low' : 'status-medal'}
-        style={{ '--status-health': `${percent}%` } as React.CSSProperties}
-        title={catalogue.character.short(state.character.health, MAX_HEALTH)}
-        aria-hidden="true"
-      >
-        <span className="status-face">{initial(state.character.name)}</span>
-      </span>
-      <div className="status-text">
-        <p className="status-name">
-          <strong>{state.character.name}</strong>
-        </p>
-        {template ? (
-          <p className="meta status-template" lang={scenario.language}>
-            {template.name}
-          </p>
-        ) : null}
+      <div className="status-top">
         <span
-          className={low ? 'health-segments low' : 'health-segments'}
-          role="img"
-          aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
+          className={low ? 'status-medal low' : 'status-medal'}
+          style={{ '--status-health': `${percent}%` } as React.CSSProperties}
+          title={catalogue.character.short(state.character.health, MAX_HEALTH)}
+          aria-hidden="true"
         >
-          {Array.from({ length: MAX_HEALTH }, (_, index) => (
-            <span key={index} className={index < state.character.health ? 'on' : ''} />
-          ))}
+          <span className="status-face">{initial(state.character.name)}</span>
         </span>
+        <div className="status-text">
+          <p className="status-name">
+            <strong>{state.character.name}</strong>
+          </p>
+          {template ? (
+            <p className="meta status-template" lang={scenario.language}>
+              {template.name}
+            </p>
+          ) : null}
+        </div>
       </div>
+      <p className="status-health">
+        <span>{catalogue.character.health}</span>
+        <strong>
+          {formatNumber(language, state.character.health)}
+          <span className="meta"> / {formatNumber(language, MAX_HEALTH)}</span>
+        </strong>
+      </p>
+      <span
+        className={low ? 'health-segments low' : 'health-segments'}
+        role="img"
+        aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
+      >
+        {Array.from({ length: MAX_HEALTH }, (_, index) => (
+          <span key={index} className={index < state.character.health ? 'on' : ''} />
+        ))}
+      </span>
+      <dl className="status-attrs">
+        {attributes.map((attr) => (
+          <div key={attr.id} className="status-attr">
+            <dt>{attr.label}</dt>
+            <dd>{formatNumber(language, attr.value)}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
@@ -410,22 +444,13 @@ export function SidePanel({
   const characterName = catalogue.character.name(healthShort);
   const inventoryName = catalogue.inventory.name(itemsCount);
   const journalName = catalogue.journal.name(entriesCount);
+  // Variant A order: Character status, launchers, then the compact map.
+  // The compact map carries an Expand link so the enlarged modal is reachable
+  // on desktop too; on phones the inline map hides behind the Map launcher.
+  const expandHref = playHref(playthroughId, 'map', notice, seen, showUnknownExits);
   return (
     <aside className="side" aria-label={catalogue.character.panelLabel}>
-      <div className="map-inline">
-        <LocationMap
-          map={gameView.map}
-          playthroughId={playthroughId}
-          step={step}
-          canTravel={canTravel}
-          showUnknownExits={showUnknownExits}
-          toggleHref={toggleHref}
-          markerId="map-arrow-desktop"
-          catalogue={catalogue}
-          lang={scenario.language}
-        />
-      </div>
-      <StatusCard scenario={scenario} state={state} catalogue={catalogue} />
+      <StatusCard scenario={scenario} state={state} catalogue={catalogue} language={language} />
       <nav aria-label={catalogue.character.panelLabel} className="launchers">
         <Link
           id="launcher-character"
@@ -468,6 +493,20 @@ export function SidePanel({
           <span className="launcher-sub">{catalogue.map.travelSub}</span>
         </Link>
       </nav>
+      <div className="map-inline map-card">
+        <LocationMap
+          map={gameView.map}
+          playthroughId={playthroughId}
+          step={step}
+          canTravel={canTravel}
+          showUnknownExits={showUnknownExits}
+          toggleHref={toggleHref}
+          expandHref={expandHref}
+          markerId="map-arrow-desktop"
+          catalogue={catalogue}
+          lang={scenario.language}
+        />
+      </div>
       {panel === 'character' ? (
         <PanelModal
           label={catalogue.character.title}
