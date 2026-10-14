@@ -631,7 +631,7 @@ main:has(.game) {
   font-size: 1.15rem;
   font-weight: bold;
   color: #fff;
-  background: #284d40;
+  background: var(--chronicle-green, #284d40);
 }
 
 .status-text {
@@ -740,7 +740,7 @@ main:has(.game) {
   border-radius: 0.4375rem;
   background: none;
   text-decoration: none;
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
   text-align: center;
   font-size: 0.625rem;
 }
@@ -750,12 +750,12 @@ main:has(.game) {
 }
 
 .launcher:focus-visible {
-  outline: 2px solid #284d40;
+  outline: 2px solid var(--chronicle-green, #284d40);
   outline-offset: 2px;
 }
 
 .launcher-icon {
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
 }
 
 .launcher-label {
@@ -826,11 +826,15 @@ main:has(.game) {
 }
 
 .panel-modal a {
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
 }
 
+/* One amber focus ring for everything in the modal, matching the game screen
+ * (`.game button/a/summary:focus-visible`): 3px `#ba753d` with a 3px offset. */
 .panel-modal button:focus-visible,
-.panel-modal a:focus-visible {
+.panel-modal a:focus-visible,
+.panel-modal-close:focus-visible,
+.inv-tile:focus-visible {
   outline: 3px solid #ba753d;
   outline-offset: 3px;
 }
@@ -845,18 +849,13 @@ main:has(.game) {
 
 .panel-modal .button.secondary {
   background: transparent;
-  color: #284d40;
-  border: 1px solid #284d40;
+  color: var(--chronicle-green, #284d40);
+  border: 1px solid var(--chronicle-green, #284d40);
 }
 
 .panel-modal .button.secondary:hover:not(:disabled) {
   background: #edf2ec;
-  border-color: #284d40;
-}
-
-.panel-modal .button.secondary:focus-visible {
-  outline: 3px solid #ba753d;
-  outline-offset: 3px;
+  border-color: var(--chronicle-green, #284d40);
 }
 
 /* Character sheet: header with a large Health medal, Attributes with pips,
@@ -963,8 +962,8 @@ main:has(.game) {
 }
 
 .pip.base {
-  background: #284d40;
-  border-color: #284d40;
+  background: var(--chronicle-green, #284d40);
+  border-color: var(--chronicle-green, #284d40);
 }
 
 .pip.bonus {
@@ -1012,7 +1011,7 @@ main:has(.game) {
   height: 2rem;
   border-radius: 0.5rem;
   background: #edf2ec;
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
 }
 
 @media (max-width: 46rem) {
@@ -1061,11 +1060,6 @@ main:has(.game) {
 .panel-modal-close:hover {
   background: #edf2ec;
   border-color: #8fa68f;
-}
-
-.panel-modal-close:focus-visible {
-  outline: 3px solid #ba753d;
-  outline-offset: 3px;
 }
 
 .panel-modal h2:not(.panel-modal-title) {
@@ -1139,7 +1133,7 @@ main:has(.game) {
   border-radius: 0.5rem;
   display: grid;
   place-items: center;
-  background: #284d40;
+  background: var(--chronicle-green, #284d40);
   color: #fff;
 }
 
@@ -1174,7 +1168,7 @@ main:has(.game) {
   border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 0.6rem;
   background: #fff;
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
   font-family: inherit;
   cursor: pointer;
   padding: 0.5rem;
@@ -1187,13 +1181,8 @@ main:has(.game) {
   border-color: #8fa68f;
 }
 
-.inv-tile:focus-visible {
-  outline: 3px solid #ba753d;
-  outline-offset: 3px;
-}
-
 .inv-tile.selected {
-  border: 2px solid #284d40;
+  border: 2px solid var(--chronicle-green, #284d40);
   box-shadow: 0 0 0 3px rgb(40 77 64 / 0.15);
 }
 
@@ -1214,7 +1203,7 @@ main:has(.game) {
 }
 
 .inv-spark {
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
 }
 
 .inv-spark.corner {
@@ -1232,14 +1221,14 @@ main:has(.game) {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-align: center;
-  background: #284d40;
+  background: var(--chronicle-green, #284d40);
   color: #fff;
   padding: 0.1rem 0;
 }
 
 .inv-detail {
   margin-top: 1rem;
-  border-top: 2px solid #284d40;
+  border-top: 2px solid var(--chronicle-green, #284d40);
   padding-top: 0.75rem;
 }
 
@@ -1270,11 +1259,11 @@ main:has(.game) {
 
 .magic {
   display: inline-block;
-  border: 1px solid #284d40;
+  border: 1px solid var(--chronicle-green, #284d40);
   border-radius: 1rem;
   padding: 0 0.5rem;
   font-size: 0.85rem;
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
   white-space: nowrap;
 }
 
