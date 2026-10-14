@@ -187,6 +187,9 @@ export default async function PlayPage({
     }
     const journal = await store.listJournal(resolved.playthrough.id);
     const recordedEnding = latestJournalEnding(journal);
+    // The Journal launcher opens the same modal as during play, reusing the
+    // newest batch newest first with the sequence cursor for older batches.
+    const incompatibleModalJournal = modalJournalBatch(journal, catalogue, incompatibleName);
     // The Scenario is still in the collection but its content changed: the
     // Character sheet, inventory and map render best effort from the current
     // content, and a new Playthrough is on offer.
@@ -267,7 +270,9 @@ export default async function PlayPage({
             )}
             canTravel={false}
             forceReadOnly
-            journalTotal={journal.length}
+            journalTotal={incompatibleModalJournal.total}
+            journalEntries={incompatibleModalJournal.entries}
+            journalNextCursor={incompatibleModalJournal.nextCursor}
             selectedItem={selectedItem}
             catalogue={catalogue}
             language={language}
@@ -449,7 +454,9 @@ export default async function PlayPage({
             showUnknownExits={showUnknownExits}
             toggleHref={mapToggleHref}
             canTravel={canTravel}
-            journalTotal={journal.length}
+            journalTotal={modalJournal.total}
+            journalEntries={modalJournal.entries}
+            journalNextCursor={modalJournal.nextCursor}
             seen={preservedSeen}
             selectedItem={selectedItem}
             catalogue={catalogue}
@@ -705,7 +712,9 @@ export default async function PlayPage({
           showUnknownExits={showUnknownExits}
           toggleHref={mapToggleHref}
           canTravel={canTravel}
-          journalTotal={journal.length}
+          journalTotal={modalJournal.total}
+          journalEntries={modalJournal.entries}
+          journalNextCursor={modalJournal.nextCursor}
           seen={preservedSeen}
           selectedItem={selectedItem}
           catalogue={catalogue}

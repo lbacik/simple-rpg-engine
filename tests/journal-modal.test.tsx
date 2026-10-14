@@ -124,4 +124,51 @@ describe('JournalModalLink', () => {
     expect(html).toContain('Zobacz dziennik');
     expect(html).not.toContain('View journal');
   });
+
+  it('renders the side-panel launcher trigger with its id, accessible name and sublabel', () => {
+    const html = renderToStaticMarkup(
+      <JournalModalLink
+        playthroughId="pt-1"
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={34}
+        id="launcher-journal"
+        className="launcher"
+        ariaLabel="Journal, 34 entries"
+        text={enText}
+      >
+        <span className="launcher-label">Journal</span>
+        <span className="launcher-sub">34 entries</span>
+      </JournalModalLink>,
+    );
+    // The launcher keeps its id for focus restoration, its accessible name and
+    // its plain link to the standalone page for readers without JavaScript.
+    expect(html).toContain('id="launcher-journal"');
+    expect(html).toContain('aria-label="Journal, 34 entries"');
+    expect(html).toContain('href="/play/pt-1/journal"');
+    expect(html).toContain('class="launcher"');
+    expect(html).toContain('34 entries');
+    expect(html).not.toContain('role="dialog"');
+  });
+
+  it('opens over the game screen without navigating: the trigger stays a plain link', () => {
+    const html = renderToStaticMarkup(
+      <JournalModalLink
+        playthroughId="pt-1"
+        initialEntries={[]}
+        initialNextCursor={null}
+        total={0}
+        id="launcher-journal"
+        className="launcher"
+        ariaLabel="Journal, 0 entries"
+        text={enText}
+      >
+        <span className="launcher-label">Journal</span>
+      </JournalModalLink>,
+    );
+    // No dialog on first paint: opening is client state that never reloads the
+    // game screen, so the result panel, Combat target and scroll survive it.
+    expect(html).toContain('<a ');
+    expect(html).not.toContain('role="dialog"');
+  });
 });

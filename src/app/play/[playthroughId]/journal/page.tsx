@@ -55,24 +55,30 @@ export default async function JournalPage({
   const rendered = renderJournalEntries(batch.entries, catalogue, characterName);
 
   return (
-    <main>
-      <p>
-        <a href={`/play/${playthrough.id}`}>Back to the game</a>
-      </p>
-      <h1>Journal</h1>
-      {total === 0 ? (
-        <p className="meta">Nothing has happened yet.</p>
-      ) : (
-        <>
-          <p className="meta">{total === 1 ? '1 entry.' : `${total} entries.`}</p>
-          <JournalEntries
-            playthroughId={playthrough.id}
-            initialEntries={rendered}
-            initialNextCursor={batch.nextCursor ?? null}
-            total={total}
-          />
-        </>
-      )}
+    <main className="journal-page">
+      <article className="reading-card">
+        <div className="reading-body">
+          <p>
+            <a className="button secondary" href={`/play/${playthrough.id}`}>
+              Back to the game
+            </a>
+          </p>
+          <h1>Journal</h1>
+          {total === 0 ? (
+            <p className="meta">Nothing has happened yet.</p>
+          ) : (
+            <>
+              <p className="meta">{total === 1 ? '1 entry.' : `${total} entries.`}</p>
+              <JournalEntries
+                playthroughId={playthrough.id}
+                initialEntries={rendered}
+                initialNextCursor={batch.nextCursor ?? null}
+                total={total}
+              />
+            </>
+          )}
+        </div>
+      </article>
     </main>
   );
 }

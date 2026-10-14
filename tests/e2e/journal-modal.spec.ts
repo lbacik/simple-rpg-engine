@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-// The journal modal (docs/spec/ui.md, journal): "View journal" opens the
-// Journal over the game screen instead of navigating away. Inside, the
-// Journal scrolls infinitely within the modal with its position indicator,
-// and closing returns to the unchanged game screen.
-test('view journal opens in a modal, scrolls older entries, closes unchanged', async ({
+// The journal modal (docs/spec/ui.md, journal): the side-panel Journal
+// launcher opens the Journal over the game screen instead of navigating away.
+// Inside, the Journal scrolls infinitely within the modal with its position
+// indicator, and closing returns to the unchanged game screen, including an
+// undismissed result panel.
+test('journal launcher opens in a modal, scrolls older entries, closes unchanged', async ({
   page,
 }) => {
   await page.goto('/');
@@ -22,20 +23,24 @@ test('view journal opens in a modal, scrolls older entries, closes unchanged', a
 
   // Grow the Journal past one batch (20 entries) with inventory turns, which
   // never leave the position: unequip and re-equip the cloak in a loop.
-  const panel = page.locator('.side .full');
-  await panel.getByRole('link', { name: 'Inventory' }).click();
-  const cloak = panel.locator('li.item', { hasText: "Hunter's Cloak" });
-  // The slot paragraph and its form are siblings (the parser closes the
-  // paragraph before the form), so the outfit form is found by its slot input.
-  const unequipOutfit = panel
-    .locator('form:has(input[name="slot"][value="outfit"])')
+  await page.getByRole('link', { name: /Inventory, \d+ items/ }).click();
+  const inventoryDialog = page.getByRole('dialog', { name: 'Inventory' });
+  await expect(inventoryDialog).toBeVisible();
+  const cloakTile = inventoryDialog.getByRole('button', { name: /Hunter's Cloak/ });
+  const unequipOutfit = inventoryDialog
+    .locator('.inv-slot', { hasText: "Hunter's Cloak" })
     .getByRole('button', { name: 'Unequip' });
   for (let round = 0; round < 11; round += 1) {
     await unequipOutfit.click();
-    await expect(cloak.getByRole('button', { name: 'Equip' })).toBeEnabled();
-    await cloak.getByRole('button', { name: 'Equip' }).click();
+    await expect(cloakTile).toBeEnabled();
+    await cloakTile.click();
+    await expect(
+      inventoryDialog.locator('.inv-detail').getByRole('button', { name: 'Equip' }),
+    ).toBeVisible();
+    await inventoryDialog.locator('.inv-detail').getByRole('button', { name: 'Equip' }).click();
     await expect(unequipOutfit).toBeVisible();
   }
+  await inventoryDialog.getByRole('link', { name: 'Close Inventory' }).click();
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
 
   // Wait for hydration: the modal intercepts the click on the client, so a
@@ -43,21 +48,21 @@ test('view journal opens in a modal, scrolls older entries, closes unchanged', a
   await page.waitForLoadState('networkidle');
 
   const url = page.url();
-  const journalLink = page.getByRole('link', { name: 'View journal' });
-  await expect(journalLink).toBeVisible();
+  const journalLauncher = page.getByRole('link', { name: /Journal, \d+ entr/ });
+  await expect(journalLauncher).toBeVisible();
 
   // Opening the modal navigates nowhere: the game screen stays as it was.
-  await journalLink.click();
+  await journalLauncher.click();
   const dialog = page.getByRole('dialog', { name: 'Journal' });
   await expect(dialog).toBeVisible();
   expect(page.url()).toBe(url);
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Continue' })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
 
-  // The modal Journal is newest first with its position indicator, and "Open
-  // in new tab" points at the full Journal page.
+  // The modal header names the Journal with its total and offers "Open in new
+  // tab" to the full Journal page.
   await expect(dialog.locator('.journal-position-text')).toBeVisible();
+  await expect(dialog.getByText(/\d+ entries\./)).toBeVisible();
   const openInNewTab = dialog.getByRole('link', { name: 'Open in new tab' });
   await expect(openInNewTab).toHaveAttribute('href', /\/play\/.+\/journal$/);
   await expect(openInNewTab).toHaveAttribute('target', '_blank');
@@ -77,30 +82,103 @@ test('view journal opens in a modal, scrolls older entries, closes unchanged', a
     .toBeGreaterThan(20);
   await expect.poll(() => positionText.textContent()).not.toBe(positionBefore);
 
-  // Escape closes the modal, returns focus to the trigger, unlocks the
+  // Escape closes the modal, returns focus to the launcher, unlocks the
   // background scroll, and leaves the game screen unchanged.
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(journalLink).toBeFocused();
+  await expect(journalLauncher).toBeFocused();
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
   expect(page.url()).toBe(url);
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Continue' })).toHaveCount(0);
 
   // The close button closes the same way.
-  await journalLink.click();
+  await journalLauncher.click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Close' }).click();
   await expect(dialog).toBeHidden();
-  await expect(journalLink).toBeFocused();
+  await expect(journalLauncher).toBeFocused();
   expect(page.url()).toBe(url);
 
   // So does a backdrop click.
-  await journalLink.click();
+  await journalLauncher.click();
   await expect(dialog).toBeVisible();
   await page.locator('.journal-modal-backdrop').click({ position: { x: 5, y: 5 } });
   await expect(dialog).toBeHidden();
-  await expect(journalLink).toBeFocused();
+  await expect(journalLauncher).toBeFocused();
   expect(page.url()).toBe(url);
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
+});
+
+test('journal modal returns to an undismissed result panel unchanged', async ({ page }) => {
+  await page.goto('/');
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Two Bridges' })
+    .getByRole('link', { name: 'New Playthrough' })
+    .click();
+  await page.locator('#name').fill('ResultModal');
+  await page.getByRole('button', { name: 'Start the Playthrough' }).click();
+  await page.getByRole('link', { name: 'Continue' }).click();
+
+  // A Choice without a Test lands on a result panel with Continue.
+  await page.getByRole('button', { name: 'Ask what key he means.' }).click();
+  const panel = page.locator('article.reading-card');
+  await expect(panel.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(panel).toContainText('The brass key, lost on the far side');
+
+  const url = page.url();
+  const journalLauncher = page.getByRole('link', { name: /Journal, \d+ entr/ });
+  await journalLauncher.click();
+  const dialog = page.getByRole('dialog', { name: 'Journal' });
+  await expect(dialog).toBeVisible();
+  expect(page.url()).toBe(url);
+  await expect.poll(() => dialog.locator('li[data-seq]').count()).toBeGreaterThan(0);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  expect(page.url()).toBe(url);
+  // The undismissed result panel is still there with its Continue.
+  await expect(panel.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(panel).toContainText('The brass key, lost on the far side');
+  await expect(journalLauncher).toBeFocused();
+});
+
+test('standalone journal stays reachable directly and from a new tab', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/');
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'The Whispering Woods' })
+    .getByRole('link', { name: 'New Playthrough' })
+    .click();
+  await page.locator('#name').fill('Standalone');
+  await page.getByRole('button', { name: 'Start the Playthrough' }).click();
+  await page.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
+
+  // Direct standalone access renders the newest batch with its total.
+  const gameUrl = page.url();
+  const playthroughId = gameUrl.split('/play/')[1]?.split('?')[0];
+  await page.goto(`/play/${playthroughId}/journal`);
+  await expect(page.getByRole('heading', { name: 'Journal' })).toBeVisible();
+  await expect(page.locator('ol li[data-seq]').first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the game' })).toHaveAttribute(
+    'href',
+    `/play/${playthroughId}`,
+  );
+
+  // Back on the game screen, "Open in new tab" points at that standalone page.
+  await page.goto(gameUrl);
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('link', { name: /Journal, \d+ entr/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Journal' });
+  await expect(dialog).toBeVisible();
+  const href = await dialog.getByRole('link', { name: 'Open in new tab' }).getAttribute('href');
+  expect(href).toMatch(/\/play\/.+\/journal$/);
+  const newTab = await context.newPage();
+  await newTab.goto(href!);
+  await expect(newTab.getByRole('heading', { name: 'Journal' })).toBeVisible();
+  await newTab.close();
 });
