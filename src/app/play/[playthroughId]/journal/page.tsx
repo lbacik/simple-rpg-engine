@@ -5,6 +5,7 @@ import { getDatabase, PlaythroughStore } from '@/persistence/index';
 import { getSessionHash } from '@/app/lib/session';
 import {
   JOURNAL_BATCH_SIZE,
+  journalEntriesText,
   parseJournalCursor,
   renderJournalEntries,
 } from '@/app/lib/journal';
@@ -55,24 +56,31 @@ export default async function JournalPage({
   const rendered = renderJournalEntries(batch.entries, catalogue, characterName);
 
   return (
-    <main>
-      <p>
-        <a href={`/play/${playthrough.id}`}>Back to the game</a>
-      </p>
-      <h1>Journal</h1>
-      {total === 0 ? (
-        <p className="meta">Nothing has happened yet.</p>
-      ) : (
-        <>
-          <p className="meta">{total === 1 ? '1 entry.' : `${total} entries.`}</p>
-          <JournalEntries
-            playthroughId={playthrough.id}
-            initialEntries={rendered}
-            initialNextCursor={batch.nextCursor ?? null}
-            total={total}
-          />
-        </>
-      )}
+    <main className="journal-page">
+      <article className="reading-card">
+        <div className="reading-body">
+          <p>
+            <a className="button secondary" href={`/play/${playthrough.id}`}>
+              {catalogue.journal.backToGame}
+            </a>
+          </p>
+          <h1>{catalogue.journal.title}</h1>
+          {total === 0 ? (
+            <p className="meta">{catalogue.journal.empty}</p>
+          ) : (
+            <>
+              <p className="meta">{catalogue.journal.total(total)}</p>
+              <JournalEntries
+                playthroughId={playthrough.id}
+                initialEntries={rendered}
+                initialNextCursor={batch.nextCursor ?? null}
+                total={total}
+                text={journalEntriesText(catalogue)}
+              />
+            </>
+          )}
+        </div>
+      </article>
     </main>
   );
 }

@@ -30,13 +30,13 @@ test('a mid-playthrough switch keeps earlier narration with flags, in Polish UI'
 
   // The intro is a result panel; Continue reaches the on-enter Scene.
   await page.getByRole('link', { name: 'Continue' }).click();
-  const title = page.locator('article.reading h1');
+  const title = page.locator('article.reading-card h1');
   await expect(title.locator('span[lang="en"]')).toHaveText('The Near Bridge');
 
   // A Choice without a Test: deterministic, one step with Choice, Outcome,
   // state change and the follow-on Scene entries, all presented in English.
   await page.getByRole('button', { name: 'Ask what key he means.' }).click();
-  const panel = page.locator('article.reading');
+  const panel = page.locator('article.reading-card');
   await expect(panel).toContainText('The brass key, lost on the far side');
   await expect(panel).toContainText('Received: Brass Key');
 
@@ -59,9 +59,13 @@ test('a mid-playthrough switch keeps earlier narration with flags, in Polish UI'
   // entry carries its language with a flag after its Polish type label, while
   // the engine-generated state change carries no flag and only its name keeps
   // the presented language.
+  const gameUrl = page.url();
   await page.locator('#launcher-journal').click();
-  await expect(page).toHaveURL(/\/play\/[^/]+\/journal$/);
-  const list = page.locator('ol');
+  const journalDialog = page.getByRole('dialog', { name: 'Dziennik' });
+  await expect(journalDialog).toBeVisible();
+  // The modal opens over the game screen instead of navigating away.
+  expect(page.url()).toBe(gameUrl);
+  const list = journalDialog.locator('ol');
   await expect(list.locator('li')).toHaveCount(6);
 
   const intro = list.locator('li', { hasText: 'Rain has swollen the river' });

@@ -1,6 +1,7 @@
-// The journal modal (docs/spec/ui.md, journal): every "View journal" link
-// that sits next to play opens the Journal over the game screen instead of
-// navigating away, with an "Open in new tab" link to the full page.
+// The journal modal (docs/spec/ui.md, journal): the side-panel Journal
+// launcher, the Ending screen's "View journal" control and every other "View
+// journal" link that sits next to play open the Journal over the game screen
+// instead of navigating away, with an "Open in new tab" link to the full page.
 //
 // The trigger is a plain anchor to the Journal URL, so navigating directly,
 // reloading, or following the link without JavaScript still shows the full
@@ -18,7 +19,11 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { journalHref, type RenderedJournalEntry } from '../../../lib/journal';
+import {
+  journalHref,
+  type JournalEntriesText,
+  type RenderedJournalEntry,
+} from '../../../lib/journal';
 import { JournalEntries } from './journal-entries';
 
 /**
@@ -26,7 +31,7 @@ import { JournalEntries } from './journal-entries';
  * these through the catalogue and passes them as props, so no catalogue is
  * shipped to the browser (docs/spec/architecture.md, interface text).
  */
-export type JournalModalText = {
+export type JournalModalText = JournalEntriesText & {
   viewJournal: string;
   title: string;
   total: string;
@@ -40,7 +45,10 @@ export function JournalModalLink({
   initialNextCursor,
   total,
   className,
+  id,
+  ariaLabel,
   text,
+  children,
 }: {
   playthroughId: string;
   initialEntries: RenderedJournalEntry[];
@@ -48,8 +56,14 @@ export function JournalModalLink({
   total: number;
   /** The trigger styling of the screen it sits on (for example the Ending screen's secondary button). */
   className?: string;
+  /** Id of the trigger, so focus returns to it on close (for example the side-panel launcher id). */
+  id?: string;
+  /** Accessible name of the trigger, when its visible content needs one (for example a launcher with a sublabel). */
+  ariaLabel?: string;
   /** Interface Text, rendered by the server through the catalogue. */
   text: JournalModalText;
+  /** Trigger content; defaults to the "View journal" label. */
+  children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLAnchorElement | null>(null);
@@ -117,8 +131,15 @@ export function JournalModalLink({
 
   return (
     <>
-      <a ref={triggerRef} href={href} className={className} onClick={openModal}>
-        {text.viewJournal}
+      <a
+        ref={triggerRef}
+        id={id}
+        href={href}
+        className={className}
+        aria-label={ariaLabel}
+        onClick={openModal}
+      >
+        {children ?? text.viewJournal}
       </a>
       {open ? (
         <div
@@ -154,6 +175,7 @@ export function JournalModalLink({
                 initialEntries={initialEntries}
                 initialNextCursor={initialNextCursor}
                 total={total}
+                text={text}
               />
             </div>
           </div>

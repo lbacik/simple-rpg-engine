@@ -105,8 +105,22 @@ test('the Inventory modal unequips and equips with the modal open', async ({ pag
   expect(page.url()).not.toMatch(/panel=/);
   await expect(page.getByRole('link', { name: /Inventory, \d+ items/ })).toBeFocused();
 
-  // The Journal launcher reaches the full Journal page.
+  // The Journal launcher opens the Journal in a modal over the game screen,
+  // with an "Open in new tab" link to the full Journal page.
+  const gameUrl = page.url();
   await page.getByRole('link', { name: /Journal, \d+ entr/ }).click();
+  const journalDialog = page.getByRole('dialog', { name: 'Journal' });
+  await expect(journalDialog).toBeVisible();
+  expect(page.url()).toBe(gameUrl);
+  await expect(journalDialog.getByRole('link', { name: 'Open in new tab' })).toHaveAttribute(
+    'href',
+    /\/journal$/,
+  );
+  await page.keyboard.press('Escape');
+  await expect(journalDialog).toHaveCount(0);
+
+  // The standalone Journal page stays directly reachable.
+  await page.goto(`${gameUrl.split('?')[0]}/journal`);
   await expect(page).toHaveURL(/\/journal$/);
   await expect(page.getByRole('heading', { name: 'Journal' })).toBeVisible();
 });

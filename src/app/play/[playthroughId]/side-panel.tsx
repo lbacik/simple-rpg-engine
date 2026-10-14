@@ -2,13 +2,15 @@
 // panel): a status card (medal with a Health ring, name, Template, readable
 // Health line, segmented Health bar, effective Attributes), the Character /
 // Inventory / Journal launchers, then the compact Location map with an Expand
-// link. The Character sheet and the inventory open in modals over the
-// game screen; on phones a fourth Map launcher opens the map in a modal.
+// link. The Character sheet, the inventory and the Journal open in modals over
+// the game screen; on phones a fourth Map launcher opens the map in a modal.
 //
-// The open modal is part of the URL (`?panel=`): the server renders it open
-// from the URL, so the launchers are plain links and the panel works without
-// JavaScript. The modal content is today's Character and Inventory content,
-// unchanged.
+// The Character, inventory and map modals are part of the URL (`?panel=`): the
+// server renders them open from the URL, so those launchers are plain links
+// and the panel works without JavaScript. The Journal modal is client state
+// over the same trigger link, so opening and closing it never reloads the game
+// screen and keeps its state; without JavaScript the trigger navigates to the
+// full Journal page.
 
 import Link from 'next/link';
 import type { Scenario } from '@/content/model';
@@ -22,9 +24,11 @@ import { EQUIPMENT_SLOTS } from '@/engine/inventory';
 import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { playHref, type PanelId } from '@/app/lib/panel';
+import { journalEntriesText, type RenderedJournalEntry } from '@/app/lib/journal';
 import { CharacterSheet, healthPercent, initial, isLowHealth } from './character-sheet';
 import { LocationMap } from './map';
 import { PanelModal } from './panel-modal';
+import { JournalModalLink } from './journal/journal-modal';
 import {
   InventoryBrowser,
   type InventoryBrowserText,
@@ -383,6 +387,8 @@ export function SidePanel({
   canTravel,
   forceReadOnly,
   journalTotal,
+  journalEntries,
+  journalNextCursor,
   seen,
   selectedItem,
   catalogue,
@@ -404,6 +410,10 @@ export function SidePanel({
   forceReadOnly?: boolean;
   /** Total Journal entries, for the Journal launcher sublabel. */
   journalTotal: number;
+  /** Newest Journal batch for the modal: newest first with the older-batch cursor. */
+  journalEntries: RenderedJournalEntry[];
+  /** Cursor for older batches inside the modal (`null` at the start of the Journal). */
+  journalNextCursor: number | null;
   seen?: number;
   /** The `?item=` tile the inventory detail pane selects. */
   selectedItem?: string;
@@ -473,16 +483,27 @@ export function SidePanel({
           <span className="launcher-label">{catalogue.inventory.title}</span>
           <span className="launcher-sub">{itemsCount}</span>
         </Link>
-        <Link
+        <JournalModalLink
+          playthroughId={playthroughId}
+          initialEntries={journalEntries}
+          initialNextCursor={journalNextCursor}
+          total={journalTotal}
           id="launcher-journal"
           className="launcher"
-          href={`/play/${playthroughId}/journal`}
-          aria-label={journalName}
+          ariaLabel={journalName}
+          text={{
+            ...journalEntriesText(catalogue),
+            viewJournal: catalogue.game.viewJournal,
+            title: catalogue.journal.title,
+            total: catalogue.journal.total(journalTotal),
+            openInNewTab: catalogue.journal.openInNewTab,
+            close: catalogue.journal.close,
+          }}
         >
           <LauncherIcon name="journal" />
           <span className="launcher-label">{catalogue.journal.title}</span>
           <span className="launcher-sub">{entriesCount}</span>
-        </Link>
+        </JournalModalLink>
         <Link
           id="launcher-map"
           className="launcher map-only"

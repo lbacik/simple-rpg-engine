@@ -194,6 +194,38 @@ export function modalJournalBatch(
   };
 }
 
+/**
+ * Every Interface Text string the entry list shows. The server renders these
+ * through the catalogue and passes them as props, so no catalogue is shipped
+ * to the browser (docs/spec/architecture.md, interface text). All strings:
+ * the `{step}`, `{seq}` and `{total}` placeholders in `position` and
+ * `stepNote` are filled in on the client as the reader scrolls.
+ */
+export type JournalEntriesText = {
+  empty: string;
+  loadingOlder: string;
+  loadFailed: string;
+  retryOlder: string;
+  startReached: string;
+  olderEntries: string;
+  position: string;
+  stepNote: string;
+};
+
+/** The entry list's Interface Text in the current Interface Language. */
+export function journalEntriesText(catalogue: Catalogue): JournalEntriesText {
+  return {
+    empty: catalogue.journal.empty,
+    loadingOlder: catalogue.journal.loadingOlder,
+    loadFailed: catalogue.journal.loadFailed,
+    retryOlder: catalogue.journal.retryOlder,
+    startReached: catalogue.journal.startReached,
+    olderEntries: catalogue.journal.olderEntries,
+    position: catalogue.journal.position,
+    stepNote: catalogue.journal.stepNote,
+  };
+}
+
 /** One journal entry rendered to HTML, ready to append to the list. */
 export type RenderedJournalEntry = {
   seq: number;
