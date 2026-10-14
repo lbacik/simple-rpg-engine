@@ -631,7 +631,7 @@ main:has(.game) {
   font-size: 1.15rem;
   font-weight: bold;
   color: #fff;
-  background: #284d40;
+  background: var(--chronicle-green, #284d40);
 }
 
 .status-text {
@@ -740,7 +740,7 @@ main:has(.game) {
   border-radius: 0.4375rem;
   background: none;
   text-decoration: none;
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
   text-align: center;
   font-size: 0.625rem;
 }
@@ -750,12 +750,12 @@ main:has(.game) {
 }
 
 .launcher:focus-visible {
-  outline: 2px solid #284d40;
+  outline: 2px solid var(--chronicle-green, #284d40);
   outline-offset: 2px;
 }
 
 .launcher-icon {
-  color: #284d40;
+  color: var(--chronicle-green, #284d40);
 }
 
 .launcher-label {
@@ -779,7 +779,10 @@ main:has(.game) {
   }
 }
 
-/* Panel modals: Character, Inventory and (on phones) the map. */
+/* Panel modals: Character, Inventory and (on phones) the map. The surface,
+ * palette, typography, borders, spacing, icon treatment and focus styles
+ * follow the illustrated-chronicle game screen (variant A); the Character and
+ * inventory content, structure and behaviour are unchanged. */
 .panel-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -787,7 +790,7 @@ main:has(.game) {
   display: grid;
   place-items: center;
   padding: 1.5rem 1rem;
-  background: rgb(42 37 29 / 0.45);
+  background: rgb(37 48 41 / 0.5);
 }
 
 .panel-modal {
@@ -795,14 +798,64 @@ main:has(.game) {
   width: min(36rem, 100%);
   max-height: min(85dvh, 60rem);
   overflow: auto;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: 0.6rem;
-  padding: 1rem 1.1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--chronicle-line, #dce3db);
+  border-radius: 0.875rem;
+  box-shadow: 0 1rem 3rem rgb(38 60 53 / 0.25);
+  padding: 1.75rem 2.25rem 2rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #263c35;
 }
 
 .panel-modal:focus {
   outline: none;
+}
+
+.panel-modal h1,
+.panel-modal h2,
+.panel-modal h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  color: #263c35;
+}
+
+.panel-modal .meta {
+  color: var(--chronicle-sub, #66766c);
+}
+
+.panel-modal a {
+  color: var(--chronicle-green, #284d40);
+}
+
+/* One amber focus ring for everything in the modal, matching the game screen
+ * (`.game button/a/summary:focus-visible`): 3px `#ba753d` with a 3px offset. */
+.panel-modal button:focus-visible,
+.panel-modal a:focus-visible,
+.panel-modal-close:focus-visible,
+.inv-tile:focus-visible {
+  outline: 3px solid #ba753d;
+  outline-offset: 3px;
+}
+
+.panel-modal .notice {
+  background: var(--chronicle-cream, #faf8f1);
+  border-left: 3px solid #a8321f;
+  border-radius: 0 0.35rem 0.35rem 0;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.panel-modal .button.secondary {
+  background: transparent;
+  color: var(--chronicle-green, #284d40);
+  border: 1px solid var(--chronicle-green, #284d40);
+}
+
+.panel-modal .button.secondary:hover:not(:disabled) {
+  background: #edf2ec;
+  border-color: var(--chronicle-green, #284d40);
 }
 
 /* Character sheet: header with a large Health medal, Attributes with pips,
@@ -839,12 +892,13 @@ main:has(.game) {
 
 .sheet-hero-text .meta {
   margin: 0.15rem 0 0;
+  color: var(--chronicle-sub, #66766c);
 }
 
 .sheet-lede {
   margin: 0.35rem 0 0;
   font-style: italic;
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
 }
 
 .sheet-cols {
@@ -855,8 +909,8 @@ main:has(.game) {
 }
 
 .sheet h3 {
-  font-size: 1rem;
-  margin: 0.9rem 0 0.25rem;
+  font-size: 1.05rem;
+  margin: 1.25rem 0 0.5rem;
 }
 
 .sheet-attrs {
@@ -870,16 +924,17 @@ main:has(.game) {
   grid-template-columns: 5.5rem auto 1fr;
   align-items: center;
   gap: 0.2rem 0.75rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px dashed var(--rule);
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--chronicle-line, #dce3db);
 }
 
 .sheet-attr-name {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .sheet-attr-total {
   justify-self: end;
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.5rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -888,7 +943,7 @@ main:has(.game) {
 .sheet-attr-src {
   grid-column: 1 / -1;
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
 }
 
 /* Attribute pips: filled circles for base, gold diamonds for counted
@@ -902,12 +957,13 @@ main:has(.game) {
   width: 0.85rem;
   height: 0.85rem;
   border-radius: 50%;
-  border: 1.5px solid var(--rule);
+  border: 1.5px solid var(--chronicle-line, #dce3db);
+  background: #fff;
 }
 
 .pip.base {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--chronicle-green, #284d40);
+  border-color: var(--chronicle-green, #284d40);
 }
 
 .pip.bonus {
@@ -923,6 +979,7 @@ main:has(.game) {
 
 .sheet-health {
   margin: 0.25rem 0;
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.75rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -939,16 +996,22 @@ main:has(.game) {
   grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px dashed var(--rule);
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--chronicle-line, #dce3db);
 }
 
 .sheet-slots li.empty {
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
 }
 
 .sheet-slot-icon {
-  color: var(--accent);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: #edf2ec;
+  color: var(--chronicle-green, #284d40);
 }
 
 @media (max-width: 46rem) {
@@ -967,40 +1030,41 @@ main:has(.game) {
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--chronicle-line, #dce3db);
 }
 
 .panel-modal-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .panel-modal-close {
   flex: none;
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--rule);
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 50%;
   text-decoration: none;
-  color: var(--ink);
+  color: #263c35;
   font-size: 1.25rem;
   line-height: 1;
-  background: var(--card);
+  background: #fff;
 }
 
 .panel-modal-close:hover {
-  border-color: var(--accent);
-}
-
-.panel-modal-close:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  background: #edf2ec;
+  border-color: #8fa68f;
 }
 
 .panel-modal h2:not(.panel-modal-title) {
-  font-size: 1.05rem;
-  margin: 0.75rem 0 0.25rem;
+  font-size: 1.25rem;
+  margin: 1.25rem 0 0.5rem;
 }
 
 /* Phone: modals are full-screen. */
@@ -1016,6 +1080,7 @@ main:has(.game) {
     height: 100dvh;
     border: none;
     border-radius: 0;
+    padding: 1.5rem;
   }
 }
 
@@ -1040,18 +1105,18 @@ main:has(.game) {
 }
 
 .inv-doll {
-  background: linear-gradient(180deg, var(--card), #f3ecdc);
-  border: 1px solid var(--rule);
-  border-radius: 0.6rem;
-  padding: 0.25rem 0.85rem 0.85rem;
+  background: var(--chronicle-cream, #faf8f1);
+  border: 1px solid var(--chronicle-line, #dce3db);
+  border-radius: 0.75rem;
+  padding: 0.25rem 1rem 1rem;
 }
 
 .inv-slot {
   display: grid;
   grid-template-columns: 3.2rem minmax(0, 1fr);
   gap: 0.6rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--rule);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--chronicle-line, #dce3db);
 }
 
 .inv-slot:last-child {
@@ -1068,18 +1133,18 @@ main:has(.game) {
   border-radius: 0.5rem;
   display: grid;
   place-items: center;
-  background: var(--accent);
+  background: var(--chronicle-green, #284d40);
   color: #fff;
 }
 
 .inv-slot.empty .inv-slot-icon {
   background: transparent;
-  color: var(--muted);
-  border: 1.5px dashed var(--rule);
+  color: var(--chronicle-sub, #66766c);
+  border: 1.5px dashed var(--chronicle-line, #dce3db);
 }
 
 .inv-slot.empty em {
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
 }
 
 .inv-tiles {
@@ -1100,10 +1165,10 @@ main:has(.game) {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 0.6rem;
-  background: var(--card);
-  color: var(--accent);
+  background: #fff;
+  color: var(--chronicle-green, #284d40);
   font-family: inherit;
   cursor: pointer;
   padding: 0.5rem;
@@ -1112,21 +1177,17 @@ main:has(.game) {
 }
 
 .inv-tile:hover {
-  border-color: var(--accent);
-}
-
-.inv-tile:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  background: #f3f6ef;
+  border-color: #8fa68f;
 }
 
 .inv-tile.selected {
-  border: 2px solid var(--accent);
-  box-shadow: 0 0 0 3px rgb(90 74 47 / 0.15);
+  border: 2px solid var(--chronicle-green, #284d40);
+  box-shadow: 0 0 0 3px rgb(40 77 64 / 0.15);
 }
 
 .inv-tile-name {
-  color: var(--ink);
+  color: #263c35;
   font-size: 0.82rem;
   line-height: 1.2;
   text-align: center;
@@ -1137,12 +1198,12 @@ main:has(.game) {
   top: 0.3rem;
   right: 0.4rem;
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
   font-variant-numeric: tabular-nums;
 }
 
 .inv-spark {
-  color: var(--accent);
+  color: var(--chronicle-green, #284d40);
 }
 
 .inv-spark.corner {
@@ -1160,14 +1221,14 @@ main:has(.game) {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-align: center;
-  background: var(--accent);
+  background: var(--chronicle-green, #284d40);
   color: #fff;
   padding: 0.1rem 0;
 }
 
 .inv-detail {
   margin-top: 1rem;
-  border-top: 2px solid var(--accent);
+  border-top: 2px solid var(--chronicle-green, #284d40);
   padding-top: 0.75rem;
 }
 
@@ -1177,35 +1238,37 @@ main:has(.game) {
 
 .inv-desc {
   font-style: italic;
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
 }
 
 .inv-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  margin: 0.35rem 0;
+  padding: 0;
 }
 
 .inv-chips > span {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 999px;
   padding: 0 0.6rem;
   font-size: 0.85rem;
-  background: var(--card);
+  background: #fff;
 }
 
 .magic {
   display: inline-block;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--chronicle-green, #284d40);
   border-radius: 1rem;
   padding: 0 0.5rem;
   font-size: 0.85rem;
-  color: var(--accent);
+  color: var(--chronicle-green, #284d40);
   white-space: nowrap;
 }
 
 .reason {
-  color: var(--muted);
+  color: var(--chronicle-sub, #66766c);
   font-size: 0.9rem;
 }
 
