@@ -1,12 +1,14 @@
-# The gate. Runs on every branch push and pull request, and release.yml reuses
+# The gate. Runs on pull requests and on pushes to main, and release.yml reuses
 # it via workflow_call, so what blocks a production deploy is the same thing
-# that runs on every push. `branches: ['**']` matches no tag, so a `v*` tag
-# does not run the suite twice.
+# that runs on every PR. Pushes to other branches are not run separately: a
+# branch with an open PR would otherwise run the suite twice (push + PR). A
+# branch without a PR is not checked until one is opened. `branches: [main]`
+# matches no tag, so a `v*` tag does not run the suite twice.
 name: Test
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_call:
 
