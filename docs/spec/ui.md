@@ -48,7 +48,7 @@ Layout **A, "Illustrated chronicle"** (selected from the [light UI prototype](ht
 
 Explicit amendments to the prototype's variant A:
 
-- The Character and inventory modals keep their current controls; only their shared visual styling adapts here, and their detailed visual adaptation follows separately.
+- The Character and inventory modals keep their current content, structure and behaviour; their shared visual styling (light palette, typography, borders, spacing, icon treatment, focus styles and modal surface) follows the selected A layout.
 - The compact map card exposes an **Expand map** link, so the enlarged map modal is reachable on desktop too, not only behind the phone launcher.
 - The map keeps its current plain surface with authored/fallback coordinates, discovery and Connection semantics; the prototype's decorative terrain background is deferred.
 - The map keeps its app-level **"Show unseen exits"** control (off by default).
