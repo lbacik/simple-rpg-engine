@@ -169,6 +169,13 @@ export const en = {
     presetHelp: 'Choosing a preset fills in the values below; they stay editable.',
     attributesHelp: 'Attributes take 0–3 each, with no sum limit.',
     healthLabel: 'Starting Health (1–12)',
+    equipmentHeading: 'Equipment',
+    weaponLabel: 'Weapon',
+    outfitLabel: 'Outfit',
+    talismanLabel: 'Talisman',
+    consumablesLabel: 'Consumables (0–3)',
+    consumablesHelp: (heal: number): string =>
+      `Each restores ${whole(heal)} Health. Using one at full Health is rejected.`,
     characterLine: (
       might: number,
       agility: number,

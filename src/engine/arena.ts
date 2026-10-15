@@ -79,6 +79,8 @@ export type ArenaEnemyDefinition = z.infer<typeof arenaEnemySchema>;
 
 const arenaWeaponSchema = z
   .strictObject({
+    /** The weapon's name as presented; carried into attack events. */
+    name: z.string().trim().min(1).max(40).optional(),
     damage: z.number().int().min(2).max(4),
     reach: z.enum(['melee', 'ranged']).default('melee'),
   })
@@ -96,6 +98,19 @@ const arenaBonusesSchema = z.strictObject({
   presence: z.number().int().min(0).max(2).optional(),
 });
 
+const arenaConsumablesSchema = z.strictObject({
+  /** The Consumable id the Combat `use-item` form posts. */
+  id: z.string().trim().min(1).max(40),
+  /** The Consumable's name as presented; carried into use events. */
+  name: z.string().trim().min(1).max(40),
+  /** Health restored by one copy, 1-12 like Scenario Consumables. */
+  heal: z.number().int().min(1).max(12),
+  /** Copies held; one is consumed per use in Combat. */
+  count: z.number().int().min(0).max(3),
+});
+
+export type ArenaConsumables = z.infer<typeof arenaConsumablesSchema>;
+
 const arenaCharacterSchema = z.strictObject({
   attributes: arenaAttributesSchema,
   /** Current Health, 1-12. Maximum Health is always 12 (MAX_HEALTH). */
@@ -103,6 +118,8 @@ const arenaCharacterSchema = z.strictObject({
   weapon: arenaWeaponSchema.optional(),
   /** Passive Equipment bonuses, each 0-2; the +2 cap holds by construction. */
   bonuses: arenaBonusesSchema.optional(),
+  /** The held Consumables; absent or at zero count means none held. */
+  consumables: arenaConsumablesSchema.optional(),
 });
 
 export type ArenaCharacterDefinition = z.infer<typeof arenaCharacterSchema>;
@@ -193,6 +210,7 @@ export type ArenaCharacterState = {
   health: number;
   weapon?: ArenaWeapon;
   bonuses?: { might?: number; agility?: number; wits?: number; presence?: number };
+  consumables?: ArenaConsumables;
 };
 
 /**
@@ -222,10 +240,15 @@ function effectiveAttributes(state: ArenaState): ArenaAttributes {
 }
 
 /** The Character's attack Damage and Reach: the weapon's, or 2 / melee bare. */
-function characterAttack(state: ArenaState): { damage: number; reach: 'melee' | 'ranged' } {
+function characterAttack(state: ArenaState): {
+  damage: number;
+  reach: 'melee' | 'ranged';
+  weaponName: string | undefined;
+} {
   const weapon = state.character.weapon;
-  if (weapon !== undefined) return { damage: weapon.damage, reach: weapon.reach };
-  return { damage: 2, reach: 'melee' };
+  if (weapon !== undefined)
+    return { damage: weapon.damage, reach: weapon.reach, weaponName: weapon.name };
+  return { damage: 2, reach: 'melee', weaponName: undefined };
 }
 
 /** Surviving opponents, in Setup order. */
@@ -350,6 +373,9 @@ export function startArena(setup: ArenaSetup, rng: Rng): StartArenaResult {
       health: setup.character.health,
       ...(setup.character.weapon !== undefined ? { weapon: { ...setup.character.weapon } } : {}),
       ...(setup.character.bonuses !== undefined ? { bonuses: { ...setup.character.bonuses } } : {}),
+      ...(setup.character.consumables !== undefined
+        ? { consumables: { ...setup.character.consumables } }
+        : {}),
     },
     opponents,
   };
@@ -385,6 +411,11 @@ export type ArenaAction = {
    * target on an action that takes none, is rejected.
    */
   targetId?: string;
+  /**
+   * The Consumable id for `use-item`. With a single Consumable kind it may be
+   * omitted; a forged id, or an id on an action that takes none, is rejected.
+   */
+  itemId?: string;
   expectedStep: number;
 };
 
@@ -420,9 +451,12 @@ const TARGETED_ARENA_ACTIONS: ReadonlySet<ArenaCombatAction> = new Set([
  * selects the next Round's Intents; selection dice draw after the resolution
  * rolls, in Setup order.
  *
- * An Arena Setup carries no consumables, so `use-item` is rejected the way an
- * unavailable action is: nothing changes, `step` does not advance and no die
- * is drawn. Every other action resolves under the unchanged Combat rules.
+ * A `use-item` without a held Consumable, with a forged Consumable id, or at
+ * full Health is rejected the way an unavailable action is: nothing changes,
+ * `step` does not advance and no die is drawn. A legal use heals — and
+ * consumes one copy — only at execution, so a death earlier in the order
+ * stops the sequence before the use instead. Every other action resolves
+ * under the unchanged Combat rules.
  */
 export function applyArenaAction(
   state: ArenaState,
@@ -435,12 +469,16 @@ export function applyArenaAction(
   if (state.status !== 'active') {
     return { ok: false, reason: 'ended' };
   }
-  const { action: combatAction, targetId: submittedTarget } = input;
+  const { action: combatAction, targetId: submittedTarget, itemId: submittedItem } = input;
   const survivors = survivorsOf(state);
 
   // Target validation: a missing, unknown or defeated target, or a target on
   // an action that takes none, is rejected before anything resolves.
+  // A Consumable id travels only on `use-item`.
   let targetId = submittedTarget;
+  if (submittedItem !== undefined && combatAction !== 'use-item') {
+    return { ok: false, reason: 'illegal-action' };
+  }
   if (targetId !== undefined && !TARGETED_ARENA_ACTIONS.has(combatAction)) {
     return { ok: false, reason: 'illegal-action' };
   }
@@ -481,8 +519,17 @@ export function applyArenaAction(
       return { ok: false, reason: 'illegal-action' };
     }
   } else if (combatAction === 'use-item') {
-    // An Arena Setup carries no consumables: always unavailable.
-    return { ok: false, reason: 'illegal-action' };
+    // A Consumable use needs a held copy below full Health: at full Health
+    // nothing is consumed and no Round resolves, like Scenario Combat.
+    const consumables = state.character.consumables;
+    if (
+      consumables === undefined ||
+      consumables.count < 1 ||
+      (submittedItem !== undefined && submittedItem !== consumables.id) ||
+      state.character.health >= MAX_HEALTH
+    ) {
+      return { ok: false, reason: 'illegal-action' };
+    }
   } else if (combatAction !== 'escape' && combatAction !== 'distract') {
     return { ok: false, reason: 'illegal-action' };
   }
@@ -506,6 +553,10 @@ export function applyArenaAction(
     waryUntil[opponent.id] = opponent.waryUntilRound;
   }
   let health = state.character.health;
+  // The Consumables still held: a legal use replaces this with the
+  // decremented copy at execution; every exit path below stores it back.
+  let remainingConsumables: ArenaConsumables | undefined =
+    state.character.consumables === undefined ? undefined : { ...state.character.consumables };
 
   const byId = new Map(state.opponents.map((opponent) => [opponent.id, opponent]));
   const opponentOf = (id: string): ArenaOpponentState => {
@@ -783,6 +834,7 @@ export function applyArenaAction(
     actions.push({
       actor: characterRef, kind: 'attack', speed: 'normal', order, target: ref,
       status: 'executed', roll, damage: roll.hit ? attack.damage : 0,
+      ...(attack.weaponName !== undefined ? { weaponName: attack.weaponName } : {}),
       ...(defeatedParticipants !== undefined ? { defeatedParticipants } : {}),
     });
     if (defeatedParticipants !== undefined && arenaDefeated()) {
@@ -891,6 +943,27 @@ export function applyArenaAction(
     }
   }
 
+  /** The Character's Consumable use at its place in the order: never cancelled. */
+  function resolveUseItem(order: number): void {
+    const consumables = remainingConsumables;
+    if (consumables === undefined || consumables.count < 1) {
+      throw new Error('use-item committed without a consumable');
+    }
+    // Heals — and consumes — only at execution, from the current Health, so
+    // earlier Enemy actions in the order reduce the waste. A death earlier in
+    // the order stops the sequence before this action instead.
+    const restored = Math.min(MAX_HEALTH, health + consumables.heal) - health;
+    health += restored;
+    remainingConsumables = { ...consumables, count: consumables.count - 1 };
+    actions.push({
+      actor: characterRef, kind: 'use-item', speed: characterSpeed, order,
+      status: 'executed',
+      itemId: consumables.id,
+      itemName: consumables.name,
+      healed: restored,
+    });
+  }
+
   /** The Character's action at its place in the order. */
   function resolveCharacterAction(order: number): void {
     if (combatAction === 'advance') {
@@ -899,6 +972,8 @@ export function applyArenaAction(
       resolveFallBack(order);
     } else if (combatAction === 'escape') {
       resolveEscape(order);
+    } else if (combatAction === 'use-item') {
+      resolveUseItem(order);
     } else if (combatAction === 'defend') {
       resolveDefend(order);
     } else if (combatAction === 'distract') {
@@ -949,7 +1024,11 @@ export function applyArenaAction(
       ...state,
       status: 'death',
       step: state.step + 1,
-      character: { ...state.character, health: 0 },
+      character: {
+        ...state.character,
+        health: 0,
+        ...(remainingConsumables === undefined ? {} : { consumables: remainingConsumables }),
+      },
       opponents: state.opponents.map((opponent) => ({
         ...opponent,
         range: ranges[opponent.id] ?? opponent.range,
@@ -972,7 +1051,11 @@ export function applyArenaAction(
       ...state,
       status: 'victory',
       step: state.step + 1,
-      character: { ...state.character, health },
+      character: {
+        ...state.character,
+        health,
+        ...(remainingConsumables === undefined ? {} : { consumables: remainingConsumables }),
+      },
       opponents: state.opponents.map((opponent) => ({
         ...opponent,
         range: ranges[opponent.id] ?? opponent.range,
@@ -998,7 +1081,11 @@ export function applyArenaAction(
       ...state,
       status: 'escape',
       step: state.step + 1,
-      character: { ...state.character, health },
+      character: {
+        ...state.character,
+        health,
+        ...(remainingConsumables === undefined ? {} : { consumables: remainingConsumables }),
+      },
       opponents: state.opponents.map((opponent) => ({
         ...opponent,
         range: ranges[opponent.id] ?? opponent.range,
@@ -1035,7 +1122,11 @@ export function applyArenaAction(
     ...state,
     step: state.step + 1,
     round: nextRound,
-    character: { ...state.character, health },
+    character: {
+      ...state.character,
+      health,
+      ...(remainingConsumables === undefined ? {} : { consumables: remainingConsumables }),
+    },
     opponents: state.opponents.map((opponent) => {
       if (defeated(opponent.id)) {
         return {
@@ -1073,18 +1164,28 @@ export type ArenaDisabledReason =
   | 'already-near'
   | 'already-far'
   | 'needs-near'
+  | 'full-health'
   | 'wary';
 
 export type ArenaAvailability = {
-  id: Exclude<ArenaCombatAction, 'use-item'>;
+  id: ArenaCombatAction;
   enabled: boolean;
   reason?: ArenaDisabledReason;
+  /** The Consumable a `use-item` entry uses; absent on every other action. */
+  itemId?: string;
+  /** The Consumable's name as presented; present only on `use-item`. */
+  itemName?: string;
+  /** The equipped weapon's name as presented; absent from Attack when unarmed. */
+  weaponName?: string;
 };
 
 /**
- * Whether each Character action is available in the current fight. There are
- * no consumable entries: an Arena Setup carries no consumables. The entry
- * point rejects unavailable actions independently.
+ * Whether each Character action is available in the current fight: Advance
+ * while a survivor is Far, Fall back while one is Near, Attack when the
+ * Character's Reach allows the Range to a survivor, Defend and Escape always,
+ * Distract while a survivor is not Wary, and one Use entry per held
+ * Consumable kind while below full Health. The entry point rejects
+ * unavailable actions independently.
  */
 export function arenaActions(state: ArenaState): ArenaAvailability[] {
   if (state.status !== 'active') {
@@ -1096,15 +1197,34 @@ export function arenaActions(state: ArenaState): ArenaAvailability[] {
     attack.reach === 'ranged' || survivors.some((opponent) => opponent.range === 'near');
   const anyFar = survivors.some((opponent) => opponent.range === 'far');
   const anyNear = survivors.some((opponent) => opponent.range === 'near');
+  const belowFull = state.character.health < MAX_HEALTH;
   const distractable = survivors.some(
     (opponent) => (opponent.waryUntilRound ?? 0) < state.round,
   );
+  const consumables = state.character.consumables;
+  const consumableHeld = consumables !== undefined && consumables.count > 0;
   return [
     { id: 'advance', enabled: anyFar, ...(anyFar ? {} : { reason: 'already-near' as const }) },
     { id: 'fall-back', enabled: anyNear, ...(anyNear ? {} : { reason: 'already-far' as const }) },
-    { id: 'attack', enabled: inReach, ...(inReach ? {} : { reason: 'needs-near' as const }) },
+    {
+      id: 'attack',
+      enabled: inReach,
+      ...(inReach ? {} : { reason: 'needs-near' as const }),
+      ...(attack.weaponName === undefined ? {} : { weaponName: attack.weaponName }),
+    },
     { id: 'defend', enabled: true },
     { id: 'distract', enabled: distractable, ...(distractable ? {} : { reason: 'wary' as const }) },
+    ...(consumableHeld
+      ? [
+          {
+            id: 'use-item' as const,
+            enabled: belowFull,
+            ...(belowFull ? {} : { reason: 'full-health' as const }),
+            itemId: consumables.id,
+            itemName: consumables.name,
+          },
+        ]
+      : []),
     { id: 'escape', enabled: true },
   ];
 }
@@ -1138,12 +1258,13 @@ export function arenaResult(state: ArenaState): ArenaResult | undefined {
 // ---------------------------------------------------------------------------
 
 /** The action group of every Character action playable in the Arena. */
-const ARENA_ACTION_GROUP: Record<Exclude<ArenaCombatAction, 'use-item'>, CombatActionGroup> = {
+const ARENA_ACTION_GROUP: Record<ArenaCombatAction, CombatActionGroup> = {
   advance: 'position',
   'fall-back': 'position',
   attack: 'fight',
   defend: 'fight',
   distract: 'fight',
+  'use-item': 'items',
   escape: 'leave',
 };
 

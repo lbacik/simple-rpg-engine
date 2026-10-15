@@ -13,6 +13,14 @@ import { CombatPanel } from '../play/[playthroughId]/combat-panel';
 import { arenaCombatAction, resetArenaAction } from './actions';
 import { BESTIARY, DEFAULT_ARENA_CHARACTER, bestiaryDescription, bestiaryName } from './bestiary';
 import { arenaCombatView, arenaFoeName, arenaTacticalRounds } from './combat-view';
+import {
+  ARENA_CONSUMABLE,
+  OUTFITS,
+  TALISMANS,
+  WEAPON_OPTIONS,
+  equipmentDescription,
+  equipmentName,
+} from './equipment';
 import { getArenaPresets } from './presets';
 import ArenaSetupForm from './setup-form';
 
@@ -61,6 +69,30 @@ export default async function ArenaPage({
   // Character controls, which stay editable.
   if (run === null) {
     const character = DEFAULT_ARENA_CHARACTER;
+    // Equipment options as plain localized props: the setup form posts raw ids
+    // back, and the Start action re-validates every one, so the fight never
+    // trusts the browser. Weapon meta is Damage · Reach; bonus meta is +1
+    // Attribute, empty on the empty slots.
+    const weapons = WEAPON_OPTIONS.map((option) => ({
+      id: option.id,
+      name: equipmentName(option, language),
+      description: equipmentDescription(option, language),
+      meta: catalogue.inventory.weaponStats(option.damage, catalogue.reach[option.reach]),
+    }));
+    const bonusMeta = (bonus: 'might' | 'agility' | 'wits' | 'presence' | undefined): string =>
+      bonus === undefined ? '' : catalogue.inventory.bonusStat(catalogue.attributes[bonus]);
+    const outfits = OUTFITS.map((option) => ({
+      id: option.id,
+      name: equipmentName(option, language),
+      description: equipmentDescription(option, language),
+      meta: bonusMeta(option.bonus),
+    }));
+    const talismans = TALISMANS.map((option) => ({
+      id: option.id,
+      name: equipmentName(option, language),
+      description: equipmentDescription(option, language),
+      meta: bonusMeta(option.bonus),
+    }));
     return (
       <main>
         <h1>{catalogue.arena.title}</h1>
@@ -91,7 +123,15 @@ export default async function ArenaPage({
           defaults={{
             attributes: { ...character.attributes },
             health: character.health,
+            weapon: 'unarmed',
+            outfit: 'none',
+            talisman: 'none',
+            consumables: 1,
           }}
+          weapons={weapons}
+          outfits={outfits}
+          talismans={talismans}
+          consumablesMax={ARENA_CONSUMABLE.maxQuantity}
           strings={{
             bestiaryLegend: catalogue.arena.bestiaryHeading,
             opponentOne: catalogue.arena.opponentOne,
@@ -105,6 +145,12 @@ export default async function ArenaPage({
             presetHelp: catalogue.arena.presetHelp,
             attributesHelp: catalogue.arena.attributesHelp,
             healthLabel: catalogue.arena.healthLabel,
+            equipmentHeading: catalogue.arena.equipmentHeading,
+            weaponLabel: catalogue.arena.weaponLabel,
+            outfitLabel: catalogue.arena.outfitLabel,
+            talismanLabel: catalogue.arena.talismanLabel,
+            consumablesLabel: catalogue.arena.consumablesLabel,
+            consumablesHelp: catalogue.arena.consumablesHelp(ARENA_CONSUMABLE.heal),
             start: catalogue.arena.start,
             attributeLabels: {
               might: catalogue.attributes.might,
