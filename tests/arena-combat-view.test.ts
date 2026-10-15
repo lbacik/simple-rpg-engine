@@ -67,4 +67,52 @@ describe('arena combat adapter', () => {
     expect(arenaCombatView({ ...state, status: 'victory' }, 'en')).toBeUndefined();
     expect(arenaFoeName(state)).toBe('Grey Wolf');
   });
+
+  it('names two opponents and shows each lane with its own Range and Intent', async () => {
+    const { buildArenaSetupForOpponents } = await import('../src/app/arena/bestiary');
+    const setup = buildArenaSetupForOpponents(
+      [
+        { enemyId: 'grey-wolf', range: 'near' },
+        { enemyId: 'bandit-archer', range: 'far' },
+      ],
+      'en',
+    );
+    if (setup === undefined) throw new Error('expected a setup');
+    const validated = validateArenaSetup(setup);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error('fixture setup should validate');
+    // The archer is heavy: its preparing draw rolls high, so no Prepare.
+    const { state } = startArena(validated.setup, () => 6);
+    expect(arenaFoeName(state)).toContain('Grey Wolf');
+    expect(arenaFoeName(state)).toContain('Bandit Archer');
+    const combat = arenaCombatView(state, 'en');
+    expect(combat?.arena.participants).toHaveLength(2);
+    const ranges = (combat?.arena.participants ?? []).map((lane) => lane.range);
+    expect(ranges).toEqual(['near', 'far']);
+    expect(combat?.arena.order).toHaveLength(2);
+  });
+
+  it('tells duplicate foes apart by letter', async () => {
+    const { buildArenaSetupForOpponents } = await import('../src/app/arena/bestiary');
+    const setup = buildArenaSetupForOpponents(
+      [
+        { enemyId: 'grey-wolf', range: 'near' },
+        { enemyId: 'grey-wolf', range: 'far' },
+      ],
+      'en',
+    );
+    if (setup === undefined) throw new Error('expected a setup');
+    const validated = validateArenaSetup(setup);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error('fixture setup should validate');
+    const { state } = startArena(validated.setup, () => {
+      throw new Error('no dice expected');
+    });
+    expect(arenaFoeName(state)).toBe('Grey Wolf A + Grey Wolf B');
+    const combat = arenaCombatView(state, 'en');
+    const names = (combat?.arena.participants ?? []).map((lane) => lane.name);
+    expect(names).toEqual(['Grey Wolf', 'Grey Wolf']);
+    const ordinals = (combat?.arena.participants ?? []).map((lane) => lane.ordinal);
+    expect(ordinals).toEqual([1, 2]);
+  });
 });

@@ -20,19 +20,38 @@ import { bestiaryById, bestiaryDescription } from './bestiary';
 export type ArenaCombat = Extract<GameView, { kind: 'combat' }>;
 
 /**
- * The fight's opponent, named as stored when the Setup was built — the way
+ * One opponent's display name: its stored name plus the ordinal letter when
+ * the fight holds two of the same kind ("Grey Wolf A"), mirroring the Combat
+ * lanes, so duplicates are distinguishable. Author ids are never shown.
+ */
+export function arenaFoeDisplayName(state: ArenaState, opponentId: string): string {
+  const opponent = state.opponents.find((candidate) => candidate.id === opponentId);
+  if (opponent === undefined) return '';
+  const sameName = state.opponents.filter((candidate) => candidate.name === opponent.name);
+  if (sameName.length <= 1) return opponent.name;
+  const ordinal = sameName.findIndex((candidate) => candidate.id === opponent.id) + 1;
+  return `${opponent.name} ${String.fromCharCode(64 + ordinal)}`;
+}
+
+/**
+ * The fight's opponents, named as stored when the Setup was built — the way
  * the Journal stores Scenario text as presented, so a mid-fight language
- * switch never renames the foe out from under the stored narration.
+ * switch never renames a foe out from under the stored narration. One foe
+ * reads as its name; two read joined with " + ".
  */
 export function arenaFoeName(state: ArenaState): string {
-  return state.opponents[0]?.name ?? '';
+  return state.opponents.map((opponent) => arenaFoeDisplayName(state, opponent.id)).join(' + ');
 }
 
 function arenaFoeDescription(state: ArenaState, language: InterfaceLanguage): string {
-  const first = state.opponents[0];
-  if (first === undefined) return '';
-  const entry = bestiaryById(first.id);
-  return entry === undefined ? '' : bestiaryDescription(entry, language);
+  const texts = state.opponents.map((opponent) => {
+    // A duplicate's participant id carries a "-2" suffix: strip it to find
+    // the Bestiary entry the opponent was built from.
+    const entry = bestiaryById(opponent.id) ?? bestiaryById(opponent.id.replace(/-2$/, ''));
+    if (entry === undefined) return '';
+    return bestiaryDescription(entry, language);
+  });
+  return texts.filter((text) => text !== '').join('\n\n');
 }
 
 /**

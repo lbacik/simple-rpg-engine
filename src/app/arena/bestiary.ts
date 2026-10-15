@@ -430,3 +430,113 @@ export function buildArenaSetup(
     ],
   };
 }
+
+/** One requested opponent: a Bestiary entry plus its own starting Range. */
+export type ArenaOpponentRequest = {
+  enemyId: string;
+  range: 'near' | 'far';
+};
+
+/**
+ * Distinct participant ids for the requested opponents: a unique kind keeps
+ * its Bestiary id, while a repeated kind keeps the id once and takes
+ * `<id>-2` for the second (truncated to the 40-character opponent id limit),
+ * so two of the same Enemy are distinguishable targets. The Combat
+ * presentation tells them apart by the stored ordinal letter.
+ */
+export function arenaOpponentIds(requests: ArenaOpponentRequest[]): string[] {
+  const counts = new Map<string, number>();
+  return requests.map((request) => {
+    const seen = (counts.get(request.enemyId) ?? 0) + 1;
+    counts.set(request.enemyId, seen);
+    if (seen === 1) return request.enemyId;
+    const suffixed = `${request.enemyId}-2`;
+    return suffixed.length <= 40 ? suffixed : suffixed.slice(-40);
+  });
+}
+
+/**
+ * One Arena Setup for a fight against one or two Bestiary entries, each at
+ * its own starting Range. The same Enemy may appear twice: duplicates receive
+ * distinct participant ids automatically. Undefined for an empty list, more
+ * than 2 opponents, an unknown entry id, or a Range outside near/far.
+ */
+export function buildArenaSetupForOpponents(
+  requests: ArenaOpponentRequest[],
+  language: InterfaceLanguage,
+  character: ArenaCharacterDefinition = DEFAULT_ARENA_CHARACTER,
+): ArenaSetup | undefined {
+  if (requests.length < 1 || requests.length > 2) return undefined;
+  const entries = requests.map((request) => bestiaryById(request.enemyId));
+  if (entries.some((entry) => entry === undefined)) return undefined;
+  if (requests.some((request) => request.range !== 'near' && request.range !== 'far')) {
+    return undefined;
+  }
+  const ids = arenaOpponentIds(requests);
+  return {
+    character: { attributes: { ...character.attributes }, health: character.health },
+    opponents: requests.map((request, index) => {
+      const entry = entries[index];
+      if (entry === undefined) throw new Error(`unknown bestiary entry "${request.enemyId}"`);
+      return {
+        id: ids[index] ?? request.enemyId,
+        enemy: { ...entry.enemy, name: bestiaryName(entry, language) },
+        range: request.range,
+      };
+    }),
+  };
+}
+
+function singleValue(formData: FormData, key: string): string | undefined {
+  const values = formData.getAll(key);
+  if (values.length > 1) return undefined;
+  const value = values[0];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return undefined;
+  return value;
+}
+
+/**
+ * Parse the Arena Setup form: two opponent slots (`enemy1`/`range1`,
+ * `enemy2`/`range2`, where an empty `enemy2` means no second opponent), with
+ * the pre-release single `enemy` field accepted as one opponent at its
+ * Bestiary Range. Returns the Setup with each opponent at its own starting
+ * Range, or undefined when the opponent count is not 1-2, an Enemy is
+ * unknown, a Range is outside near/far, a field repeats, or a third opponent
+ * (`enemy3`, `range3`, `opponents`) is submitted.
+ */
+export function arenaSetupFromForm(
+  formData: FormData,
+  language: InterfaceLanguage,
+  character: ArenaCharacterDefinition = DEFAULT_ARENA_CHARACTER,
+): ArenaSetup | undefined {
+  // A third opponent slot is never offered: its presence is a forged request.
+  for (const key of ['enemy3', 'range3', 'opponents', 'opponent3']) {
+    if (formData.has(key)) return undefined;
+  }
+  const enemy1Raw = singleValue(formData, 'enemy1');
+  const range1Raw = singleValue(formData, 'range1');
+  const enemy2Raw = singleValue(formData, 'enemy2');
+  const range2Raw = singleValue(formData, 'range2');
+  const legacyRaw = singleValue(formData, 'enemy');
+  // A repeated field value reads as undefined above only when the key exists.
+  for (const key of ['enemy1', 'range1', 'enemy2', 'range2', 'enemy']) {
+    if (formData.getAll(key).length > 1) return undefined;
+  }
+  const hasNewSlots = formData.has('enemy1') || formData.has('range1') || formData.has('enemy2') || formData.has('range2');
+  if (hasNewSlots) {
+    // Mixing the legacy single field with the new slots would exceed the
+    // offered opponents: reject it.
+    if (legacyRaw !== undefined && legacyRaw !== '') return undefined;
+    if (enemy1Raw === undefined || enemy1Raw === '') return undefined;
+    if (range1Raw !== 'near' && range1Raw !== 'far') return undefined;
+    const requests: ArenaOpponentRequest[] = [{ enemyId: enemy1Raw, range: range1Raw }];
+    if (enemy2Raw !== undefined && enemy2Raw !== '') {
+      if (range2Raw !== 'near' && range2Raw !== 'far') return undefined;
+      requests.push({ enemyId: enemy2Raw, range: range2Raw });
+    }
+    return buildArenaSetupForOpponents(requests, language, character);
+  }
+  if (legacyRaw === undefined || legacyRaw === '') return undefined;
+  return buildArenaSetup(legacyRaw, language, character);
+}

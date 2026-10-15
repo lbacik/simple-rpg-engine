@@ -52,10 +52,13 @@ export default async function ArenaPage({
       ? null
       : await new ArenaStore(getDatabase()).findBySession(sessionHash);
 
-  // No run: the Arena Setup. The first entry is pre-selected and the controls
-  // carry the default Character, so Start works without JavaScript and without
-  // touching anything; with JavaScript a preset fills the controls, which stay
-  // editable.
+  // No run: the Arena Setup. Two opponent slots, each with its own starting
+  // Range; the second slot defaults to none. Only these two slots exist, so a
+  // third opponent is impossible in the UI; the server validates the count and
+  // the Range values independently. The first entry is pre-selected and the
+  // controls carry the default Character, so Start works without JavaScript
+  // and without touching anything; with JavaScript a preset fills the
+  // Character controls, which stay editable.
   if (run === null) {
     const character = DEFAULT_ARENA_CHARACTER;
     return (
@@ -82,6 +85,7 @@ export default async function ArenaPage({
               catalogue.reach[entry.enemy.reach],
               catalogue.arena.behaviour[entry.enemy.behaviour],
             ),
+            range: entry.range,
           }))}
           presets={getArenaPresets(language)}
           defaults={{
@@ -90,6 +94,11 @@ export default async function ArenaPage({
           }}
           strings={{
             bestiaryLegend: catalogue.arena.bestiaryHeading,
+            opponentOne: catalogue.arena.opponentOne,
+            opponentTwo: catalogue.arena.opponentTwo,
+            noSecondOpponent: catalogue.arena.noSecondOpponent,
+            startingRange: catalogue.arena.startingRange,
+            rangeLabels: { near: catalogue.range.near, far: catalogue.range.far },
             characterLegend: catalogue.arena.characterHeading,
             presetLabel: catalogue.arena.presetLabel,
             presetCustom: catalogue.arena.presetCustom,
@@ -105,6 +114,29 @@ export default async function ArenaPage({
             },
           }}
         />
+        <section aria-label={catalogue.arena.bestiaryHeading}>
+          <h2>{catalogue.arena.bestiaryHeading}</h2>
+          <ul className="cards">
+            {BESTIARY.map((entry) => (
+              <li key={entry.id} className="card">
+                <strong>{bestiaryName(entry, language)}</strong>
+                <p>{bestiaryDescription(entry, language)}</p>
+                <p className="meta">
+                  {catalogue.arena.enemyLine(
+                    entry.enemy.attributes.might,
+                    entry.enemy.attributes.agility,
+                    entry.enemy.attributes.wits,
+                    entry.enemy.attributes.presence,
+                    entry.enemy.health,
+                    entry.enemy.damage,
+                    catalogue.reach[entry.enemy.reach],
+                    catalogue.arena.behaviour[entry.enemy.behaviour],
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     );
   }

@@ -21,7 +21,7 @@ import { isCombatAction } from '@/app/lib/combat-request';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import { ensureSessionId, getSessionHash, hashSessionId } from '@/app/lib/session';
 import { ArenaStore, getDatabase } from '@/persistence/index';
-import { buildArenaSetup, parseArenaCharacter } from './bestiary';
+import { arenaSetupFromForm, parseArenaCharacter } from './bestiary';
 
 const PATH = '/arena';
 
@@ -31,7 +31,6 @@ function unavailable(): never {
 }
 
 export async function startArenaAction(formData: FormData): Promise<never> {
-  const enemyId = String(formData.get('enemy') ?? '');
   const language = await getInterfaceLanguage();
   // The Character travels as five plain controls. Missing or non-integer
   // values parse to no Character; out-of-range values fail the engine
@@ -47,10 +46,10 @@ export async function startArenaAction(formData: FormData): Promise<never> {
     presence: field('presence'),
     health: field('health'),
   });
+  // The form offers two opponent slots, each with its own starting Range;
+  // the parser validates the opponent count (1-2) and the Range values.
   const setup =
-    enemyId === '' || character === undefined
-      ? undefined
-      : buildArenaSetup(enemyId, language, character);
+    character === undefined ? undefined : arenaSetupFromForm(formData, language, character);
   const validated = setup === undefined ? undefined : validateArenaSetup(setup);
   if (validated === undefined || !validated.ok) {
     await ensureSessionId();

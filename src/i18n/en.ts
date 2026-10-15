@@ -157,8 +157,12 @@ export const en = {
   arena: {
     title: 'Arena',
     description:
-      'Choose an opponent from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
+      'Choose one or two opponents from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
     bestiaryHeading: 'Bestiary',
+    opponentOne: 'Opponent 1',
+    opponentTwo: 'Opponent 2 (optional)',
+    noSecondOpponent: 'No second opponent',
+    startingRange: 'Starting Range',
     characterHeading: 'Your Character',
     presetLabel: 'Character preset',
     presetCustom: 'Custom',

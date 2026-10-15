@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The Arena page (issue #166): pick a Bestiary Enemy, press Start, fight
-// Rounds through the existing Combat presentation and actions, and land on
-// the result screen with a way back to the setup. Reloading mid-fight resumes
-// the same Combat.
+// The Arena page: pick Bestiary Enemies, press Start, fight Rounds through
+// the existing Combat presentation and actions, and land on the result screen
+// with a way back to the setup. Reloading mid-fight resumes the same Combat.
+// The setup offers exactly two opponent slots, each with its own starting
+// Range, so a third opponent is impossible in the UI.
 
 async function expectRound(page: Page, expected: number): Promise<void> {
   await expect(page.locator('.combat-header .combat-kicker').first()).toContainText(
@@ -40,10 +41,10 @@ test('arena: start against the wolf, fight Rounds, reload, reach the result', as
   await page.locator('header.topnav').getByRole('link', { name: 'Arena' }).click();
   await expect(page).toHaveURL(/\/arena$/);
   await expect(page.getByRole('heading', { name: 'Arena' })).toBeVisible();
-  await expect(page.getByText('Grey Wolf')).toBeVisible();
-  await expect(page.getByText('Cave Bear')).toBeVisible();
+  await expect(page.locator('ul.cards').getByText('Grey Wolf')).toBeVisible();
+  await expect(page.locator('ul.cards').getByText('Bandit Archer')).toBeVisible();
 
-  // The first entry is pre-selected: Start begins the Combat directly.
+  // Opponent 1 defaults to the first entry: Start begins the Combat directly.
   await page.getByRole('button', { name: 'Start the fight' }).click();
   await expect(page.getByLabel('Combat arena')).toBeVisible();
   await expectRound(page, 1);
@@ -69,7 +70,7 @@ test('arena: start against the wolf, fight Rounds, reload, reach the result', as
   // The result screen leads back to the setup, which lists the Bestiary again.
   await page.getByRole('button', { name: 'Back to setup' }).click();
   await expect(page.getByRole('heading', { name: 'Arena' })).toBeVisible();
-  await expect(page.getByText('Grey Wolf')).toBeVisible();
+  await expect(page.locator('ul.cards').getByText('Grey Wolf')).toBeVisible();
 });
 
 test('arena: escape attempts end on the result screen with a way back', async ({
@@ -80,7 +81,11 @@ test('arena: escape attempts end on the result screen with a way back', async ({
 
   // The archer starts Far, so Escape carries its +2 bonus through the Combat
   // panel like any other action.
-  await page.getByRole('radio', { name: 'Bandit Archer' }).check();
+  await page.locator('#arena-enemy1').selectOption('bandit-archer');
+  await page
+    .locator('fieldset', { has: page.getByText('Opponent 1', { exact: true }) })
+    .getByRole('radio', { name: 'Far' })
+    .check();
   await page.getByRole('button', { name: 'Start the fight' }).click();
   await expect(page.getByLabel('Combat arena')).toBeVisible();
   await expectRound(page, 1);
@@ -96,5 +101,52 @@ test('arena: escape attempts end on the result screen with a way back', async ({
 
   await page.getByRole('button', { name: 'Back to setup' }).click();
   await expect(page.getByRole('heading', { name: 'Arena' })).toBeVisible();
-  await expect(page.getByText('Bandit Archer')).toBeVisible();
+  await expect(page.locator('ul.cards').getByText('Bandit Archer')).toBeVisible();
+});
+
+test('arena: two opponents at different starting Ranges share the fight', async ({
+  page,
+}) => {
+  await page.goto('/arena');
+  await expect(page.getByRole('heading', { name: 'Arena' })).toBeVisible();
+
+  // The setup offers exactly two opponent slots — a third is impossible.
+  await expect(page.locator('#arena-enemy1')).toBeVisible();
+  await expect(page.locator('#arena-enemy2')).toBeVisible();
+  await expect(page.locator('#arena-enemy3')).toHaveCount(0);
+
+  // The wolf starts Near, the archer Far: each slot keeps its own Range.
+  await page.locator('#arena-enemy1').selectOption('grey-wolf');
+  await page
+    .locator('fieldset', { hasText: 'Opponent 1' })
+    .getByRole('radio', { name: 'Near' })
+    .check();
+  await page.locator('#arena-enemy2').selectOption('bandit-archer');
+  await page
+    .locator('fieldset', { hasText: 'Opponent 2' })
+    .getByRole('radio', { name: 'Far' })
+    .check();
+  await page.getByRole('button', { name: 'Start the fight' }).click();
+
+  const arena = page.getByLabel('Combat arena');
+  await expect(arena).toBeVisible();
+  await expectRound(page, 1);
+
+  // Both foes share the fight, each in its own lane with its own Range, and
+  // the order strip holds both Intents.
+  await expect(arena.getByText('Grey Wolf').first()).toBeVisible();
+  await expect(arena.getByText('Bandit Archer').first()).toBeVisible();
+  const lanes = arena.locator('.tactical-range');
+  await expect(lanes).toHaveCount(2);
+  await expect(lanes.filter({ hasText: 'Near' })).toHaveCount(1);
+  await expect(lanes.filter({ hasText: 'Far' })).toHaveCount(1);
+  await expect(page.locator('.combat-order-list .combat-chip[data-order-pos]')).toHaveCount(2);
+  // With two survivors the target picker names both foes.
+  await expect(page.locator('nav.combat-targets')).toBeVisible();
+
+  // One Round resolves and both lanes keep their own Ranges into Round 2.
+  await page.getByRole('button', { name: /^Attack/ }).click();
+  await expectRound(page, 2);
+  await expect(arena.getByText('Grey Wolf').first()).toBeVisible();
+  await expect(arena.getByText('Bandit Archer').first()).toBeVisible();
 });
