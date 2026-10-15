@@ -131,6 +131,18 @@ describe('non-game interface text', () => {
       pl.arena.you,
       en.arena.backToSetup,
       pl.arena.backToSetup,
+      en.arena.fightAgain,
+      pl.arena.fightAgain,
+      en.arena.summaryHeading,
+      pl.arena.summaryHeading,
+      en.arena.summaryOutcome,
+      pl.arena.summaryOutcome,
+      en.arena.summaryRounds,
+      pl.arena.summaryRounds,
+      en.arena.summaryHealth,
+      pl.arena.summaryHealth,
+      en.arena.summaryHits(3, 1),
+      pl.arena.summaryHits(3, 1),
       en.nav.arena,
       pl.nav.arena,
     ];
@@ -194,6 +206,13 @@ describe('non-game interface text', () => {
     expect(pl.arena.rounds(1)).toBe('1 runda');
     expect(pl.arena.rounds(3)).toBe('3 rundy');
     expect(pl.arena.rounds(5)).toBe('5 rund');
+    expect(en.arena.fightAgain).toBe('Fight again');
+    expect(pl.arena.fightAgain).toBe('Walcz ponownie');
+    expect(en.arena.summaryHits(1, 0)).toBe('1 hit · 0 misses');
+    expect(en.arena.summaryHits(3, 2)).toBe('3 hits · 2 misses');
+    expect(pl.arena.summaryHits(1, 1)).toBe('1 trafienie · 1 pudło');
+    expect(pl.arena.summaryHits(3, 2)).toBe('3 trafienia · 2 pudła');
+    expect(pl.arena.summaryHits(5, 5)).toBe('5 trafień · 5 pudeł');
   });
 
   it('keeps the error page strings equal to the catalogue', () => {

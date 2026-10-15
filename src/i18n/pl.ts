@@ -210,6 +210,23 @@ export const pl: Catalogue = {
         other: `${whole(count)} rundy`,
       }),
     backToSetup: 'Wróć do przygotowań',
+    fightAgain: 'Walcz ponownie',
+    summaryHeading: 'Podsumowanie walki',
+    summaryOutcome: 'Wynik',
+    summaryRounds: 'Stoczone rundy',
+    summaryHealth: 'Pozostałe Zdrowie',
+    summaryHits: (hits: number, misses: number): string =>
+      `${selectPlural('pl', hits, {
+        one: '1 trafienie',
+        few: `${whole(hits)} trafienia`,
+        many: `${whole(hits)} trafień`,
+        other: `${whole(hits)} trafienia`,
+      })} · ${selectPlural('pl', misses, {
+        one: '1 pudło',
+        few: `${whole(misses)} pudła`,
+        many: `${whole(misses)} pudeł`,
+        other: `${whole(misses)} pudła`,
+      })}`,
   },
   notFound: {
     title: 'Nie znaleziono strony',

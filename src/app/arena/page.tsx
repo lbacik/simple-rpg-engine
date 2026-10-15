@@ -2,17 +2,24 @@
 // the existing Combat panel, and the result screen. One run per Session,
 // stored outside the Playthrough stores, so reloading mid-fight resumes the
 // same Combat without ever listing the fight among the Session's Playthroughs.
+// The last setup is remembered per Session apart from the run (issue #171),
+// so reopening the Arena restores it and Fight again restarts it fresh.
 
 import type { Metadata } from 'next';
-import { arenaResult } from '@/engine/index';
+import { arenaResult, arenaSummary } from '@/engine/index';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import { getSessionHash } from '@/app/lib/session';
-import { ArenaStore, getDatabase } from '@/persistence/index';
+import { ArenaSetupStore, ArenaStore, getDatabase } from '@/persistence/index';
 import { CombatPanel } from '../play/[playthroughId]/combat-panel';
-import { arenaCombatAction, resetArenaAction } from './actions';
+import { arenaCombatAction, rematchArenaAction, resetArenaAction } from './actions';
 import { BESTIARY, DEFAULT_ARENA_CHARACTER, bestiaryDescription, bestiaryName } from './bestiary';
 import { arenaCombatView, arenaFoeName, arenaTacticalRounds } from './combat-view';
+import {
+  arenaSetupFromRemembered,
+  parseRememberedSetup,
+  rememberedFormDefaults,
+} from './last-setup';
 import {
   ARENA_CONSUMABLE,
   OUTFITS,
@@ -55,20 +62,45 @@ export default async function ArenaPage({
   const catalogue = getCatalogue(language);
   const noticeText = noticeTextFor(catalogue, notice);
   const sessionHash = await getSessionHash();
+  const database = getDatabase();
   const run =
-    sessionHash === undefined
-      ? null
-      : await new ArenaStore(getDatabase()).findBySession(sessionHash);
+    sessionHash === undefined ? null : await new ArenaStore(database).findBySession(sessionHash);
+  // The Session's remembered setup, validated on read: an unknown id (a
+  // Bestiary entry removed since) restores per-field fallbacks on the form
+  // and hides Fight again, so the page always opens.
+  const rememberedRaw =
+    sessionHash === undefined ? null : await new ArenaSetupStore(database).findRaw(sessionHash);
+  const remembered = rememberedRaw === null ? undefined : parseRememberedSetup(rememberedRaw);
+  const rememberedDefaults = remembered === undefined ? undefined : rememberedFormDefaults(remembered);
+  const rematchable =
+    remembered === undefined
+      ? undefined
+      : arenaSetupFromRemembered(remembered, language);
 
   // No run: the Arena Setup. Two opponent slots, each with its own starting
   // Range; the second slot defaults to none. Only these two slots exist, so a
   // third opponent is impossible in the UI; the server validates the count and
-  // the Range values independently. The first entry is pre-selected and the
-  // controls carry the default Character, so Start works without JavaScript
+  // the Range values independently. The controls restore the Session's
+  // remembered setup when one was remembered, else the first entry is
+  // pre-selected with the default Character, so Start works without JavaScript
   // and without touching anything; with JavaScript a preset fills the
-  // Character controls, which stay editable.
+  // Character controls, which stay editable. The form key remounts it when
+  // the restored setup changes, so Back to setup always shows what was fought.
   if (run === null) {
     const character = DEFAULT_ARENA_CHARACTER;
+    const setupDefaults = {
+      opponent1: rememberedDefaults?.opponent1 ?? {
+        enemy: BESTIARY[0]?.id ?? 'grey-wolf',
+        range: BESTIARY[0]?.range ?? 'near',
+      },
+      opponent2: rememberedDefaults?.opponent2 ?? null,
+      attributes: rememberedDefaults?.attributes ?? { ...character.attributes },
+      health: rememberedDefaults?.health ?? character.health,
+      weapon: rememberedDefaults?.weapon ?? 'unarmed',
+      outfit: rememberedDefaults?.outfit ?? 'none',
+      talisman: rememberedDefaults?.talisman ?? 'none',
+      consumables: rememberedDefaults?.consumables ?? 1,
+    };
     // Equipment options as plain localized props: the setup form posts raw ids
     // back, and the Start action re-validates every one, so the fight never
     // trusts the browser. Weapon meta is Damage · Reach; bonus meta is +1
@@ -103,6 +135,7 @@ export default async function ArenaPage({
           </p>
         ) : null}
         <ArenaSetupForm
+          key={JSON.stringify(setupDefaults)}
           enemies={BESTIARY.map((entry) => ({
             id: entry.id,
             name: bestiaryName(entry, language),
@@ -120,14 +153,7 @@ export default async function ArenaPage({
             range: entry.range,
           }))}
           presets={getArenaPresets(language)}
-          defaults={{
-            attributes: { ...character.attributes },
-            health: character.health,
-            weapon: 'unarmed',
-            outfit: 'none',
-            talisman: 'none',
-            consumables: 1,
-          }}
+          defaults={setupDefaults}
           weapons={weapons}
           outfits={outfits}
           talismans={talismans}
@@ -187,10 +213,12 @@ export default async function ArenaPage({
     );
   }
 
-  // The fight ended in victory, death or escape: the result screen with a way
-  // back to the setup.
+  // The fight ended in victory, death or escape: the result screen with the
+  // fight summary, Fight again with the identical setup, and a way back to
+  // the setup to change it.
   if (run.state.status !== 'active') {
     const result = arenaResult(run.state);
+    const summary = arenaSummary(run.state, run.journal);
     const foe = arenaFoeName(run.state);
     const title =
       result?.outcome === 'victory'
@@ -210,7 +238,53 @@ export default async function ArenaPage({
           {catalogue.arena.title} · {title}
         </h1>
         <p>{body}</p>
-        {result ? <p className="meta">{catalogue.arena.rounds(result.rounds)}</p> : null}
+        {summary ? (
+          <section aria-label={catalogue.arena.summaryHeading}>
+            <h2>{catalogue.arena.summaryHeading}</h2>
+            <ul>
+              <li>
+                {catalogue.arena.summaryOutcome}: {title}
+              </li>
+              <li>
+                {catalogue.arena.summaryRounds}: {catalogue.arena.rounds(summary.rounds)}
+              </li>
+              <li>
+                {catalogue.arena.summaryHealth}:
+                <ul>
+                  <li>
+                    {catalogue.arena.you}:{' '}
+                    {catalogue.character.short(
+                      summary.characterHealth,
+                      summary.characterMaxHealth,
+                    )}
+                  </li>
+                  {summary.opponents.map((opponent) => (
+                    <li key={opponent.name}>
+                      {opponent.name}:{' '}
+                      {catalogue.character.short(opponent.health, opponent.maxHealth)}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+              <li>
+                {catalogue.arena.you}:{' '}
+                {catalogue.arena.summaryHits(summary.characterHits, summary.characterMisses)}
+              </li>
+              <li>
+                {foe}: {catalogue.arena.summaryHits(summary.foeHits, summary.foeMisses)}
+              </li>
+            </ul>
+          </section>
+        ) : null}
+        {rematchable !== undefined ? (
+          <form action={rematchArenaAction}>
+            <p>
+              <button className="button" type="submit">
+                {catalogue.arena.fightAgain}
+              </button>
+            </p>
+          </form>
+        ) : null}
         <form action={resetArenaAction}>
           <p>
             <button className="button" type="submit">

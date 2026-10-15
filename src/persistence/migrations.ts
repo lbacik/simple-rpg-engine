@@ -81,4 +81,19 @@ export const MIGRATIONS: Record<string, { up(db: Kysely<Database>): Promise<void
         .execute();
     },
   },
+  // The remembered Arena Setup (issue #171): the last setup per Session, kept
+  // apart from the run, so going back to the setup or finishing a fight never
+  // forgets it. A rematch and the setup form both read it back.
+  '004_arena_setups': {
+    async up(db: Kysely<Database>): Promise<void> {
+      await db.schema
+        .createTable('arena_setups')
+        .ifNotExists()
+        .addColumn('session_id', 'text', (col) => col.primaryKey())
+        .addColumn('setup', 'text', (col) => col.notNull())
+        .addColumn('created_at', 'text', (col) => col.notNull())
+        .addColumn('updated_at', 'text', (col) => col.notNull())
+        .execute();
+    },
+  },
 };

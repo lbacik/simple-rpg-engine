@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { startArena, validateArenaSetup, type ArenaState } from '../src/engine/index';
-import { ArenaStore, migrateDatabase, openDatabase } from '../src/persistence/index';
+import { ArenaSetupStore, ArenaStore, migrateDatabase, openDatabase } from '../src/persistence/index';
 import { DEFAULT_ARENA_CHARACTER, buildArenaSetup } from '../src/app/arena/bestiary';
 
 function freshState(): { state: ArenaState; journal: { type: 'arena-start'; opponents: [] }[] } {
@@ -70,6 +70,29 @@ describe('arena store', () => {
       await runs.replace('hash-1', state, journal);
       await runs.clear('hash-1');
       expect(await runs.findBySession('hash-1')).toBeNull();
+    } finally {
+      await db.destroy();
+    }
+  });
+});
+
+describe('remembered arena setup store', () => {
+  it('remembers the last setup per Session and replaces it', async () => {
+    const db = openDatabase(':memory:');
+    try {
+      await migrateDatabase(db);
+      const setups = new ArenaSetupStore(db);
+      expect(await setups.findRaw('hash-1')).toBeNull();
+      await setups.save('hash-1', '{"enemy1":"grey-wolf"}');
+      expect(await setups.findRaw('hash-1')).toBe('{"enemy1":"grey-wolf"}');
+      // Another Session sees nothing.
+      expect(await setups.findRaw('hash-2')).toBeNull();
+      // Starting again replaces the remembered setup, and clearing the run
+      // never touches it: the stores are independent.
+      await setups.save('hash-1', '{"enemy1":"bandit-archer"}');
+      expect(await setups.findRaw('hash-1')).toBe('{"enemy1":"bandit-archer"}');
+      await new ArenaStore(db).clear('hash-1');
+      expect(await setups.findRaw('hash-1')).toBe('{"enemy1":"bandit-archer"}');
     } finally {
       await db.destroy();
     }

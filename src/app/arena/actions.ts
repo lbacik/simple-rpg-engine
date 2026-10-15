@@ -5,8 +5,10 @@
 // Every submission re-checks, in order: the Session, the stored run, `step`,
 // then legality in the engine (via applyArenaAction). Rejections change
 // nothing and redirect back with a transient notice; there is no error page.
-// Starting a fight replaces the Session's run; going back to the setup clears
-// it. A forged action value fails fast here before reaching the engine, which
+// Starting a fight replaces the Session's run and remembers its setup; going
+// back to the setup clears the run but keeps the remembered setup, and Fight
+// again restarts it fresh. A forged action value fails fast here before reaching
+// the engine, which
 // re-validates real actions independently — including a forged Consumable id,
 // which the engine rejects through the normal path (no dice, no step).
 //
@@ -18,13 +20,17 @@
 import { randomInt } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { applyArenaAction, startArena, validateArenaSetup } from '@/engine/index';
+import { applyArenaAction, startArena } from '@/engine/index';
 import { isCombatAction } from '@/app/lib/combat-request';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import { ensureSessionId, getSessionHash, hashSessionId } from '@/app/lib/session';
-import { ArenaStore, getDatabase } from '@/persistence/index';
-import { arenaSetupFromForm, parseArenaCharacter } from './bestiary';
-import { parseArenaEquipment } from './equipment';
+import { ArenaSetupStore, ArenaStore, getDatabase } from '@/persistence/index';
+import {
+  arenaSetupFromRemembered,
+  captureRememberedSetup,
+  parseRememberedSetup,
+  validatedSetupFromForm,
+} from './last-setup';
 
 const PATH = '/arena';
 
@@ -35,45 +41,12 @@ function unavailable(): never {
 
 export async function startArenaAction(formData: FormData): Promise<never> {
   const language = await getInterfaceLanguage();
-  // The Character travels as five plain controls. Missing or non-integer
-  // values parse to no Character; out-of-range values fail the engine
-  // validation below. Either way the fight never starts on forged numbers.
-  const field = (name: string): string | null => {
-    const value = formData.get(name);
-    return value === null ? null : String(value);
-  };
-  const character = parseArenaCharacter({
-    might: field('might'),
-    agility: field('agility'),
-    wits: field('wits'),
-    presence: field('presence'),
-    health: field('health'),
-  });
-  // The Equipment travels as four plain controls alongside the Character.
-  // Unknown ids and out-of-range quantities parse to no Equipment; either way
-  // the fight never starts on forged values.
-  const equipment = parseArenaEquipment(
-    {
-      weapon: field('weapon'),
-      outfit: field('outfit'),
-      talisman: field('talisman'),
-      consumables: field('consumables'),
-    },
-    language,
-  );
-  // The form offers two opponent slots, each with its own starting Range;
-  // the parser validates the opponent count (1-2) and the Range values.
-  const setup =
-    character === undefined || equipment === undefined
-      ? undefined
-      : arenaSetupFromForm(formData, language, {
-          ...character,
-          ...(equipment.weapon !== undefined ? { weapon: equipment.weapon } : {}),
-          ...(equipment.bonuses !== undefined ? { bonuses: equipment.bonuses } : {}),
-          consumables: equipment.consumables,
-        });
-  const validated = setup === undefined ? undefined : validateArenaSetup(setup);
-  if (validated === undefined || !validated.ok) {
+  // The form offers two opponent slots, each with its own starting Range, the
+  // five Character controls and the four Equipment controls. The shared
+  // pipeline parses and engine-validates them all, so the fight never starts
+  // on forged values.
+  const setup = validatedSetupFromForm(formData, language);
+  if (setup === undefined) {
     await ensureSessionId();
     unavailable();
   }
@@ -81,7 +54,43 @@ export async function startArenaAction(formData: FormData): Promise<never> {
   // cookie and store no run.
   const { id } = await ensureSessionId();
   const sessionHash = hashSessionId(id);
-  const started = startArena(validated.setup, randomInt);
+  // Remember the setup for this Session: reopening the Arena restores it and
+  // Fight again restarts it. The snapshot is captured from the same validated
+  // form, so remembering cannot diverge from the fight.
+  const snapshot = captureRememberedSetup(formData);
+  if (snapshot !== undefined) {
+    await new ArenaSetupStore(getDatabase()).save(sessionHash, JSON.stringify(snapshot));
+  }
+  const started = startArena(setup, randomInt);
+  await new ArenaStore(getDatabase()).replace(sessionHash, started.state, started.journal);
+  revalidatePath(PATH);
+  redirect(PATH);
+}
+
+/**
+ * Fight again with the remembered setup (issue #171): a new Combat with the
+ * identical setup and fresh Health, Range and Intents, through the same
+ * pipeline as Start. The remembered setup survives; a missing or stale one
+ * lands back on the page it came from.
+ */
+export async function rematchArenaAction(): Promise<never> {
+  const language = await getInterfaceLanguage();
+  const sessionHash = await getSessionHash();
+  // Sliding refresh: re-set the same id with a fresh Max-Age.
+  await ensureSessionId();
+  if (sessionHash === undefined) {
+    revalidatePath(PATH);
+    redirect(PATH);
+  }
+  const raw = await new ArenaSetupStore(getDatabase()).findRaw(sessionHash);
+  const snapshot = raw === null ? undefined : parseRememberedSetup(raw);
+  const setup =
+    snapshot === undefined ? undefined : arenaSetupFromRemembered(snapshot, language);
+  if (setup === undefined) {
+    revalidatePath(PATH);
+    redirect(PATH);
+  }
+  const started = startArena(setup, randomInt);
   await new ArenaStore(getDatabase()).replace(sessionHash, started.state, started.journal);
   revalidatePath(PATH);
   redirect(PATH);

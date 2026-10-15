@@ -49,9 +49,18 @@ export type ArenaRunRow = {
   updated_at: string;
 };
 
+export type ArenaSetupRow = {
+  session_id: string;
+  /** The remembered Arena Setup snapshot JSON document, stored as TEXT. */
+  setup: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   playthroughs: PlaythroughRow;
   journal_entries: JournalEntryRow;
   sessions: SessionRow;
   arena_runs: ArenaRunRow;
+  arena_setups: ArenaSetupRow;
 };

@@ -205,6 +205,13 @@ export const en = {
     rounds: (count: number): string =>
       count === 1 ? '1 round' : `${whole(count)} rounds`,
     backToSetup: 'Back to setup',
+    fightAgain: 'Fight again',
+    summaryHeading: 'Fight summary',
+    summaryOutcome: 'Outcome',
+    summaryRounds: 'Rounds fought',
+    summaryHealth: 'Remaining Health',
+    summaryHits: (hits: number, misses: number): string =>
+      `${selectPlural('en', hits, { one: '1 hit', other: `${whole(hits)} hits` })} · ${selectPlural('en', misses, { one: '1 miss', other: `${whole(misses)} misses` })}`,
   },
   notFound: {
     title: 'Page not found',

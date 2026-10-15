@@ -549,3 +549,45 @@ export class ArenaStore {
     await this.db.deleteFrom('arena_runs').where('session_id', '=', sessionId).execute();
   }
 }
+
+/**
+ * The remembered Arena Setups (issue #171): the last setup per Session, kept
+ * apart from the run. Starting a fight remembers its setup; going back to the
+ * setup or finishing a fight never forgets it. The payload is the snapshot
+ * JSON the Arena layer validates on read, never trusted blindly.
+ */
+export class ArenaSetupStore {
+  constructor(private readonly db: Kysely<Database>) {}
+
+  /** The Session's remembered setup JSON, or null when none was remembered. */
+  async findRaw(sessionId: string): Promise<string | null> {
+    const row = await this.db
+      .selectFrom('arena_setups')
+      .select(['setup'])
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    return row?.setup ?? null;
+  }
+
+  /** Remember the Session's setup, replacing any previous one. */
+  async save(sessionId: string, setup: string): Promise<void> {
+    const now = new Date().toISOString();
+    const existing = await this.db
+      .selectFrom('arena_setups')
+      .select(['session_id'])
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    if (existing) {
+      await this.db
+        .updateTable('arena_setups')
+        .set({ setup, updated_at: now })
+        .where('session_id', '=', sessionId)
+        .execute();
+      return;
+    }
+    await this.db
+      .insertInto('arena_setups')
+      .values({ session_id: sessionId, setup, created_at: now, updated_at: now })
+      .execute();
+  }
+}
