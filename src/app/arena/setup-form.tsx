@@ -16,10 +16,16 @@ export type ArenaSetupEnemyOption = {
   name: string;
   description: string;
   meta: string;
+  range: 'near' | 'far';
 };
 
 export type ArenaSetupStrings = {
   bestiaryLegend: string;
+  opponentOne: string;
+  opponentTwo: string;
+  noSecondOpponent: string;
+  startingRange: string;
+  rangeLabels: { near: string; far: string };
   characterLegend: string;
   presetLabel: string;
   presetCustom: string;
@@ -77,26 +83,42 @@ export default function ArenaSetupForm({
 
   return (
     <form action={startArenaAction}>
-      <fieldset>
-        <legend>{strings.bestiaryLegend}</legend>
-        <ul className="cards">
-          {enemies.map((enemy, index) => (
-            <li key={enemy.id} className="card">
-              <label>
-                <input
-                  type="radio"
-                  name="enemy"
-                  value={enemy.id}
-                  defaultChecked={index === 0}
-                />{' '}
-                <strong>{enemy.name}</strong>
-              </label>
-              <p>{enemy.description}</p>
-              <p className="meta">{enemy.meta}</p>
-            </li>
-          ))}
-        </ul>
-      </fieldset>
+      {[1, 2].map((slot) => (
+        <fieldset key={slot}>
+          <legend>{slot === 1 ? strings.opponentOne : strings.opponentTwo}</legend>
+          <p>
+            <label htmlFor={`arena-enemy${slot}`}>{strings.bestiaryLegend}</label>{' '}
+            <select
+              id={`arena-enemy${slot}`}
+              name={`enemy${slot}`}
+              defaultValue={slot === 1 ? enemies[0]?.id : ''}
+            >
+              {slot === 2 ? <option value="">{strings.noSecondOpponent}</option> : null}
+              {enemies.map((enemy) => (
+                <option key={enemy.id} value={enemy.id}>
+                  {enemy.name}
+                </option>
+              ))}
+            </select>
+          </p>
+          <p>
+            <span id={`arena-range${slot}-label`}>{strings.startingRange}</span>{' '}
+            <span role="group" aria-labelledby={`arena-range${slot}-label`}>
+              {(['near', 'far'] as const).map((range) => (
+                <label key={range}>
+                  <input
+                    type="radio"
+                    name={`range${slot}`}
+                    value={range}
+                    defaultChecked={range === (slot === 1 ? (enemies[0]?.range ?? 'near') : 'far')}
+                  />{' '}
+                  {strings.rangeLabels[range]}{' '}
+                </label>
+              ))}
+            </span>
+          </p>
+        </fieldset>
+      ))}
       <fieldset>
         <legend>{strings.characterLegend}</legend>
         <p>

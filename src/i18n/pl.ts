@@ -157,8 +157,12 @@ export const pl: Catalogue = {
   arena: {
     title: 'Arena',
     description:
-      'Wybierz przeciwnika z Bestiariusza i wypróbuj zasady Walki. Bez Scenariusza i Rozgrywki — sama walka.',
+      'Wybierz jednego lub dwóch przeciwników z Bestiariusza i wypróbuj zasady Walki. Bez Scenariusza i Rozgrywki — sama walka.',
     bestiaryHeading: 'Bestiariusz',
+    opponentOne: 'Przeciwnik 1',
+    opponentTwo: 'Przeciwnik 2 (opcjonalnie)',
+    noSecondOpponent: 'Bez drugiego przeciwnika',
+    startingRange: 'Dystans początkowy',
     characterHeading: 'Twoja postać',
     presetLabel: 'Gotowy wzorzec postaci',
     presetCustom: 'Własna',

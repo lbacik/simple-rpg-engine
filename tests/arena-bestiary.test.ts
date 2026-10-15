@@ -144,3 +144,178 @@ describe('bestiary', () => {
     expect(validateBestiary([valid, valid])).not.toEqual([]);
   });
 });
+
+describe('two opponents', () => {
+  it('builds one setup per slot with each opponent at its own starting Range', async () => {
+    const { buildArenaSetupForOpponents } = await import('../src/app/arena/bestiary');
+    const setup = buildArenaSetupForOpponents(
+      [
+        { enemyId: 'grey-wolf', range: 'near' },
+        { enemyId: 'bandit-archer', range: 'far' },
+      ],
+      'en',
+    );
+    expect(setup?.opponents).toHaveLength(2);
+    expect(setup?.opponents[0]?.id).toBe('grey-wolf');
+    expect(setup?.opponents[0]?.range).toBe('near');
+    expect(setup?.opponents[1]?.id).toBe('bandit-archer');
+    expect(setup?.opponents[1]?.range).toBe('far');
+    expect(setup?.opponents[0]?.enemy.name).toBe('Grey Wolf');
+    const validated = validateArenaSetup(setup);
+    expect(validated.ok).toBe(true);
+  });
+
+  it('gives duplicate Enemy kinds distinct participant ids', async () => {
+    const { buildArenaSetupForOpponents } = await import('../src/app/arena/bestiary');
+    const setup = buildArenaSetupForOpponents(
+      [
+        { enemyId: 'grey-wolf', range: 'near' },
+        { enemyId: 'grey-wolf', range: 'far' },
+      ],
+      'en',
+    );
+    expect(setup?.opponents).toHaveLength(2);
+    const ids = (setup?.opponents ?? []).map((opponent) => opponent.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids[0]).toBe('grey-wolf');
+    expect(ids[1]).not.toBe('grey-wolf');
+    // Both start at their own chosen Range from Round 1: the Near wolf
+    // Strikes while the Far wolf closes in (steady melee).
+    const { startArena } = await import('../src/engine/index');
+    if (setup === undefined) throw new Error('expected a setup');
+    const validated = validateArenaSetup(setup);
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) throw new Error('fixture setup should validate');
+    const { state } = startArena(validated.setup, () => {
+      throw new Error('no dice expected');
+    });
+    expect(state.opponents[0]?.range).toBe('near');
+    expect(state.opponents[1]?.range).toBe('far');
+    expect(state.opponents[0]?.intent).toBe('strike');
+    expect(state.opponents[1]?.intent).toBe('close-in');
+  });
+
+  it('rejects an empty list, a third opponent, unknown kinds and bad Ranges', async () => {
+    const { buildArenaSetupForOpponents } = await import('../src/app/arena/bestiary');
+    expect(buildArenaSetupForOpponents([], 'en')).toBeUndefined();
+    expect(
+      buildArenaSetupForOpponents(
+        [
+          { enemyId: 'grey-wolf', range: 'near' },
+          { enemyId: 'bandit-archer', range: 'far' },
+          { enemyId: 'ash-hound', range: 'near' },
+        ],
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(
+      buildArenaSetupForOpponents([{ enemyId: 'no-such-foe', range: 'near' }], 'en'),
+    ).toBeUndefined();
+    expect(
+      buildArenaSetupForOpponents(
+        [{ enemyId: 'grey-wolf', range: 'sideways' as 'near' }],
+        'en',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('parses the setup form: slots, legacy field, and forged values', async () => {
+    const { arenaSetupFromForm } = await import('../src/app/arena/bestiary');
+    const form = (entries: [string, string][]): FormData => {
+      const data = new FormData();
+      for (const [key, value] of entries) data.append(key, value);
+      return data;
+    };
+    // One opponent: the second slot stays on "no second opponent".
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy1', 'grey-wolf'],
+          ['range1', 'near'],
+          ['enemy2', ''],
+          ['range2', 'far'],
+        ]),
+        'en',
+      )?.opponents,
+    ).toHaveLength(1);
+    // Two opponents at different starting Ranges.
+    const pair = arenaSetupFromForm(
+      form([
+        ['enemy1', 'grey-wolf'],
+        ['range1', 'near'],
+        ['enemy2', 'bandit-archer'],
+        ['range2', 'far'],
+      ]),
+      'en',
+    );
+    expect(pair?.opponents.map((opponent) => opponent.range)).toEqual(['near', 'far']);
+    // The same Enemy twice parses to distinct participant ids.
+    const dupes = arenaSetupFromForm(
+      form([
+        ['enemy1', 'grey-wolf'],
+        ['range1', 'near'],
+        ['enemy2', 'grey-wolf'],
+        ['range2', 'far'],
+      ]),
+      'en',
+    );
+    expect(new Set((dupes?.opponents ?? []).map((opponent) => opponent.id)).size).toBe(2);
+    // The pre-release single field still starts its entry at its Bestiary Range.
+    expect(arenaSetupFromForm(form([['enemy', 'grey-wolf']]), 'en')?.opponents).toHaveLength(1);
+    // Forged values fail: a bad Range, a third opponent, a repeated field,
+    // an unknown Enemy, and mixing the legacy field with the new slots.
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy1', 'grey-wolf'],
+          ['range1', 'sideways'],
+          ['enemy2', ''],
+          ['range2', 'far'],
+        ]),
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy1', 'grey-wolf'],
+          ['range1', 'near'],
+          ['enemy2', 'bandit-archer'],
+          ['range2', 'far'],
+          ['enemy3', 'ash-hound'],
+        ]),
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy1', 'grey-wolf'],
+          ['enemy1', 'bandit-archer'],
+          ['range1', 'near'],
+        ]),
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy1', 'no-such-foe'],
+          ['range1', 'near'],
+        ]),
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(
+      arenaSetupFromForm(
+        form([
+          ['enemy', 'grey-wolf'],
+          ['enemy1', 'grey-wolf'],
+          ['range1', 'near'],
+        ]),
+        'en',
+      ),
+    ).toBeUndefined();
+    expect(arenaSetupFromForm(form([]), 'en')).toBeUndefined();
+  });
+});
