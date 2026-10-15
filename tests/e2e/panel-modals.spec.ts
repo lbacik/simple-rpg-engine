@@ -125,6 +125,56 @@ test('the Inventory modal unequips and equips with the modal open', async ({ pag
   await expect(page.getByRole('heading', { name: 'Journal' })).toBeVisible();
 });
 
+// On desktop the Map launcher sits beside the other launchers and opens the
+// expanded map modal while the compact map stays visible; the toggle stays
+// consistent between the two presentations.
+test('the desktop Map launcher opens the expanded modal over the compact map', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'The Whispering Woods' })
+    .getByRole('link', { name: 'New Playthrough' })
+    .click();
+  await page.locator('#name').fill('Desktop');
+  await page.getByRole('button', { name: 'Start the Playthrough' }).click();
+  await page.getByRole('link', { name: 'Continue' }).click();
+
+  // Reach the Ashford Location view, where map travel is available.
+  await page.getByRole('button', { name: 'Hear her out.' }).click();
+  await page.getByRole('button', { name: 'Promise to find Mira.' }).click();
+  await page.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
+
+  // The Map launcher is visible on desktop and the compact map is shown.
+  await expect(page.getByRole('link', { name: 'Map' })).toBeVisible();
+  await expect(page.locator('.map-inline')).toBeVisible();
+
+  // The launcher opens the expanded map in a modal reflected in the URL,
+  // with the compact map still in place behind it.
+  await page.getByRole('link', { name: 'Map' }).click();
+  const mapDialog = page.getByRole('dialog', { name: 'Location map' });
+  await expect(mapDialog).toBeVisible();
+  await expect(page).toHaveURL(/panel=map/);
+  await expect(page.locator('.map-inline')).toBeVisible();
+
+  // The modal toggle flips the shared setting and stays open on the modal.
+  await mapDialog.getByRole('link', { name: 'Show unseen exits' }).click();
+  await expect(page.getByRole('dialog', { name: 'Location map' })).toBeVisible();
+  await expect(page).toHaveURL(/unknown=1/);
+  await expect(
+    mapDialog.getByRole('link', { name: 'Hide unseen exits' }),
+  ).toBeVisible();
+
+  // Escape closes the modal and returns focus to the Map launcher.
+  await page.keyboard.press('Escape');
+  await expect(mapDialog).toHaveCount(0);
+  expect(page.url()).not.toMatch(/panel=map/);
+  await expect(page.getByRole('link', { name: 'Map' })).toBeFocused();
+});
+
 // On phones the status card and launchers replace the compact summary, and a
 // Map launcher opens the map in a full-screen modal that map travel works from.
 test('the phone Map launcher opens the map and travels from it', async ({ page }) => {
@@ -158,9 +208,10 @@ test('the phone Map launcher opens the map and travels from it', async ({ page }
   await expect(mapDialog).toBeVisible();
   await expect(page).toHaveURL(/panel=map/);
 
-  // Unvisited exits draw as "?" nodes once enabled; travelling from the modal
+  // Unseen exits draw as "?" nodes once enabled; travelling from the modal
   // works exactly like the matching exit button.
-  await mapDialog.getByRole('link', { name: /Show unvisited exits/ }).click();
+  await mapDialog.getByRole('link', { name: 'Show unseen exits' }).click();
+  await expect(mapDialog.getByRole('link', { name: 'Hide unseen exits' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Location map' })).toBeVisible();
   await page
     .getByRole('dialog', { name: 'Location map' })

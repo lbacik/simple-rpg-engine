@@ -111,6 +111,29 @@ export function playHref(
 }
 
 /**
+ * The "Show/Hide unseen exits" toggle: the same game page carrying the
+ * opposite of the current "?" map setting, preserving the open panel modal,
+ * the transient notice, the Continue acknowledgement, the selected inventory
+ * tile and the Combat target selection. Following it changes no game state,
+ * does not advance `step` and appends no Journal entries.
+ */
+export function mapToggleHref(
+  playthroughId: string,
+  query: Omit<PlayQuery, 'showUnknownExits'> & { showUnknownExits: boolean },
+): string {
+  return playHref(
+    playthroughId,
+    query.panel,
+    query.notice,
+    query.seen,
+    // The toggle flips the setting, so it carries the opposite value.
+    !query.showUnknownExits,
+    query.item,
+    query.target,
+  );
+}
+
+/**
  * The Continue link after a result panel: the same game page carrying the
  * current `step` as `?seen=`, preserving the open panel modal, the transient
  * notice and the "?" map setting. Following it changes no game state and does

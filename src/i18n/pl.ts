@@ -281,8 +281,8 @@ export const pl: Catalogue = {
     expand: 'Powiększ mapę',
     travelTo: (name: string) => `Podróż: ${name}`,
     heardOf: (name: string) => `${name} (znane ze słyszenia)`,
-    showUnknown: 'Pokaż nieodwiedzone wyjścia jako „?”',
-    hideUnknown: 'Ukryj nieodwiedzone wyjścia',
+    showUnknown: 'Pokaż niewidoczne wyjścia',
+    hideUnknown: 'Ukryj niewidoczne wyjścia',
   },
   journal: {
     title: 'Dziennik',

@@ -281,8 +281,8 @@ export const en = {
     expand: 'Expand map',
     travelTo: (name: string) => `Travel to ${name}`,
     heardOf: (name: string) => `${name} (heard of)`,
-    showUnknown: 'Show unvisited exits as “?”',
-    hideUnknown: 'Hide unvisited exits',
+    showUnknown: 'Show unseen exits',
+    hideUnknown: 'Hide unseen exits',
   },
   journal: {
     title: 'Journal',
