@@ -38,7 +38,11 @@ test('arena equipment: a ranged weapon attacks from Far', async ({ page }) => {
   // The hunting bow (ranged, 3 Damage) against the Bandit Archer, who starts
   // Far: a melee weapon could not attack from there.
   await page.getByLabel('Weapon').selectOption('hunting-bow');
-  await page.getByRole('radio', { name: 'Bandit Archer' }).check();
+  await page.locator('#arena-enemy1').selectOption('bandit-archer');
+  await page
+    .locator('fieldset', { hasText: 'Opponent 1' })
+    .getByRole('radio', { name: 'Far' })
+    .check();
   await page.getByRole('button', { name: 'Start the fight' }).click();
   await expect(page.getByLabel('Combat arena')).toBeVisible();
   await expectRound(page, 'Round 1');
@@ -99,7 +103,11 @@ test('arena equipment reads Polish under pl', async ({ browser }) => {
     // The hunting bow against the Bandit Archer: at full Health the draught
     // use is rejected in Polish...
     await page.getByLabel('Broń').selectOption('hunting-bow');
-    await page.getByRole('radio', { name: 'Bandyta łucznik' }).check();
+    await page.locator('#arena-enemy1').selectOption('bandit-archer');
+    await page
+      .locator('fieldset', { hasText: 'Przeciwnik 1' })
+      .getByRole('radio', { name: 'Daleko' })
+      .check();
     await page.getByRole('button', { name: 'Rozpocznij walkę' }).click();
     await expect(page.getByLabel('Arena walki')).toBeVisible();
     await expect(page.getByRole('button', { name: /Użyj: Wywar leczniczy/ })).toBeDisabled();
