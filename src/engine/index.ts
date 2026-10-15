@@ -69,6 +69,7 @@ export {
   arenaActions,
   arenaResult,
   arenaSetupSchema,
+  arenaView,
   startArena,
   validateArenaSetup,
   type ApplyArenaActionResult,

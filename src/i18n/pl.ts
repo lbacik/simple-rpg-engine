@@ -66,6 +66,7 @@ export const pl: Catalogue = {
   nav: {
     scenarios: 'Scenariusze',
     playthroughs: 'Moje rozgrywki',
+    arena: 'Arena',
   },
   language: {
     label: 'Język',
@@ -152,6 +153,49 @@ export const pl: Catalogue = {
     statusActive: 'Aktywna',
     statusEnded: 'Zakończona',
     statusIncompatible: 'Niezgodna',
+  },
+  arena: {
+    title: 'Arena',
+    description:
+      'Wybierz przeciwnika z Bestiariusza i wypróbuj zasady Walki. Bez Scenariusza i Rozgrywki — sama walka.',
+    bestiaryHeading: 'Bestiariusz',
+    characterHeading: 'Twoja postać',
+    characterLine: (
+      might: number,
+      agility: number,
+      wits: number,
+      presence: number,
+      health: number,
+    ): string =>
+      `Krzepa ${whole(might)} · Zręczność ${whole(agility)} · Spryt ${whole(wits)} · Prezencja ${whole(presence)} · Zdrowie ${whole(health)}`,
+    behaviour: {
+      steady: 'Stateczny',
+      heavy: 'Mocny',
+    },
+    enemyLine: (
+      might: number,
+      agility: number,
+      wits: number,
+      presence: number,
+      health: number,
+      damage: number,
+      reach: string,
+      behaviour: string,
+    ): string =>
+      `Krzepa ${whole(might)} · Zręczność ${whole(agility)} · Spryt ${whole(wits)} · Prezencja ${whole(presence)} · Zdrowie ${whole(health)} · Obrażenia ${whole(damage)} · Zasięg ${reach} · ${behaviour}`,
+    start: 'Rozpocznij walkę',
+    starting: 'Rozpoczynanie…',
+    unknownEnemy: 'Wybierz jednego z przeciwników z Bestiariusza.',
+    /** The default Character's name in roll lines. */
+    you: 'Ty',
+    rounds: (count: number): string =>
+      selectPlural('pl', count, {
+        one: '1 runda',
+        few: `${whole(count)} rundy`,
+        many: `${whole(count)} rund`,
+        other: `${whole(count)} rundy`,
+      }),
+    backToSetup: 'Wróć do przygotowań',
   },
   notFound: {
     title: 'Nie znaleziono strony',

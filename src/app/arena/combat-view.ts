@@ -1,0 +1,105 @@
+// The Arena Combat adapter (issue #166): the stored Arena run rendered
+// through the existing Combat presentation. The adapter derives the Scenario
+// Combat view shape from Arena state — the localized opponent name and
+// description, the default Character, the Arena view projection — so the Arena
+// page reuses the Combat panel and its actions unchanged. The Combat log reads
+// the stored Arena journal, never the state, so it survives a reload.
+
+import {
+  arenaView,
+  type ArenaJournalEntry,
+  type ArenaState,
+  type GameView,
+  type TacticalRoundView,
+} from '../../engine/index';
+import { MAX_HEALTH } from '../../engine/state';
+import { getCatalogue, type InterfaceLanguage } from '../../i18n/index';
+import { bestiaryById, bestiaryDescription, bestiaryName } from './bestiary';
+
+export type ArenaCombat = Extract<GameView, { kind: 'combat' }>;
+
+/** The fight's opponent in the Interface Language, falling back to the stored name. */
+export function arenaFoeName(state: ArenaState, language: InterfaceLanguage): string {
+  const first = state.opponents[0];
+  if (first === undefined) return '';
+  const entry = bestiaryById(first.id);
+  return entry === undefined ? first.name : bestiaryName(entry, language);
+}
+
+function arenaFoeDescription(state: ArenaState, language: InterfaceLanguage): string {
+  const first = state.opponents[0];
+  if (first === undefined) return '';
+  const entry = bestiaryById(first.id);
+  return entry === undefined ? '' : bestiaryDescription(entry, language);
+}
+
+/**
+ * The existing Combat view over the running fight. Undefined once the fight
+ * has ended; the result screen reads `arenaResult` instead.
+ */
+export function arenaCombatView(
+  state: ArenaState,
+  language: InterfaceLanguage,
+): ArenaCombat | undefined {
+  const arena = arenaView(state);
+  if (arena === undefined) {
+    return undefined;
+  }
+  const catalogue = getCatalogue(language);
+  const foe = arenaFoeName(state, language);
+  const weapon = state.character.weapon;
+  const attack = weapon === undefined ? { damage: 2, reach: 'melee' as const } : weapon;
+  const first = state.opponents[0];
+  return {
+    kind: 'combat',
+    locationId: 'arena',
+    locationName: catalogue.combat.arenaLabel,
+    encounterId: 'arena',
+    encounterName: foe,
+    text: arenaFoeDescription(state, language),
+    characterName: catalogue.arena.you,
+    range:
+      state.opponents.find((opponent) => opponent.damageTaken < opponent.maxHealth)?.range ??
+      'far',
+    round: state.round,
+    character: {
+      health: state.character.health,
+      maxHealth: MAX_HEALTH,
+      reach: attack.reach,
+      damage: attack.damage,
+    },
+    enemy:
+      first === undefined
+        ? { name: foe, health: 0, maxHealth: 0, damage: 0, reach: 'melee' as const }
+        : {
+            name: foe,
+            health: Math.max(0, first.maxHealth - first.damageTaken),
+            maxHealth: first.maxHealth,
+            damage: first.damage,
+            reach: first.reach,
+          },
+    actions: arena.actions.map((action) => ({
+      id: action.id,
+      group: action.group,
+      enabled: action.enabled,
+      ...(action.reason === undefined ? {} : { reason: action.reason }),
+    })),
+    arena,
+    map: { nodes: [], edges: [], currentLocationId: 'arena', travelTargetIds: [] },
+  };
+}
+
+/** The stored Arena Rounds as the Combat log, oldest first. */
+export function arenaTacticalRounds(journal: ArenaJournalEntry[]): TacticalRoundView[] {
+  return journal.flatMap((entry) =>
+    entry.type === 'arena-round'
+      ? [
+          {
+            round: entry.round,
+            actions: entry.actions,
+            ...(entry.stop === undefined ? {} : { stop: entry.stop }),
+          },
+        ]
+      : [],
+  );
+}

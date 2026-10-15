@@ -109,6 +109,26 @@ describe('non-game interface text', () => {
       pl.scenarioLanguage.textBadge('en'),
       en.scenario.templateItemSuffix(1, null),
       pl.scenario.templateItemSuffix(2, 'Broń'),
+      en.arena.title,
+      pl.arena.title,
+      en.arena.description,
+      pl.arena.description,
+      en.arena.bestiaryHeading,
+      pl.arena.bestiaryHeading,
+      en.arena.characterHeading,
+      pl.arena.characterHeading,
+      en.arena.start,
+      pl.arena.start,
+      en.arena.starting,
+      pl.arena.starting,
+      en.arena.unknownEnemy,
+      pl.arena.unknownEnemy,
+      en.arena.you,
+      pl.arena.you,
+      en.arena.backToSetup,
+      pl.arena.backToSetup,
+      en.nav.arena,
+      pl.nav.arena,
     ];
     for (const text of strings) {
       expect(text.length).toBeGreaterThan(0);
@@ -146,6 +166,30 @@ describe('non-game interface text', () => {
   it('renders counts through the plural helper', () => {
     expect(en.startForm.invalidName()).toBe('Enter a name of 1–40 characters.');
     expect(pl.startForm.invalidName()).toBe('Podaj imię o długości 1–40 znaków.');
+  });
+
+  it('covers the Arena setup, stats and result', () => {
+    expect(en.arena.characterLine(2, 2, 1, 1, 12)).toBe(
+      'Might 2 · Agility 2 · Wits 1 · Presence 1 · Health 12',
+    );
+    expect(pl.arena.characterLine(2, 2, 1, 1, 12)).toBe(
+      'Krzepa 2 · Zręczność 2 · Spryt 1 · Prezencja 1 · Zdrowie 12',
+    );
+    expect(
+      en.arena.enemyLine(1, 2, 1, 0, 8, 2, en.reach.melee, en.arena.behaviour.steady),
+    ).toBe(
+      'Might 1 · Agility 2 · Wits 1 · Presence 0 · Health 8 · Damage 2 · Reach melee · Steady',
+    );
+    expect(
+      pl.arena.enemyLine(3, 0, 0, 1, 14, 3, pl.reach.melee, pl.arena.behaviour.heavy),
+    ).toBe(
+      'Krzepa 3 · Zręczność 0 · Spryt 0 · Prezencja 1 · Zdrowie 14 · Obrażenia 3 · Zasięg wręcz · Mocny',
+    );
+    expect(en.arena.rounds(1)).toBe('1 round');
+    expect(en.arena.rounds(5)).toBe('5 rounds');
+    expect(pl.arena.rounds(1)).toBe('1 runda');
+    expect(pl.arena.rounds(3)).toBe('3 rundy');
+    expect(pl.arena.rounds(5)).toBe('5 rund');
   });
 
   it('keeps the error page strings equal to the catalogue', () => {
@@ -204,6 +248,7 @@ describe('catalogue parity', () => {
       expect(Object.keys(catalogue), name).toContain('notFound');
       expect(Object.keys(catalogue), name).toContain('error');
       expect(Object.keys(catalogue), name).toContain('scenarioLanguage');
+      expect(Object.keys(catalogue), name).toContain('arena');
     }
   });
 });
