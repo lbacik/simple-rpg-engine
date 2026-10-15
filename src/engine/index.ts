@@ -77,6 +77,7 @@ export {
   type ArenaAvailability,
   type ArenaCharacterDefinition,
   type ArenaCombatAction,
+  type ArenaConsumables,
   type ArenaDisabledReason,
   type ArenaEnemyDefinition,
   type ArenaJournalEntry,
@@ -86,6 +87,7 @@ export {
   type ArenaSetup,
   type ArenaSetupIssue,
   type ArenaState,
+  type ArenaWeapon,
   type StartArenaResult,
   type ValidateArenaSetupResult,
 } from './arena';

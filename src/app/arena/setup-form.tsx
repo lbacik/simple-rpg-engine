@@ -41,7 +41,7 @@ export type ArenaSetupStrings = {
   presetHelp: string;
   attributesHelp: string;
   healthLabel: string;
-  equipmentLegend: string;
+  equipmentHeading: string;
   weaponLabel: string;
   outfitLabel: string;
   talismanLabel: string;
@@ -253,7 +253,7 @@ export default function ArenaSetupForm({
         </p>
       </fieldset>
       <fieldset>
-        <legend>{strings.equipmentLegend}</legend>
+        <legend>{strings.equipmentHeading}</legend>
         <p>
           <label htmlFor="arena-weapon">{strings.weaponLabel}</label>{' '}
           <select id="arena-weapon" name="weapon" value={weapon} onChange={(event) => setWeapon(event.target.value)}>

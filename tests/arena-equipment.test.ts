@@ -28,6 +28,7 @@ import {
   type ArenaState,
   type Rng,
 } from '../src/engine/index';
+import { arenaCombatView } from '../src/app/arena/combat-view';
 
 type ArenaSuccess = Extract<ReturnType<typeof applyArenaAction>, { ok: true }>;
 
@@ -120,7 +121,7 @@ describe('equipment catalogue', () => {
       outfit: 'chain-shirt',
       talisman: 'bear-fang',
       consumables: '2',
-    });
+    }, 'en');
     expect(parsed).toBeDefined();
     expect(parsed?.weapon).toMatchObject({ damage: 3, reach: 'melee' });
     // Both grant Might: the +2 cap holds by construction.
@@ -133,7 +134,7 @@ describe('equipment catalogue', () => {
       outfit: 'none',
       talisman: 'none',
       consumables: '0',
-    });
+    }, 'en');
     expect(bare).toBeDefined();
     expect(bare?.weapon).toBeUndefined();
     expect(bare?.bonuses).toBeUndefined();
@@ -141,19 +142,19 @@ describe('equipment catalogue', () => {
 
     // Forged ids and out-of-range quantities parse to no Equipment.
     expect(
-      parseArenaEquipment({ weapon: 'doomblade', outfit: 'none', talisman: 'none', consumables: '0' }),
+      parseArenaEquipment({ weapon: 'doomblade', outfit: 'none', talisman: 'none', consumables: '0' }, 'en'),
     ).toBeUndefined();
     expect(
-      parseArenaEquipment({ weapon: 'sword', outfit: 'plate', talisman: 'none', consumables: '0' }),
+      parseArenaEquipment({ weapon: 'sword', outfit: 'plate', talisman: 'none', consumables: '0' }, 'en'),
     ).toBeUndefined();
     expect(
-      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'amulet', consumables: '0' }),
+      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'amulet', consumables: '0' }, 'en'),
     ).toBeUndefined();
     expect(
-      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'none', consumables: '9' }),
+      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'none', consumables: '9' }, 'en'),
     ).toBeUndefined();
     expect(
-      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'none', consumables: '' }),
+      parseArenaEquipment({ weapon: 'sword', outfit: 'none', talisman: 'none', consumables: '' }, 'en'),
     ).toBeUndefined();
   });
 });
@@ -340,5 +341,44 @@ describe('consumables in the fight', () => {
     (rng as Rng & { assertExhausted(): void }).assertExhausted();
     expect(result.state.status).toBe('death');
     expect(result.state.character.consumables?.count).toBe(1);
+  });
+});
+
+describe('equipment in the combat panel', () => {
+  function equippedSetup(health: number): ArenaState {
+    const setup = wolfSetup({
+      attributes: { ...FLAT },
+      health,
+      weapon: { name: 'Hunting Bow', damage: 3, reach: 'ranged' },
+      consumables: { id: 'healing-draught', name: 'Healing Draught', heal: 4, count: 1 },
+    });
+    return startArena(setup, noDice).state;
+  }
+
+  it('names the weapon and the consumable on the panel', () => {
+    const combat = arenaCombatView(equippedSetup(5), 'en');
+    expect(combat?.character).toMatchObject({
+      weaponName: 'Hunting Bow',
+      reach: 'ranged',
+      damage: 3,
+    });
+    expect(combat?.actions.find((action) => action.id === 'attack')).toMatchObject({
+      weaponName: 'Hunting Bow',
+    });
+    expect(combat?.actions.find((action) => action.id === 'use-item')).toMatchObject({
+      enabled: true,
+      itemId: 'healing-draught',
+      itemName: 'Healing Draught',
+    });
+  });
+
+  it('disables the consumable use at full Health', () => {
+    const combat = arenaCombatView(equippedSetup(12), 'en');
+    expect(combat?.actions.find((action) => action.id === 'use-item')).toMatchObject({
+      enabled: false,
+      reason: 'full-health',
+      itemId: 'healing-draught',
+      itemName: 'Healing Draught',
+    });
   });
 });

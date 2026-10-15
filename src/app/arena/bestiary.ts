@@ -420,7 +420,13 @@ export function buildArenaSetup(
     return undefined;
   }
   return {
-    character: { attributes: { ...character.attributes }, health: character.health },
+    character: {
+      attributes: { ...character.attributes },
+      health: character.health,
+      ...(character.weapon !== undefined ? { weapon: { ...character.weapon } } : {}),
+      ...(character.bonuses !== undefined ? { bonuses: { ...character.bonuses } } : {}),
+      ...(character.consumables !== undefined ? { consumables: { ...character.consumables } } : {}),
+    },
     opponents: [
       {
         id: entry.id,
