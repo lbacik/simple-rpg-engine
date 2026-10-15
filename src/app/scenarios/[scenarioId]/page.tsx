@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getScenario, localizeScenario } from '@/content/index';
 import type { Scenario } from '@/content/index';
 import { MAX_HEALTH } from '@/engine/state';
 import { getCatalogue, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
-import { ARENA_SCENARIO_ID } from '@/app/lib/arena';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import { ScenarioLanguageFlags } from '@/app/flag';
 import StartForm from './start-form';
@@ -58,9 +57,6 @@ export default async function ScenarioPage({
   params: Promise<{ scenarioId: string }>;
 }) {
   const { scenarioId } = await params;
-  // The Arena is entered through the top navigation (`/arena`): its fights
-  // start from a picked Bestiary enemy, not from the Character creation form.
-  if (scenarioId === ARENA_SCENARIO_ID) redirect('/arena');
   const language: InterfaceLanguage = await getInterfaceLanguage();
   const catalogue = getCatalogue(language);
   const base = getScenario(scenarioId);

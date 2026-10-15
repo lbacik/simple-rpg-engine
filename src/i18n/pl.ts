@@ -66,7 +66,6 @@ export const pl: Catalogue = {
   nav: {
     scenarios: 'Scenariusze',
     playthroughs: 'Moje rozgrywki',
-    arena: 'Arena',
   },
   language: {
     label: 'Język',
@@ -153,18 +152,6 @@ export const pl: Catalogue = {
     statusActive: 'Aktywna',
     statusEnded: 'Zakończona',
     statusIncompatible: 'Niezgodna',
-  },
-  arena: {
-    title: 'Arena',
-    description: 'Wybierz przeciwnika z Bestiariusza i stocz walkę.',
-    bestiary: 'Bestiariusz',
-    chooseOpponent: 'Wybierz przeciwnika',
-    fighter: 'Twój wojownik',
-    start: 'Rozpocznij walkę',
-    starting: 'Rozpoczynanie…',
-    unknownEnemy: 'Wybierz jednego z wymienionych przeciwników.',
-    result: 'Wynik',
-    backToArena: 'Wróć na Arenę',
   },
   notFound: {
     title: 'Nie znaleziono strony',

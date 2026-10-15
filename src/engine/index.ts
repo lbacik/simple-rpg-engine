@@ -60,6 +60,34 @@ export {
   type MigrationResult,
   type VersionedState,
 } from './migrate';
+// Arena mode: engine-level Combat testing without any authored Scenario,
+// Encounter, Outcome or Ending (issue #165). The Arena reuses Intent
+// selection and the Round order from `tactical.ts` and resolves every Round
+// under the unchanged Combat rules; its state is never a Playthrough.
+export {
+  applyArenaAction,
+  arenaActions,
+  arenaResult,
+  arenaSetupSchema,
+  startArena,
+  validateArenaSetup,
+  type ApplyArenaActionResult,
+  type ArenaAction,
+  type ArenaAvailability,
+  type ArenaCharacterDefinition,
+  type ArenaCombatAction,
+  type ArenaDisabledReason,
+  type ArenaEnemyDefinition,
+  type ArenaJournalEntry,
+  type ArenaOpponentDefinition,
+  type ArenaOpponentState,
+  type ArenaResult,
+  type ArenaSetup,
+  type ArenaSetupIssue,
+  type ArenaState,
+  type StartArenaResult,
+  type ValidateArenaSetupResult,
+} from './arena';
 export {
   MAP_ASPECT_RATIO,
   MAP_CENTRE,

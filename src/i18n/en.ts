@@ -68,7 +68,6 @@ export const en = {
   nav: {
     scenarios: 'Scenarios',
     playthroughs: 'My Playthroughs',
-    arena: 'Arena',
   },
   language: {
     label: 'Language',
@@ -153,18 +152,6 @@ export const en = {
     statusActive: 'Active',
     statusEnded: 'Ended',
     statusIncompatible: 'Incompatible',
-  },
-  arena: {
-    title: 'Arena',
-    description: 'Pick an opponent from the Bestiary and fight a Combat.',
-    bestiary: 'Bestiary',
-    chooseOpponent: 'Choose your opponent',
-    fighter: 'Your fighter',
-    start: 'Start the fight',
-    starting: 'Starting…',
-    unknownEnemy: 'Choose one of the listed opponents.',
-    result: 'Result',
-    backToArena: 'Back to the Arena',
   },
   notFound: {
     title: 'Page not found',

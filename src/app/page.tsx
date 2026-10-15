@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { listScenarios, localizeScenario } from '@/content/index';
 import { getCatalogue, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { ScenarioLanguageFlags } from './flag';
-import { ARENA_SCENARIO_ID } from './lib/arena';
 import { getInterfaceLanguage } from './lib/language';
 
 export const dynamic = 'force-dynamic';
@@ -61,15 +60,10 @@ function ScenarioCard({
 export default async function HomePage() {
   const language: InterfaceLanguage = await getInterfaceLanguage();
   const catalogue = getCatalogue(language);
-  // The Arena is entered through the top navigation (`/arena`), never through
-  // the collection: its fights start from a picked Bestiary enemy, not from
-  // the Character creation form.
-  const scenarios = listScenarios()
-    .filter((scenario) => scenario.id !== ARENA_SCENARIO_ID)
-    .map((scenario) => ({
-      base: scenario,
-      ...localizeScenario(scenario, language),
-    }));
+  const scenarios = listScenarios().map((scenario) => ({
+    base: scenario,
+    ...localizeScenario(scenario, language),
+  }));
   if (scenarios.length === 0) {
     return (
       <main>

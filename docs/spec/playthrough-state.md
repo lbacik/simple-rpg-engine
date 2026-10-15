@@ -139,6 +139,8 @@ On entering (on-enter), by Open Scene (on-demand), or by `next` (follow-on):
 - **Escape**: the Combat ends, its starting membership, tie-break order, Ranges and temporary effects are discarded, the Encounter record keeps each participant's Damage taken, including defeated participants, and the `escape` Outcome is applied.
 - **Character death**: Health 0, then `ended(death Ending)`, appending the Ending entry.
 
+An Arena fight is not Playthrough state: it runs from an Arena Setup in its own state document (`kind: 'arena'`), never in a Playthrough row, and its victory, escape and death apply no Outcome and reach no Ending.
+
 Defeat and victory are derived from wounds and the current content, not a stored victory marker. With unchanged content an Encounter stays defeated and its victory Outcome is applied at most once. Outside an active Combat, a content change that increases a participant's maximum Health above its Damage taken may revive it; a later `start-combat` then fights the survivors, and defeating the Encounter applies its victory Outcome again, including its Effects. This does not reopen an ended Playthrough. Revival that changes the surviving membership of an active Combat instead makes the Playthrough incompatible ([architecture.md](architecture.md#content-compatibility)).
 
 ## State versions and migration

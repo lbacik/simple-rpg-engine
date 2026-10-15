@@ -101,7 +101,7 @@ These limits keep content valid; they do not guarantee that a fight can be won.
 
 ## Combat
 
-A Combat is a fight between the Character and the **participants** of one Encounter: one or two Enemies. A Scenario arranges successive fights through content.
+A Combat is a fight between the Character and the **participants** of one Encounter: one or two Enemies. A Scenario arranges successive fights through content. An **Arena** fight pits the same Character actions against one or two opponents from an **Arena Setup** instead, under these same rules; it ends in a plain result with no Encounter Outcome and no Ending.
 
 ### Participants
 
@@ -272,7 +272,7 @@ So at most one Heavy attack is ever in preparation, and a second participant nev
 - **Escape**: a successful Escape ends the Combat; participants later in the order do not act.
 - **Death**: the Character's Health reaches 0, and the Playthrough ends on the death Ending.
 
-What follows a victory or an escape is authored on the Encounter (see [content-semantics.md](content-semantics.md#encounters-and-combat)).
+What follows a victory or an escape is authored on the Encounter (see [content-semantics.md](content-semantics.md#encounters-and-combat)). In the Arena there is nothing authored after either: the fight ends in its plain result.
 
 ### Persistence of wounds
 
