@@ -7,7 +7,9 @@
 // nothing and redirect back with a transient notice; there is no error page.
 // Starting a fight replaces the Session's run; going back to the setup clears
 // it. A forged action value fails fast here before reaching the engine, which
-// re-validates real actions independently.
+// re-validates real actions independently — including `use-item`, which the
+// Arena carries no consumables for and the engine rejects through the normal
+// path (no dice, no step).
 
 'use server';
 
@@ -50,8 +52,9 @@ export async function startArenaAction(formData: FormData): Promise<never> {
 export async function arenaCombatAction(formData: FormData): Promise<never> {
   const expectedStep = Number(String(formData.get('expectedStep') ?? ''));
   const actionId = String(formData.get('combat') ?? '');
-  // An Arena Setup carries no consumables: a use-item submission is forged.
-  if (!Number.isInteger(expectedStep) || !isCombatAction(actionId) || actionId === 'use-item') {
+  // Only the whitelist fails fast: real actions (including `use-item`, which
+  // no Arena Setup can satisfy) reach the engine's normal-path rejection.
+  if (!Number.isInteger(expectedStep) || !isCombatAction(actionId)) {
     await ensureSessionId();
     unavailable();
   }

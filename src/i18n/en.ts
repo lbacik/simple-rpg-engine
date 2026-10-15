@@ -184,8 +184,6 @@ export const en = {
     ): string =>
       `Might ${whole(might)} · Agility ${whole(agility)} · Wits ${whole(wits)} · Presence ${whole(presence)} · Health ${whole(health)} · Damage ${whole(damage)} · Reach ${reach} · ${behaviour}`,
     start: 'Start the fight',
-    starting: 'Starting…',
-    unknownEnemy: 'Choose one of the Bestiary opponents.',
     /** The default Character's name in roll lines. */
     you: 'You',
     rounds: (count: number): string =>

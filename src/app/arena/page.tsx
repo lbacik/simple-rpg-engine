@@ -11,7 +11,7 @@ import { getSessionHash } from '@/app/lib/session';
 import { ArenaStore, getDatabase } from '@/persistence/index';
 import { CombatPanel } from '../play/[playthroughId]/combat-panel';
 import { arenaCombatAction, resetArenaAction, startArenaAction } from './actions';
-import { BESTIARY, DEFAULT_ARENA_CHARACTER } from './bestiary';
+import { BESTIARY, DEFAULT_ARENA_CHARACTER, bestiaryDescription, bestiaryName } from './bestiary';
 import { arenaCombatView, arenaFoeName, arenaTacticalRounds } from './combat-view';
 
 export const dynamic = 'force-dynamic';
@@ -76,9 +76,9 @@ export default async function ArenaPage({
                       value={entry.id}
                       defaultChecked={index === 0}
                     />{' '}
-                    <strong>{language === 'pl' ? entry.name.pl : entry.name.en}</strong>
+                    <strong>{bestiaryName(entry, language)}</strong>
                   </label>
-                  <p>{language === 'pl' ? entry.description.pl : entry.description.en}</p>
+                  <p>{bestiaryDescription(entry, language)}</p>
                   <p className="meta">
                     {catalogue.arena.enemyLine(
                       entry.enemy.attributes.might,
@@ -121,7 +121,7 @@ export default async function ArenaPage({
   // back to the setup.
   if (run.state.status !== 'active') {
     const result = arenaResult(run.state);
-    const foe = arenaFoeName(run.state, language);
+    const foe = arenaFoeName(run.state);
     const title =
       result?.outcome === 'victory'
         ? catalogue.ending.victory

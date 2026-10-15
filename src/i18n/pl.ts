@@ -184,8 +184,6 @@ export const pl: Catalogue = {
     ): string =>
       `Krzepa ${whole(might)} · Zręczność ${whole(agility)} · Spryt ${whole(wits)} · Prezencja ${whole(presence)} · Zdrowie ${whole(health)} · Obrażenia ${whole(damage)} · Zasięg ${reach} · ${behaviour}`,
     start: 'Rozpocznij walkę',
-    starting: 'Rozpoczynanie…',
-    unknownEnemy: 'Wybierz jednego z przeciwników z Bestiariusza.',
     /** The default Character's name in roll lines. */
     you: 'Ty',
     rounds: (count: number): string =>

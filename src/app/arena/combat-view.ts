@@ -1,9 +1,10 @@
 // The Arena Combat adapter (issue #166): the stored Arena run rendered
 // through the existing Combat presentation. The adapter derives the Scenario
-// Combat view shape from Arena state — the localized opponent name and
-// description, the default Character, the Arena view projection — so the Arena
-// page reuses the Combat panel and its actions unchanged. The Combat log reads
-// the stored Arena journal, never the state, so it survives a reload.
+// Combat view shape from Arena state — the opponent name as stored at setup,
+// its localized description, the default Character, the Arena view projection
+// — so the Arena page reuses the Combat panel and its actions unchanged. The
+// Combat log reads the stored Arena journal, never the state, so it survives
+// a reload.
 
 import {
   arenaView,
@@ -14,16 +15,17 @@ import {
 } from '../../engine/index';
 import { MAX_HEALTH } from '../../engine/state';
 import { getCatalogue, type InterfaceLanguage } from '../../i18n/index';
-import { bestiaryById, bestiaryDescription, bestiaryName } from './bestiary';
+import { bestiaryById, bestiaryDescription } from './bestiary';
 
 export type ArenaCombat = Extract<GameView, { kind: 'combat' }>;
 
-/** The fight's opponent in the Interface Language, falling back to the stored name. */
-export function arenaFoeName(state: ArenaState, language: InterfaceLanguage): string {
-  const first = state.opponents[0];
-  if (first === undefined) return '';
-  const entry = bestiaryById(first.id);
-  return entry === undefined ? first.name : bestiaryName(entry, language);
+/**
+ * The fight's opponent, named as stored when the Setup was built — the way
+ * the Journal stores Scenario text as presented, so a mid-fight language
+ * switch never renames the foe out from under the stored narration.
+ */
+export function arenaFoeName(state: ArenaState): string {
+  return state.opponents[0]?.name ?? '';
 }
 
 function arenaFoeDescription(state: ArenaState, language: InterfaceLanguage): string {
@@ -46,7 +48,7 @@ export function arenaCombatView(
     return undefined;
   }
   const catalogue = getCatalogue(language);
-  const foe = arenaFoeName(state, language);
+  const foe = arenaFoeName(state);
   const weapon = state.character.weapon;
   const attack = weapon === undefined ? { damage: 2, reach: 'melee' as const } : weapon;
   const first = state.opponents[0];
