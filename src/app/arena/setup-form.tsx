@@ -64,6 +64,8 @@ export default function ArenaSetupForm({
   enemies: ArenaSetupEnemyOption[];
   presets: ArenaPreset[];
   defaults: {
+    opponent1: { enemy: string; range: 'near' | 'far' };
+    opponent2: { enemy: string; range: 'near' | 'far' } | null;
     attributes: ArenaPreset['attributes'];
     health: number;
     weapon: string;
@@ -128,7 +130,9 @@ export default function ArenaSetupForm({
             <select
               id={`arena-enemy${slot}`}
               name={`enemy${slot}`}
-              defaultValue={slot === 1 ? enemies[0]?.id : ''}
+              defaultValue={
+                slot === 1 ? defaults.opponent1.enemy : (defaults.opponent2?.enemy ?? '')
+              }
             >
               {slot === 2 ? <option value="">{strings.noSecondOpponent}</option> : null}
               {enemies.map((enemy) => (
@@ -147,7 +151,10 @@ export default function ArenaSetupForm({
                     type="radio"
                     name={`range${slot}`}
                     value={range}
-                    defaultChecked={range === (slot === 1 ? (enemies[0]?.range ?? 'near') : 'far')}
+                    defaultChecked={
+                      range ===
+                      (slot === 1 ? defaults.opponent1.range : (defaults.opponent2?.range ?? 'far'))
+                    }
                   />{' '}
                   {strings.rangeLabels[range]}{' '}
                 </label>

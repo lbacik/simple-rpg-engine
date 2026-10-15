@@ -1248,6 +1248,97 @@ export function arenaResult(state: ArenaState): ArenaResult | undefined {
   return { outcome: state.status, rounds: state.round };
 }
 
+/** One foe's remaining Health in the fight summary, named as presented. */
+export type ArenaSummaryOpponent = {
+  name: string;
+  health: number;
+  maxHealth: number;
+};
+
+/**
+ * The fight summary for the result screen (issue #171): the outcome, the
+ * Rounds fought, the remaining Health on both sides, and the hits and misses
+ * on both sides, for judging playability. Only executed attack rolls count:
+ * the Character's attacks with its counterattacks, and the foes' strikes and
+ * heavy attacks. Distract, Fall back and Escape roll success, not hits;
+ * cancelled, dropped and not-reached actions carry no roll.
+ */
+export type ArenaSummary = {
+  outcome: 'victory' | 'escape' | 'death';
+  /** The round the fight ended on. */
+  rounds: number;
+  characterHealth: number;
+  characterMaxHealth: number;
+  opponents: ArenaSummaryOpponent[];
+  characterHits: number;
+  characterMisses: number;
+  foeHits: number;
+  foeMisses: number;
+};
+
+/**
+ * The fight's summary: undefined while it runs. The roll counts read the
+ * stored journal, never the state, so the summary matches the shown log.
+ */
+export function arenaSummary(
+  state: ArenaState,
+  journal: ArenaJournalEntry[],
+): ArenaSummary | undefined {
+  if (state.status === 'active') {
+    return undefined;
+  }
+  let characterHits = 0;
+  let characterMisses = 0;
+  let foeHits = 0;
+  let foeMisses = 0;
+  for (const entry of journal) {
+    if (entry.type !== 'arena-round') continue;
+    for (const event of entry.actions) {
+      if (event.status !== 'executed') continue;
+      // The counterattack reaction rides on the missed melee attack it
+      // answers, so it counts for the Character side wherever it sits.
+      if (event.counter !== undefined) {
+        if (event.counter.roll.hit) characterHits += 1;
+        else characterMisses += 1;
+      }
+      if (event.actor.kind === 'character') {
+        if (event.kind === 'attack' && event.roll !== undefined) {
+          if (event.roll.hit) characterHits += 1;
+          else characterMisses += 1;
+        }
+      } else if (
+        (event.kind === 'strike' || event.kind === 'heavy-attack') &&
+        event.roll !== undefined
+      ) {
+        if (event.roll.hit) foeHits += 1;
+        else foeMisses += 1;
+      }
+    }
+  }
+  return {
+    outcome: state.status,
+    rounds: state.round,
+    characterHealth: state.character.health,
+    characterMaxHealth: MAX_HEALTH,
+    opponents: state.opponents.map((opponent) => {
+      const sameName = state.opponents.filter((candidate) => candidate.name === opponent.name);
+      const name =
+        sameName.length <= 1
+          ? opponent.name
+          : `${opponent.name} ${String.fromCharCode(64 + sameName.findIndex((candidate) => candidate.id === opponent.id) + 1)}`;
+      return {
+        name,
+        health: Math.max(0, opponent.maxHealth - opponent.damageTaken),
+        maxHealth: opponent.maxHealth,
+      };
+    }),
+    characterHits,
+    characterMisses,
+    foeHits,
+    foeMisses,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Arena view: what the fight shows. A pure projection over the running fight
 // for the Arena page (issue #166): lanes, legal targets, reason codes,

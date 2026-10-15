@@ -480,7 +480,15 @@ export function buildArenaSetupForOpponents(
   }
   const ids = arenaOpponentIds(requests);
   return {
-    character: { attributes: { ...character.attributes }, health: character.health },
+    character: {
+      attributes: { ...character.attributes },
+      health: character.health,
+      ...(character.weapon !== undefined ? { weapon: { ...character.weapon } } : {}),
+      ...(character.bonuses !== undefined ? { bonuses: { ...character.bonuses } } : {}),
+      ...(character.consumables !== undefined
+        ? { consumables: { ...character.consumables } }
+        : {}),
+    },
     opponents: requests.map((request, index) => {
       const entry = entries[index];
       if (entry === undefined) throw new Error(`unknown bestiary entry "${request.enemyId}"`);
