@@ -1,0 +1,7 @@
+id: sands
+name: The Sands
+description: |
+  White sand, a ring of wooden benches, and a gate that slams shut behind
+  every fighter who steps in.
+map: { x: 50, y: 50 }
+scenes: [choose-foe]

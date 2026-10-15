@@ -1,0 +1,12 @@
+# Character Template catalog. The Arena keeps a single default fighter:
+# base Attributes are 0-3 and sum to exactly 6. Starting Equipment is
+# equipped, at most one item per slot.
+
+- id: arena-fighter
+  name: Arena Fighter
+  description: A pit regular with more scars than fears.
+  attributes: { might: 2, agility: 2, wits: 1, presence: 1 }
+  items:
+    - { item: arena-sword }
+    - { item: arena-leathers }
+    - { item: field-dressing, quantity: 2 }

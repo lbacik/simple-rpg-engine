@@ -1,0 +1,25 @@
+id: choose-foe
+title: Choose Your Foe
+trigger: on-enter
+text: |
+  The master of the pit nods at you, {name}. Three gates stand open, and
+  behind each one something waits. Pick your fight.
+choices:
+  - id: fight-training-dummy
+    text: Face the Training Dummy.
+    outcome:
+      text: |
+        You step into the ring to face the Training Dummy, {name}.
+      start-combat: fight-training-dummy
+  - id: fight-pit-wolf
+    text: Face the Pit Wolf.
+    outcome:
+      text: |
+        You step into the ring to face the Pit Wolf, {name}.
+      start-combat: fight-pit-wolf
+  - id: fight-cave-bear
+    text: Face the Cave Bear.
+    outcome:
+      text: |
+        You step into the ring to face the Cave Bear, {name}.
+      start-combat: fight-cave-bear

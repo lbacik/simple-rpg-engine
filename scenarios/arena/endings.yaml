@@ -1,0 +1,16 @@
+# Ending catalog. `death` is the death Ending named in the manifest;
+# `triumph` is reached through every Encounter's victory Outcome.
+
+- id: triumph
+  kind: victory
+  title: Champion of the Sands
+  text: |
+    The master of the pit raises your arm, {name}, and the benches shake the
+    sand from their seats. Tonight the songs are about you.
+
+- id: death
+  kind: defeat
+  title: Fallen in the Sands
+  text: |
+    Your strength runs out among the cheering and the dust, {name}. The pit
+    keeps the brave ones it cannot heal.

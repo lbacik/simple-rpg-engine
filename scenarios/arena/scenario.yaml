@@ -1,0 +1,30 @@
+# The Arena: a sand-strewn pit under an open sky. Pick an opponent from the
+# Bestiary and fight. Manifest and entry point. Every content file is listed
+# explicitly by type; the section a file is listed under decides its content
+# type. The Arena is entered through the top navigation (`/arena`), never
+# through the Scenario collection.
+
+schemaVersion: 1
+id: arena
+title: Arena
+description: >-
+  A sand-strewn pit under an open sky. Pick an opponent from the Bestiary
+  and fight.
+author: Simple RPG Engine contributors
+version: "1.0.0"
+language: en
+
+startLocation: sands
+deathEnding: death
+
+locations:
+  - locations/sands.yaml
+
+scenes:
+  - scenes/choose-foe.yaml
+
+items: [items.yaml]
+enemies: [enemies.yaml]
+encounters: [encounters.yaml]
+templates: [templates.yaml]
+endings: [endings.yaml]
