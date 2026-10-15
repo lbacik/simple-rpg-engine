@@ -97,17 +97,67 @@ export function bestiaryDescription(entry: BestiaryEntry, language: InterfaceLan
 }
 
 /**
- * One Arena Setup for a fight against the Bestiary entry: the default
- * Character and the single opponent with its Enemy name in the Interface
- * Language. Undefined for an unknown entry id.
+ * One submitted Character field: the raw form value, or null when the control
+ * posted nothing. Strings because the form transports text; the engine's
+ * `validateArenaSetup` owns the ranges.
  */
-export function buildArenaSetup(id: string, language: InterfaceLanguage): ArenaSetup | undefined {
+export type ArenaCharacterFields = {
+  might: string | null;
+  agility: string | null;
+  wits: string | null;
+  presence: string | null;
+  health: string | null;
+};
+
+function parseArenaInteger(raw: string | null): number | undefined {
+  if (raw === null) return undefined;
+  // An empty control posts '': `Number('')` is 0, which would silently pass
+  // for an Attribute, so emptiness is invalid here rather than zero.
+  const trimmed = raw.trim();
+  if (!/^-?\d+$/.test(trimmed)) return undefined;
+  return Number(trimmed);
+}
+
+/**
+ * Parse the submitted Character controls into a Character definition. Returns
+ * undefined for missing or non-integer values; the Attribute (0-3) and Health
+ * (1-12) ranges are enforced by the engine's `validateArenaSetup`, which the
+ * Start action runs over the built Setup.
+ */
+export function parseArenaCharacter(fields: ArenaCharacterFields): ArenaCharacterDefinition | undefined {
+  const might = parseArenaInteger(fields.might);
+  const agility = parseArenaInteger(fields.agility);
+  const wits = parseArenaInteger(fields.wits);
+  const presence = parseArenaInteger(fields.presence);
+  const health = parseArenaInteger(fields.health);
+  if (
+    might === undefined ||
+    agility === undefined ||
+    wits === undefined ||
+    presence === undefined ||
+    health === undefined
+  ) {
+    return undefined;
+  }
+  return { attributes: { might, agility, wits, presence }, health };
+}
+
+/**
+ * One Arena Setup for a fight against the Bestiary entry: the given Character
+ * (the default one when omitted) and the single opponent with its Enemy name
+ * in the Interface Language. Undefined for an unknown entry id.
+ */
+export function buildArenaSetup(
+  id: string,
+  language: InterfaceLanguage,
+  character: ArenaCharacterDefinition = DEFAULT_ARENA_CHARACTER,
+): ArenaSetup | undefined {
   const entry = bestiaryById(id);
   if (entry === undefined) {
     return undefined;
   }
   return {
-    character: { ...DEFAULT_ARENA_CHARACTER },
+    character: { attributes: { ...character.attributes }, health: character.health },
     opponents: [
       {
         id: entry.id,

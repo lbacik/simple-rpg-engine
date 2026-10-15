@@ -160,6 +160,11 @@ export const pl: Catalogue = {
       'Wybierz przeciwnika z Bestiariusza i wypróbuj zasady Walki. Bez Scenariusza i Rozgrywki — sama walka.',
     bestiaryHeading: 'Bestiariusz',
     characterHeading: 'Twoja postać',
+    presetLabel: 'Gotowy wzorzec postaci',
+    presetCustom: 'Własna',
+    presetHelp: 'Wybór wzorca wypełnia poniższe wartości; nadal możesz je zmieniać.',
+    attributesHelp: 'Atrybuty przyjmują 0–3 każdy, bez limitu sumy.',
+    healthLabel: 'Zdrowie początkowe (1–12)',
     characterLine: (
       might: number,
       agility: number,

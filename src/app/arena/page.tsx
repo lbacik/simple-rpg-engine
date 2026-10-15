@@ -10,9 +10,11 @@ import { getInterfaceLanguage } from '@/app/lib/language';
 import { getSessionHash } from '@/app/lib/session';
 import { ArenaStore, getDatabase } from '@/persistence/index';
 import { CombatPanel } from '../play/[playthroughId]/combat-panel';
-import { arenaCombatAction, resetArenaAction, startArenaAction } from './actions';
+import { arenaCombatAction, resetArenaAction } from './actions';
 import { BESTIARY, DEFAULT_ARENA_CHARACTER, bestiaryDescription, bestiaryName } from './bestiary';
 import { arenaCombatView, arenaFoeName, arenaTacticalRounds } from './combat-view';
+import { getArenaPresets } from './presets';
+import ArenaSetupForm from './setup-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,8 +52,10 @@ export default async function ArenaPage({
       ? null
       : await new ArenaStore(getDatabase()).findBySession(sessionHash);
 
-  // No run: the Arena Setup. The first entry is pre-selected, so Start works
-  // without JavaScript and without touching the picker.
+  // No run: the Arena Setup. The first entry is pre-selected and the controls
+  // carry the default Character, so Start works without JavaScript and without
+  // touching anything; with JavaScript a preset fills the controls, which stay
+  // editable.
   if (run === null) {
     const character = DEFAULT_ARENA_CHARACTER;
     return (
@@ -63,56 +67,44 @@ export default async function ArenaPage({
             {noticeText}
           </p>
         ) : null}
-        <form action={startArenaAction}>
-          <fieldset>
-            <legend>{catalogue.arena.bestiaryHeading}</legend>
-            <ul className="cards">
-              {BESTIARY.map((entry, index) => (
-                <li key={entry.id} className="card">
-                  <label>
-                    <input
-                      type="radio"
-                      name="enemy"
-                      value={entry.id}
-                      defaultChecked={index === 0}
-                    />{' '}
-                    <strong>{bestiaryName(entry, language)}</strong>
-                  </label>
-                  <p>{bestiaryDescription(entry, language)}</p>
-                  <p className="meta">
-                    {catalogue.arena.enemyLine(
-                      entry.enemy.attributes.might,
-                      entry.enemy.attributes.agility,
-                      entry.enemy.attributes.wits,
-                      entry.enemy.attributes.presence,
-                      entry.enemy.health,
-                      entry.enemy.damage,
-                      catalogue.reach[entry.enemy.reach],
-                      catalogue.arena.behaviour[entry.enemy.behaviour],
-                    )}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
-          <p>
-            <button className="button" type="submit">
-              {catalogue.arena.start}
-            </button>
-          </p>
-        </form>
-        <section aria-label={catalogue.arena.characterHeading}>
-          <h2>{catalogue.arena.characterHeading}</h2>
-          <p>
-            {catalogue.arena.characterLine(
-              character.attributes.might,
-              character.attributes.agility,
-              character.attributes.wits,
-              character.attributes.presence,
-              character.health,
-            )}
-          </p>
-        </section>
+        <ArenaSetupForm
+          enemies={BESTIARY.map((entry) => ({
+            id: entry.id,
+            name: bestiaryName(entry, language),
+            description: bestiaryDescription(entry, language),
+            meta: catalogue.arena.enemyLine(
+              entry.enemy.attributes.might,
+              entry.enemy.attributes.agility,
+              entry.enemy.attributes.wits,
+              entry.enemy.attributes.presence,
+              entry.enemy.health,
+              entry.enemy.damage,
+              catalogue.reach[entry.enemy.reach],
+              catalogue.arena.behaviour[entry.enemy.behaviour],
+            ),
+          }))}
+          presets={getArenaPresets(language)}
+          defaults={{
+            attributes: { ...character.attributes },
+            health: character.health,
+          }}
+          strings={{
+            bestiaryLegend: catalogue.arena.bestiaryHeading,
+            characterLegend: catalogue.arena.characterHeading,
+            presetLabel: catalogue.arena.presetLabel,
+            presetCustom: catalogue.arena.presetCustom,
+            presetHelp: catalogue.arena.presetHelp,
+            attributesHelp: catalogue.arena.attributesHelp,
+            healthLabel: catalogue.arena.healthLabel,
+            start: catalogue.arena.start,
+            attributeLabels: {
+              might: catalogue.attributes.might,
+              agility: catalogue.attributes.agility,
+              wits: catalogue.attributes.wits,
+              presence: catalogue.attributes.presence,
+            },
+          }}
+        />
       </main>
     );
   }

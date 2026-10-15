@@ -160,6 +160,11 @@ export const en = {
       'Choose an opponent from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
     bestiaryHeading: 'Bestiary',
     characterHeading: 'Your Character',
+    presetLabel: 'Character preset',
+    presetCustom: 'Custom',
+    presetHelp: 'Choosing a preset fills in the values below; they stay editable.',
+    attributesHelp: 'Attributes take 0–3 each, with no sum limit.',
+    healthLabel: 'Starting Health (1–12)',
     characterLine: (
       might: number,
       agility: number,
