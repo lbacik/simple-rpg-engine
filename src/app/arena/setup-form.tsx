@@ -1,9 +1,11 @@
-// The Arena setup form (issue #168): the Bestiary picker, the Character
-// Attribute and Health controls, and the Template preset selector. A Client
-// Component, so the preset choice fills the controls without a round trip —
-// but the form still posts plain fields to the Start Server Action, which
-// re-validates every value, so the fight never trusts the browser. Every word
-// arrives as rendered strings in props; no catalogue is imported here.
+// The Arena setup form (issues #168-#169): the Bestiary picker, the
+// Character Attribute and Health controls with the Template preset selector,
+// and the Equipment controls (weapon, outfit, talisman, Consumables). A Client
+// Component, so the preset choice fills the Attribute and Health controls
+// without a round trip — but the form still posts plain fields to the Start
+// Server Action, which re-validates every value, so the fight never trusts
+// the browser. Every word arrives as rendered strings in props; no catalogue
+// is imported here.
 
 'use client';
 
@@ -19,6 +21,13 @@ export type ArenaSetupEnemyOption = {
   range: 'near' | 'far';
 };
 
+export type ArenaSetupEquipmentOption = {
+  id: string;
+  name: string;
+  description: string;
+  meta: string;
+};
+
 export type ArenaSetupStrings = {
   bestiaryLegend: string;
   opponentOne: string;
@@ -32,6 +41,12 @@ export type ArenaSetupStrings = {
   presetHelp: string;
   attributesHelp: string;
   healthLabel: string;
+  equipmentLegend: string;
+  weaponLabel: string;
+  outfitLabel: string;
+  talismanLabel: string;
+  consumablesLabel: string;
+  consumablesHelp: string;
   start: string;
   attributeLabels: { might: string; agility: string; wits: string; presence: string };
 };
@@ -40,11 +55,26 @@ export default function ArenaSetupForm({
   enemies,
   presets,
   defaults,
+  weapons,
+  outfits,
+  talismans,
+  consumablesMax,
   strings,
 }: {
   enemies: ArenaSetupEnemyOption[];
   presets: ArenaPreset[];
-  defaults: { attributes: ArenaPreset['attributes']; health: number };
+  defaults: {
+    attributes: ArenaPreset['attributes'];
+    health: number;
+    weapon: string;
+    outfit: string;
+    talisman: string;
+    consumables: number;
+  };
+  weapons: ArenaSetupEquipmentOption[];
+  outfits: ArenaSetupEquipmentOption[];
+  talismans: ArenaSetupEquipmentOption[];
+  consumablesMax: number;
   strings: ArenaSetupStrings;
 }) {
   const [presetId, setPresetId] = useState('');
@@ -53,6 +83,13 @@ export default function ArenaSetupForm({
   const [wits, setWits] = useState(String(defaults.attributes.wits));
   const [presence, setPresence] = useState(String(defaults.attributes.presence));
   const [health, setHealth] = useState(String(defaults.health));
+  // The Equipment selects stand outside the preset: a preset fills the
+  // Attributes and Health above, while the weapon, outfit, talisman and
+  // Consumables stay exactly as chosen.
+  const [weapon, setWeapon] = useState(defaults.weapon);
+  const [outfit, setOutfit] = useState(defaults.outfit);
+  const [talisman, setTalisman] = useState(defaults.talisman);
+  const [consumables, setConsumables] = useState(String(defaults.consumables));
 
   function choosePreset(id: string): void {
     setPresetId(id);
@@ -214,6 +251,60 @@ export default function ArenaSetupForm({
             onChange={(event) => setHealthEdited(event.target.value)}
           />
         </p>
+      </fieldset>
+      <fieldset>
+        <legend>{strings.equipmentLegend}</legend>
+        <p>
+          <label htmlFor="arena-weapon">{strings.weaponLabel}</label>{' '}
+          <select id="arena-weapon" name="weapon" value={weapon} onChange={(event) => setWeapon(event.target.value)}>
+            {weapons.map((option) => (
+              <option key={option.id} value={option.id} title={option.description}>
+                {option.name} — {option.meta}
+              </option>
+            ))}
+          </select>
+        </p>
+        <p>
+          <label htmlFor="arena-outfit">{strings.outfitLabel}</label>{' '}
+          <select id="arena-outfit" name="outfit" value={outfit} onChange={(event) => setOutfit(event.target.value)}>
+            {outfits.map((option) => (
+              <option key={option.id} value={option.id} title={option.description}>
+                {option.meta === '' ? option.name : `${option.name} — ${option.meta}`}
+              </option>
+            ))}
+          </select>
+        </p>
+        <p>
+          <label htmlFor="arena-talisman">{strings.talismanLabel}</label>{' '}
+          <select
+            id="arena-talisman"
+            name="talisman"
+            value={talisman}
+            onChange={(event) => setTalisman(event.target.value)}
+          >
+            {talismans.map((option) => (
+              <option key={option.id} value={option.id} title={option.description}>
+                {option.meta === '' ? option.name : `${option.name} — ${option.meta}`}
+              </option>
+            ))}
+          </select>
+        </p>
+        <p>
+          <label htmlFor="arena-consumables">{strings.consumablesLabel}</label>{' '}
+          <input
+            id="arena-consumables"
+            name="consumables"
+            type="number"
+            min={0}
+            max={consumablesMax}
+            step={1}
+            required
+            inputMode="numeric"
+            value={consumables}
+            onChange={(event) => setConsumables(event.target.value)}
+          />
+        </p>
+        <p className="meta">{strings.consumablesHelp}</p>
       </fieldset>
       <p>
         <button className="button" type="submit">

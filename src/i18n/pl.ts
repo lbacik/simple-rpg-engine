@@ -169,6 +169,13 @@ export const pl: Catalogue = {
     presetHelp: 'Wybór wzorca wypełnia poniższe wartości; nadal możesz je zmieniać.',
     attributesHelp: 'Atrybuty przyjmują 0–3 każdy, bez limitu sumy.',
     healthLabel: 'Zdrowie początkowe (1–12)',
+    equipmentHeading: 'Ekwipunek',
+    weaponLabel: 'Broń',
+    outfitLabel: 'Strój',
+    talismanLabel: 'Talizman',
+    consumablesLabel: 'Przedmioty jednorazowe (0–3)',
+    consumablesHelp: (heal: number): string =>
+      `Każdy przywraca ${whole(heal)} Zdrowia. Użycie przy pełnym Zdrowiu jest odrzucane.`,
     characterLine: (
       might: number,
       agility: number,

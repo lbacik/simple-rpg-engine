@@ -86,6 +86,7 @@ export function arenaCombatView(
     character: {
       health: state.character.health,
       maxHealth: MAX_HEALTH,
+      ...(weapon?.name === undefined ? {} : { weaponName: weapon.name }),
       reach: attack.reach,
       damage: attack.damage,
     },
@@ -104,6 +105,9 @@ export function arenaCombatView(
       group: action.group,
       enabled: action.enabled,
       ...(action.reason === undefined ? {} : { reason: action.reason }),
+      ...(action.itemId === undefined ? {} : { itemId: action.itemId }),
+      ...(action.itemName === undefined ? {} : { itemName: action.itemName }),
+      ...(action.weaponName === undefined ? {} : { weaponName: action.weaponName }),
     })),
     arena,
     map: { nodes: [], edges: [], currentLocationId: 'arena', travelTargetIds: [] },

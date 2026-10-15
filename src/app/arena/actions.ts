@@ -7,9 +7,11 @@
 // nothing and redirect back with a transient notice; there is no error page.
 // Starting a fight replaces the Session's run; going back to the setup clears
 // it. A forged action value fails fast here before reaching the engine, which
-// re-validates real actions independently — including `use-item`, which the
-// Arena carries no consumables for and the engine rejects through the normal
-// path (no dice, no step).
+// re-validates real actions independently — including a forged Consumable id,
+// which the engine rejects through the normal path (no dice, no step).
+//
+// The Combat `use-item` posts its Consumable id as `item`, like the Scenario
+// Combat form; every other action posts no `item`.
 
 'use server';
 
@@ -22,6 +24,7 @@ import { getInterfaceLanguage } from '@/app/lib/language';
 import { ensureSessionId, getSessionHash, hashSessionId } from '@/app/lib/session';
 import { ArenaStore, getDatabase } from '@/persistence/index';
 import { arenaSetupFromForm, parseArenaCharacter } from './bestiary';
+import { parseArenaEquipment } from './equipment';
 
 const PATH = '/arena';
 
@@ -46,10 +49,29 @@ export async function startArenaAction(formData: FormData): Promise<never> {
     presence: field('presence'),
     health: field('health'),
   });
+  // The Equipment travels as four plain controls alongside the Character.
+  // Unknown ids and out-of-range quantities parse to no Equipment; either way
+  // the fight never starts on forged values.
+  const equipment = parseArenaEquipment(
+    {
+      weapon: field('weapon'),
+      outfit: field('outfit'),
+      talisman: field('talisman'),
+      consumables: field('consumables'),
+    },
+    language,
+  );
   // The form offers two opponent slots, each with its own starting Range;
   // the parser validates the opponent count (1-2) and the Range values.
   const setup =
-    character === undefined ? undefined : arenaSetupFromForm(formData, language, character);
+    character === undefined || equipment === undefined
+      ? undefined
+      : arenaSetupFromForm(formData, language, {
+          ...character,
+          ...(equipment.weapon !== undefined ? { weapon: equipment.weapon } : {}),
+          ...(equipment.bonuses !== undefined ? { bonuses: equipment.bonuses } : {}),
+          consumables: equipment.consumables,
+        });
   const validated = setup === undefined ? undefined : validateArenaSetup(setup);
   if (validated === undefined || !validated.ok) {
     await ensureSessionId();
@@ -68,8 +90,8 @@ export async function startArenaAction(formData: FormData): Promise<never> {
 export async function arenaCombatAction(formData: FormData): Promise<never> {
   const expectedStep = Number(String(formData.get('expectedStep') ?? ''));
   const actionId = String(formData.get('combat') ?? '');
-  // Only the whitelist fails fast: real actions (including `use-item`, which
-  // no Arena Setup can satisfy) reach the engine's normal-path rejection.
+  // Only the whitelist fails fast: real actions (including a `use-item` with
+  // a forged Consumable id) reach the engine's normal-path rejection.
   if (!Number.isInteger(expectedStep) || !isCombatAction(actionId)) {
     await ensureSessionId();
     unavailable();
@@ -88,11 +110,13 @@ export async function arenaCombatAction(formData: FormData): Promise<never> {
     redirect(PATH);
   }
   const target = String(formData.get('target') ?? '');
+  const item = String(formData.get('item') ?? '');
   const result = applyArenaAction(
     run.state,
     {
       action: actionId,
       ...(target === '' ? {} : { targetId: target }),
+      ...(item === '' ? {} : { itemId: item }),
       expectedStep,
     },
     randomInt,
