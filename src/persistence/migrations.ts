@@ -64,4 +64,21 @@ export const MIGRATIONS: Record<string, { up(db: Kysely<Database>): Promise<void
         .execute();
     },
   },
+  // The Arena page (issue #166): one run per Session, outside the Playthrough
+  // stores, so a reload resumes the same Combat without ever listing the
+  // fight among the Session's Playthroughs (ADR 0006).
+  '003_arena_runs': {
+    async up(db: Kysely<Database>): Promise<void> {
+      await db.schema
+        .createTable('arena_runs')
+        .ifNotExists()
+        .addColumn('session_id', 'text', (col) => col.primaryKey())
+        .addColumn('step', 'integer', (col) => col.notNull())
+        .addColumn('state', 'text', (col) => col.notNull())
+        .addColumn('journal', 'text', (col) => col.notNull())
+        .addColumn('created_at', 'text', (col) => col.notNull())
+        .addColumn('updated_at', 'text', (col) => col.notNull())
+        .execute();
+    },
+  },
 };

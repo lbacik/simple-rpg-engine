@@ -29,6 +29,12 @@ import { z } from 'zod';
 import type { CompiledParticipant } from '../content/model';
 import type {
   CombatAction,
+  CombatActionGroup,
+  CombatArenaAction,
+  CombatArenaOrderEntry,
+  CombatArenaParticipant,
+  CombatArenaTarget,
+  CombatArenaView,
   CombatRoll,
   CombatStopReason,
   Rng,
@@ -1120,4 +1126,237 @@ export function arenaResult(state: ArenaState): ArenaResult | undefined {
     return undefined;
   }
   return { outcome: state.status, rounds: state.round };
+}
+
+// ---------------------------------------------------------------------------
+// Arena view: what the fight shows. A pure projection over the running fight
+// for the Arena page (issue #166): lanes, legal targets, reason codes,
+// thresholds, Speed and predicted order positions, badges and preparation
+// descriptions. No RNG, no mutation, no Journal — mirroring the Scenario
+// Combat arena projection (`combatArena` in `index.ts`) over Arena state, so
+// the Arena page renders the existing Combat presentation unchanged.
+// ---------------------------------------------------------------------------
+
+/** The action group of every Character action playable in the Arena. */
+const ARENA_ACTION_GROUP: Record<Exclude<ArenaCombatAction, 'use-item'>, CombatActionGroup> = {
+  advance: 'position',
+  'fall-back': 'position',
+  attack: 'fight',
+  defend: 'fight',
+  distract: 'fight',
+  escape: 'leave',
+};
+
+/**
+ * Derive the Arena view from the running fight. Pure: no RNG, no mutation, no
+ * Journal. Returns undefined once the fight has ended; the result screen reads
+ * `arenaResult` instead.
+ */
+export function arenaView(state: ArenaState): CombatArenaView | undefined {
+  if (state.status !== 'active') {
+    return undefined;
+  }
+  const effective = effectiveAttributes(state);
+  const attack = characterAttack(state);
+  const survivors = survivorsOf(state);
+  const setupOrder = state.opponents.map((opponent) => opponent.id);
+
+  // The Intents' places among themselves, in resolution order.
+  const intentQueued: QueuedAction[] = survivors.map(
+    (opponent): QueuedAction => ({
+      key: opponent.id,
+      actor: 'participant',
+      participantId: opponent.id,
+      speed: INTENT_SPEED[opponent.intent],
+      agility: opponent.attributes.agility,
+    }),
+  );
+  const intentOrdered = orderActions(intentQueued, setupOrder);
+  const intentPosition = new Map(
+    intentOrdered.map((queued, index) => [queued.participantId ?? '', index + 1]),
+  );
+
+  /** The predicted place of a Character action with itself among the Intents. */
+  const predictOrder = (speed: Speed): number => {
+    const queued: QueuedAction[] = [
+      ...intentQueued,
+      { key: 'character', actor: 'character', speed, agility: effective.agility },
+    ];
+    const ordered = orderActions(queued, setupOrder);
+    return ordered.findIndex((queuedAction) => queuedAction.actor === 'character') + 1;
+  };
+
+  const refOf = (opponent: ArenaOpponentState): { name: string; ordinal?: number } => {
+    const ordinal = ordinalOf(state, opponent);
+    return ordinal === undefined ? { name: opponent.name } : { name: opponent.name, ordinal };
+  };
+
+  const participants: CombatArenaParticipant[] = state.opponents.map((opponent) => {
+    const ref = refOf(opponent);
+    const defeated = opponent.damageTaken >= opponent.maxHealth;
+    if (defeated) {
+      return {
+        participantId: opponent.id,
+        enemyId: opponent.id,
+        ...ref,
+        defeated: true,
+        health: 0,
+        maxHealth: opponent.maxHealth,
+        damage: opponent.damage,
+        reach: opponent.reach,
+        prepared: false,
+      };
+    }
+    const isAttack = opponent.intent === 'strike' || opponent.intent === 'heavy-attack';
+    const wary =
+      opponent.waryUntilRound !== undefined && opponent.waryUntilRound >= state.round;
+    return {
+      participantId: opponent.id,
+      enemyId: opponent.id,
+      ...ref,
+      defeated: false,
+      range: opponent.range,
+      health: Math.max(0, opponent.maxHealth - opponent.damageTaken),
+      maxHealth: opponent.maxHealth,
+      damage: opponent.damage,
+      reach: opponent.reach,
+      intent: opponent.intent,
+      intentSpeed: INTENT_SPEED[opponent.intent],
+      order: intentPosition.get(opponent.id) ?? 0,
+      ...(isAttack
+        ? {
+            threshold: 7 + effective.agility,
+            guardedThreshold: 9 + effective.agility,
+          }
+        : {}),
+      prepared: opponent.prepared,
+      ...(wary && opponent.waryUntilRound !== undefined
+        ? { waryUntilRound: opponent.waryUntilRound }
+        : {}),
+      ...(opponent.intent === 'prepare' || opponent.prepared
+        ? {
+            preparation: {
+              kind: 'heavy-attack' as const,
+              speed: INTENT_SPEED['heavy-attack'],
+              damage: opponent.damage + 3,
+            },
+          }
+        : {}),
+    };
+  });
+
+  const order: CombatArenaOrderEntry[] = intentOrdered.flatMap((queued) => {
+    const opponent =
+      queued.participantId === undefined
+        ? undefined
+        : state.opponents.find((candidate) => candidate.id === queued.participantId);
+    if (opponent === undefined) {
+      return [];
+    }
+    return [
+      {
+        participantId: opponent.id,
+        ...refOf(opponent),
+        intent: opponent.intent,
+        speed: INTENT_SPEED[opponent.intent],
+        order: intentPosition.get(opponent.id) ?? 0,
+      },
+    ];
+  });
+
+  const legalTargets = survivors.map((opponent) => opponent.id);
+  const nearSurvivors = survivors.filter((opponent) => opponent.range === 'near');
+  const allFar =
+    survivors.length > 0 && survivors.every((opponent) => opponent.range !== 'near');
+  const opposingAll =
+    survivors.length === 0
+      ? 0
+      : Math.max(...survivors.map((opponent) => opponent.attributes.agility));
+  const opposingNear = Math.max(
+    0,
+    ...nearSurvivors.map((opponent) => opponent.attributes.agility),
+  );
+
+  const availability = arenaActions(state);
+  const actions: CombatArenaAction[] = availability.map((entry) => {
+    const speed = CHARACTER_ACTION_SPEED[entry.id];
+    const base = { ...entry, group: ARENA_ACTION_GROUP[entry.id], speed, order: predictOrder(speed) };
+    if (entry.id === 'attack') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (opponent): CombatArenaTarget => {
+            const reachable = attack.reach === 'ranged' || opponent.range === 'near';
+            return {
+              participantId: opponent.id,
+              ...refOf(opponent),
+              range: opponent.range,
+              enabled: reachable,
+              ...(reachable ? {} : { reason: 'needs-near' as const }),
+              threshold: 7 + opponent.attributes.agility,
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'distract') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (opponent): CombatArenaTarget => {
+            const wary = (opponent.waryUntilRound ?? 0) >= state.round;
+            return {
+              participantId: opponent.id,
+              ...refOf(opponent),
+              range: opponent.range,
+              enabled: !wary,
+              ...(wary ? { reason: 'wary' as const } : {}),
+              threshold: 7 + opponent.attributes.wits,
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'advance') {
+      return {
+        ...base,
+        targets: survivors.map(
+          (opponent): CombatArenaTarget => {
+            const advanceable = opponent.range === 'far';
+            return {
+              participantId: opponent.id,
+              ...refOf(opponent),
+              range: opponent.range,
+              enabled: advanceable,
+              ...(advanceable ? {} : { reason: 'already-near' as const }),
+            };
+          },
+        ),
+      };
+    }
+    if (entry.id === 'fall-back') {
+      return {
+        ...base,
+        ...(nearSurvivors.length === 0 ? {} : { threshold: 7 + opposingNear }),
+      };
+    }
+    if (entry.id === 'escape') {
+      return {
+        ...base,
+        threshold: 7 + opposingAll,
+        escapeBonus: allFar ? 2 : 0,
+      };
+    }
+    return base;
+  });
+
+  return {
+    encounterId: 'arena',
+    round: state.round,
+    participants,
+    legalTargets,
+    order,
+    actions,
+    guarded: false,
+  };
 }

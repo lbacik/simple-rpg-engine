@@ -38,8 +38,20 @@ export type SessionRow = {
   last_seen_at: string;
 };
 
+export type ArenaRunRow = {
+  session_id: string;
+  step: number;
+  /** The engine-owned Arena state JSON document, stored as TEXT. */
+  state: string;
+  /** The Arena journal entries JSON array, stored as TEXT. */
+  journal: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   playthroughs: PlaythroughRow;
   journal_entries: JournalEntryRow;
   sessions: SessionRow;
+  arena_runs: ArenaRunRow;
 };

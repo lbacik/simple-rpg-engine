@@ -9,6 +9,7 @@
 // the stored bytes as parsed JSON, including invalid documents.
 
 import type { Kysely, Transaction } from 'kysely';
+import type { ArenaJournalEntry, ArenaState } from '../engine/arena';
 import type { PlaythroughState } from '../engine/state';
 import { runSerialized } from './db';
 import type { Database } from './schema';
@@ -400,5 +401,151 @@ export class SessionStore {
       .values({ id_hash: idHash, created_at: now, last_seen_at: now })
       .execute();
     return { idHash, createdAt: now, lastSeenAt: now };
+  }
+}
+
+export type StoredArenaRun = {
+  sessionId: string;
+  step: number;
+  /** The running fight; validated structurally on read, never trusted blindly. */
+  state: ArenaState;
+  journal: ArenaJournalEntry[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+function parseArenaState(text: string): ArenaState | undefined {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== 'object' || parsed === null || (parsed as { kind?: unknown }).kind !== 'arena') {
+      return undefined;
+    }
+    return parsed as ArenaState;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseArenaJournal(text: string): ArenaJournalEntry[] | undefined {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (!Array.isArray(parsed)) {
+      return undefined;
+    }
+    return parsed as ArenaJournalEntry[];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The Arena runs (issue #166, ADR 0006): one run per Session, stored outside
+ * the Playthrough stores so a fight is never listed among the Session's
+ * Playthroughs. A reload reads the same row back and resumes the same Combat;
+ * starting a fight replaces the row, going back to the setup clears it.
+ */
+export class ArenaStore {
+  constructor(private readonly db: Kysely<Database>) {}
+
+  async findBySession(sessionId: string): Promise<StoredArenaRun | null> {
+    const row = await this.db
+      .selectFrom('arena_runs')
+      .selectAll()
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    if (!row) return null;
+    // Corrupt rows read as absent without rewriting them, like corrupt
+    // Playthrough state: the page falls back to the setup.
+    const state = parseArenaState(row.state);
+    const journal = parseArenaJournal(row.journal);
+    if (state === undefined || journal === undefined) return null;
+    return {
+      sessionId: row.session_id,
+      step: row.step,
+      state,
+      journal,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  /**
+   * Store the Session's run, replacing any previous one. Used when a fight
+   * starts: the new Setup takes the place of whatever ran before.
+   */
+  async replace(sessionId: string, state: ArenaState, journal: ArenaJournalEntry[]): Promise<void> {
+    const now = new Date().toISOString();
+    const existing = await this.db
+      .selectFrom('arena_runs')
+      .select(['session_id'])
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    if (existing) {
+      await this.db
+        .updateTable('arena_runs')
+        .set({
+          step: state.step,
+          state: JSON.stringify(state),
+          journal: JSON.stringify(journal),
+          updated_at: now,
+        })
+        .where('session_id', '=', sessionId)
+        .execute();
+      return;
+    }
+    await this.db
+      .insertInto('arena_runs')
+      .values({
+        session_id: sessionId,
+        step: state.step,
+        state: JSON.stringify(state),
+        journal: JSON.stringify(journal),
+        created_at: now,
+        updated_at: now,
+      })
+      .execute();
+  }
+
+  /**
+   * Guarded Round commit: swaps the state and appends the new Journal entries
+   * only when the stored `step` still equals `expectedStep`. Resolves false
+   * when stale (a concurrent Round won; nothing is written) or when no run is
+   * stored. Serialized per database handle like the Playthrough turn commit.
+   */
+  async commit(
+    sessionId: string,
+    expectedStep: number,
+    state: ArenaState,
+    journal: ArenaJournalEntry[],
+  ): Promise<boolean> {
+    return runSerialized(this.db, () =>
+      this.db.transaction().execute(async (trx) => {
+        const row = await trx
+          .selectFrom('arena_runs')
+          .selectAll()
+          .where('session_id', '=', sessionId)
+          .executeTakeFirst();
+        if (!row || row.step !== expectedStep) {
+          return false;
+        }
+        const stored = parseArenaJournal(row.journal) ?? [];
+        await trx
+          .updateTable('arena_runs')
+          .set({
+            step: state.step,
+            state: JSON.stringify(state),
+            journal: JSON.stringify([...stored, ...journal]),
+            updated_at: new Date().toISOString(),
+          })
+          .where('session_id', '=', sessionId)
+          .where('step', '=', expectedStep)
+          .execute();
+        return true;
+      }),
+    );
+  }
+
+  async clear(sessionId: string): Promise<void> {
+    await this.db.deleteFrom('arena_runs').where('session_id', '=', sessionId).execute();
   }
 }

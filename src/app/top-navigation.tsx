@@ -20,6 +20,7 @@ export function TopNavigation({
     <nav>
       <a href="/">{catalogue.nav.scenarios}</a>
       <a href="/playthroughs">{catalogue.nav.playthroughs}</a>
+      <a href="/arena">{catalogue.nav.arena}</a>
       <span className="spacer" aria-hidden="true" />
       <details className="langmenu">
         <summary aria-label={catalogue.language.menu(currentName)}>

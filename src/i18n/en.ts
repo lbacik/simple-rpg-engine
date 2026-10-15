@@ -68,6 +68,7 @@ export const en = {
   nav: {
     scenarios: 'Scenarios',
     playthroughs: 'My Playthroughs',
+    arena: 'Arena',
   },
   language: {
     label: 'Language',
@@ -152,6 +153,42 @@ export const en = {
     statusActive: 'Active',
     statusEnded: 'Ended',
     statusIncompatible: 'Incompatible',
+  },
+  arena: {
+    title: 'Arena',
+    description:
+      'Choose an opponent from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
+    bestiaryHeading: 'Bestiary',
+    characterHeading: 'Your Character',
+    characterLine: (
+      might: number,
+      agility: number,
+      wits: number,
+      presence: number,
+      health: number,
+    ): string =>
+      `Might ${whole(might)} · Agility ${whole(agility)} · Wits ${whole(wits)} · Presence ${whole(presence)} · Health ${whole(health)}`,
+    behaviour: {
+      steady: 'Steady',
+      heavy: 'Heavy',
+    },
+    enemyLine: (
+      might: number,
+      agility: number,
+      wits: number,
+      presence: number,
+      health: number,
+      damage: number,
+      reach: string,
+      behaviour: string,
+    ): string =>
+      `Might ${whole(might)} · Agility ${whole(agility)} · Wits ${whole(wits)} · Presence ${whole(presence)} · Health ${whole(health)} · Damage ${whole(damage)} · Reach ${reach} · ${behaviour}`,
+    start: 'Start the fight',
+    /** The default Character's name in roll lines. */
+    you: 'You',
+    rounds: (count: number): string =>
+      count === 1 ? '1 round' : `${whole(count)} rounds`,
+    backToSetup: 'Back to setup',
   },
   notFound: {
     title: 'Page not found',
