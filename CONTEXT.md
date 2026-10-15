@@ -177,3 +177,15 @@ _Avoid_: Gear, loadout
 **Consumable**:
 A single-use item that restores Health and is consumed when used.
 _Avoid_: Potion, charge
+
+**Arena**:
+A mode next to Scenarios for testing the Combat mechanism: fights run directly from an Arena Setup through the engine, with no Scenario, Encounter, Outcome or Ending, and no Playthrough.
+_Avoid_: Scenario, test fight
+
+**Arena Setup**:
+The description of one Arena fight: opponents with their Enemy definitions, a Range per opponent, and a Character with Attributes, Health and Equipment.
+_Avoid_: Encounter, Template
+
+**Bestiary**:
+The offer of Enemy kinds an Arena Setup draws its opponents from.
+_Avoid_: Monster manual, catalogue

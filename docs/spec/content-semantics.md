@@ -10,7 +10,7 @@ The Character is always in exactly one Location. At any moment play is in one of
 
 - **Location view**: the Location's description, its visible Connections and its available on-demand Scenes;
 - **Scene active**: a Scene's narration and its visible Choices;
-- **Combat**: a fight with the surviving participants of one Encounter;
+- **Combat**: a fight with the surviving participants of one Encounter; an Arena fight instead pits the Character against the opponents of an Arena Setup, with no Encounter involved;
 - **Ended**: the Playthrough has reached an Ending.
 
 ## Scenario start
@@ -122,6 +122,8 @@ An **Enemy** is a reusable definition. An **Encounter** is a named placement of 
 - **Character death** is not an Encounter Outcome. It always ends the Playthrough on the Scenario's death Ending.
 
 Defeat is checked against current content, not remembered as a separate victory flag. A content change outside Combat may revive a previously defeated participant by increasing its maximum Health above its recorded Damage. In an active Playthrough, a later `start-combat` then fights the current survivors, and the next victory applies the `victory` Outcome and its Effects again. The usual once-only guarantee holds while content remains unchanged. Revival that changes the surviving membership of an active Combat makes the Playthrough incompatible instead ([architecture.md](architecture.md#content-compatibility)); content edits never reopen an ended Playthrough or automatically start a Combat.
+
+An Arena fight bypasses all of the above: it starts from an Arena Setup, never touches an Encounter record, and ends in a plain result with no Outcome and no Ending.
 
 ### Authoring pattern: re-offering an escapable fight
 
