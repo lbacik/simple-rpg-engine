@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 // launcher opens the Journal over the game screen instead of navigating away.
 // Inside, the Journal scrolls infinitely within the modal with its position
 // indicator, and closing returns to the unchanged game screen, including an
-// undismissed result panel.
+// undismissed outcome modal (closing the Journal never acknowledges it).
 test('journal launcher opens in a modal, scrolls older entries, closes unchanged', async ({
   page,
 }) => {
@@ -109,7 +109,7 @@ test('journal launcher opens in a modal, scrolls older entries, closes unchanged
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
 });
 
-test('journal modal returns to an undismissed result panel unchanged', async ({ page }) => {
+test('journal modal returns to an undismissed outcome modal unchanged', async ({ page }) => {
   await page.goto('/');
   await page
     .getByRole('listitem')
@@ -120,11 +120,13 @@ test('journal modal returns to an undismissed result panel unchanged', async ({ 
   await page.getByRole('button', { name: 'Start the Playthrough' }).click();
   await page.getByRole('link', { name: 'Continue' }).click();
 
-  // A Choice without a Test lands on a result panel with Continue.
+  // A Choice without a Test lands on an outcome modal with Continue over the
+  // destination Location.
   await page.getByRole('button', { name: 'Ask what key he means.' }).click();
-  const panel = page.locator('article.reading-card');
-  await expect(panel.getByRole('link', { name: 'Continue' })).toBeVisible();
-  await expect(panel).toContainText('The brass key, lost on the far side');
+  const outcome = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(outcome).toContainText('The brass key, lost on the far side');
 
   const url = page.url();
   const journalLauncher = page.getByRole('link', { name: /Journal, \d+ entr/ });
@@ -137,9 +139,11 @@ test('journal modal returns to an undismissed result panel unchanged', async ({ 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   expect(page.url()).toBe(url);
-  // The undismissed result panel is still there with its Continue.
-  await expect(panel.getByRole('link', { name: 'Continue' })).toBeVisible();
-  await expect(panel).toContainText('The brass key, lost on the far side');
+  // The undismissed outcome modal is still there with its Continue: closing
+  // the Journal never acknowledges the presentation beneath it.
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(outcome).toContainText('The brass key, lost on the far side');
   await expect(journalLauncher).toBeFocused();
 });
 

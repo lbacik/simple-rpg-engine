@@ -305,7 +305,7 @@ export function wrapScenarioNames(message: string, names: string[], lang: string
 // ---------------------------------------------------------------------------
 // Tactical round report (docs/spec/ui.md, log; docs/spec/playthrough-state.md,
 // combat events). One renderer serves the full Journal, the modal Journal, the
-// Combat panel's last-round callout and the decisive Round in the result panel:
+// Combat panel's last-round callout and the decisive Round in the outcome modal:
 // every action of the Round in resolution order — executed, cancelled,
 // dropped or not reached — with its roll and result, any nested counterattack,
 // defeats and the stop reason. Participants sharing an Enemy kind are told

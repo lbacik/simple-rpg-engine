@@ -1,22 +1,28 @@
-// The client-side Continue after a result panel
+// The client-side Continue after an Outcome presentation
 // (docs/spec/playthrough-state.md, two kinds of Continue; docs/spec/ui.md,
-// tests and results): the reading column shows only the result panel until
+// tests and results): the Outcome shows in a modal over the Location until
 // `?seen=` equals the current `step`, and Continue carries that step without
 // changing game state.
 
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   continueHref,
   parsePanel,
   parseSeenStep,
   playHref,
-  shouldShowResultPanel,
+  shouldShowOutcomeModal,
 } from '../src/app/lib/panel';
-import { ResultPanel } from '../src/app/play/[playthroughId]/result-panel';
-import { RESULT_PANEL_ENTRY_TYPES } from '../src/engine/index';
+import { OUTCOME_MODAL_ENTRY_TYPES } from '../src/engine/index';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: () => {} }),
+}));
+
+// Imported after the router mock so the client modal picks it up.
+const { OutcomeModal } = await import('../src/app/play/[playthroughId]/outcome-modal');
 
 describe('parseSeenStep', () => {
   it('parses the current step', () => {
@@ -59,38 +65,38 @@ describe('panel hrefs', () => {
   });
 });
 
-describe('shouldShowResultPanel', () => {
-  it('shows only the result panel until Continue', () => {
-    // No `?seen=`: the result panel alone.
-    expect(shouldShowResultPanel(true, 4, undefined)).toBe(true);
+describe('shouldShowOutcomeModal', () => {
+  it('shows the outcome modal until Continue', () => {
+    // No `?seen=`: the outcome modal over the Location.
+    expect(shouldShowOutcomeModal(true, 4, undefined)).toBe(true);
   });
 
   it('shows the position after Continue', () => {
-    expect(shouldShowResultPanel(true, 4, 4)).toBe(false);
+    expect(shouldShowOutcomeModal(true, 4, 4)).toBe(false);
   });
 
   it('ignores a step parameter that does not match the current step', () => {
-    expect(shouldShowResultPanel(true, 4, 3)).toBe(true);
-    expect(shouldShowResultPanel(true, 4, 5)).toBe(true);
+    expect(shouldShowOutcomeModal(true, 4, 3)).toBe(true);
+    expect(shouldShowOutcomeModal(true, 4, 5)).toBe(true);
   });
 
-  it('shows the position directly when the step produced no result entries', () => {
-    expect(shouldShowResultPanel(false, 4, undefined)).toBe(false);
-    expect(shouldShowResultPanel(false, 4, 4)).toBe(false);
-    expect(shouldShowResultPanel(false, 4, 3)).toBe(false);
+  it('shows the position directly when the step produced no outcome entries', () => {
+    expect(shouldShowOutcomeModal(false, 4, undefined)).toBe(false);
+    expect(shouldShowOutcomeModal(false, 4, 4)).toBe(false);
+    expect(shouldShowOutcomeModal(false, 4, 3)).toBe(false);
   });
 });
 
-describe('result-panel entry types', () => {
-  it('gates every result panel behind Continue: Choice/Test and Combat end', () => {
+describe('outcome-modal entry types', () => {
+  it('gates every Outcome presentation behind Continue: Choice/Test and Combat end', () => {
     for (const type of ['test', 'outcome', 'state-change', 'combat-end', 'enemy-defeated']) {
-      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(true);
+      expect(OUTCOME_MODAL_ENTRY_TYPES.has(type)).toBe(true);
     }
   });
 
-  it('leaves positions, the intro and the Ending out of the panel', () => {
-    // The intro shows in a modal over the starting Location instead of a
-    // result panel (docs/spec/playthrough-state.md, result panel).
+  it('leaves positions, the intro and the Ending out of the modal', () => {
+    // The intro shows in a modal over the starting Location instead of an
+    // outcome modal (docs/spec/playthrough-state.md, outcome modal).
     for (const type of [
       'intro',
       'scene',
@@ -101,7 +107,7 @@ describe('result-panel entry types', () => {
       'inventory',
       'ending',
     ]) {
-      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(false);
+      expect(OUTCOME_MODAL_ENTRY_TYPES.has(type)).toBe(false);
     }
   });
 });
@@ -129,16 +135,18 @@ describe('Continue href', () => {
   });
 });
 
-describe('ResultPanel', () => {
-  it('renders the entries with a Continue link carrying the step', () => {
+describe('OutcomeModal', () => {
+  it('renders the entries in a dialog with a Continue link carrying the step', () => {
     const html = renderToStaticMarkup(
-      <ResultPanel
+      <OutcomeModal
         entries={['<p>Outcome narration.</p>']}
-        continueHref="/play/pt-1?seen=4"
+        acknowledgeHref="/play/pt-1?seen=4"
         continueLabel={en.game.continue}
         label={en.game.latestEvents}
+        closeLabel="Close Latest events"
       />,
     );
+    expect(html).toContain('role="dialog"');
     expect(html).toContain('Outcome narration.');
     expect(html).toContain('href="/play/pt-1?seen=4"');
     expect(html).toContain('Continue');
@@ -151,11 +159,12 @@ describe('ResultPanel', () => {
 
   it('renders nothing without entries', () => {
     const html = renderToStaticMarkup(
-      <ResultPanel
+      <OutcomeModal
         entries={[]}
-        continueHref="/play/pt-1?seen=4"
+        acknowledgeHref="/play/pt-1?seen=4"
         continueLabel={en.game.continue}
         label={en.game.latestEvents}
+        closeLabel="Close Latest events"
       />,
     );
     expect(html).toBe('');
@@ -163,11 +172,12 @@ describe('ResultPanel', () => {
 
   it('renders the Continue control in Polish', () => {
     const html = renderToStaticMarkup(
-      <ResultPanel
+      <OutcomeModal
         entries={['<p>Narracja wyniku.</p>']}
-        continueHref="/play/pt-1?seen=4"
+        acknowledgeHref="/play/pt-1?seen=4"
         continueLabel={pl.game.continue}
         label={pl.game.latestEvents}
+        closeLabel="Zamknij Ostatnie wydarzenia"
       />,
     );
     expect(html).toContain('Kontynuuj');

@@ -1,7 +1,7 @@
 // Engine unit tests for Scenes, Choices, Outcomes and narration with the
 // Whispering Woods Scenario as the fixture (docs/spec/content-semantics.md,
 // docs/spec/playthrough-state.md): activation, Conditions, Choices,
-// Outcomes, Effects, transitions, the result-panel types and the {name}
+// Outcomes, Effects, transitions, the outcome-modal entry types and the {name}
 // rendering rule. A small synthetic package covers what the example
 // Scenario cannot reach without Tests, Combat or Endings (clear-flag,
 // non-lethal and lethal damage, `once` in a repeatable Scene, `next` to a
@@ -19,7 +19,7 @@ import {
   evaluateCondition,
   onDemandScenes,
   renderNarration,
-  RESULT_PANEL_ENTRY_TYPES,
+  OUTCOME_MODAL_ENTRY_TYPES,
   startPlaythrough,
   view,
   visibleChoices,
@@ -708,28 +708,28 @@ describe('conditions: every fact', () => {
   });
 });
 
-describe('result panel derivation and narration', () => {
-  it('derives the panel from the latest step entries of the listed types only', () => {
-    expect([...RESULT_PANEL_ENTRY_TYPES].sort()).toEqual(
+describe('outcome modal derivation and narration', () => {
+  it('derives the modal entries from the latest step entries of the listed types only', () => {
+    expect([...OUTCOME_MODAL_ENTRY_TYPES].sort()).toEqual(
       ['combat-end', 'enemy-defeated', 'outcome', 'state-change', 'test'].sort(),
     );
     const { scenario, state: started } = startWoods();
     const listened = choose(scenario, started, 'listen').state;
     const accepted = choose(scenario, listened, 'accept').state;
-    // Step 1 produced a Choice and Scene narration: no panel.
+    // Step 1 produced a Choice and Scene narration: no outcome entries.
     const stepOne = listened.step;
     expect(stepOne).toBe(1);
     // Step 2 produced the Outcome narration and three state changes.
-    const panel = accepted.step;
+    const outcomeStep = accepted.step;
     expect(
       [
         { step: stepOne, type: 'choice' },
         { step: stepOne, type: 'scene' },
-        { step: panel, type: 'choice' },
-        { step: panel, type: 'outcome' },
-        { step: panel, type: 'state-change' },
+        { step: outcomeStep, type: 'choice' },
+        { step: outcomeStep, type: 'outcome' },
+        { step: outcomeStep, type: 'state-change' },
       ]
-        .filter((entry) => entry.step === panel && RESULT_PANEL_ENTRY_TYPES.has(entry.type))
+        .filter((entry) => entry.step === outcomeStep && OUTCOME_MODAL_ENTRY_TYPES.has(entry.type))
         .map((entry) => entry.type),
     ).toEqual(['outcome', 'state-change']);
   });

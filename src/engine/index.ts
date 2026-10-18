@@ -394,16 +394,16 @@ export type NewJournalEntry =
     };
 
 /**
- * Journal entry types that make up the result panel
- * (docs/spec/playthrough-state.md, result panel): the Test, Outcome
+ * Journal entry types that make up the Outcome modal
+ * (docs/spec/playthrough-state.md, outcome modal): the Test, Outcome
  * narration and state changes of the latest step, plus Combat end and
  * the Enemy-defeated notice. The intro is not part of it: at the start of a
  * Playthrough it shows in a modal over the starting Location instead.
- * Scene narration, travel, Combat start and rounds are shown by the new
- * position itself. Test and Combat types arrive with their tickets; the set
- * already lists them.
+ * Scene narration, travel, Combat start and rounds are revealed after
+ * acknowledgement through the existing engine sequence. Test and Combat
+ * types arrive with their tickets; the set already lists them.
  */
-export const RESULT_PANEL_ENTRY_TYPES: ReadonlySet<string> = new Set([
+export const OUTCOME_MODAL_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'test',
   'outcome',
   'state-change',
@@ -3116,7 +3116,7 @@ export function combatRounds(
  * action of the Round with its status, rolls and results, and how the sequence
  * stopped, if it did. Rendered through the shared tactical report (the full
  * Journal, the modal Journal, the Combat panel's last-round callout and the
- * decisive Round in the result panel), never reinterpreted as a legacy round.
+ * decisive Round in the outcome modal), never reinterpreted as a legacy round.
  */
 export type TacticalRoundView = {
   round: number;
