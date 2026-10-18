@@ -5,6 +5,9 @@
 
 'use client';
 
+// PROTOTYPE (#196): animated Illustration variants, development builds only.
+import { AnimatedIllustrationPrototype } from './_prototype-animated-illustration/variants';
+
 export function SceneIllustration({
   src,
   width,
@@ -16,6 +19,9 @@ export function SceneIllustration({
   height: number;
   alt: string;
 }) {
+  if (process.env.NODE_ENV !== 'production') {
+    return <AnimatedIllustrationPrototype src={src} width={width} height={height} alt={alt} />;
+  }
   return (
     <img
       src={src}

@@ -1,0 +1,17 @@
+{
+  "_comment": "PROTOTYPE (#196). Per-Illustration anchor points as fractions of the image width/height. Shared by the asset render script and the variant components.",
+  "loopSeconds": 8,
+  "fps": 24,
+  "illustrations": {
+    "loc-hunters-camp": {
+      "hearth": { "x": 0.532, "y": 0.745, "width": 0.15 },
+      "light": { "x": 0.532, "y": 0.72, "radius": 0.42 },
+      "sky": { "top": 0.06, "bottom": 0.3 }
+    },
+    "camp-standoff": {
+      "hearth": { "x": 0.7, "y": 0.8, "width": 0.2 },
+      "light": { "x": 0.7, "y": 0.78, "radius": 0.45 },
+      "sky": { "top": 0.08, "bottom": 0.3 }
+    }
+  }
+}

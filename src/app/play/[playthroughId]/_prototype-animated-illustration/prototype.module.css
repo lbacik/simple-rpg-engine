@@ -1,0 +1,136 @@
+/* PROTOTYPE (#196), throwaway. */
+
+.frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.overlay[data-ready='true'] {
+  opacity: 1;
+}
+
+.video {
+  object-fit: cover;
+}
+
+.multiply {
+  mix-blend-mode: multiply;
+}
+
+.clip {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.strip {
+  display: block;
+  height: 100%;
+  max-width: none;
+}
+
+.mover {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Overlay Play/Pause control: bottom-right, always visible, 44×44 px target. */
+.control {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: rgba(250, 247, 240, 0.88);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.control:focus-visible {
+  outline: 3px solid #1d5fd6;
+  outline-offset: 2px;
+}
+
+.lab {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 999;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  background: #111;
+  color: #eee;
+  border-radius: 10px;
+  font: 12px/1.45 system-ui, sans-serif;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+.lab summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.labBody {
+  padding: 0 12px 12px;
+}
+
+.lab h4 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ab;
+}
+
+.lab pre {
+  margin: 0;
+  padding: 8px;
+  background: #222;
+  border-radius: 6px;
+  overflow: auto;
+  font-size: 11px;
+}
+
+.lab label {
+  display: block;
+}
+
+.lab button {
+  margin-top: 4px;
+  font: inherit;
+}
+
+.lab table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.lab td {
+  padding: 1px 4px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.lab td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
