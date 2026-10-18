@@ -2,7 +2,7 @@
 // panel): a status card (medal with a Health ring, name, Template, readable
 // Health line, segmented Health bar, effective Attributes), the Character /
 // Inventory / Journal / Map launchers, then the compact Location map with an
-// Expand link. The Character sheet, the inventory, the Journal and the expanded
+// Expand button. The Character sheet, the inventory, the Journal and the expanded
 // map open in modals over the game screen; the compact map stays visible behind
 // the map modal on desktop.
 //
@@ -458,7 +458,7 @@ export function SidePanel({
   const inventoryName = catalogue.inventory.name(itemsCount);
   const journalName = catalogue.journal.name(entriesCount);
   // Variant A order: Character status, launchers, then the compact map.
-  // The compact map carries an Expand link and the Map launcher opens the
+  // The compact map carries an Expand button and the Map launcher opens the
   // same enlarged modal, so it is reachable on desktop and phones alike; on
   // phones the inline map hides behind the Map launcher.
   const expandHref = playHref(playthroughId, 'map', notice, seen, showUnknownExits);

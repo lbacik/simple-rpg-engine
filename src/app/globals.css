@@ -1378,11 +1378,24 @@ button[disabled] {
 .map-head h2 {
   margin: 0;
   font-size: 0.9375rem;
+  min-width: 0;
 }
 
-.map-expand {
+/* The compact-map Expand control reads as a secondary button matching the
+ * unknown-exits toggle, with a small leading icon; it keeps to one line so
+ * the map header never wraps or overflows on phone and desktop widths. */
+.map-head .map-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   font-size: 0.8125rem;
+  padding: 0.375rem 0.75rem;
   white-space: nowrap;
+  flex: none;
+}
+
+.map-control-icon {
+  flex: none;
 }
 
 .map-card .map-area {
@@ -1535,7 +1548,10 @@ form.map-node button.map-travel:focus-visible .dot {
  * current state (`aria-pressed` plus the explicit label), in the compact
  * map and in the expanded modal alike. */
 .map-toggle .button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
   text-align: center;
   font-size: 0.8125rem;
   padding: 0.5rem 1rem;

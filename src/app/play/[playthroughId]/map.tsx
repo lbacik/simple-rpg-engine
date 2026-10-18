@@ -7,7 +7,9 @@
 // clickable while a Scene or Combat is active.
 //
 // The compact map and the expanded modal share this module with the same
-// toggle: a button-style link flipping the app-level "?" setting. The Travel
+// toggle: a button-style link flipping the app-level "?" setting, and (compact
+// only) a secondary-style Expand button opening the enlarged map modal. Both
+// controls carry small leading icons. The Travel
 // server action is injected (page.tsx passes it through the side panel) and
 // the imports are relative, so tests can drive this module directly with
 // react-dom/server.
@@ -132,6 +134,53 @@ function PlacedNode({
   );
 }
 
+/**
+ * A small leading icon for the compact-map controls (expand, show/hide
+ * unknown exits). Stroke-based `currentColor` SVGs in the same visual
+ * language as the side-panel launcher icons; decorative only, so hidden
+ * from assistive tech and never part of the control's accessible name.
+ */
+function MapControlIcon({ name }: { name: 'expand' | 'eye' | 'eye-off' }) {
+  const paths =
+    name === 'expand' ? (
+      <>
+        <path d="M15 3h6v6" />
+        <path d="M9 21H3v-6" />
+        <path d="M21 3l-7 7" />
+        <path d="M3 21l7-7" />
+      </>
+    ) : name === 'eye' ? (
+      <>
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </>
+    ) : (
+      <>
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+        <path d="M2 2l20 20" />
+      </>
+    );
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className="map-control-icon"
+    >
+      {paths}
+    </svg>
+  );
+}
+
 export function LocationMap({
   map,
   playthroughId,
@@ -169,7 +218,8 @@ export function LocationMap({
       <div className="map-head">
         <h2>{catalogue.map.title}</h2>
         {expandHref === undefined ? null : (
-          <a className="map-expand" href={expandHref}>
+          <a className="map-expand button secondary" href={expandHref}>
+            <MapControlIcon name="expand" />
             {catalogue.map.expand}
           </a>
         )}
@@ -228,10 +278,12 @@ export function LocationMap({
       <p className="map-toggle">
         {showUnknownExits ? (
           <a className="button secondary" aria-pressed="true" href={toggleHref}>
+            <MapControlIcon name="eye-off" />
             {catalogue.map.hideUnknown}
           </a>
         ) : (
           <a className="button secondary" aria-pressed="false" href={toggleHref}>
+            <MapControlIcon name="eye" />
             {catalogue.map.showUnknown}
           </a>
         )}
