@@ -571,6 +571,61 @@ function messageWithName(message: string, name: string, lang: string): string {
   return `<p>${before}<span lang="${escapeHtml(lang)}">${escapeHtml(name)}</span>${after}</p>`;
 }
 
+/**
+ * Feedback notices the Outcome modal and the Journal share (received-item and discovery feedback): one renderer
+ * serves every surface, so equivalent notices always read the same. The
+ * wording comes from the typed catalogue (both Interface Languages), the
+ * Scenario-provided name keeps the entry's `lang`, and the icon is decorative
+ * (`aria-hidden`, never announced) while the explicit text carries the
+ * meaning without colour or icons.
+ */
+export type FeedbackNoticeKind = 'item-received' | 'revealed';
+
+/** The structured state change behind a feedback notice, if any. */
+export function feedbackNoticeKind(entry: JournalEntryView): FeedbackNoticeKind | undefined {
+  if (entry.type !== 'state-change') return undefined;
+  const record = (entry.payload ?? {}) as Record<string, unknown>;
+  if (typeof record.text === 'string' && record.text !== '') return undefined;
+  if (record.change === 'item-received') return 'item-received';
+  if (record.change === 'revealed') return 'revealed';
+  return undefined;
+}
+
+const FEEDBACK_STYLE: Record<FeedbackNoticeKind, { icon: string; modifier: string }> = {
+  'item-received': { icon: '🎒', modifier: 'received' },
+  revealed: { icon: '🧭', modifier: 'revealed' },
+};
+
+/**
+ * A feedback notice: the catalogue message with the Scenario name in its own
+ * `lang` element, wrapped in the shared treatment (`feedback feedback--received`
+ * or `feedback feedback--revealed`) with a decorative icon. Long names wrap
+ * (`feedback-text` is `min-width: 0`) and quantities stay in the text flow
+ * next to the name.
+ */
+function feedbackNotice(
+  message: string,
+  name: string,
+  lang: string,
+  kind: FeedbackNoticeKind,
+): string {
+  const { icon, modifier } = FEEDBACK_STYLE[kind];
+  let body = escapeHtml(message);
+  if (name !== '') {
+    const at = message.lastIndexOf(name);
+    if (at !== -1) {
+      const before = escapeHtml(message.slice(0, at));
+      const after = escapeHtml(message.slice(at + name.length));
+      body = `${before}<span lang="${escapeHtml(lang)}">${escapeHtml(name)}</span>${after}`;
+    }
+  }
+  return (
+    `<p class="feedback feedback--${modifier}">` +
+    `<span class="feedback-icon" aria-hidden="true">${icon}</span>` +
+    `<span class="feedback-text">${body}</span></p>`
+  );
+}
+
 function isAttributeId(value: unknown): value is keyof Catalogue['attributes'] {
   return value === 'might' || value === 'agility' || value === 'wits' || value === 'presence';
 }
@@ -651,6 +706,7 @@ function renderStateChangeEntry(
       change === 'item-received'
         ? catalogue.journal.itemReceived(name, amount)
         : catalogue.journal.itemLost(name, amount);
+    if (change === 'item-received') return feedbackNotice(message, name, lang, 'item-received');
     return messageWithName(message, name, lang);
   }
   if (change === 'health-gained') {
@@ -666,7 +722,7 @@ function renderStateChangeEntry(
   if (change === 'revealed') {
     const name = typeof record.name === 'string' ? record.name : undefined;
     if (name === undefined) return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
-    return messageWithName(catalogue.journal.revealed(name), name, lang);
+    return feedbackNotice(catalogue.journal.revealed(name), name, lang, 'revealed');
   }
   return `<p>${escapeHtml(catalogue.journal.types.stateChange)}</p>`;
 }

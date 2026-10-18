@@ -449,6 +449,61 @@ main:has(.game) {
   border-radius: 0 0.35rem 0.35rem 0;
 }
 
+/* Received-item and discovery feedback (Outcome modal, Journal):
+ * one shared treatment per kind. The explicit catalogue text ("Received:",
+ * "Revealed:" / "Otrzymano:", "Odkryto:") carries the meaning, so the notice
+ * reads without colour or icons; the icon is decorative (aria-hidden). The
+ * kinds differ by icon, border style and tint, never by colour alone. Long
+ * names wrap and stacked notices keep their rhythm on desktop and mobile. */
+.feedback {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  border: 1px solid var(--chronicle-line, #dce3db);
+  border-left-width: 0.3rem;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+  background: #fff;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.feedback-icon {
+  flex: none;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.feedback-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feedback--received {
+  border-left-color: #2f6b3a;
+  border-left-style: solid;
+  background: #eef4ea;
+}
+
+.feedback--revealed {
+  border-left-color: #8a6d1b;
+  border-left-style: dashed;
+  background: #faf3df;
+}
+
+.result .feedback {
+  margin: 0.5rem 0;
+}
+
+.result .feedback:first-child {
+  margin-top: 0;
+}
+
+.result .feedback:last-child {
+  margin-bottom: 0.75rem;
+}
+
 /* Real actions read as numbered decision cards under a "decide" eyebrow. */
 .decisions {
   margin-top: 1.625rem;
