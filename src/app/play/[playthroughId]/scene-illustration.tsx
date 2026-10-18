@@ -5,17 +5,27 @@
 
 'use client';
 
+import type { MotionView } from '@/engine/index';
+import { LayeredIllustration } from './prototype-layered-illustration';
+
 export function SceneIllustration({
   src,
   width,
   height,
   alt,
+  motion,
 }: {
   src: string;
   width: number;
   height: number;
   alt: string;
+  motion?: MotionView;
 }) {
+  // PROTOTYPE (#209): a layered Illustration. Keyed by the Still, so another
+  // Illustration starts a new Showing.
+  if (motion !== undefined) {
+    return <LayeredIllustration key={src} src={src} width={width} height={height} alt={alt} motion={motion} />;
+  }
   return (
     <img
       src={src}

@@ -18,6 +18,9 @@ import {
   inspectImage,
 } from './images';
 import type { ImageFormat } from './images';
+import type { z } from 'zod';
+import { MotionSchema } from './schema';
+import type { CameraSchema, LayerSchema } from './schema';
 import { hasDotDot, isAbsolutePath, isUrl, normalizeListedPath, symlinkEscapesDir } from './paths';
 import { isRecord, nodeAtPath } from './structure';
 import type { ManifestSection, ParsedFile } from './structure';
@@ -932,13 +935,16 @@ export type IntegrityImage = {
   height: number;
   hash: string;
   alt: string;
+  motion?: IntegrityMotion;
 };
 
 type ImageEntry = {
   id: string;
   imagePath: string;
   alt: string;
+  motion: unknown;
   file: ParsedFile;
+  index: number;
   path: (string | number)[];
 };
 
@@ -952,7 +958,9 @@ function collectImageEntries(files: ParsedFile[]): ImageEntry[] {
         id: entry['id'],
         imagePath: typeof entry['path'] === 'string' ? entry['path'] : '',
         alt: typeof entry['alt'] === 'string' ? entry['alt'] : '',
+        motion: entry['motion'],
         file,
+        index: entryIndex,
         path: [entryIndex, 'path'],
       });
     });
@@ -990,98 +998,221 @@ function checkImages(
     }
     seenPaths.set(normalizeListedPath(entry.imagePath), entry);
 
-    const invalidReason = imagePathViolation(scenarioDir, entry.imagePath);
-    if (invalidReason !== undefined) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/invalid-image-path',
-        message: `invalid image path "${entry.imagePath}" ${invalidReason}`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    let bytes: Buffer;
-    try {
-      bytes = fs.readFileSync(path.join(scenarioDir, entry.imagePath));
-    } catch {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/missing-image-file',
-        message: `image file "${entry.imagePath}" is missing or unreadable`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    const expected = IMAGE_FORMAT_BY_EXTENSION[path.extname(entry.imagePath)];
-    const inspected = inspectImage(bytes);
-    if (expected === undefined || inspected === undefined || inspected.format !== expected) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-format-mismatch',
-        message:
-          `image file "${entry.imagePath}" does not match its extension; ` +
-          `the signature must match ${expected === undefined ? 'a supported format' : `".${expected === 'jpeg' ? 'jpg"/".jpeg' : expected}"`} ` +
-          `(.png, .jpg, .jpeg or .webp, lowercase)`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    const tooLarge =
-      bytes.length > MAX_IMAGE_BYTES ||
-      (inspected.width !== undefined &&
-        inspected.height !== undefined &&
-        (inspected.width > MAX_IMAGE_SIDE || inspected.height > MAX_IMAGE_SIDE));
-    if (tooLarge) {
-      const detail =
-        bytes.length > MAX_IMAGE_BYTES
-          ? `is ${bytes.length} bytes; files must be at most 2 MiB`
-          : `is ${inspected.width}x${inspected.height} px; no side may exceed 4096 px`;
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-too-large',
-        message: `image file "${entry.imagePath}" ${detail}`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    if (inspected.width === undefined || inspected.height === undefined) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-format-mismatch',
-        message:
-          `image file "${entry.imagePath}" could not be read as ".${expected}"; ` +
-          `the file may be truncated or corrupt`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
+    const read = readImageFile(scenarioDir, entry.imagePath, 'image file', entry.file, entry.path, ctx);
+    if (read === undefined) continue;
+    const motion = entry.motion === undefined ? undefined : checkMotion(entry, read, scenarioDir, ctx);
     images.push({
       id: entry.id,
       path: entry.imagePath,
-      format: inspected.format,
-      width: inspected.width,
-      height: inspected.height,
-      hash: hashImageBytes(bytes),
+      format: read.format,
+      width: read.width,
+      height: read.height,
+      hash: hashImageBytes(read.bytes),
       alt: entry.alt,
+      ...(motion === undefined ? {} : { motion }),
     });
-    imageBytes.set(entry.id, bytes);
+    imageBytes.set(entry.id, read.bytes);
   }
   return { images, imageBytes };
 }
+
+type ReadImage = { bytes: Buffer; format: ImageFormat; width: number; height: number };
+
+/**
+ * Read and inspect one image file of the Scenario: a Still or (PROTOTYPE,
+ * #209) a Layer file. Reports the ref/ image codes against `nodePath` and
+ * returns undefined on any of them.
+ */
+function readImageFile(
+  scenarioDir: string,
+  imagePath: string,
+  noun: string,
+  file: ParsedFile,
+  nodePath: (string | number)[],
+  ctx: Ctx,
+): ReadImage | undefined {
+  const at = { file: file.file, range: nodeRangeOf(file, nodePath), path: nodePath };
+  const invalidReason = imagePathViolation(scenarioDir, imagePath);
+  if (invalidReason !== undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/invalid-image-path',
+      message: `invalid image path "${imagePath}" ${invalidReason}`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  let bytes: Buffer;
+  try {
+    bytes = fs.readFileSync(path.join(scenarioDir, imagePath));
+  } catch {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/missing-image-file',
+      message: `${noun} "${imagePath}" is missing or unreadable`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  const expected = IMAGE_FORMAT_BY_EXTENSION[path.extname(imagePath)];
+  const inspected = inspectImage(bytes);
+  if (expected === undefined || inspected === undefined || inspected.format !== expected) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-format-mismatch',
+      message:
+        `${noun} "${imagePath}" does not match its extension; ` +
+        `the signature must match ${expected === undefined ? 'a supported format' : `".${expected === 'jpeg' ? 'jpg"/".jpeg' : expected}"`} ` +
+        `(.png, .jpg, .jpeg or .webp, lowercase)`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  const tooLarge =
+    bytes.length > MAX_IMAGE_BYTES ||
+    (inspected.width !== undefined &&
+      inspected.height !== undefined &&
+      (inspected.width > MAX_IMAGE_SIDE || inspected.height > MAX_IMAGE_SIDE));
+  if (tooLarge) {
+    const detail =
+      bytes.length > MAX_IMAGE_BYTES
+        ? `is ${bytes.length} bytes; files must be at most 2 MiB`
+        : `is ${inspected.width}x${inspected.height} px; no side may exceed 4096 px`;
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-too-large',
+      message: `${noun} "${imagePath}" ${detail}`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  if (inspected.width === undefined || inspected.height === undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-format-mismatch',
+      message:
+        `${noun} "${imagePath}" could not be read as ".${expected}"; ` +
+        `the file may be truncated or corrupt`,
+      ...at,
+    });
+    return undefined;
+  }
+  return { bytes, format: inspected.format, width: inspected.width, height: inspected.height };
+}
+
+// ---------------------------------------------------------------------------
+// PROTOTYPE (#209): Illustration Motion (validator rules, #202). The play/
+// warnings belong to Phase 4 in the spec; the prototype reports them here,
+// where the Layer files are already read.
+// ---------------------------------------------------------------------------
+
+const MAX_ILLUSTRATION_BYTES = 4 * 1024 * 1024;
+const READING_COLUMN_PX = 1000;
+
+export type IntegrityLayer = z.output<typeof LayerSchema> & {
+  file: { path: string; hash: string; format: ImageFormat; width: number; height: number };
+};
+
+export type IntegrityMotion = {
+  layers: IntegrityLayer[];
+  camera?: z.output<typeof CameraSchema>;
+};
+
+function checkMotion(entry: ImageEntry, still: ReadImage, scenarioDir: string, ctx: Ctx): IntegrityMotion | undefined {
+  const parsed = MotionSchema.safeParse(entry.motion);
+  // Phase 2 already reported any structural problem.
+  if (!parsed.success) return undefined;
+  const motion = parsed.data;
+  const base: (string | number)[] = [entry.index, 'motion'];
+  const warn = (code: string, message: string, nodePath: (string | number)[]) =>
+    ctx.push({
+      severity: 'warning',
+      code,
+      message,
+      file: entry.file.file,
+      range: nodeRangeOf(entry.file, nodePath),
+      path: nodePath,
+    });
+
+  const layers: IntegrityLayer[] = [];
+  const distinct = new Map<string, number>();
+  let failed = false;
+  (motion.layers ?? []).forEach((layer, index) => {
+    const layerPath = [...base, 'layers', index];
+    const read = readImageFile(scenarioDir, layer.path, 'Layer file', entry.file, [...layerPath, 'path'], ctx);
+    if (read === undefined) {
+      failed = true;
+      return;
+    }
+    distinct.set(normalizeListedPath(layer.path), read.bytes.length);
+    if (layer.frames !== undefined && read.width % layer.frames !== 0) {
+      failed = true;
+      ctx.push({
+        severity: 'error',
+        code: 'ref/sprite-strip-width',
+        message: `Layer file "${layer.path}" is ${read.width} px wide, which does not divide into ${layer.frames} equal frames`,
+        file: entry.file.file,
+        range: nodeRangeOf(entry.file, [...layerPath, 'frames']),
+        path: [...layerPath, 'frames'],
+      });
+    }
+    if (layer.frames === undefined && layer.drift === undefined && layer.flicker === undefined) {
+      warn(
+        'play/static-layer',
+        `Layer "${layer.path}" has no "frames", "drift" or "flicker"; it shows only while Motion is on, so the Illustration at rest differs from the Still`,
+        layerPath,
+      );
+    }
+    if (layer.drift !== undefined && samePoint(layer.drift.from, layer.drift.to)) {
+      warn('play/motionless', `the Drift of Layer "${layer.path}" starts and ends at the same point`, [...layerPath, 'drift']);
+    }
+    layers.push({
+      ...layer,
+      file: { path: layer.path, hash: hashImageBytes(read.bytes), format: read.format, width: read.width, height: read.height },
+    });
+  });
+
+  const total = still.bytes.length + [...distinct.values()].reduce((sum, bytes) => sum + bytes, 0);
+  if (total > MAX_ILLUSTRATION_BYTES) {
+    failed = true;
+    ctx.push({
+      severity: 'error',
+      code: 'ref/illustration-too-large',
+      message: `Illustration "${entry.id}" is ${total} bytes with its distinct Layer files; an Illustration may total at most 4 MiB`,
+      file: entry.file.file,
+      range: nodeRangeOf(entry.file, base),
+      path: base,
+    });
+  }
+
+  const camera = motion.camera;
+  if (camera !== undefined) {
+    const cameraPath = [...base, 'camera'];
+    if (camera.from.zoom === camera.to.zoom && samePoint(camera.from, camera.to)) {
+      warn('play/motionless', `the Camera of Illustration "${entry.id}" ends where it starts`, cameraPath);
+    }
+    const zoom = Math.max(camera.from.zoom, camera.to.zoom);
+    const viewPx = (still.width * 100) / zoom;
+    if (viewPx < READING_COLUMN_PX) {
+      warn(
+        'play/camera-low-resolution',
+        `at zoom ${zoom} the Camera shows ${Math.round(viewPx)} px of the ${still.width} px Still, fewer than the ~${READING_COLUMN_PX} px reading column`,
+        cameraPath,
+      );
+    }
+  }
+  if (failed) return undefined;
+  return { layers, ...(camera === undefined ? {} : { camera }) };
+}
+
+function samePoint(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
+  return a.x === b.x && a.y === b.y;
+}
+
 
 /** The invalid-image-path reason, or undefined when the path is acceptable. */
 function imagePathViolation(scenarioDir: string, imagePath: string): string | undefined {

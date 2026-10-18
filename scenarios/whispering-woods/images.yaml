@@ -101,6 +101,41 @@
   alt: >-
     An abandoned hunters' camp in a pine clearing, with a branch lean-to and a
     ring of blackened hearth stones.
+  # PROTOTYPE (#209): the example layered Illustration.
+  motion:
+    layers:
+      - path: images/layers/hunters-camp-sun.webp
+        blend: multiply
+        flicker: { depth: 40 }
+      - path: images/layers/crow.webp
+        frames: 8
+        fps: 4
+        # Centre of a 4%-wide square frame whose feet (97% down the frame)
+        # stand on the stump top at { x: 33.4, y: 65.8 }.
+        at: { x: 33.4, y: 62.5 }
+        width: 4
+      - path: images/layers/bird.webp
+        frames: 4
+        fps: 5
+        width: 4
+        drift:
+          from: { x: 38, y: 16 }
+          to: { x: 108, y: 9 }
+          duration: 14
+          delay: 1.5
+      - path: images/layers/bird.webp
+        frames: 4
+        fps: 6
+        width: 3.2
+        drift:
+          from: { x: -5, y: 23 }
+          to: { x: 105, y: 19 }
+          duration: 24
+          delay: 8
+          loop: true
+    camera:
+      to: { zoom: 110, x: 30, y: 55 }
+      duration: 18
 
 - id: loc-wolf-hollow
   path: images/loc-wolf-hollow.png

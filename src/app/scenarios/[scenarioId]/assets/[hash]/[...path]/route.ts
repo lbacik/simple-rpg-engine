@@ -45,7 +45,13 @@ export async function GET(
   if (relative === '' || isAbsolutePath(relative) || isUrl(relative) || hasDotDot(relative)) {
     return notFound();
   }
-  const image = scenario.images.find((entry) => entry.path === relative);
+  // PROTOTYPE (#209): a Layer file of a layered Illustration is served too.
+  const image =
+    scenario.images.find((entry) => entry.path === relative) ??
+    scenario.images
+      .flatMap((entry) => entry.motion?.layers ?? [])
+      .map((layer) => layer.file)
+      .find((file) => file.path === relative && file.hash === hash);
   if (image === undefined || image.hash !== hash) return notFound();
   const dir = path.resolve(scenario.dir);
   const full = path.resolve(dir, relative);

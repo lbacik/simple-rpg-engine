@@ -4,6 +4,7 @@
 // (enforced by the no-restricted-imports rule in eslint.config.mjs).
 
 import type { Scenario } from '../content/index';
+import type { IntegrityLayer, IntegrityMotion } from '../content/integrity';
 import type {
   AttributeName,
   CompiledChoice,
@@ -3197,7 +3198,38 @@ export type IllustrationView = {
   width: number;
   height: number;
   alt: string;
+  motion?: MotionView;
 };
+
+// PROTOTYPE (#209): the Motion of a layered Illustration, as the renderer
+// needs it: each Layer's asset URL and pixel size next to its declaration.
+export type LayerView = Omit<IntegrityLayer, 'file'> & { src: string; pxWidth: number; pxHeight: number };
+export type MotionView = { layers: LayerView[]; camera?: IntegrityMotion['camera'] };
+
+export function illustrationView(
+  scenarioId: string,
+  image: { hash: string; path: string; width: number; height: number; alt: string; motion?: IntegrityMotion },
+): IllustrationView {
+  return {
+    src: sceneIllustrationUrl(scenarioId, image),
+    width: image.width,
+    height: image.height,
+    alt: image.alt,
+    ...(image.motion === undefined
+      ? {}
+      : {
+          motion: {
+            layers: image.motion.layers.map(({ file, ...layer }) => ({
+              ...layer,
+              src: sceneIllustrationUrl(scenarioId, file),
+              pxWidth: file.width,
+              pxHeight: file.height,
+            })),
+            ...(image.motion.camera === undefined ? {} : { camera: image.motion.camera }),
+          },
+        }),
+  };
+}
 
 /**
  * The asset URL of a declared image: the Scenario asset route with the
@@ -3371,14 +3403,7 @@ export function view(
         text: scene.text,
         characterName: state.character.name,
         illustration:
-          scene.illustration === undefined
-            ? undefined
-            : {
-                src: sceneIllustrationUrl(scenario.id, scene.illustration),
-                width: scene.illustration.width,
-                height: scene.illustration.height,
-                alt: scene.illustration.alt,
-              },
+          scene.illustration === undefined ? undefined : illustrationView(scenario.id, scene.illustration),
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
@@ -3403,14 +3428,7 @@ export function view(
     name: location.name,
     description: location.description,
     illustration:
-      location.illustration === undefined
-        ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, location.illustration),
-            width: location.illustration.width,
-            height: location.illustration.height,
-            alt: location.illustration.alt,
-          },
+      location.illustration === undefined ? undefined : illustrationView(scenario.id, location.illustration),
     exits: visibleExits(scenario, state),
     onDemandScenes: onDemandScenes(scenario, state),
     map: deriveMap(scenario, state, options),

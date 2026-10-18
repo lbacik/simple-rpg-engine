@@ -338,10 +338,64 @@ export const EndingSchema = z.strictObject({
   text: narrationSchema,
 });
 
+// PROTOTYPE (#209): Illustration Motion, from the authoring syntax (#201) and
+// the validator ranges (#202). `at` has no .default() here: a defaulted `at`
+// would sit next to `drift`, which excludes it; the engine applies the
+// { x: 50, y: 50 } default when a Layer has no Drift.
+const stillPointSchema = z.strictObject({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+const driftPointSchema = z.strictObject({
+  x: z.number().min(-100).max(200),
+  y: z.number().min(-100).max(200),
+});
+const durationSchema = z.number().gt(0).max(600);
+const delaySchema = z.number().min(0).max(600).default(0);
+
+export const LayerSchema = z.strictObject({
+  path: z.string(),
+  at: stillPointSchema.optional(),
+  width: z.number().gt(0).max(400).default(100),
+  frames: z.number().int().min(2).max(64).optional(),
+  fps: z.number().min(1).max(30).optional(),
+  blend: z.enum(['normal', 'multiply', 'screen']).default('normal'),
+  drift: z
+    .strictObject({
+      from: driftPointSchema,
+      to: driftPointSchema,
+      duration: durationSchema,
+      delay: delaySchema,
+      loop: z.boolean().default(false),
+    })
+    .optional(),
+  flicker: z.strictObject({ depth: z.number().min(1).max(100) }).optional(),
+});
+
+const framingSchema = z.strictObject({
+  zoom: z.number().min(100).max(400),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+
+export const CameraSchema = z.strictObject({
+  from: framingSchema.default({ zoom: 100, x: 50, y: 50 }),
+  to: framingSchema,
+  duration: durationSchema,
+  delay: delaySchema,
+  loop: z.boolean().default(false),
+});
+
+export const MotionSchema = z.strictObject({
+  layers: z.array(LayerSchema).optional(),
+  camera: CameraSchema.optional(),
+});
+
 export const ImageSchema = z.strictObject({
   id: idSchema,
   path: z.string(),
   alt: textSchema,
+  motion: MotionSchema.optional(),
 });
 
 // Catalog roots are bare sequences: no extra wrapper.

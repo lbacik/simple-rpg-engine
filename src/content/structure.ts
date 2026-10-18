@@ -730,6 +730,49 @@ function checkEnding(value: unknown, path: readonly (string | number)[], ctx: Ct
 function checkImage(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
   checkText(value['alt'], [...path, 'alt'], ctx);
+  if (value['motion'] !== undefined) checkMotion(value['motion'], [...path, 'motion'], ctx);
+}
+
+// PROTOTYPE (#209): the Motion refinements from the validator rules (#202).
+function checkMotion(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
+  if (!isRecord(value)) return;
+  const layers = value['layers'];
+  if ((layers === undefined && value['camera'] === undefined) || (Array.isArray(layers) && layers.length === 0)) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/empty-motion',
+      message: '"motion" must declare at least one Layer or a "camera"',
+      file: ctx.file,
+      range: rangeOf(ctx, [...path]),
+      path: [...path],
+    });
+  }
+  if (!Array.isArray(layers)) return;
+  layers.forEach((layer, index) => {
+    if (!isRecord(layer)) return;
+    const base = [...path, 'layers', index];
+    if (layer['drift'] !== undefined && layer['at'] !== undefined) {
+      ctx.push({
+        severity: 'error',
+        code: 'schema/drift-and-at',
+        message: 'a Layer with "drift" must not have "at"; the Drift points place it',
+        file: ctx.file,
+        range: rangeOf(ctx, [...base, 'at']),
+        path: [...base, 'at'],
+      });
+    }
+    if ((layer['frames'] === undefined) !== (layer['fps'] === undefined)) {
+      const present = layer['frames'] === undefined ? 'fps' : 'frames';
+      ctx.push({
+        severity: 'error',
+        code: 'schema/frames-fps',
+        message: '"frames" and "fps" go together: a sprite strip needs both, a single picture neither',
+        file: ctx.file,
+        range: rangeOf(ctx, [...base, present]),
+        path: [...base, present],
+      });
+    }
+  });
 }
 
 function checkCatalog(

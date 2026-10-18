@@ -84,12 +84,12 @@ function webpDimensions(bytes: Buffer): { width: number; height: number } | unde
     return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
   }
   if (fourcc === 'VP8X') {
-    // One flags byte, then the canvas width and height minus one as 24-bit
-    // little-endian values.
-    if (payload.length < 7) return undefined;
+    // One flags byte, three reserved bytes, then the canvas width and height
+    // minus one as 24-bit little-endian values.
+    if (payload.length < 10) return undefined;
     return {
-      width: payload.readUIntLE(1, 3) + 1,
-      height: payload.readUIntLE(4, 3) + 1,
+      width: payload.readUIntLE(4, 3) + 1,
+      height: payload.readUIntLE(7, 3) + 1,
     };
   }
   return undefined;

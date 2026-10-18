@@ -7,7 +7,7 @@ import {
   renderNarration,
   renderStoredText,
   OUTCOME_MODAL_ENTRY_TYPES,
-  sceneIllustrationUrl,
+  illustrationView,
   tacticalCombatRounds,
   view,
   visibleExits,
@@ -452,12 +452,7 @@ export default async function PlayPage({
     const baseIllustration =
       baseLocation.illustration === undefined
         ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, baseLocation.illustration),
-            width: baseLocation.illustration.width,
-            height: baseLocation.illustration.height,
-            alt: baseLocation.illustration.alt,
-          };
+        : illustrationView(scenario.id, baseLocation.illustration);
     const baseExits = visibleExits(scenario, state);
     const baseOnDemand = onDemandScenes(scenario, state);
     const introBaseView = {
@@ -522,6 +517,7 @@ export default async function PlayPage({
                   width={baseIllustration.width}
                   height={baseIllustration.height}
                   alt={baseIllustration.alt}
+                  motion={baseIllustration.motion}
                 />
               </figure>
             ) : null}
@@ -608,12 +604,7 @@ export default async function PlayPage({
     const backgroundIllustration =
       backgroundLocation.illustration === undefined
         ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, backgroundLocation.illustration),
-            width: backgroundLocation.illustration.width,
-            height: backgroundLocation.illustration.height,
-            alt: backgroundLocation.illustration.alt,
-          };
+        : illustrationView(scenario.id, backgroundLocation.illustration);
     const backgroundExits = visibleExits(scenario, state);
     const backgroundOnDemand = onDemandScenes(scenario, state);
     return (
@@ -640,6 +631,7 @@ export default async function PlayPage({
                   width={backgroundIllustration.width}
                   height={backgroundIllustration.height}
                   alt={backgroundIllustration.alt}
+                  motion={backgroundIllustration.motion}
                 />
               </figure>
             ) : null}
@@ -755,6 +747,7 @@ export default async function PlayPage({
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
+                    motion={gameView.illustration.motion}
                   />
                 </figure>
               ) : null}
@@ -829,6 +822,7 @@ export default async function PlayPage({
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
+                    motion={gameView.illustration.motion}
                   />
                 </figure>
               ) : null}

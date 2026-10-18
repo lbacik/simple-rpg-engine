@@ -1,0 +1,60 @@
+/* PROTOTYPE (#209), throwaway. */
+
+/* The Illustration's box: Layers and the Camera are clipped to it. */
+.frame {
+  position: relative;
+  overflow: hidden;
+}
+
+.camera {
+  position: relative;
+  transform-origin: 0 0;
+  isolation: isolate;
+}
+
+.still {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* A Still-sized box, so a Drift translates in percent of the Still. */
+.mover {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  overflow: hidden;
+}
+
+.strip {
+  display: block;
+  height: 100%;
+  max-width: none;
+}
+
+/* Overlay Play/Pause control: bottom-right, 44×44 px target. */
+.control {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink, #2a251d);
+  background: rgba(250, 247, 240, 0.88);
+  color: var(--ink, #2a251d);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.control:focus-visible {
+  outline: 3px solid #1d5fd6;
+  outline-offset: 2px;
+}
