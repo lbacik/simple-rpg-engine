@@ -39,7 +39,7 @@ export function parseSeenStep(value: string | undefined): number | undefined {
  * Continue) instead of the current position alone: the latest step produced
  * outcome entries and `?seen=` does not equal the current `step`.
  */
-export function shouldShowResultPanel(
+export function shouldShowOutcomeModal(
   hasResultEntries: boolean,
   currentStep: number,
   seenStep: number | undefined,

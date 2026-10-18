@@ -11,9 +11,9 @@ import {
   parsePanel,
   parseSeenStep,
   playHref,
-  shouldShowResultPanel,
+  shouldShowOutcomeModal,
 } from '../src/app/lib/panel';
-import { RESULT_PANEL_ENTRY_TYPES } from '../src/engine/index';
+import { OUTCOME_MODAL_ENTRY_TYPES } from '../src/engine/index';
 import { en } from '../src/i18n/en';
 import { pl } from '../src/i18n/pl';
 
@@ -65,36 +65,36 @@ describe('panel hrefs', () => {
   });
 });
 
-describe('shouldShowResultPanel', () => {
+describe('shouldShowOutcomeModal', () => {
   it('shows the outcome modal until Continue', () => {
     // No `?seen=`: the outcome modal over the Location.
-    expect(shouldShowResultPanel(true, 4, undefined)).toBe(true);
+    expect(shouldShowOutcomeModal(true, 4, undefined)).toBe(true);
   });
 
   it('shows the position after Continue', () => {
-    expect(shouldShowResultPanel(true, 4, 4)).toBe(false);
+    expect(shouldShowOutcomeModal(true, 4, 4)).toBe(false);
   });
 
   it('ignores a step parameter that does not match the current step', () => {
-    expect(shouldShowResultPanel(true, 4, 3)).toBe(true);
-    expect(shouldShowResultPanel(true, 4, 5)).toBe(true);
+    expect(shouldShowOutcomeModal(true, 4, 3)).toBe(true);
+    expect(shouldShowOutcomeModal(true, 4, 5)).toBe(true);
   });
 
-  it('shows the position directly when the step produced no result entries', () => {
-    expect(shouldShowResultPanel(false, 4, undefined)).toBe(false);
-    expect(shouldShowResultPanel(false, 4, 4)).toBe(false);
-    expect(shouldShowResultPanel(false, 4, 3)).toBe(false);
+  it('shows the position directly when the step produced no outcome entries', () => {
+    expect(shouldShowOutcomeModal(false, 4, undefined)).toBe(false);
+    expect(shouldShowOutcomeModal(false, 4, 4)).toBe(false);
+    expect(shouldShowOutcomeModal(false, 4, 3)).toBe(false);
   });
 });
 
-describe('result-panel entry types', () => {
+describe('outcome-modal entry types', () => {
   it('gates every Outcome presentation behind Continue: Choice/Test and Combat end', () => {
     for (const type of ['test', 'outcome', 'state-change', 'combat-end', 'enemy-defeated']) {
-      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(true);
+      expect(OUTCOME_MODAL_ENTRY_TYPES.has(type)).toBe(true);
     }
   });
 
-  it('leaves positions, the intro and the Ending out of the panel', () => {
+  it('leaves positions, the intro and the Ending out of the modal', () => {
     // The intro shows in a modal over the starting Location instead of an
     // outcome modal (docs/spec/playthrough-state.md, outcome modal).
     for (const type of [
@@ -107,7 +107,7 @@ describe('result-panel entry types', () => {
       'inventory',
       'ending',
     ]) {
-      expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(false);
+      expect(OUTCOME_MODAL_ENTRY_TYPES.has(type)).toBe(false);
     }
   });
 });

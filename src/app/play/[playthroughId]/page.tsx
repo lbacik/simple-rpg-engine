@@ -6,7 +6,7 @@ import {
   onDemandScenes,
   renderNarration,
   renderStoredText,
-  RESULT_PANEL_ENTRY_TYPES,
+  OUTCOME_MODAL_ENTRY_TYPES,
   sceneIllustrationUrl,
   tacticalCombatRounds,
   view,
@@ -36,7 +36,7 @@ import {
   parseSelectedItem,
   selectCombatTarget,
   shouldShowIntroModal,
-  shouldShowResultPanel,
+  shouldShowOutcomeModal,
 } from '@/app/lib/panel';
 import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
 import { CombatPanel } from './combat-panel';
@@ -310,11 +310,11 @@ export default async function PlayPage({
   // round never joins the presentation. A step that ended the Playthrough keeps
   // its entries: the modal shows them over the Location, and acknowledgement
   // reveals the Ending screen through the existing engine sequence.
-  const resultEntries = journal
+  const outcomeEntries = journal
     .filter(
       (entry) =>
         entry.step === playthrough.step &&
-        (RESULT_PANEL_ENTRY_TYPES.has(entry.type) ||
+        (OUTCOME_MODAL_ENTRY_TYPES.has(entry.type) ||
           (entry.type === 'combat-round' && gameView.kind !== 'combat')),
     )
     .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
@@ -349,8 +349,8 @@ export default async function PlayPage({
   // the outcome modal of the actual latest step is shown again. Following
   // Continue changes no game state and does not advance `step`.
   const seenStep = parseSeenStep(seenParam);
-  const showResult = shouldShowResultPanel(
-    resultEntries.length > 0,
+  const showOutcome = shouldShowOutcomeModal(
+    outcomeEntries.length > 0,
     playthrough.step,
     seenStep,
   );
@@ -602,7 +602,7 @@ export default async function PlayPage({
   // the following Scene, Combat panel or Ending screen). The side panel stays
   // visible throughout, with map travel disabled so no Location action can be
   // invoked through the background.
-  if (showResult) {
+  if (showOutcome) {
     const backgroundLocation =
       scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
     const backgroundIllustration =
@@ -723,7 +723,7 @@ export default async function PlayPage({
           closeLabel={catalogue.closePanel(catalogue.game.latestEvents)}
           acknowledgeHref={continueTo}
           continueLabel={catalogue.game.continue}
-          entries={resultEntries}
+          entries={outcomeEntries}
         />
       </main>
     );

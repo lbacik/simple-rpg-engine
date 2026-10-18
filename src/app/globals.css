@@ -441,7 +441,7 @@ main:has(.game) {
   margin-bottom: 0;
 }
 
-.result {
+.outcome-entries {
   border-left: 3px solid var(--chronicle-green);
   background: var(--chronicle-cream);
   padding: 0.75rem 1rem;
@@ -785,6 +785,32 @@ main:has(.game) {
   place-items: center;
   padding: 1.5rem 1rem;
   background: rgb(37 48 41 / 0.5);
+}
+
+/* Outcome modal stacking: its backdrop sits below the top navigation and the
+ * side panel, so the Journal launcher and the language switcher stay usable
+ * while an outcome is unacknowledged (docs/spec/ui.md, journal and language
+ * switcher; docs/spec/playthrough-state.md, outcome modal). The reading
+ * column behind it is inert with no map travel, so no Location action can be
+ * invoked through it. Panel and Journal modals keep z-index 50 above
+ * everything, so they open over the outcome modal. */
+.outcome-modal-backdrop {
+  z-index: 40;
+}
+
+body:has(.outcome-modal-backdrop) header.topnav,
+body:has(.outcome-modal-backdrop) .game .side {
+  z-index: 41;
+}
+
+body:has(.outcome-modal-backdrop) header.topnav {
+  position: relative;
+}
+
+@media (max-width: 50rem) {
+  body:has(.outcome-modal-backdrop) .game .side {
+    position: relative;
+  }
 }
 
 .panel-modal {

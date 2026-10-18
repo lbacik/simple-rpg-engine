@@ -19,7 +19,7 @@ import {
   evaluateCondition,
   onDemandScenes,
   renderNarration,
-  RESULT_PANEL_ENTRY_TYPES,
+  OUTCOME_MODAL_ENTRY_TYPES,
   startPlaythrough,
   view,
   visibleChoices,
@@ -710,7 +710,7 @@ describe('conditions: every fact', () => {
 
 describe('outcome modal derivation and narration', () => {
   it('derives the modal entries from the latest step entries of the listed types only', () => {
-    expect([...RESULT_PANEL_ENTRY_TYPES].sort()).toEqual(
+    expect([...OUTCOME_MODAL_ENTRY_TYPES].sort()).toEqual(
       ['combat-end', 'enemy-defeated', 'outcome', 'state-change', 'test'].sort(),
     );
     const { scenario, state: started } = startWoods();
@@ -729,7 +729,7 @@ describe('outcome modal derivation and narration', () => {
         { step: outcomeStep, type: 'outcome' },
         { step: outcomeStep, type: 'state-change' },
       ]
-        .filter((entry) => entry.step === outcomeStep && RESULT_PANEL_ENTRY_TYPES.has(entry.type))
+        .filter((entry) => entry.step === outcomeStep && OUTCOME_MODAL_ENTRY_TYPES.has(entry.type))
         .map((entry) => entry.type),
     ).toEqual(['outcome', 'state-change']);
   });

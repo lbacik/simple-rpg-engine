@@ -403,7 +403,7 @@ export type NewJournalEntry =
  * acknowledgement through the existing engine sequence. Test and Combat
  * types arrive with their tickets; the set already lists them.
  */
-export const RESULT_PANEL_ENTRY_TYPES: ReadonlySet<string> = new Set([
+export const OUTCOME_MODAL_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'test',
   'outcome',
   'state-change',

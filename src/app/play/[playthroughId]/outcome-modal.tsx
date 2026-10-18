@@ -1,7 +1,7 @@
 // The Outcome modal (Outcome narration after a Choice or Test): the Test,
 // the Outcome narration and the state changes of the latest step shown in an
 // accessible modal over the Playthrough's current Location, rather than
-// replacing the Location view with a result panel.
+// replacing the Location view with the presentation.
 //
 // The acknowledgement is client-side only, like the intro modal's Continue:
 // a plain link to the same game page carrying the current `step` as
@@ -14,9 +14,14 @@
 //
 // While open, the Location actions behind it cannot be invoked: the page
 // renders the background reading column `inert`, and map travel is disabled
-// (`canTravel` false). The side panel stays visible. After acknowledgement the
-// next playable state appears through the existing engine transition sequence:
-// the Location view, the following Scene, Combat panel or Ending screen.
+// (`canTravel` false). The side panel stays visible, and its backdrop sits
+// below the top navigation and the side panel (see `.outcome-modal-backdrop`
+// in globals.css), so the Journal launcher and the language switcher stay
+// usable: the Journal opens over the undismissed outcome, and a language
+// switch shows the same outcome modal again in the mixed languages. After
+// acknowledgement the next playable state appears through the existing engine
+// transition sequence: the Location view, the following Scene, Combat panel
+// or Ending screen.
 
 'use client';
 
@@ -51,8 +56,10 @@ export function OutcomeModal({
   acknowledgeRef.current = acknowledgeHref;
 
   // Lock the background scroll while open; initial focus lands on Continue,
-  // the primary acknowledgement control.
+  // the primary acknowledgement control. With no entries there is no dialog,
+  // so the effects stay idle.
   useEffect(() => {
+    if (entries.length === 0) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const dialog = dialogRef.current;
@@ -65,6 +72,7 @@ export function OutcomeModal({
 
   // Escape acknowledges; Tab cycles inside the dialog.
   useEffect(() => {
+    if (entries.length === 0) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -102,7 +110,7 @@ export function OutcomeModal({
 
   return (
     <div
-      className="panel-modal-backdrop"
+      className="panel-modal-backdrop outcome-modal-backdrop"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           router.push(acknowledgeRef.current);
@@ -127,7 +135,7 @@ export function OutcomeModal({
             <span aria-hidden="true">×</span>
           </Link>
         </div>
-        <div className="result" aria-label={label}>
+        <div className="outcome-entries" aria-label={label}>
           {entries.map((html, index) => (
             <div key={index} dangerouslySetInnerHTML={{ __html: html }} />
           ))}
