@@ -19,6 +19,7 @@ export function PanelModal({
   label,
   closeHref,
   launcherId,
+  size,
   children,
 }: {
   /** Accessible name of the dialog (the panel title). */
@@ -27,6 +28,11 @@ export function PanelModal({
   closeHref: string;
   /** Id of the launcher that opened the modal: focus returns here on close. */
   launcherId: string;
+  /**
+   * The reusable larger modal size (the Map modal now; the Journal modal in a
+   * follow-up). Other modals leave this unset and keep the default size.
+   */
+  size?: 'large';
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -104,7 +110,7 @@ export function PanelModal({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="panel-modal"
+        className={size === 'large' ? 'panel-modal panel-modal--large' : 'panel-modal'}
         tabIndex={-1}
       >
         {children}

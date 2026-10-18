@@ -587,6 +587,7 @@ export function SidePanel({
           label={catalogue.map.label}
           closeHref={closeHref}
           launcherId="launcher-map"
+          size="large"
         >
           <ModalShell
             title={catalogue.map.title}
@@ -602,6 +603,7 @@ export function SidePanel({
               travelAction={travelAction}
               showUnknownExits={showUnknownExits}
               toggleHref={toggleHref}
+              hideHeading
               markerId="map-arrow-modal"
               catalogue={catalogue}
               lang={scenario.language}
