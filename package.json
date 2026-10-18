@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "prototype:fight": "next dev --port 3011"
+    "prototype:fight": "next dev --port 3011",
+    "prototype:ui-c": "next dev --port 3012"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
