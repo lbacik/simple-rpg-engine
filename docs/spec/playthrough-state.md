@@ -73,9 +73,11 @@ Travel identifies a Connection by its target: every visible Connection to the sa
 
 ### Result panel
 
-The result panel is derived from the Journal entries of the **latest step**, taking only these types, in order: intro, Test, Outcome narration, state change, the Combat round that ended a Combat (victory or escape), Combat end and the Enemy-defeated notice. Scene narration, travel, Combat start and the other Combat rounds are not part of it; they are shown by the new position itself (the Scene, the Location view or the Combat panel). If the latest step produced none of these types (for example an empty Outcome), there is no result panel, and the new position is shown directly. A step that ended the Playthrough shows the Ending screen instead.
+The result panel is derived from the Journal entries of the **latest step**, taking only these types, in order: Test, Outcome narration, state change, the Combat round that ended a Combat (victory or escape), Combat end and the Enemy-defeated notice. Scene narration, travel, Combat start and the other Combat rounds are not part of it; they are shown by the new position itself (the Scene, the Location view or the Combat panel). The intro is not part of it either: at the start of a Playthrough it shows in a modal over the starting Location instead (see below). If the latest step produced none of these types (for example an empty Outcome), there is no result panel, and the new position is shown directly. A step that ended the Playthrough shows the Ending screen instead.
 
-While the result panel is shown, the reading column shows **only** the panel and its Continue: the Location view, Scene, Combat panel and the "View journal" link are not rendered until the player continues. The side panel (map, Character, Inventory) and any transient notice stay visible throughout. This applies to every result panel: after a Choice or Test, after Combat ends, and to the intro at the start of a Playthrough.
+While the result panel is shown, the reading column shows **only** the panel and its Continue: the Location view, Scene, Combat panel and the "View journal" link are not rendered until the player continues. The side panel (map, Character, Inventory) and any transient notice stay visible throughout. This applies to every result panel: after a Choice or Test, and after Combat ends.
+
+At the start of a Playthrough with an intro, the starting Location renders beneath an intro modal holding the intro narration, with no actionable Location forms behind it and no map travel. The modal's Continue (and any dismissal of it: the Escape key, a backdrop click) is the same client-side `?seen=<step>` acknowledgement as the result panel's Continue: it changes no game state, repeats no Effects and appends no Journal entries, and a reload without the parameter shows the modal again. A pending on-enter Scene of the starting Location stays in state and renders after acknowledgement through the existing engine sequence. A Scenario without an intro opens directly in its normal initial position with no modal.
 
 The panel renders its entries as the Journal does. When the Interface Language changed after the step (for example a switch before Continue, then a reload), its narration stays in the language it was presented in, with that `lang`, while its Test and state changes follow the new Interface Language. Narration is not re-read from content.
 
@@ -85,7 +87,7 @@ The panel renders its entries as the Journal does. When the Interface Language c
 
 1. Create the Character from the Template: name, a copy of the base Attributes, Health 12, the starting items with quantities, and the Template's Equipment equipped.
 2. Set `step` to 0, the current Location to the starting Location, and empty Flags.
-3. Append the intro to the Journal, if the Scenario has one. (It is displayed like any other result panel.)
+3. Append the intro to the Journal, if the Scenario has one. (It is displayed in a modal over the starting Location.)
 4. Enter the starting Location (below).
 
 ### Entering a Location

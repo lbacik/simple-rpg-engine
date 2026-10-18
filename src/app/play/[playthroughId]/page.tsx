@@ -370,10 +370,12 @@ export default async function PlayPage({
     renderJournalEntry(entry, catalogue, characterName),
   );
   const introHtml = introRendered.map((rendered) => rendered.html).join('');
+  // Rows stored before Interface Languages hold English text and no language:
+  // they are tagged `en`, like the Journal renderer tags them.
   const introLang =
     typeof introAtStep[0]?.lang === 'string' && introAtStep[0]?.lang !== ''
       ? String(introAtStep[0]?.lang)
-      : shown;
+      : 'en';
   const showIntro = shouldShowIntroModal(
     introRendered.length > 0,
     playthrough.step,
