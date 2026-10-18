@@ -711,7 +711,7 @@ describe('conditions: every fact', () => {
 describe('result panel derivation and narration', () => {
   it('derives the panel from the latest step entries of the listed types only', () => {
     expect([...RESULT_PANEL_ENTRY_TYPES].sort()).toEqual(
-      ['combat-end', 'enemy-defeated', 'intro', 'outcome', 'state-change', 'test'].sort(),
+      ['combat-end', 'enemy-defeated', 'outcome', 'state-change', 'test'].sort(),
     );
     const { scenario, state: started } = startWoods();
     const listened = choose(scenario, started, 'listen').state;

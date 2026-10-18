@@ -82,21 +82,17 @@ describe('shouldShowResultPanel', () => {
 });
 
 describe('result-panel entry types', () => {
-  it('gates every result panel behind Continue: Choice/Test, Combat end and intro', () => {
-    for (const type of [
-      'intro',
-      'test',
-      'outcome',
-      'state-change',
-      'combat-end',
-      'enemy-defeated',
-    ]) {
+  it('gates every result panel behind Continue: Choice/Test and Combat end', () => {
+    for (const type of ['test', 'outcome', 'state-change', 'combat-end', 'enemy-defeated']) {
       expect(RESULT_PANEL_ENTRY_TYPES.has(type)).toBe(true);
     }
   });
 
-  it('leaves positions and the Ending out of the panel', () => {
+  it('leaves positions, the intro and the Ending out of the panel', () => {
+    // The intro shows in a modal over the starting Location instead of a
+    // result panel (docs/spec/playthrough-state.md, result panel).
     for (const type of [
+      'intro',
       'scene',
       'choice',
       'travel',

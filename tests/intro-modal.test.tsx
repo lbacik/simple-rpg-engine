@@ -217,6 +217,9 @@ describe('IntroModal', () => {
     expect(html).toContain('href="/play/pt-1?seen=0"');
     expect(html).toContain('Continue');
     expect(html).toContain('lang="en"');
+    // The modal reuses the shared panel-modal surface, which is full-screen
+    // on phones (docs/spec/ui.md, character and inventory panel).
+    expect(html).toContain('panel-modal');
     // Continue is a plain link, not a form: following it changes no game
     // state and does not advance `step`.
     expect(html).not.toContain('<form');
