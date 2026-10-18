@@ -3,11 +3,14 @@ import { getScenario } from '@/content/registry';
 import { localizeScenario } from '@/content/index';
 import {
   combatRounds,
+  onDemandScenes,
   renderNarration,
   renderStoredText,
   RESULT_PANEL_ENTRY_TYPES,
+  sceneIllustrationUrl,
   tacticalCombatRounds,
   view,
+  visibleExits,
 } from '@/engine/index';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
 import { ScenarioFallbackBadge } from '@/app/flag';
@@ -32,6 +35,7 @@ import {
   parseSeenStep,
   parseSelectedItem,
   selectCombatTarget,
+  shouldShowIntroModal,
   shouldShowResultPanel,
 } from '@/app/lib/panel';
 import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
@@ -43,6 +47,7 @@ import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes'
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { ResultPanel } from './result-panel';
+import { IntroModal } from './intro-modal';
 import { SidePanel } from './side-panel';
 
 export const dynamic = 'force-dynamic';
@@ -351,6 +356,29 @@ export default async function PlayPage({
     playthrough.step,
     seenStep,
   );
+  // The Scenario intro shows in a modal over the starting Location instead of
+  // the result-panel-only column: the Journal already holds the intro text as
+  // presented (Scenario narration formatting, Character name substituted, in
+  // the Translation the Interface Language selects or the Base Language), so
+  // the modal renders the same entry HTML as the Journal. The acknowledgement
+  // is the same client-side `?seen=<step>` as Continue: it changes no game
+  // state, repeats no Effects and appends no Journal entries.
+  const introAtStep = journal.filter(
+    (entry) => entry.step === playthrough.step && entry.type === 'intro',
+  );
+  const introRendered = introAtStep.map((entry) =>
+    renderJournalEntry(entry, catalogue, characterName),
+  );
+  const introHtml = introRendered.map((rendered) => rendered.html).join('');
+  const introLang =
+    typeof introAtStep[0]?.lang === 'string' && introAtStep[0]?.lang !== ''
+      ? String(introAtStep[0]?.lang)
+      : shown;
+  const showIntro = shouldShowIntroModal(
+    introRendered.length > 0,
+    playthrough.step,
+    seenStep,
+  );
   // Once acknowledged, the panel and "?" links keep `?seen=` so the position
   // stays visible instead of bouncing back to the result panel.
   const preservedSeen = seenStep === playthrough.step ? seenStep : undefined;
@@ -408,6 +436,163 @@ export default async function PlayPage({
       </span>
     </header>
   );
+
+  // The intro modal over the starting Location: the base view stays the
+  // Scenario's starting Location (name, description, Illustration) with no
+  // actionable forms, so Location actions cannot be submitted through the
+  // background with or without JavaScript. The modal's Continue (and any
+  // dismissal: Escape, backdrop) acknowledges with the same `?seen=<step>`
+  // as the result panel: no state change, no repeated Effects, no duplicated
+  // Journal entries. A pending on-enter Scene stays in state and renders
+  // after acknowledgement through the existing engine sequence. Without an
+  // intro there is no modal and play opens directly in the normal position.
+  if (showIntro) {
+    const baseLocation =
+      scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
+    const baseIllustration =
+      baseLocation.illustration === undefined
+        ? undefined
+        : {
+            src: sceneIllustrationUrl(scenario.id, baseLocation.illustration),
+            width: baseLocation.illustration.width,
+            height: baseLocation.illustration.height,
+            alt: baseLocation.illustration.alt,
+          };
+    const baseExits = visibleExits(scenario, state);
+    const baseOnDemand = onDemandScenes(scenario, state);
+    const introBaseView = {
+      kind: 'location' as const,
+      locationId: baseLocation.id,
+      name: baseLocation.name,
+      description: baseLocation.description,
+      ...(baseIllustration === undefined ? {} : { illustration: baseIllustration }),
+      exits: baseExits,
+      onDemandScenes: baseOnDemand,
+      map: gameView.map,
+    };
+    const introHead = (
+      <header className="chronicle-head">
+        <div className="chronicle-brand">
+          <svg
+            width={30}
+            height={30}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="m15 9-2 4-4 2 2-4Z" />
+          </svg>
+          <div>
+            <p className="eyebrow">{catalogue.game.adventure}</p>
+            <strong lang={shown}>{scenario.title}</strong>
+          </div>
+        </div>
+        <span className="location-badge">
+          <span aria-hidden="true" />
+          <span lang={shown}>{baseLocation.name}</span>
+        </span>
+      </header>
+    );
+    return (
+      <main>
+        {introHead}
+        <div className="game">
+          <article className="reading-card" aria-hidden={false}>
+            {noticeText ? (
+              <p className="notice" role="status">
+                {noticeText}
+              </p>
+            ) : null}
+            <div className="reading-title">
+              <p className="eyebrow">{catalogue.game.currentLocation}</p>
+              <h1>
+                <span lang={shown}>{baseLocation.name}</span>
+                {badge === undefined ? null : <> {badge}</>}
+              </h1>
+            </div>
+            {baseIllustration ? (
+              <figure className="reading-art">
+                <SceneIllustration
+                  src={baseIllustration.src}
+                  width={baseIllustration.width}
+                  height={baseIllustration.height}
+                  alt={baseIllustration.alt}
+                />
+              </figure>
+            ) : null}
+            <div className="reading-body">
+              <div
+                className="narration"
+                lang={shown}
+                dangerouslySetInnerHTML={{
+                  __html: renderNarration(baseLocation.description, characterName),
+                }}
+              />
+              {baseOnDemand.length > 0 || baseExits.length > 0 ? (
+                <section aria-label={catalogue.game.decide} className="decisions">
+                  <p className="eyebrow">{catalogue.game.decide}</p>
+                  {baseOnDemand.map((scene, index) => (
+                    <p key={scene.sceneId}>
+                      <button className="choice" type="button" disabled aria-disabled="true">
+                        <span className="choice-number" aria-hidden="true">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span lang={shown}>{scene.title}</span>
+                        <span aria-hidden="true">↗</span>
+                      </button>
+                    </p>
+                  ))}
+                  {baseExits.map((exit, index) => (
+                    <p key={exit.targetLocationId}>
+                      <button className="choice" type="button" disabled aria-disabled="true">
+                        <span className="choice-number" aria-hidden="true">
+                          {String(baseOnDemand.length + index + 1).padStart(2, '0')}
+                        </span>
+                        <span lang={shown}>{exit.label}</span>
+                        <span aria-hidden="true">↗</span>
+                      </button>
+                    </p>
+                  ))}
+                </section>
+              ) : null}
+            </div>
+          </article>
+          <SidePanel
+            scenario={scenario}
+            state={state}
+            playthroughId={playthrough.id}
+            step={playthrough.step}
+            panel={panel}
+            notice={notice}
+            noticeText={noticeText}
+            gameView={introBaseView}
+            showUnknownExits={showUnknownExits}
+            toggleHref={mapToggle}
+            canTravel={false}
+            journalTotal={modalJournal.total}
+            journalEntries={modalJournal.entries}
+            journalNextCursor={modalJournal.nextCursor}
+            seen={preservedSeen}
+            selectedItem={selectedItem}
+            catalogue={catalogue}
+            language={language}
+          />
+        </div>
+        <IntroModal
+          continueHref={continueTo}
+          continueLabel={catalogue.game.continue}
+          title={catalogue.journal.types.intro}
+          introHtml={introHtml}
+          lang={introLang}
+        />
+      </main>
+    );
+  }
 
   // While the result panel is shown, the reading column holds only the panel
   // (with Continue) and the transient notice: the Location view, Scene and

@@ -48,6 +48,24 @@ export function shouldShowResultPanel(
   return seenStep !== currentStep;
 }
 
+/**
+ * Whether the Scenario intro shows in a modal over the starting Location:
+ * the latest step holds the intro entry and `?seen=` does not equal the
+ * current `step`. The acknowledgement is the same client-side `?seen=<step>`
+ * as the result panel's Continue: following it changes no game state, repeats
+ * no Effects and appends no Journal entries, and reloading without the
+ * parameter shows the modal again. A Scenario without an intro never opens
+ * the modal.
+ */
+export function shouldShowIntroModal(
+  hasIntroAtStep: boolean,
+  currentStep: number,
+  seenStep: number | undefined,
+): boolean {
+  if (!hasIntroAtStep) return false;
+  return seenStep !== currentStep;
+}
+
 /** A raw query/form value with whitespace-only treated as absent. */
 export function cleanParam(value: string | undefined | null): string | undefined {
   if (value === undefined || value === null) return undefined;
