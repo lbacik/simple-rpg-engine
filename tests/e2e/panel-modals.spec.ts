@@ -1,4 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
+
+// The enlarged map modal shows its whole content (map plus the unknown-exits
+// toggle) at once: the dialog itself never scrolls.
+async function expectNoModalScroll(dialog: Locator): Promise<void> {
+  const needsScroll = await dialog.evaluate(
+    (element) => element.scrollHeight > element.clientHeight + 1,
+  );
+  expect(needsScroll).toBe(false);
+}
 
 // The side-panel launchers and modals (docs/spec/ui.md, Character and
 // inventory panel): the Character sheet and the inventory open in modals over
@@ -173,6 +182,16 @@ test('the desktop Map launcher opens the expanded modal over the compact map', a
   await expect(page).toHaveURL(/panel=map/);
   await expect(page.locator('.map-inline')).toBeVisible();
 
+  // The modal header carries the only Map title: the map section drops its
+  // duplicated heading but keeps its accessible label. The compact map behind
+  // the modal keeps its own heading with the Expand control.
+  await expect(mapDialog.getByRole('heading', { name: 'Map', exact: true })).toHaveCount(1);
+  await expect(page.locator('.map-inline').getByRole('heading', { name: 'Map', exact: true })).toBeVisible();
+  await expect(page.locator('.map-inline').getByRole('link', { name: 'Expand map' })).toBeVisible();
+
+  // The whole modal content (map plus toggle) fits without scrolling.
+  await expectNoModalScroll(mapDialog);
+
   // The modal toggle flips the shared setting and stays open on the modal.
   await mapDialog.getByRole('link', { name: 'Show unseen exits' }).click();
   await expect(page.getByRole('dialog', { name: 'Location map' })).toBeVisible();
@@ -220,6 +239,10 @@ test('the phone Map launcher opens the map and travels from it', async ({ page }
   const mapDialog = page.getByRole('dialog', { name: 'Location map' });
   await expect(mapDialog).toBeVisible();
   await expect(page).toHaveURL(/panel=map/);
+
+  // One Map title (the modal header) and no modal scrolling on phones either.
+  await expect(mapDialog.getByRole('heading', { name: 'Map', exact: true })).toHaveCount(1);
+  await expectNoModalScroll(mapDialog);
 
   // Unseen exits draw as "?" nodes once enabled; travelling from the modal
   // works exactly like the matching exit button.

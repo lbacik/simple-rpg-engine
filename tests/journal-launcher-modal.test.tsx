@@ -28,12 +28,23 @@ const playPage = readFileSync(
 );
 const css = readFileSync(join(__dirname, '..', 'src', 'app', 'globals.css'), 'utf8');
 
-function cssBlock(selector: string): string {
-  const start = css.indexOf(selector);
-  if (start === -1) return '';
+function cssBlock(selector: string, occurrence = 1): string {
+  let start = -1;
+  for (let seen = 0; seen < occurrence; seen += 1) {
+    start = css.indexOf(selector, start + 1);
+    if (start === -1) return '';
+  }
   const open = css.indexOf('{', start);
   const close = css.indexOf('}', open);
   return css.slice(open, close);
+}
+
+/**
+ * The standalone `.journal-modal` rule (not the shared large-size rule it is
+ * grouped into): the second `.journal-modal {` match in the file.
+ */
+function mainJournalModalBlock(): string {
+  return cssBlock('.journal-modal {', 2);
 }
 
 const enLauncherText: JournalModalText = {
@@ -181,7 +192,7 @@ describe('launcher trigger rendering', () => {
 
 describe('chronicle Journal modal surface', () => {
   it('uses the white chronicle card, chronicle tokens and amber focus ring', () => {
-    const modal = cssBlock('.journal-modal {');
+    const modal = mainJournalModalBlock();
     expect(modal).toContain('background: #fff');
     expect(modal).toContain('var(--chronicle-line');
     expect(modal).toContain('border-radius: 0.875rem');
@@ -199,6 +210,34 @@ describe('chronicle Journal modal surface', () => {
     const body = cssBlock('.journal-modal-body {');
     expect(body).toContain('overflow-y: auto');
     expect(css).toContain('height: 100dvh;');
+  });
+
+  it('shares the larger Map modal size instead of a separate width', () => {
+    // One shared rule sizes both the Map and Journal modals, so more Journal
+    // entries are readable at once without a second width drifting from the Map.
+    expect(css).toMatch(
+      /\.panel-modal--large,\s*\.journal-modal\s*\{[^}]*width:\s*min\(52rem,\s*100%\)/,
+    );
+    expect(css).not.toContain('min(40rem');
+  });
+
+  it('leaves the other panel modals at the default size', () => {
+    expect(cssBlock('.panel-modal {')).toContain('width: min(36rem, 100%)');
+  });
+
+  it('fits the viewport with a fixed header while only the entry list scrolls', () => {
+    // The dialog fits the viewport as a flex column (its own block declares no
+    // width: the shared large rule sizes it): the header never shrinks away
+    // and only the entry list scrolls.
+    const modal = mainJournalModalBlock();
+    expect(modal).toContain('max-height: min(85dvh');
+    expect(modal).toContain('flex-direction: column');
+    expect(modal).not.toMatch(/width\s*:/);
+    const head = cssBlock('.journal-modal-header {');
+    expect(head).toContain('flex: none');
+    const body = cssBlock('.journal-modal-body {');
+    expect(body).toContain('overflow-y: auto');
+    expect(body).toContain('min-height: 0');
   });
 
   it('keeps the standalone fallback readable in the light theme', () => {

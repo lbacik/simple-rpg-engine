@@ -1561,10 +1561,32 @@ form.map-node button.map-travel:focus-visible .dot {
   margin: 0.75rem 1.375rem 1.375rem;
 }
 
-/* The expanded map modal runs wider than the Character sheet, like the
- * Inventory modal, so the enlarged map and its toggle stay readable. */
-.panel-modal:has(.map) {
-  width: min(44rem, 100%);
+/* A reusable larger modal size: the Map modal and the Journal modal share it,
+ * so the enlarged map and more Journal entries get more room at once. Other
+ * panel modals keep the default size. */
+.panel-modal--large,
+.journal-modal {
+  width: min(52rem, 100%);
+}
+
+/* The enlarged map modal shows its whole content (map plus the unknown-exits
+ * toggle) at once, without scrolling the modal: the map scales to the
+ * available viewport space, constrained by both width and height while keeping
+ * its aspect ratio, instead of overflowing. The subtracted budget covers the
+ * modal chrome (header, toggle, padding, backdrop); the map is square
+ * (`MAP_ASPECT_RATIO`), so capping the width by the available height also
+ * caps the height and the ratio is never broken. */
+.panel-modal--large .map--modal .map-area {
+  width: min(100%, calc(100dvh - 24rem));
+  max-height: calc(100dvh - 24rem);
+  margin-inline: auto;
+}
+
+@media (max-width: 46rem) {
+  .panel-modal--large .map--modal .map-area {
+    width: min(100%, calc(100dvh - 21rem));
+    max-height: calc(100dvh - 21rem);
+  }
 }
 
 .panel-modal .map-toggle {
@@ -2148,7 +2170,8 @@ form.map-node button.map-travel:focus-visible .dot {
   background: #fff;
   border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 0.875rem;
-  width: min(40rem, 100%);
+  /* The size comes from the shared larger modal rule above (same as the Map
+   * modal): no separate size here. */
   max-height: min(85dvh, 60rem);
   display: flex;
   flex-direction: column;
@@ -2201,6 +2224,10 @@ form.map-node button.map-travel:focus-visible .dot {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+  /* Fixed above the scrolling entry list: the header never shrinks away when
+   * the dialog fits the viewport, so the title, total and controls stay
+   * visible while the list scrolls. */
+  flex: none;
   padding: 1.75rem 2.25rem 1rem;
   border-bottom: 1px solid var(--chronicle-line, #dce3db);
 }
@@ -2220,6 +2247,9 @@ form.map-node button.map-travel:focus-visible .dot {
 
 .journal-modal-body {
   overflow-y: auto;
+  /* The only scroller in the dialog: the list scrolls inside the fitted modal
+   * instead of pushing it past the viewport. */
+  min-height: 0;
   padding: 0 2.25rem 2rem;
 }
 
