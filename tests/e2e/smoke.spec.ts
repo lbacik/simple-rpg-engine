@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 // The end-to-end smoke test (docs/spec/architecture.md, testing strategy):
-// start a Playthrough of whispering-woods, acknowledge the intro result panel
-// with Continue, take two Choices (one with an empty Outcome, one with a
-// result panel), and see the same state after a reload.
+// start a Playthrough of whispering-woods, acknowledge the intro modal with
+// Continue, take two Choices (one with an empty Outcome, one with a result
+// panel), and see the same state after a reload.
 test('a playthrough survives choices, Continue and a reload', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Scenarios' })).toBeVisible();
@@ -19,13 +19,15 @@ test('a playthrough survives choices, Continue and a reload', async ({ page }) =
   await page.getByRole('button', { name: 'Start the Playthrough' }).click();
 
   await expect(page).toHaveURL(/\/play\/[^/]+$/);
-  // The intro is a result panel: the reading column shows only the panel and
-  // its Continue. The position waits for Continue, while the side panel (map,
-  // status card, launchers) stays visible and no modal is open.
+  // The intro is a modal over the starting Location: Ashford renders beneath
+  // with its Continue acknowledgement above it. The pending on-enter Scene
+  // (The Bell of Ashford) waits for Continue, while the side panel (map,
+  // status card, launchers) stays visible.
+  await expect(page.getByRole('dialog', { name: 'Intro' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Character, Health 12/12' })).toBeVisible();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // Continue carries the current step and renders the position. It changes no
   // game state: the URL only gains `?seen=`. The reading column holds no
@@ -35,10 +37,11 @@ test('a playthrough survives choices, Continue and a reload', async ({ page }) =
   await expect(page.getByRole('link', { name: /Journal, \d+ entr/ })).toBeVisible();
   await expect(page).toHaveURL(/seen=0/);
 
-  // A mismatched step is ignored: the result panel of the actual latest step
+  // A mismatched step is ignored: the intro modal of the actual latest step
   // is shown again. (A fresh Playthrough has no newer step, so go back to the
   // unacknowledged URL instead.)
   await page.goto(page.url().replace(/seen=\d+/, 'seen=999'));
+  await expect(page.getByRole('dialog', { name: 'Intro' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Continue' }).click();

@@ -182,6 +182,20 @@ describe('intro narration rendering', () => {
     expect(rendered.html).toContain('lang="en"');
     expect(rendered.label).toBe(pl.journal.types.intro);
   });
+
+  it('tags legacy languageless intro entries as English', () => {
+    // Rows stored before Interface Languages hold no language: like the
+    // Journal renderer (and the intro modal's `lang` prop in page.tsx) they
+    // fall back to `en` rather than rendering an empty or missing `lang`.
+    for (const entry of [
+      { type: 'intro', payload: { text: 'You wake.' } },
+      { type: 'intro', lang: '', payload: { text: 'You wake.' } },
+    ]) {
+      const rendered = renderJournalEntry(entry, en, 'Robin');
+      expect(rendered.html).toContain('lang="en"');
+      expect(rendered.html).not.toContain('lang=""');
+    }
+  });
 });
 
 describe('IntroModal', () => {
