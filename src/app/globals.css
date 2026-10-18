@@ -1561,10 +1561,11 @@ form.map-node button.map-travel:focus-visible .dot {
   margin: 0.75rem 1.375rem 1.375rem;
 }
 
-/* A reusable larger modal size: the Map modal uses it now (the Journal modal
- * adopts it in a follow-up) so the enlarged map and its toggle get more room.
- * Other panel modals keep the default size. */
-.panel-modal--large {
+/* A reusable larger modal size: the Map modal and the Journal modal share it,
+ * so the enlarged map and more Journal entries get more room at once. Other
+ * panel modals keep the default size. */
+.panel-modal--large,
+.journal-modal {
   width: min(52rem, 100%);
 }
 
@@ -2169,7 +2170,8 @@ form.map-node button.map-travel:focus-visible .dot {
   background: #fff;
   border: 1px solid var(--chronicle-line, #dce3db);
   border-radius: 0.875rem;
-  width: min(40rem, 100%);
+  /* The size comes from the shared larger modal rule above (same as the Map
+   * modal): no separate size here. */
   max-height: min(85dvh, 60rem);
   display: flex;
   flex-direction: column;
@@ -2222,6 +2224,10 @@ form.map-node button.map-travel:focus-visible .dot {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+  /* Fixed above the scrolling entry list: the header never shrinks away when
+   * the dialog fits the viewport, so the title, total and controls stay
+   * visible while the list scrolls. */
+  flex: none;
   padding: 1.75rem 2.25rem 1rem;
   border-bottom: 1px solid var(--chronicle-line, #dce3db);
 }
@@ -2241,6 +2247,9 @@ form.map-node button.map-travel:focus-visible .dot {
 
 .journal-modal-body {
   overflow-y: auto;
+  /* The only scroller in the dialog: the list scrolls inside the fitted modal
+   * instead of pushing it past the viewport. */
+  min-height: 0;
   padding: 0 2.25rem 2rem;
 }
 

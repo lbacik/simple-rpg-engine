@@ -29,8 +29,9 @@ export function PanelModal({
   /** Id of the launcher that opened the modal: focus returns here on close. */
   launcherId: string;
   /**
-   * The reusable larger modal size (the Map modal now; the Journal modal in a
-   * follow-up). Other modals leave this unset and keep the default size.
+   * The reusable larger modal size (the Map modal; the Journal modal shares
+   * the same width through its own class). Other modals leave this unset and
+   * keep the default size.
    */
   size?: 'large';
   children: React.ReactNode;

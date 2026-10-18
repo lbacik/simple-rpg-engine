@@ -67,6 +67,12 @@ test('journal launcher opens in a modal, scrolls older entries, closes unchanged
   await expect(openInNewTab).toHaveAttribute('href', /\/play\/.+\/journal$/);
   await expect(openInNewTab).toHaveAttribute('target', '_blank');
 
+  // The Journal modal shares the larger Map modal size: capture its width for
+  // the comparison at the end of the test.
+  const journalWidth = await dialog.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+
   // One batch on screen; scrolling the modal body loads older entries, and
   // the position indicator tracks the modal's scroll: the entry at the top
   // of the viewport changes as older entries scroll by.
@@ -81,6 +87,21 @@ test('journal launcher opens in a modal, scrolls older entries, closes unchanged
     .poll(() => body.locator('li[data-seq]').count(), { timeout: 15_000 })
     .toBeGreaterThan(20);
   await expect.poll(() => positionText.textContent()).not.toBe(positionBefore);
+
+  // The larger modal fits the viewport: the dialog itself never scrolls, only
+  // the entry list does, and the header (title, total, open-in-new-tab and
+  // close) stays visible while scrolled to the oldest entries.
+  const dialogNeedsScroll = await dialog.evaluate(
+    (element) => element.scrollHeight > element.clientHeight + 1,
+  );
+  expect(dialogNeedsScroll).toBe(false);
+  const bodyScrollable = await body.evaluate(
+    (element) => element.scrollHeight > element.clientHeight + 1,
+  );
+  expect(bodyScrollable).toBe(true);
+  await expect(dialog.getByRole('heading', { name: 'Journal' })).toBeVisible();
+  await expect(openInNewTab).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
 
   // Escape closes the modal, returns focus to the launcher, unlocks the
   // background scroll, and leaves the game screen unchanged.
@@ -107,6 +128,67 @@ test('journal launcher opens in a modal, scrolls older entries, closes unchanged
   await expect(journalLauncher).toBeFocused();
   expect(page.url()).toBe(url);
   await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
+
+  // The Journal modal matches the Map modal's larger size on the same
+  // viewport, while other panel modals keep the default (narrower) size.
+  await page.getByRole('link', { name: 'Map', exact: true }).click();
+  const mapDialog = page.getByRole('dialog', { name: 'Location map' });
+  await expect(mapDialog).toBeVisible();
+  const mapWidth = await mapDialog.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+  expect(journalWidth).toBe(mapWidth);
+  await page.keyboard.press('Escape');
+  await expect(mapDialog).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Character, Health 12/12' }).click();
+  const characterDialog = page.getByRole('dialog', { name: 'Character' });
+  await expect(characterDialog).toBeVisible();
+  const characterWidth = await characterDialog.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+  expect(characterWidth).toBeLessThan(journalWidth);
+  await page.keyboard.press('Escape');
+  await expect(characterDialog).toHaveCount(0);
+});
+
+test('journal modal fits the phone viewport with its header visible', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto('/');
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'The Whispering Woods' })
+    .getByRole('link', { name: 'New Playthrough' })
+    .click();
+  await page.locator('#name').fill('PhoneSize');
+  await page.getByRole('button', { name: 'Start the Playthrough' }).click();
+  await page.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'The Bell of Ashford' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  await page.getByRole('link', { name: /Journal, \d+ entr/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Journal' });
+  await expect(dialog).toBeVisible();
+
+  // Full-screen on phones: the dialog stays within the viewport, never scrolls
+  // itself, and keeps its header controls visible.
+  const fit = await dialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      top: rect.top,
+      bottom: rect.bottom,
+      needsScroll: element.scrollHeight > element.clientHeight + 1,
+    };
+  });
+  expect(fit.top).toBeGreaterThanOrEqual(-1);
+  expect(fit.bottom).toBeLessThanOrEqual(801);
+  expect(fit.needsScroll).toBe(false);
+  await expect(dialog.getByRole('heading', { name: 'Journal' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Open in new tab' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
 });
 
 test('journal modal returns to an undismissed outcome modal unchanged', async ({ page }) => {
