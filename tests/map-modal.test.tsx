@@ -147,6 +147,7 @@ function render(
     showUnknownExits?: boolean;
     toggleHref?: string;
     expandHref?: string;
+    hideHeading?: boolean;
     catalogue?: typeof en;
   } = {},
 ): string {
@@ -160,6 +161,7 @@ function render(
       showUnknownExits={extra.showUnknownExits ?? false}
       toggleHref={extra.toggleHref ?? '/play/play-1?unknown=1'}
       expandHref={extra.expandHref}
+      hideHeading={extra.hideHeading}
       markerId="map-arrow-test"
       catalogue={extra.catalogue ?? en}
       lang="en"
@@ -236,6 +238,30 @@ describe('LocationMap toggle', () => {
     expect(html).toContain('You are here');
     expect(html).toContain('>?<');
     expect(html).toContain('Expand map');
+  });
+
+  it('keeps its own heading and Expand control in the compact side-panel map', () => {
+    const html = render(derived(loadFixture(), ['gate-open'], false), {
+      expandHref: '/play/play-1?panel=map',
+    });
+    expect(html).toContain('<h2>Map</h2>');
+    expect(html).toContain('Expand map');
+    expect(html).toContain('aria-label="Location map"');
+  });
+
+  it('omits the duplicated heading in the enlarged map modal but keeps the accessible label', () => {
+    const html = render(derived(loadFixture(), ['gate-open'], false), {
+      hideHeading: true,
+    });
+    // The modal header already carries the Map title, so the section drops
+    // its own heading (and the empty head row with it).
+    expect(html).not.toContain('<h2>');
+    expect(html).not.toContain('map-head');
+    expect(html).toContain('aria-label="Location map"');
+    expect(html).toContain('class="map map--modal"');
+    // The map and its toggle still render.
+    expect(html).toContain('map-area');
+    expect(html).toContain('Show unseen exits');
   });
 });
 
@@ -350,8 +376,15 @@ describe('map launcher and modal chrome', () => {
     expect(css).not.toContain('map-only');
   });
 
-  it('styles the toggle as a button and widens the expanded modal', () => {
+  it('styles the toggle as a button and gives the map modal a reusable larger size', () => {
     expect(css).toContain('.map-toggle .button');
-    expect(css).toContain('.panel-modal:has(.map)');
+    expect(css).toContain('.panel-modal--large');
+  });
+
+  it('fits the enlarged map into the viewport without scrolling the modal', () => {
+    // The modal map scales to the available viewport space, constrained by
+    // both width and height while keeping its aspect ratio.
+    expect(css).toContain('.panel-modal--large .map--modal .map-area');
+    expect(css).toContain('100dvh');
   });
 });

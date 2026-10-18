@@ -141,6 +141,7 @@ export function LocationMap({
   showUnknownExits,
   toggleHref,
   expandHref,
+  hideHeading,
   markerId,
   catalogue,
   lang,
@@ -156,6 +157,13 @@ export function LocationMap({
   toggleHref: string;
   /** When set, an Expand link opens the enlarged map modal (desktop access). */
   expandHref?: string;
+  /**
+   * Set for the enlarged map modal: the modal header already carries the Map
+   * title, so the section's own heading is omitted (the accessible
+   * `aria-label` stays). The compact side-panel map leaves this unset and
+   * keeps its heading with the Expand control.
+   */
+  hideHeading?: boolean;
   /** Unique SVG marker id: the map renders twice on the page (phone, desktop). */
   markerId: string;
   /** Interface Text: the game screen passes the current catalogue. */
@@ -164,16 +172,22 @@ export function LocationMap({
   lang: string;
 }) {
   const byId = new Map(map.nodes.map((node) => [node.id, node]));
+  const showHead = hideHeading !== true || expandHref !== undefined;
   return (
-    <section aria-label={catalogue.map.label} className="map">
-      <div className="map-head">
-        <h2>{catalogue.map.title}</h2>
-        {expandHref === undefined ? null : (
-          <a className="map-expand" href={expandHref}>
-            {catalogue.map.expand}
-          </a>
-        )}
-      </div>
+    <section
+      aria-label={catalogue.map.label}
+      className={hideHeading === true ? 'map map--modal' : 'map'}
+    >
+      {showHead ? (
+        <div className="map-head">
+          {hideHeading === true ? null : <h2>{catalogue.map.title}</h2>}
+          {expandHref === undefined ? null : (
+            <a className="map-expand" href={expandHref}>
+              {catalogue.map.expand}
+            </a>
+          )}
+        </div>
+      ) : null}
       <div className="map-area" style={{ aspectRatio: MAP_ASPECT_RATIO }} role="img">
         <svg
           className="map-lines"

@@ -1545,10 +1545,31 @@ form.map-node button.map-travel:focus-visible .dot {
   margin: 0.75rem 1.375rem 1.375rem;
 }
 
-/* The expanded map modal runs wider than the Character sheet, like the
- * Inventory modal, so the enlarged map and its toggle stay readable. */
-.panel-modal:has(.map) {
-  width: min(44rem, 100%);
+/* A reusable larger modal size: the Map modal uses it now (the Journal modal
+ * adopts it in a follow-up) so the enlarged map and its toggle get more room.
+ * Other panel modals keep the default size. */
+.panel-modal--large {
+  width: min(52rem, 100%);
+}
+
+/* The enlarged map modal shows its whole content (map plus the unknown-exits
+ * toggle) at once, without scrolling the modal: the map scales to the
+ * available viewport space, constrained by both width and height while keeping
+ * its aspect ratio, instead of overflowing. The subtracted budget covers the
+ * modal chrome (header, toggle, padding, backdrop); the map is square
+ * (`MAP_ASPECT_RATIO`), so capping the width by the available height also
+ * caps the height and the ratio is never broken. */
+.panel-modal--large .map--modal .map-area {
+  width: min(100%, calc(100dvh - 24rem));
+  max-height: calc(100dvh - 24rem);
+  margin-inline: auto;
+}
+
+@media (max-width: 46rem) {
+  .panel-modal--large .map--modal .map-area {
+    width: min(100%, calc(100dvh - 21rem));
+    max-height: calc(100dvh - 21rem);
+  }
 }
 
 .panel-modal .map-toggle {
