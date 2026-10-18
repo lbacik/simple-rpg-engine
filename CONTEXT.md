@@ -47,8 +47,12 @@ A zoom, a pan or both, applied to an Illustration's Still and all its Layers tog
 _Avoid_: Ken Burns, view, viewport
 
 **Motion**:
-The decorative animation of an Illustration (its Layers' frames, Drifts and Flickers, and its Camera), identical on every showing; with Motion off, only the Still is shown.
+The decorative animation of an Illustration (its Layers' frames, Drifts and Flickers, and its Camera), identical on every Showing; with Motion off, only the Still is shown.
 _Avoid_: Animation, ambience, effects
+
+**Showing**:
+One uninterrupted display of an Illustration with its Scene or Location, from arriving there (or loading the page there) until leaving; Motion starts afresh with every Showing, so a Drift or Camera that does not loop plays once per Showing, unlike a Choice or Scene offered once per Playthrough.
+_Avoid_: Visit, view, render
 
 **Choice**:
 An option offered by a Scene, optionally gated by a Condition and optionally resolved by a Test, leading to an Outcome.
