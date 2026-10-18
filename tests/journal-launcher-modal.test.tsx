@@ -69,7 +69,7 @@ describe('side-panel Journal launcher wiring', () => {
   });
 
   it('passes the modal batch on every game screen with a side panel', () => {
-    // Compatible play (result panel and position) and the read-only
+    // Compatible play (outcome modal and position) and the read-only
     // incompatible view with its Scenario still in the collection all render
     // the same side panel, so each passes the newest batch to it.
     const matches = playPage.match(/journalEntries=\{[^}]+entries\}/g) ?? [];
@@ -118,7 +118,7 @@ describe('launcher trigger rendering', () => {
     expect(html).toContain('class="launcher"');
     expect(html).toContain('25 entries');
     // Closed on first paint: no dialog, so the game screen underneath keeps
-    // its result panel, Combat target and scroll position.
+    // its outcome modal, Combat target and scroll position.
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain('Open in new tab');
   });

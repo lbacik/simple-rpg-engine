@@ -1,10 +1,10 @@
 // The Outcome modal (Outcome narration after a Choice or Test): the Test,
 // the Outcome narration and the state changes of the latest step shown in an
 // accessible modal over the Playthrough's current Location, rather than
-// replacing the Location view with the result panel.
+// replacing the Location view with a result panel.
 //
-// The acknowledgement is client-side only, like the previous result-panel
-// Continue: a plain link to the same game page carrying the current `step` as
+// The acknowledgement is client-side only, like the intro modal's Continue:
+// a plain link to the same game page carrying the current `step` as
 // `?seen=`. When it equals the Playthrough's current `step` the server skips
 // the modal and renders the position; any other value is ignored and the modal
 // is shown again. Following it (or any dismissal: Escape, backdrop click, the

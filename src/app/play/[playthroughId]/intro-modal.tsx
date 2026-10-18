@@ -2,7 +2,7 @@
 // Scenario that has an intro, the starting Location renders beneath and the
 // intro narration shows in this modal above it. Continue acknowledges the
 // intro without changing game state (the same `?seen=<step>` acknowledgement
-// as the result panel's Continue): the Outcome was already applied at start,
+// as the outcome modal's Continue): the Outcome was already applied at start,
 // so following it advances no `step`, repeats no Effects and appends no
 // Journal entries. Reloading without the parameter shows the modal again,
 // harmlessly; with it the position renders directly. There is no persisted

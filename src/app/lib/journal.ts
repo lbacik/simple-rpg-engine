@@ -158,7 +158,7 @@ export function journalHref(playthroughId: string, beforeSeq?: number | null): s
 
 /**
  * The newest journal batch for the modal over the game screen: the game page
- * already holds the whole Journal (oldest first) for the result panel, so the
+ * already holds the whole Journal (oldest first) for the outcome modal, so the
  * modal reuses it instead of a second store read. The slice is newest first
  * with the same sequence cursor the batch route uses (`null` when the start
  * of the Journal is reached), so entries appended during play never shift or
@@ -177,7 +177,7 @@ export function newestJournalBatch<T extends { seq: number }>(
 /**
  * The newest journal batch for the modal over the game screen, rendered to
  * HTML in one step: the game page already holds the whole Journal (oldest
- * first) for the result panel, so the modal reuses it instead of a second
+ * first) for the outcome modal, so the modal reuses it instead of a second
  * store read. Shared by the game, Ending and incompatible-with-Scenario
  * screens, which all open the same modal.
  */

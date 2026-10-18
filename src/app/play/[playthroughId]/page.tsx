@@ -345,8 +345,8 @@ export default async function PlayPage({
     state.activeSceneId == null &&
     state.activeCombat == null;
   // The Continue acknowledgement: `?seen=` equal to the current `step` skips
-  // the result panel and renders the position. Any other value is ignored, so
-  // the result panel of the actual latest step is shown again. Following
+  // the outcome modal and renders the position. Any other value is ignored, so
+  // the outcome modal of the actual latest step is shown again. Following
   // Continue changes no game state and does not advance `step`.
   const seenStep = parseSeenStep(seenParam);
   const showResult = shouldShowResultPanel(
@@ -354,8 +354,8 @@ export default async function PlayPage({
     playthrough.step,
     seenStep,
   );
-  // The Scenario intro shows in a modal over the starting Location instead of
-  // the result-panel-only column: the Journal already holds the intro text as
+  // The Scenario intro shows in its own modal over the starting Location: the
+  // Journal already holds the intro text as
   // presented (Scenario narration formatting, Character name substituted, in
   // the Translation the Interface Language selects or the Base Language), so
   // the modal renders the same entry HTML as the Journal. The acknowledgement
@@ -380,7 +380,7 @@ export default async function PlayPage({
     seenStep,
   );
   // Once acknowledged, the panel and "?" links keep `?seen=` so the position
-  // stays visible instead of bouncing back to the result panel.
+  // stays visible instead of bouncing back to the outcome modal.
   const preservedSeen = seenStep === playthrough.step ? seenStep : undefined;
   const continueTo = continueHref(
     playthrough.id,
@@ -442,7 +442,7 @@ export default async function PlayPage({
   // actionable forms, so Location actions cannot be submitted through the
   // background with or without JavaScript. The modal's Continue (and any
   // dismissal: Escape, backdrop) acknowledges with the same `?seen=<step>`
-  // as the result panel: no state change, no repeated Effects, no duplicated
+  // as the outcome modal's Continue: no state change, no repeated Effects, no duplicated
   // Journal entries. A pending on-enter Scene stays in state and renders
   // after acknowledgement through the existing engine sequence. Without an
   // intro there is no modal and play opens directly in the normal position.

@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 // of the Scenario text actually shown, so a player who switches language
 // mid-Playthrough keeps every earlier narration in the language it was
 // presented in, visibly marked with its flag, while all Interface Text follows
-// the new Interface Language. A result panel shown again after the switch
+// the new Interface Language. An outcome modal shown again after the switch
 // keeps its narration and re-renders its state changes. The suite plays
 // two-bridges in English, chooses without a Test (deterministic), then
 // switches to Polish.
@@ -28,28 +28,32 @@ test('a mid-playthrough switch keeps earlier narration with flags, in Polish UI'
   await page.getByRole('button', { name: 'Start the Playthrough' }).click();
   await expect(page).toHaveURL(/\/play\/[^/]+$/);
 
-  // The intro is a result panel; Continue reaches the on-enter Scene.
+  // The intro is a modal; Continue reaches the on-enter Scene.
   await page.getByRole('link', { name: 'Continue' }).click();
   const title = page.locator('article.reading-card h1');
   await expect(title.locator('span[lang="en"]')).toHaveText('The Near Bridge');
 
   // A Choice without a Test: deterministic, one step with Choice, Outcome,
   // state change and the follow-on Scene entries, all presented in English.
+  // The Outcome shows in a modal over the destination Location.
   await page.getByRole('button', { name: 'Ask what key he means.' }).click();
-  const panel = page.locator('article.reading-card');
-  await expect(panel).toContainText('The brass key, lost on the far side');
-  await expect(panel).toContainText('Received: Brass Key');
+  const outcomeModal = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcomeModal).toBeVisible();
+  await expect(outcomeModal).toContainText('The brass key, lost on the far side');
+  await expect(outcomeModal).toContainText('Received: Brass Key');
 
-  // Switching refreshes the page in Polish with the same result panel: its
+  // Switching refreshes the page in Polish with the same outcome modal: its
   // narration stays in the presented English, its state change follows Polish.
   await page.locator('details.langmenu > summary').click();
   await page.locator('details.langmenu button[value="pl"]').click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
-  await expect(panel.locator('div[lang="en"]')).toContainText(
+  const outcomePl = page.getByRole('dialog', { name: 'Ostatnie wydarzenia' });
+  await expect(outcomePl).toBeVisible();
+  await expect(outcomePl.locator('div[lang="en"]')).toContainText(
     'The brass key, lost on the far side',
   );
-  await expect(panel).toContainText('Otrzymano: Brass Key');
-  await expect(panel.locator('span[lang="en"]')).toHaveText('Brass Key');
+  await expect(outcomePl).toContainText('Otrzymano: Brass Key');
+  await expect(outcomePl.locator('span[lang="en"]')).toHaveText('Brass Key');
 
   // Continue reaches the follow-on Scene, now shown in Polish.
   await page.getByRole('link', { name: 'Kontynuuj' }).click();

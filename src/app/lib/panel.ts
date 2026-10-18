@@ -3,11 +3,11 @@
 // acknowledgement, shared by the play page and the inventory server actions
 // so both build the same URLs.
 //
-// The Continue after a result panel is client-side only
+// The Continue after an Outcome presentation is client-side only
 // (docs/spec/playthrough-state.md, two kinds of Continue): a plain link to the
 // same game page carrying `?seen=<step>`. When it equals the Playthrough's
-// current `step` the server skips the result panel and renders the position; a
-// value that does not match is ignored and the result panel is shown again.
+// current `step` the server skips the outcome modal and renders the position; a
+// value that does not match is ignored and the outcome modal is shown again.
 
 /**
  * The side-panel modal open on the game screen: the Character sheet, the
@@ -23,7 +23,7 @@ export function parsePanel(value: string | undefined): PanelId | null {
 
 /**
  * Parse `?seen=`. Anything missing or invalid becomes undefined, which the
- * game screen treats like no acknowledgement: the result panel is shown.
+ * game screen treats like no acknowledgement: the outcome modal is shown.
  */
 export function parseSeenStep(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
@@ -35,9 +35,9 @@ export function parseSeenStep(value: string | undefined): number | undefined {
 }
 
 /**
- * Whether the reading column shows only the result panel (with Continue)
- * instead of the current position: the latest step produced result-panel
- * entries and `?seen=` does not equal the current `step`.
+ * Whether the Outcome presentation shows in a modal over the Location (with
+ * Continue) instead of the current position alone: the latest step produced
+ * outcome entries and `?seen=` does not equal the current `step`.
  */
 export function shouldShowResultPanel(
   hasResultEntries: boolean,
@@ -52,7 +52,7 @@ export function shouldShowResultPanel(
  * Whether the Scenario intro shows in a modal over the starting Location:
  * the latest step holds the intro entry and `?seen=` does not equal the
  * current `step`. The acknowledgement is the same client-side `?seen=<step>`
- * as the result panel's Continue: following it changes no game state, repeats
+ * as the outcome modal's Continue: following it changes no game state, repeats
  * no Effects and appends no Journal entries, and reloading without the
  * parameter shows the modal again. A Scenario without an intro never opens
  * the modal.
@@ -152,8 +152,8 @@ export function mapToggleHref(
 }
 
 /**
- * The Continue link after a result panel: the same game page carrying the
- * current `step` as `?seen=`, preserving the open panel modal, the transient
+ * The Continue link after an Outcome presentation: the same game page carrying
+ * the current `step` as `?seen=`, preserving the open panel modal, the transient
  * notice and the "?" map setting. Following it changes no game state and does
  * not advance `step`; the Outcome was already applied when the Choice was made.
  */

@@ -85,19 +85,24 @@ export function JournalModalLink({
 
   // While open: focus the close button, trap Tab inside the dialog, close on
   // Escape, and lock the background scroll. Focus returns to the trigger via
-  // `close`.
+  // `close`. The Journal opens above any other dialog (the Outcome or intro
+  // modal beneath it keeps its own Escape handler), so Escape is caught in
+  // the capture phase and stopped: closing the Journal never acknowledges the
+  // presentation underneath, which keeps its own dismissal.
   useEffect(() => {
     if (!open) return;
     const dialog = dialogRef.current;
     closeRef.current?.focus();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onEscapeCapture = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         close();
-        return;
       }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab' || !dialog) return;
       const focusable = Array.from(
         dialog.querySelectorAll<HTMLElement>(
@@ -122,8 +127,10 @@ export function JournalModalLink({
         first.focus();
       }
     };
+    document.addEventListener('keydown', onEscapeCapture, true);
     document.addEventListener('keydown', onKeyDown);
     return () => {
+      document.removeEventListener('keydown', onEscapeCapture, true);
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };

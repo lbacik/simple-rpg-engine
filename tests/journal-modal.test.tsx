@@ -173,7 +173,7 @@ describe('JournalModalLink', () => {
       </JournalModalLink>,
     );
     // No dialog on first paint: opening is client state that never reloads the
-    // game screen, so the result panel, Combat target and scroll survive it.
+    // game screen, so the outcome modal, Combat target and scroll survive it.
     expect(html).toContain('<a ');
     expect(html).not.toContain('role="dialog"');
   });

@@ -168,7 +168,7 @@ test('two-bridges is shown in Polish under pl, with no badge', async ({ browser 
     await page.locator('#name').fill('E2E');
     await page.getByRole('button', { name: 'Rozpocznij rozgrywkę' }).click();
     await expect(page).toHaveURL(/\/play\/[^/]+$/);
-    // The intro is a result panel; Continue reaches the translated on-enter Scene.
+    // The intro is a modal; Continue reaches the translated on-enter Scene.
     await page.getByRole('link', { name: 'Kontynuuj' }).click();
     const title = page.locator('article.reading h1');
     await expect(title.locator('span[lang="pl"]')).toHaveText('Bliski most');

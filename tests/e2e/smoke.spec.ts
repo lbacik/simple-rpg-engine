@@ -52,22 +52,30 @@ test('a playthrough survives choices, Continue and a reload', async ({ page }) =
   await expect(page.getByRole('heading', { name: "Brenna's Plea" })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Continue' })).toHaveCount(0);
 
-  // An Outcome with narration and state changes shows the result panel alone.
+  // An Outcome with narration and state changes shows in a modal over the
+  // destination Location: Ashford already reads behind it while the Scene is
+  // gone, and Continue acknowledges inside the dialog.
   await page.getByRole('button', { name: 'Promise to find Mira.' }).click();
-  await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
+  const outcome = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
   await expect(page.getByRole('heading', { name: "Brenna's Plea" })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Continue' }).click();
+  await outcome.getByRole('link', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
 
   // Reloading the acknowledged position keeps it: `?seen=` still matches.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
 
-  // Reloading without the parameter may show the result panel again, which
-  // stays harmless: Continue returns to the same position.
+  // Reloading without the parameter may show the outcome modal again over the
+  // destination Location, which stays harmless: Continue returns to the same
+  // position.
   await page.goto(page.url().replace(/\?.*$/, ''));
-  await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Ashford' })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Continue' }).click();
+  const reopened = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(reopened).toBeVisible();
+  await expect(reopened.getByRole('link', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
+  await reopened.getByRole('link', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
 });

@@ -44,7 +44,7 @@ export async function newPairCombat(): Promise<never> {
   let state = started.state;
   // Each transition's entries are stored under the step that transition
   // produced, like the turn pipeline stores them: collapsing everything
-  // under the final step would surface older entries in the result panel.
+  // under the final step would surface older entries in the outcome modal.
   const stored: { step: number; type: string; lang: string; payload: unknown }[] =
     started.journal.map((entry) => {
       const { type, lang, ...payload } = entry;

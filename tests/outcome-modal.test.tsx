@@ -279,14 +279,15 @@ describe('OutcomeModal presentation', () => {
     const outcome = accepted.journal.find((entry) => entry.type === 'outcome');
     expect(outcome).toBeDefined();
     // The modal reuses the shared Journal renderer: stored Scenario text keeps
-    // formatting, name substitution and its recorded language.
+    // formatting (emphasis renders at read time) and its recorded language.
+    // The Character name was substituted when the entry was stored, so the
+    // renderer locates it verbatim and keeps it literal.
     const rendered = renderJournalEntry(
-      { type: 'outcome', lang: 'en', payload: { text: 'Brave *Robin*, {name} stands.' } },
+      { type: 'outcome', lang: 'en', payload: { text: 'Brave *Robin* stands.' } },
       en,
       'Robin',
     );
-    expect(rendered.html).toContain('<em>');
-    expect(rendered.html).not.toContain('{name}');
+    expect(rendered.html).toContain('<em>Robin</em>');
     expect(rendered.html).toContain('lang="en"');
   });
 });

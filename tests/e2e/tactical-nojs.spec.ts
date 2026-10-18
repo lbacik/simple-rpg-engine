@@ -109,7 +109,7 @@ test('no-JavaScript: intents, target B, every action group, escape, Continue, Jo
   expect(escaped).toBe(true);
   await expect(page.getByRole('heading', { name: 'Gone' })).toHaveCount(0);
 
-  // The Escape Outcome lands on the result panel: Continue, then the Journal.
+  // The Escape Outcome lands on the outcome modal over the Location: Continue, then the Journal.
   await expect(page.getByRole('link', { name: 'Continue' })).toBeVisible();
   await page.getByRole('link', { name: 'Continue' }).click();
   await expect(page.getByLabel('Combat arena')).toHaveCount(0);

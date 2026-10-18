@@ -166,7 +166,7 @@ describe('renderJournalEntry flags', () => {
   });
 });
 
-describe('the result panel after a language switch', () => {
+describe('the outcome modal after a language switch', () => {
   // Entries recorded in Polish, read back under the English catalogue: the
   // narration keeps the language it was presented in, while the Test and the
   // state change follow the new Interface Language.
