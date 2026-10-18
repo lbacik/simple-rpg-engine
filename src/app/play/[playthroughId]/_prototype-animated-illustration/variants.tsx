@@ -5,24 +5,25 @@
 // preference, reduced motion and pause show the still, and a failed animation
 // falls back to the still.
 
-'use client';
+"use client";
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { PrototypeSwitcher } from '../../../prototype-switcher';
-import { PRESETS, flicker, type Geometry } from './effects';
-import geometryFile from './geometry.json';
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { PrototypeSwitcher } from "../../../prototype-switcher";
+import { PRESETS, flicker, type Geometry } from "./effects";
+import geometryFile from "./geometry.json";
 import {
   VARIANTS,
   setLab,
   setPreference,
   setVariant,
   useMotion,
+  type Lab,
   type MotionState,
   type VariantKey,
-} from './motion';
-import styles from './prototype.module.css';
+} from "./motion";
+import styles from "./prototype.module.css";
 
-const ASSETS = '/prototype-animated-illustration';
+const ASSETS = "/prototype-animated-illustration";
 const MISSING = `${ASSETS}/missing`;
 const LOOP = geometryFile.loopSeconds;
 const ILLUSTRATIONS = geometryFile.illustrations as Record<string, Geometry>;
@@ -33,7 +34,7 @@ const BIRDS = [
 ];
 
 function illustrationId(src: string) {
-  return (src.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
+  return (src.split("/").pop() ?? "").replace(/\.[^.]+$/, "");
 }
 
 function useOnScreen(ref: RefObject<HTMLElement | null>) {
@@ -41,7 +42,9 @@ function useOnScreen(ref: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    const observer = new IntersectionObserver(([entry]) =>
+      setOnScreen(entry.isIntersecting),
+    );
     observer.observe(element);
     return () => observer.disconnect();
   }, [ref]);
@@ -75,18 +78,18 @@ export function AnimatedIllustrationPrototype({
     setAnimationFailed(false);
   }, [motion.variant, motion.lab.failAnimation, motion.lab.refuseAutoplay]);
 
-  const animated = motion.variant !== 'static' && geometry !== undefined;
+  const animated = motion.variant !== "static" && geometry !== undefined;
   const playing = animated && motion.motionOn && !refused && !animationFailed;
   const base = `${ASSETS}/${id}`;
   const fail = motion.lab.failAnimation;
 
   const toggle = () => {
     if (playing) {
-      setPreference('off');
+      setPreference("off");
     } else {
       setRefused(false);
       setAnimationFailed(false);
-      setPreference('on');
+      setPreference("on");
     }
   };
 
@@ -95,53 +98,66 @@ export function AnimatedIllustrationPrototype({
   return (
     <>
       <div ref={frameRef} className={styles.frame}>
-        <img
-          src={src}
-          width={width}
-          height={height}
-          alt={alt}
-          className="illustration"
-          style={{ maxWidth: '100%', height: 'auto' }}
-          onError={() => setStillFailed(true)}
-        />
-        {playing && motion.variant === 'A' ? (
-          <VideoLayer
-            key={fail ? 'missing' : 'file'}
-            base={fail ? MISSING : base}
-            refuse={motion.lab.refuseAutoplay}
-            onScreen={onScreen}
-            onRefused={setRefused}
-            onFailed={setAnimationFailed}
+        <div className={styles.camera}>
+          <img
+            src={src}
+            width={width}
+            height={height}
+            alt={alt}
+            className="illustration"
+            style={{ maxWidth: "100%", height: "auto" }}
+            onError={() => setStillFailed(true)}
           />
-        ) : null}
-        {playing && motion.variant === 'B' ? (
-          <AvifLayer src={fail ? `${MISSING}.avif` : `${base}.avif`} onFailed={setAnimationFailed} />
-        ) : null}
-        {playing && motion.variant === 'C' ? <EffectsLayer geometry={geometry} onScreen={onScreen} /> : null}
-        {playing && motion.variant === 'D' ? (
-          <LayersLayer
-            id={id}
-            geometry={geometry}
-            aspect={width / height}
-            fail={fail}
-            onScreen={onScreen}
-            onFailed={setAnimationFailed}
-          />
-        ) : null}
+          {playing && motion.variant === "A" ? (
+            <VideoLayer
+              key={fail ? "missing" : "file"}
+              base={fail ? MISSING : base}
+              refuse={motion.lab.refuseAutoplay}
+              onScreen={onScreen}
+              onRefused={setRefused}
+              onFailed={setAnimationFailed}
+            />
+          ) : null}
+          {playing && motion.variant === "B" ? (
+            <AvifLayer
+              src={fail ? `${MISSING}.avif` : `${base}.avif`}
+              onFailed={setAnimationFailed}
+            />
+          ) : null}
+          {playing && motion.variant === "C" ? (
+            <EffectsLayer geometry={geometry} onScreen={onScreen} />
+          ) : null}
+          {playing && motion.variant === "D" ? (
+            <LayersLayer
+              id={id}
+              geometry={geometry}
+              aspect={width / height}
+              fail={fail}
+              birdMode={motion.lab.birdMode}
+              camera={motion.lab.camera}
+              onScreen={onScreen}
+              onFailed={setAnimationFailed}
+            />
+          ) : null}
+        </div>
         {animated ? (
           <button
             type="button"
             className={styles.control}
-            aria-label={playing ? 'Pause animation' : 'Play animation'}
+            aria-label={playing ? "Pause animation" : "Play animation"}
             onClick={toggle}
           >
-            <span aria-hidden="true">{playing ? '⏸︎' : '▶︎'}</span>
+            <span aria-hidden="true">{playing ? "⏸︎" : "▶︎"}</span>
           </button>
         ) : null}
       </div>
-      {process.env.NODE_ENV !== 'production' ? (
+      {process.env.NODE_ENV !== "production" ? (
         <>
-          <PrototypeSwitcher variants={VARIANTS} current={motion.variant} onChange={setVariant} />
+          <PrototypeSwitcher
+            variants={VARIANTS}
+            current={motion.variant}
+            onChange={setVariant}
+          />
           <LabPanel
             id={id}
             configured={geometry !== undefined}
@@ -181,10 +197,10 @@ function VideoLayer({
       return;
     }
     const attempt = refuse
-      ? Promise.reject(new DOMException('Simulated refusal', 'NotAllowedError'))
+      ? Promise.reject(new DOMException("Simulated refusal", "NotAllowedError"))
       : video.play();
     attempt.catch((error: DOMException) => {
-      if (error.name === 'NotAllowedError') onRefused(true);
+      if (error.name === "NotAllowedError") onRefused(true);
     });
   }, [onScreen, refuse, onRefused]);
   return (
@@ -203,14 +219,24 @@ function VideoLayer({
       onError={() => onFailed(true)}
     >
       <source src={`${base}.webm`} type="video/webm" />
-      <source src={`${base}.mp4`} type="video/mp4" onError={() => onFailed(true)} />
+      <source
+        src={`${base}.mp4`}
+        type="video/mp4"
+        onError={() => onFailed(true)}
+      />
     </video>
   );
 }
 
 /* ---------- B: whole file, animated AVIF in <img> ---------- */
 
-function AvifLayer({ src, onFailed }: { src: string; onFailed: (value: boolean) => void }) {
+function AvifLayer({
+  src,
+  onFailed,
+}: {
+  src: string;
+  onFailed: (value: boolean) => void;
+}) {
   const [ready, setReady] = useState(false);
   // <img> has no pause API: pausing unmounts this layer and shows the still;
   // Play mounts it again and the loop restarts from its first frame.
@@ -229,11 +255,17 @@ function AvifLayer({ src, onFailed }: { src: string; onFailed: (value: boolean) 
 
 /* ---------- C: still + engine effect presets (canvas) ---------- */
 
-function EffectsLayer({ geometry, onScreen }: { geometry: Geometry; onScreen: boolean }) {
+function EffectsLayer({
+  geometry,
+  onScreen,
+}: {
+  geometry: Geometry;
+  onScreen: boolean;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
-    const ctx = canvas?.getContext('2d');
+    const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || !onScreen) return;
     let frame = 0;
     const start = performance.now();
@@ -247,7 +279,7 @@ function EffectsLayer({ geometry, onScreen }: { geometry: Geometry; onScreen: bo
       }
       ctx.clearRect(0, 0, W, H);
       const t = (now - start) / 1000;
-      PRESETS['light-flicker'](ctx, W, H, geometry, t);
+      PRESETS["light-flicker"](ctx, W, H, geometry, t);
       PRESETS.fire(ctx, W, H, geometry, t);
       PRESETS.birds(ctx, W, H, geometry, t);
       frame = requestAnimationFrame(draw);
@@ -255,7 +287,14 @@ function EffectsLayer({ geometry, onScreen }: { geometry: Geometry; onScreen: bo
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
   }, [geometry, onScreen]);
-  return <canvas ref={ref} className={`${styles.overlay} ${styles.multiply}`} data-ready="true" aria-hidden="true" />;
+  return (
+    <canvas
+      ref={ref}
+      className={`${styles.overlay} ${styles.multiply}`}
+      data-ready="true"
+      aria-hidden="true"
+    />
+  );
 }
 
 /* ---------- D: still + author-supplied layers (CSS/WAAPI composition) ---------- */
@@ -265,6 +304,8 @@ function LayersLayer({
   geometry,
   aspect,
   fail,
+  birdMode,
+  camera,
   onScreen,
   onFailed,
 }: {
@@ -272,12 +313,15 @@ function LayersLayer({
   geometry: Geometry;
   aspect: number;
   fail: boolean;
+  birdMode: "loop" | "once";
+  camera: "off" | "once" | "loop";
   onScreen: boolean;
   onFailed: (value: boolean) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(0);
-  const layerCount = 2 + BIRDS.length;
+  const birds = birdMode === "once" ? BIRDS.slice(0, 1) : BIRDS;
+  const layerCount = 2 + birds.length;
 
   useEffect(() => {
     const root = ref.current;
@@ -285,38 +329,91 @@ function LayersLayer({
     const animations: Animation[] = [];
     const light = root.querySelector('[data-layer="light"]');
     light?.animate(
-      Array.from({ length: 49 }, (_, i) => ({ opacity: Math.min(1, flicker((i / 48) * LOOP)) })),
+      Array.from({ length: 49 }, (_, i) => ({
+        opacity: Math.min(1, flicker((i / 48) * LOOP)),
+      })),
       { duration: LOOP * 1000, iterations: Infinity },
     );
-    root.querySelector('[data-layer="flame"] img')?.animate(
-      [{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }],
-      { duration: 800, iterations: Infinity, easing: 'steps(8)' },
-    );
-    root.querySelectorAll('[data-layer="bird"]').forEach((mover, k) => {
-      mover.animate([{ transform: 'translateX(-12%)' }, { transform: 'translateX(110%)' }], {
-        duration: LOOP * 1000,
-        iterations: Infinity,
-        delay: -BIRDS[k].phase * LOOP * 1000,
-      });
-      mover.querySelector('img')?.animate(
-        [{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }],
-        { duration: 500, iterations: Infinity, easing: 'steps(4)', delay: -k * 125 },
+    root
+      .querySelector('[data-layer="flame"] img')
+      ?.animate(
+        [{ transform: "translateX(0)" }, { transform: "translateX(-100%)" }],
+        { duration: 800, iterations: Infinity, easing: "steps(8)" },
       );
+    root.querySelectorAll('[data-layer="bird"]').forEach((mover, k) => {
+      if (birdMode === "once") {
+        // One slow pass per showing: starts mid-frame, leaves on the right and
+        // stays gone (`fill: forwards`).
+        mover.animate(
+          [{ transform: "translateX(50%)" }, { transform: "translateX(110%)" }],
+          {
+            duration: 20000,
+            delay: 1000,
+            iterations: 1,
+            easing: "linear",
+            fill: "both",
+          },
+        );
+      } else {
+        mover.animate(
+          [
+            { transform: "translateX(-12%)" },
+            { transform: "translateX(110%)" },
+          ],
+          {
+            duration: LOOP * 1000,
+            iterations: Infinity,
+            delay: -BIRDS[k].phase * LOOP * 1000,
+          },
+        );
+      }
+      mover
+        .querySelector("img")
+        ?.animate(
+          [{ transform: "translateX(0)" }, { transform: "translateX(-100%)" }],
+          {
+            duration: birdMode === "once" ? 800 : 500,
+            iterations: Infinity,
+            easing: "steps(4)",
+            delay: -k * 125,
+          },
+        );
     });
+    // Camera push-in: one transform on the frame's camera box, which holds the
+    // still and every layer, so the layers stay aligned with the painting.
+    const box = root.parentElement;
+    if (camera !== "off" && box) {
+      box.style.transformOrigin = `${geometry.hearth.x * 100}% ${geometry.hearth.y * 100}%`;
+      const push = box.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(1.06)" }],
+        {
+          duration: 16000,
+          easing: "ease-in-out",
+          ...(camera === "once"
+            ? { iterations: 1, fill: "forwards" as const }
+            : { iterations: Infinity, direction: "alternate" as const }),
+        },
+      );
+      animations.push(push);
+    }
     animations.push(...root.getAnimations({ subtree: true }));
     return () => animations.forEach((animation) => animation.cancel());
-  }, []);
+  }, [birdMode, camera, geometry]);
 
   useEffect(() => {
-    ref.current
+    const box = ref.current?.parentElement;
+    box
       ?.getAnimations({ subtree: true })
-      .forEach((animation) => (onScreen ? animation.play() : animation.pause()));
+      .forEach((animation) =>
+        onScreen ? animation.play() : animation.pause(),
+      );
   }, [onScreen]);
 
-  const file = (name: string) => (fail ? `${MISSING}.webp` : `${ASSETS}/${name}`);
+  const file = (name: string) =>
+    fail ? `${MISSING}.webp` : `${ASSETS}/${name}`;
   const layerProps = {
-    alt: '',
-    'aria-hidden': true,
+    alt: "",
+    "aria-hidden": true,
     onLoad: () => setLoaded((n) => n + 1),
     onError: () => onFailed(true),
   };
@@ -329,7 +426,12 @@ function LayersLayer({
         data-layer="light"
         src={file(`${id}-light.webp`)}
         className={styles.multiply}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+        }}
       />
       <div
         data-layer="flame"
@@ -341,17 +443,36 @@ function LayersLayer({
           height: `${flameHeight * 100}%`,
         }}
       >
-        <img {...layerProps} src={file('flame-sprite.webp')} className={styles.strip} style={{ width: '800%' }} />
+        <img
+          {...layerProps}
+          src={file("flame-sprite.webp")}
+          className={styles.strip}
+          style={{ width: "800%" }}
+        />
       </div>
-      {BIRDS.map((bird, k) => (
+      {birds.map((bird, k) => (
         <div
           key={k}
           data-layer="bird"
           className={styles.mover}
-          style={{ top: `${(geometry.sky.top + (geometry.sky.bottom - geometry.sky.top) * bird.band) * 100}%` }}
+          style={{
+            top: `${(geometry.sky.top + (geometry.sky.bottom - geometry.sky.top) * (birdMode === "once" ? 0.4 : bird.band)) * 100}%`,
+          }}
         >
-          <div className={styles.clip} style={{ position: 'relative', width: '3.2%', aspectRatio: '48 / 28' }}>
-            <img {...layerProps} src={file('bird-sprite.webp')} className={styles.strip} style={{ width: '400%' }} />
+          <div
+            className={styles.clip}
+            style={{
+              position: "relative",
+              width: "3.2%",
+              aspectRatio: "48 / 28",
+            }}
+          >
+            <img
+              {...layerProps}
+              src={file("bird-sprite.webp")}
+              className={styles.strip}
+              style={{ width: "400%" }}
+            />
           </div>
         </div>
       ))}
@@ -361,48 +482,63 @@ function LayersLayer({
 
 /* ---------- Lab panel (prototype chrome, not part of any variant) ---------- */
 
-const ABOUT: Record<VariantKey, { summary: string; authoring: string; files: (id: string) => string[] }> = {
+const ABOUT: Record<
+  VariantKey,
+  { summary: string; authoring: string; files: (id: string) => string[] }
+> = {
   static: {
-    summary: 'Baseline: the plain <img> shipped today.',
-    authoring: 'One image from an AI image tool.',
+    summary: "Baseline: the plain <img> shipped today.",
+    authoring: "One image from an AI image tool.",
     files: () => [],
   },
   A: {
     summary:
-      '<video muted loop playsinline> over the still. WebM (VP9) first, MP4 (H.264) fallback. Needs HTTP Range (206) on the asset route for Safari/iOS and new video MIME types.',
+      "<video muted loop playsinline> over the still. WebM (VP9) first, MP4 (H.264) fallback. Needs HTTP Range (206) on the asset route for Safari/iOS and new video MIME types.",
     authoring:
-      'AI image-to-video (Midjourney --loop, Kling/Luma end frame = start frame) → ffmpeg crop/scale, strip audio, encode WebM + MP4. Here the file is baked from the D layers plus a slow camera drift, as a stand-in: drop a real AI MP4/WebM at public/prototype-animated-illustration/<id>.mp4|.webm to compare.',
+      "AI image-to-video (Midjourney --loop, Kling/Luma end frame = start frame) → ffmpeg crop/scale, strip audio, encode WebM + MP4. Here the file is baked from the D layers plus a slow camera drift, as a stand-in: drop a real AI MP4/WebM at public/prototype-animated-illustration/<id>.mp4|.webm to compare.",
     files: (id) => [`${id}.webm`, `${id}.mp4`],
   },
   B: {
     summary:
-      'Animated AVIF in an <img> over the still. No new route work (no Range). No pause API: pause swaps back to the still and Play restarts the loop from frame 0.',
-    authoring: 'Same MP4 as A → one ffmpeg transcode (libaom-av1). Animated WebP of the same loop shown for comparison.',
+      "Animated AVIF in an <img> over the still. No new route work (no Range). No pause API: pause swaps back to the still and Play restarts the loop from frame 0.",
+    authoring:
+      "Same MP4 as A → one ffmpeg transcode (libaom-av1). Animated WebP of the same loop shown for comparison.",
     files: (id) => [`${id}.avif`, `${id}.anim.webp`],
   },
   C: {
     summary:
-      'Engine-drawn presets on a <canvas> over the still (light-flicker, fire, birds). No new media type; no per-Illustration animation bytes.',
-    authoring: 'Only the still. The author picks presets and anchor points in YAML; the look is the engine’s, the same in every Scenario.',
+      "Engine-drawn presets on a <canvas> over the still (light-flicker, fire, birds). No new media type; no per-Illustration animation bytes.",
+    authoring:
+      "Only the still. The author picks presets and anchor points in YAML; the look is the engine’s, the same in every Scenario.",
     files: () => [],
   },
   D: {
     summary:
-      'Author-supplied transparent layers composed by the engine: a light layer (multiply, flicker), a flame sprite strip (steps), bird sprite strips moving across. WebP only, so the route and security posture stay as they are.',
+      "Author-supplied transparent layers composed by the engine: a light layer (multiply, flicker), a flame sprite strip (steps), bird sprite strips moving across. WebP only, so the route and security posture stay as they are.",
     authoring:
-      'The author makes every layer: transparent flame frames, bird frames, a painted light layer. Cut-outs, aligned sprite frames and anchor points are manual work with AI tools.',
-    files: (id) => [`${id}-light.webp`, 'flame-sprite.webp', 'bird-sprite.webp'],
+      "The author makes every layer: transparent flame frames, bird frames, a painted light layer. Cut-outs, aligned sprite frames and anchor points are manual work with AI tools.",
+    files: (id) => [
+      `${id}-light.webp`,
+      "flame-sprite.webp",
+      "bird-sprite.webp",
+    ],
   },
 };
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 
-function declaration(variant: VariantKey, id: string, g: Geometry | undefined) {
+function declaration(
+  variant: VariantKey,
+  id: string,
+  g: Geometry | undefined,
+  lab: Lab,
+) {
   const head = `- id: ${id}\n  path: images/${id}.png   # the still (mandatory)\n  alt: >-\n    …one alt for still and motion…\n`;
-  if (!g || variant === 'static') return head;
-  if (variant === 'A') return `${head}  animation:\n    - images/${id}.webm\n    - images/${id}.mp4\n`;
-  if (variant === 'B') return `${head}  animation: images/${id}.avif\n`;
-  if (variant === 'C')
+  if (!g || variant === "static") return head;
+  if (variant === "A")
+    return `${head}  animation:\n    - images/${id}.webm\n    - images/${id}.mp4\n`;
+  if (variant === "B") return `${head}  animation: images/${id}.avif\n`;
+  if (variant === "C")
     return (
       `${head}  effects:\n` +
       `    - light-flicker: { at: [${pct(g.light.x)}, ${pct(g.light.y)}], radius: ${pct(g.light.radius)} }\n` +
@@ -413,7 +549,12 @@ function declaration(variant: VariantKey, id: string, g: Geometry | undefined) {
     `${head}  layers:\n` +
     `    - path: images/anim/${id}-light.webp\n      blend: multiply\n      motion: flicker\n` +
     `    - path: images/anim/flame-sprite.webp\n      frames: 8\n      fps: 10\n      at: [${pct(g.hearth.x)}, ${pct(g.hearth.y)}]\n      width: ${pct(g.hearth.width)}\n` +
-    `    - path: images/anim/bird-sprite.webp\n      frames: 4\n      fps: 8\n      count: 3\n      across: { band: [${pct(g.sky.top)}, ${pct(g.sky.bottom)}], duration: ${LOOP}s }\n`
+    (lab.birdMode === "once"
+      ? `    - path: images/anim/bird-sprite.webp\n      frames: 4\n      fps: 5\n      move:\n        from: [50%, ${pct(g.sky.top + (g.sky.bottom - g.sky.top) * 0.4)}]\n        to: [110%, ${pct(g.sky.top + (g.sky.bottom - g.sky.top) * 0.4)}]\n        duration: 20s\n        delay: 1s\n        repeat: once\n`
+      : `    - path: images/anim/bird-sprite.webp\n      frames: 4\n      fps: 8\n      count: 3\n      across: { band: [${pct(g.sky.top)}, ${pct(g.sky.bottom)}], duration: ${LOOP}s }\n`) +
+    (lab.camera === "off"
+      ? ""
+      : `  camera:\n    zoom: 106%\n    focus: [${pct(g.hearth.x)}, ${pct(g.hearth.y)}]\n    duration: 16s\n    repeat: ${lab.camera === "once" ? "once" : "loop   # in, then out"}\n`)
   );
 }
 
@@ -435,7 +576,9 @@ function LabPanel({
   animationFailed: boolean;
 }) {
   const [sizes, setSizes] = useState<Record<string, number>>({});
-  const [fetched, setFetched] = useState<{ name: string; transfer: number; body: number }[]>([]);
+  const [fetched, setFetched] = useState<
+    { name: string; transfer: number; body: number }[]
+  >([]);
 
   useEffect(() => {
     fetch(`${ASSETS}/sizes.json`)
@@ -448,13 +591,16 @@ function LabPanel({
     const read = () =>
       setFetched(
         performance
-          .getEntriesByType('resource')
-          .filter((entry) => entry.name.includes(ASSETS) || entry.name.includes(`/${id}.`))
-          .filter((entry) => !entry.name.endsWith('sizes.json'))
+          .getEntriesByType("resource")
+          .filter(
+            (entry) =>
+              entry.name.includes(ASSETS) || entry.name.includes(`/${id}.`),
+          )
+          .filter((entry) => !entry.name.endsWith("sizes.json"))
           .map((entry) => {
             const resource = entry as PerformanceResourceTiming;
             return {
-              name: resource.name.split('/').pop() ?? resource.name,
+              name: resource.name.split("/").pop() ?? resource.name,
               transfer: resource.transferSize,
               body: resource.encodedBodySize,
             };
@@ -469,28 +615,42 @@ function LabPanel({
   const files = about.files(id);
   return (
     <details className={styles.lab} open>
-      <summary>Prototype #196 · {motion.variant} · {id}</summary>
+      <summary>
+        Prototype #196 · {motion.variant} · {id}
+      </summary>
       <div className={styles.labBody}>
-        {configured ? null : <p>No prototype geometry for this Illustration: only loc-hunters-camp and camp-standoff animate.</p>}
+        {configured ? null : (
+          <p>
+            No prototype geometry for this Illustration: only loc-hunters-camp
+            and camp-standoff animate.
+          </p>
+        )}
         <p>{about.summary}</p>
         <h4>Authoring</h4>
         <p>{about.authoring}</p>
         <h4>Declaration in images.yaml (sketch)</h4>
-        <pre>{declaration(motion.variant, id, configured ? ILLUSTRATIONS[id] : undefined)}</pre>
+        <pre>
+          {declaration(
+            motion.variant,
+            id,
+            configured ? ILLUSTRATIONS[id] : undefined,
+            motion.lab,
+          )}
+        </pre>
         <h4>Bytes on disk (640×360, 8 s loop)</h4>
         <table>
           <tbody>
             <tr>
               <td>{id}.png (still)</td>
-              <td>{sizes[`${id}.png`] ? kib(sizes[`${id}.png`]) : '–'}</td>
+              <td>{sizes[`${id}.png`] ? kib(sizes[`${id}.png`]) : "–"}</td>
             </tr>
             {files.map((name) => (
               <tr key={name}>
                 <td>{name}</td>
-                <td>{sizes[name] ? kib(sizes[name]) : '–'}</td>
+                <td>{sizes[name] ? kib(sizes[name]) : "–"}</td>
               </tr>
             ))}
-            {motion.variant === 'C' ? (
+            {motion.variant === "C" ? (
               <tr>
                 <td>engine preset code (shared)</td>
                 <td>~3 KiB</td>
@@ -523,27 +683,27 @@ function LabPanel({
           <tbody>
             <tr>
               <td>OS prefers-reduced-motion</td>
-              <td>{motion.osReduced ? 'reduce' : 'no-preference'}</td>
+              <td>{motion.osReduced ? "reduce" : "no-preference"}</td>
             </tr>
             <tr>
               <td>Stored player choice (localStorage)</td>
-              <td>{motion.stored ?? 'none'}</td>
+              <td>{motion.stored ?? "none"}</td>
             </tr>
             <tr>
               <td>Effective motion</td>
-              <td>{motion.motionOn ? 'on' : 'off'}</td>
+              <td>{motion.motionOn ? "on" : "off"}</td>
             </tr>
             <tr>
               <td>Browser refused to animate</td>
-              <td>{refused ? 'yes' : 'no'}</td>
+              <td>{refused ? "yes" : "no"}</td>
             </tr>
             <tr>
               <td>Animation failed → still</td>
-              <td>{animationFailed ? 'yes' : 'no'}</td>
+              <td>{animationFailed ? "yes" : "no"}</td>
             </tr>
             <tr>
               <td>Animating now</td>
-              <td>{playing ? 'yes' : 'no'}</td>
+              <td>{playing ? "yes" : "no"}</td>
             </tr>
           </tbody>
         </table>
@@ -552,25 +712,57 @@ function LabPanel({
           <input
             type="checkbox"
             checked={motion.lab.simulateReducedMotion}
-            onChange={(event) => setLab({ simulateReducedMotion: event.target.checked })}
-          />{' '}
+            onChange={(event) =>
+              setLab({ simulateReducedMotion: event.target.checked })
+            }
+          />{" "}
           OS reduced motion (only when no stored choice)
         </label>
         <label>
           <input
             type="checkbox"
             checked={motion.lab.failAnimation}
-            onChange={(event) => setLab({ failAnimation: event.target.checked })}
-          />{' '}
+            onChange={(event) =>
+              setLab({ failAnimation: event.target.checked })
+            }
+          />{" "}
           Animation file fails to load
         </label>
         <label>
           <input
             type="checkbox"
             checked={motion.lab.refuseAutoplay}
-            onChange={(event) => setLab({ refuseAutoplay: event.target.checked })}
-          />{' '}
+            onChange={(event) =>
+              setLab({ refuseAutoplay: event.target.checked })
+            }
+          />{" "}
           Browser refuses autoplay (A only: iOS Low Power Mode)
+        </label>
+        <h4>D options</h4>
+        <label>
+          Bird:{" "}
+          <select
+            value={motion.lab.birdMode}
+            onChange={(event) =>
+              setLab({ birdMode: event.target.value as Lab["birdMode"] })
+            }
+          >
+            <option value="loop">three birds, looping</option>
+            <option value="once">one bird, once, slow, from the centre</option>
+          </select>
+        </label>
+        <label>
+          Camera push-in:{" "}
+          <select
+            value={motion.lab.camera}
+            onChange={(event) =>
+              setLab({ camera: event.target.value as Lab["camera"] })
+            }
+          >
+            <option value="off">off</option>
+            <option value="once">once (stays in)</option>
+            <option value="loop">loop (in, then out)</option>
+          </select>
         </label>
         <button type="button" onClick={() => setPreference(null)}>
           Clear stored Play/Pause choice

@@ -17,6 +17,8 @@ export type Lab = {
   simulateReducedMotion: boolean;
   failAnimation: boolean;
   refuseAutoplay: boolean;
+  birdMode: 'loop' | 'once';
+  camera: 'off' | 'once' | 'loop';
 };
 
 export type MotionState = {
@@ -35,7 +37,13 @@ const SERVER_STATE: MotionState = {
   variant: 'static',
   osReduced: false,
   stored: null,
-  lab: { simulateReducedMotion: false, failAnimation: false, refuseAutoplay: false },
+  lab: {
+    simulateReducedMotion: false,
+    failAnimation: false,
+    refuseAutoplay: false,
+    birdMode: 'loop',
+    camera: 'off',
+  },
   motionOn: false,
 };
 

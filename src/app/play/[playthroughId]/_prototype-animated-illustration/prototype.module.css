@@ -5,6 +5,10 @@
   overflow: hidden;
 }
 
+.camera {
+  position: relative;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
