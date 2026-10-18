@@ -46,8 +46,8 @@ import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
 import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
-import { ResultPanel } from './result-panel';
 import { IntroModal } from './intro-modal';
+import { OutcomeModal } from './outcome-modal';
 import { SidePanel } from './side-panel';
 
 export const dynamic = 'force-dynamic';
@@ -301,25 +301,23 @@ export default async function PlayPage({
   // of navigating away. The modal reuses the Journal already read here: the
   // newest batch, newest first, with the sequence cursor for older batches.
   const modalJournal = modalJournalBatch(journal, catalogue, characterName);
-  // A step that ended the Playthrough shows the Ending screen instead of the
-  // result panel (docs/spec/playthrough-state.md, result panel). The panel
-  // renders its entries with the same entry renderer as the Journal.
-  // The Combat round that ended a Combat (victory or escape) is part of the
-  // result panel with the Combat end and the Outcome, so the decisive round
-  // reads without opening the Journal. Mid-Combat rounds belong to the Combat
-  // panel's log instead: while a Combat runs, its latest round never joins
-  // the panel.
-  const resultEntries =
-    gameView.kind === 'ended'
-      ? []
-      : journal
-          .filter(
-            (entry) =>
-              entry.step === playthrough.step &&
-              (RESULT_PANEL_ENTRY_TYPES.has(entry.type) ||
-                (entry.type === 'combat-round' && gameView.kind !== 'combat')),
-          )
-          .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
+  // The Outcome presentation after a Choice, Test or Combat end (the result
+  // panel entry types): the Test, the Outcome narration and the state changes
+  // of the latest step, rendered with the same entry renderer as the Journal.
+  // The Combat round that ended a Combat (victory, escape or death) joins them,
+  // so the decisive round reads without opening the Journal. Mid-Combat rounds
+  // belong to the Combat panel's log instead: while a Combat runs, its latest
+  // round never joins the presentation. A step that ended the Playthrough keeps
+  // its entries: the modal shows them over the Location, and acknowledgement
+  // reveals the Ending screen through the existing engine sequence.
+  const resultEntries = journal
+    .filter(
+      (entry) =>
+        entry.step === playthrough.step &&
+        (RESULT_PANEL_ENTRY_TYPES.has(entry.type) ||
+          (entry.type === 'combat-round' && gameView.kind !== 'combat')),
+    )
+    .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
   // The Combat panel reads the roll log from the Journal, never from stored
   // state, so the log survives a reload. The arena (lanes, Intents, targets,
   // order) comes from the engine's projection over state and current content.
@@ -596,28 +594,107 @@ export default async function PlayPage({
     );
   }
 
-  // While the result panel is shown, the reading column holds only the panel
-  // (with Continue) and the transient notice: the Location view, Scene and
-  // Combat panel wait for Continue. The side panel (status card, launchers,
-  // compact map) stays visible throughout.
+  // While the Outcome presentation is unacknowledged, it appears in a modal
+  // over the Playthrough's current Location: the reading column holds the
+  // destination Location (after a `move`, the new Location; otherwise the
+  // current one) with its actions inert, and Continue reveals the next
+  // playable state through the existing engine sequence (the Location view,
+  // the following Scene, Combat panel or Ending screen). The side panel stays
+  // visible throughout, with map travel disabled so no Location action can be
+  // invoked through the background.
   if (showResult) {
+    const backgroundLocation =
+      scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
+    const backgroundIllustration =
+      backgroundLocation.illustration === undefined
+        ? undefined
+        : {
+            src: sceneIllustrationUrl(scenario.id, backgroundLocation.illustration),
+            width: backgroundLocation.illustration.width,
+            height: backgroundLocation.illustration.height,
+            alt: backgroundLocation.illustration.alt,
+          };
+    const backgroundExits = visibleExits(scenario, state);
+    const backgroundOnDemand = onDemandScenes(scenario, state);
     return (
       <main>
         {chronicleHead}
         <div className="game">
-          <article className="reading-card">
+          <article className="reading-card" inert>
             {noticeText ? (
               <p className="notice" role="status">
                 {noticeText}
               </p>
             ) : null}
+            <div className="reading-title">
+              <p className="eyebrow">{catalogue.game.currentLocation}</p>
+              <h1>
+                <span lang={shown}>{backgroundLocation.name}</span>
+                {badge === undefined ? null : <> {badge}</>}
+              </h1>
+            </div>
+            {backgroundIllustration ? (
+              <figure className="reading-art">
+                <SceneIllustration
+                  src={backgroundIllustration.src}
+                  width={backgroundIllustration.width}
+                  height={backgroundIllustration.height}
+                  alt={backgroundIllustration.alt}
+                />
+              </figure>
+            ) : null}
             <div className="reading-body">
-              <ResultPanel
-                entries={resultEntries}
-                continueHref={continueTo}
-                continueLabel={catalogue.game.continue}
-                label={catalogue.game.latestEvents}
+              <div
+                className="narration"
+                lang={shown}
+                dangerouslySetInnerHTML={{
+                  __html: renderNarration(backgroundLocation.description, characterName),
+                }}
               />
+              {backgroundOnDemand.length > 0 ? (
+                <section aria-label={catalogue.game.scenes} className="decisions">
+                  <p className="eyebrow">{catalogue.game.decide}</p>
+                  {backgroundOnDemand.map((scene, index) => (
+                    <form key={scene.sceneId} action={openSceneAction}>
+                      <input type="hidden" name="playthroughId" value={playthrough.id} />
+                      <input type="hidden" name="expectedStep" value={playthrough.step} />
+                      <input type="hidden" name="scene" value={scene.sceneId} />
+                      <p>
+                        <button className="choice" type="submit">
+                          <span className="choice-number" aria-hidden="true">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span lang={shown}>{scene.title}</span>
+                          <span aria-hidden="true">↗</span>
+                        </button>
+                      </p>
+                    </form>
+                  ))}
+                </section>
+              ) : null}
+              {backgroundExits.length > 0 ? (
+                <section aria-label={catalogue.game.exits} className="decisions">
+                  {backgroundOnDemand.length > 0 ? null : (
+                    <p className="eyebrow">{catalogue.game.decide}</p>
+                  )}
+                  {backgroundExits.map((exit, index) => (
+                    <form key={exit.targetLocationId} action={travelAction}>
+                      <input type="hidden" name="playthroughId" value={playthrough.id} />
+                      <input type="hidden" name="expectedStep" value={playthrough.step} />
+                      <input type="hidden" name="target" value={exit.targetLocationId} />
+                      <p>
+                        <button className="choice" type="submit">
+                          <span className="choice-number" aria-hidden="true">
+                            {String(backgroundOnDemand.length + index + 1).padStart(2, '0')}
+                          </span>
+                          <span lang={shown}>{exit.label}</span>
+                          <span aria-hidden="true">↗</span>
+                        </button>
+                      </p>
+                    </form>
+                  ))}
+                </section>
+              ) : null}
             </div>
           </article>
           <SidePanel
@@ -631,7 +708,7 @@ export default async function PlayPage({
             gameView={gameView}
             showUnknownExits={showUnknownExits}
             toggleHref={mapToggle}
-            canTravel={canTravel}
+            canTravel={false}
             journalTotal={modalJournal.total}
             journalEntries={modalJournal.entries}
             journalNextCursor={modalJournal.nextCursor}
@@ -641,6 +718,13 @@ export default async function PlayPage({
             language={language}
           />
         </div>
+        <OutcomeModal
+          label={catalogue.game.latestEvents}
+          closeLabel={catalogue.closePanel(catalogue.game.latestEvents)}
+          acknowledgeHref={continueTo}
+          continueLabel={catalogue.game.continue}
+          entries={resultEntries}
+        />
       </main>
     );
   }
