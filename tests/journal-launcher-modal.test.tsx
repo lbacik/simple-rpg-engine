@@ -28,9 +28,12 @@ const playPage = readFileSync(
 );
 const css = readFileSync(join(__dirname, '..', 'src', 'app', 'globals.css'), 'utf8');
 
-function cssBlock(selector: string): string {
-  const start = css.indexOf(selector);
-  if (start === -1) return '';
+function cssBlock(selector: string, occurrence = 1): string {
+  let start = -1;
+  for (let seen = 0; seen < occurrence; seen += 1) {
+    start = css.indexOf(selector, start + 1);
+    if (start === -1) return '';
+  }
   const open = css.indexOf('{', start);
   const close = css.indexOf('}', open);
   return css.slice(open, close);
@@ -41,10 +44,7 @@ function cssBlock(selector: string): string {
  * grouped into): the second `.journal-modal {` match in the file.
  */
 function mainJournalModalBlock(): string {
-  const first = css.indexOf('.journal-modal {');
-  const main = css.indexOf('.journal-modal {', first + 1);
-  const open = css.indexOf('{', main);
-  return css.slice(open, css.indexOf('}', open));
+  return cssBlock('.journal-modal {', 2);
 }
 
 const enLauncherText: JournalModalText = {
