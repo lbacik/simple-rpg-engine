@@ -149,12 +149,25 @@ test('the desktop Map launcher opens the expanded modal over the compact map', a
   await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
 
   // The Map launcher is visible on desktop and the compact map is shown.
-  await expect(page.getByRole('link', { name: 'Map' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Map', exact: true })).toBeVisible();
   await expect(page.locator('.map-inline')).toBeVisible();
+
+  // The compact map header offers Expand as a secondary-style button with a
+  // decorative leading icon, and the toggle carries its state eye icon.
+  const expand = page.locator('.map-inline').getByRole('link', { name: 'Expand map' });
+  await expect(expand).toBeVisible();
+  await expect(expand).toHaveClass(/button secondary/);
+  await expect(expand.locator('svg.map-control-icon')).toHaveCount(1);
+  await expect(
+    page
+      .locator('.map-inline')
+      .getByRole('link', { name: 'Show unseen exits' })
+      .locator('svg.map-control-icon'),
+  ).toHaveCount(1);
 
   // The launcher opens the expanded map in a modal reflected in the URL,
   // with the compact map still in place behind it.
-  await page.getByRole('link', { name: 'Map' }).click();
+  await page.getByRole('link', { name: 'Map', exact: true }).click();
   const mapDialog = page.getByRole('dialog', { name: 'Location map' });
   await expect(mapDialog).toBeVisible();
   await expect(page).toHaveURL(/panel=map/);
@@ -172,7 +185,7 @@ test('the desktop Map launcher opens the expanded modal over the compact map', a
   await page.keyboard.press('Escape');
   await expect(mapDialog).toHaveCount(0);
   expect(page.url()).not.toMatch(/panel=map/);
-  await expect(page.getByRole('link', { name: 'Map' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Map', exact: true })).toBeFocused();
 });
 
 // On phones the status card and launchers replace the compact summary, and a
@@ -192,7 +205,7 @@ test('the phone Map launcher opens the map and travels from it', async ({ page }
   // The side panel shows the status card and launchers; the inline map hides
   // behind the Map launcher and the compact summary is gone.
   await expect(page.getByLabel('Character status')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Map' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Map', exact: true })).toBeVisible();
   await expect(page.locator('.map-inline')).toBeHidden();
   await expect(page.locator('.compact-summary')).toHaveCount(0);
 
@@ -203,7 +216,7 @@ test('the phone Map launcher opens the map and travels from it', async ({ page }
   await expect(page.getByRole('heading', { name: 'Ashford' })).toBeVisible();
 
   // The Map launcher opens the map in a modal reflected in the URL.
-  await page.getByRole('link', { name: 'Map' }).click();
+  await page.getByRole('link', { name: 'Map', exact: true }).click();
   const mapDialog = page.getByRole('dialog', { name: 'Location map' });
   await expect(mapDialog).toBeVisible();
   await expect(page).toHaveURL(/panel=map/);

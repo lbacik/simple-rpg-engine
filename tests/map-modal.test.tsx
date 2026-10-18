@@ -1,7 +1,9 @@
 // Expanded map modal and the "Show unseen exits" control (issue #159,
 // docs/spec/ui.md, location map): the compact map and the modal share the
-// LocationMap, both expose a button-style toggle with a clear current state,
-// and map travel posts the real travel action only when legal.
+// LocationMap, both expose a button-style toggle with a clear current state
+// and a state-following eye icon, the compact map adds a secondary-style
+// Expand button with an enlarge icon, and map travel posts the real travel
+// action only when legal.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -239,6 +241,52 @@ describe('LocationMap toggle', () => {
   });
 });
 
+describe('map control buttons and icons', () => {
+  it('renders Expand as a secondary-style button with an enlarge icon', () => {
+    const html = render(derived(loadFixture(), ['gate-open'], false), {
+      expandHref: '/play/play-1?panel=map',
+    });
+    expect(html).toContain('class="map-expand button secondary"');
+    expect(html).toContain('href="/play/play-1?panel=map"');
+    expect(html).toContain('Expand map');
+    // Enlarge icon: outward-pointing diagonal arrows, decorative only.
+    expect(html).toContain('map-control-icon');
+    expect(html).toContain('M21 3l-7 7');
+    expect(html).toContain('aria-hidden="true"');
+  });
+
+  it('renders no Expand control without an expand href', () => {
+    const html = render(derived(loadFixture(), ['gate-open'], false));
+    expect(html).not.toContain('map-expand');
+  });
+
+  it('shows the eye icon while the action is "show" and eye-off while "hide"', () => {
+    const off = render(derived(loadFixture(), ['gate-open'], false));
+    expect(off).toContain('aria-pressed="false"');
+    expect(off).toContain('M2 12s3.5-6');
+    expect(off).not.toContain('M2 2l20 20');
+    const on = render(derived(loadFixture(), ['gate-open'], true), {
+      showUnknownExits: true,
+      toggleHref: '/play/play-1',
+    });
+    expect(on).toContain('aria-pressed="true"');
+    expect(on).toContain('M2 2l20 20');
+  });
+
+  it('keeps the control icons decorative so accessible names do not change', () => {
+    const html = render(derived(loadFixture(), ['gate-open'], false), {
+      expandHref: '/play/play-1?panel=map',
+    });
+    // Every control icon hides itself from assistive tech; neither control
+    // takes an aria-label, so the visible text stays the accessible name.
+    for (const match of html.matchAll(/<svg[^>]*map-control-icon[^>]*>/g)) {
+      expect(match[0]).toContain('aria-hidden="true"');
+    }
+    expect(html).not.toContain('aria-label="Expand map"');
+    expect(html).not.toContain('aria-label="Show unseen exits"');
+  });
+});
+
 describe('unseen exits on and off', () => {
   it('omits the unvisited target while the setting is off', () => {
     const html = render(derived(loadFixture(), ['gate-open'], false));
@@ -353,5 +401,10 @@ describe('map launcher and modal chrome', () => {
   it('styles the toggle as a button and widens the expanded modal', () => {
     expect(css).toContain('.map-toggle .button');
     expect(css).toContain('.panel-modal:has(.map)');
+  });
+
+  it('styles Expand as a secondary button with a leading icon that cannot wrap', () => {
+    expect(css).toContain('.map-head .map-expand');
+    expect(css).toContain('.map-control-icon');
   });
 });
