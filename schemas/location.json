@@ -194,12 +194,12 @@
                 "atLeast": {
                   "type": "integer",
                   "minimum": 2,
-                  "maximum": 12
+                  "maximum": 40
                 },
                 "atMost": {
                   "type": "integer",
                   "minimum": 1,
-                  "maximum": 11
+                  "maximum": 39
                 }
               },
               "additionalProperties": false
@@ -207,6 +207,30 @@
           },
           "required": [
             "health"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "companion": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "companion"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "companionLost": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "companionLost"
           ],
           "additionalProperties": false
         },

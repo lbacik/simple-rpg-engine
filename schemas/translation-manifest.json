@@ -50,6 +50,12 @@
         "type": "string"
       }
     },
+    "companions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "templates": {
       "type": "array",
       "items": {

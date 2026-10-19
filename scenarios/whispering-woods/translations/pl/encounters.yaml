@@ -5,10 +5,15 @@
     text: |
       Rozbójnik osuwa się przy wygasłym palenisku. U jego pasa wisi
       na rzemieniu klucz z brązu.
-  escape:
+  surrender:
     text: |
-      Przedzierasz się z powrotem przez zarośla, a strzały ze świstem
-      wpadają między paprocie.
+      Upuszczasz broń i unosisz puste dłonie. Łucznik jeszcze chwilę trzyma
+      napięty łuk, po czym szarpie nim w stronę drzew — bierz to za
+      wskazówkę i idź.
+  draw:
+    text: |
+      Wysuwasz się bokiem między pnie, aż żadne z was nie ma czystego
+      strzału. Łucznik opuszcza łuk i znika w lesie.
 
 - id: hollow-wolf
   text: |
@@ -17,9 +22,14 @@
     text: |
       Wilk pada między korzeniami. Za jego legowiskiem ścieżka wspina się
       ku zniszczonym kamiennym murom.
-  escape:
+  surrender:
     text: |
-      Wdrapujesz się na zbocze i biegniesz, aż warczenie cichnie za tobą.
+      Przestajesz biec, kucasz i trwasz w bezruchu. Wilk zatacza krąg,
+      węszy wiatr i truchta ku łatwiejszej zdobyczy.
+  draw:
+    text: |
+      Wycofujesz się krok po kroku, nie odwracając się. Wilk odprowadza
+      cię do zbocza, po czym odstępuje z ostatnim warczeniem.
 
 - id: wight-fight
   text: |
@@ -28,7 +38,11 @@
     text: |
       Upiór rozsypuje się w pył i rdzę. Mira otwiera oczy i wyciąga rękę
       ku twojej dłoni.
-  escape:
+  surrender:
     text: |
-      Potykając się, wracasz korytarzem ku szaremu światłu dnia. Upiór
-      nie rusza za tobą; nigdy nie opuszcza grobowca.
+      Padasz płasko i czołgasz się korytarzem ku światłu dnia. Upiór nie
+      rusza za tobą; nigdy nie opuszcza grobowca.
+  draw:
+    text: |
+      Wycofujesz się do wylotu korytarza i bronisz wąskiego przejścia
+      ostrzem. Upiór raz próbuje progu, po czym opada z powrotem na mary.

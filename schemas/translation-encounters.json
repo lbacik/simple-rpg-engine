@@ -19,7 +19,16 @@
         },
         "additionalProperties": false
       },
-      "escape": {
+      "surrender": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "draw": {
         "type": "object",
         "properties": {
           "text": {
@@ -32,7 +41,8 @@
     "required": [
       "id",
       "text",
-      "escape"
+      "surrender",
+      "draw"
     ],
     "additionalProperties": false
   }

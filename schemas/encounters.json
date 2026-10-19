@@ -12,7 +12,7 @@
       },
       "participants": {
         "minItems": 1,
-        "maxItems": 2,
+        "maxItems": 5,
         "type": "array",
         "items": {
           "type": "object",
@@ -22,18 +22,39 @@
             },
             "enemy": {
               "type": "string"
+            },
+            "startRange": {
+              "type": "string",
+              "enum": [
+                "melee",
+                "near",
+                "far"
+              ]
+            },
+            "phaseOffset": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "power": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
             }
           },
           "required": [
-            "enemy"
+            "enemy",
+            "startRange"
           ],
           "additionalProperties": false
         }
       },
       "startRange": {
-        "default": "far",
         "type": "string",
         "enum": [
+          "melee",
           "near",
           "far"
         ]
@@ -94,7 +115,7 @@
                     "heal": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 12
+                      "maximum": 40
                     }
                   },
                   "required": [
@@ -108,7 +129,7 @@
                     "damage": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 12
+                      "maximum": 40
                     }
                   },
                   "required": [
@@ -169,6 +190,30 @@
                     "take-item"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-join": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "companion-join"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-leave": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "companion-leave"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
@@ -189,7 +234,7 @@
         "required": [],
         "additionalProperties": false
       },
-      "escape": {
+      "surrender": {
         "type": "object",
         "properties": {
           "text": {
@@ -242,7 +287,7 @@
                     "heal": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 12
+                      "maximum": 40
                     }
                   },
                   "required": [
@@ -256,7 +301,7 @@
                     "damage": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 12
+                      "maximum": 40
                     }
                   },
                   "required": [
@@ -317,6 +362,202 @@
                     "take-item"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-join": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "companion-join"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-leave": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "companion-leave"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "next": {
+            "type": "string"
+          },
+          "move": {
+            "type": "string"
+          },
+          "start-combat": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "draw": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "effects": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "set-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "set-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "clear-flag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "clear-flag"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "reveal": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reveal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "heal": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 40
+                    }
+                  },
+                  "required": [
+                    "heal"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "damage": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 40
+                    }
+                  },
+                  "required": [
+                    "damage"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "give-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "give-item"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "take-item": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "default": 1,
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "item"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "take-item"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-join": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "companion-join"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "companion-leave": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "companion-leave"
+                  ],
+                  "additionalProperties": false
                 }
               ]
             }
@@ -341,7 +582,8 @@
     "required": [
       "id",
       "text",
-      "escape"
+      "surrender",
+      "draw"
     ],
     "additionalProperties": false
   }

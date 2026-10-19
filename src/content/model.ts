@@ -20,7 +20,6 @@ import {
   EnemiesCatalogSchema,
   EndingsCatalogSchema,
   EnemySchema,
-  EncounterSchema,
   EndingSchema,
   ImagesCatalogSchema,
   ItemSchema,

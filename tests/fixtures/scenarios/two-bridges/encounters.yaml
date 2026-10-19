@@ -1,6 +1,7 @@
+# startRange follows the #184 Q12 table (near + non-archer becomes melee).
 - id: wolf-ambush
   enemy: river-wolf
-  startRange: near
+  startRange: melee
   text: |
     The reeds part, and the wolf is on you.
   victory:
@@ -8,7 +9,13 @@
       The wolf limps away. The bank is quiet again.
     effects:
       - give-item: { item: bread }
-  escape:
+  surrender:
     text: |
-      You splash back to the near bank.
+      You lower your eyes and back into the shallows until the reeds hide
+      you. The wolf watches, then turns away.
+    move: east-bank
+  draw:
+    text: |
+      You hold your ground without striking. The wolf circles once, then
+      melts into the reeds.
     move: east-bank

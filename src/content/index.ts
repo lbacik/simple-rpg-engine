@@ -12,3 +12,5 @@ export { checkPlaythroughCompatibility } from './compatibility';
 export type { CompatibilityResult } from './compatibility';
 export { displayLanguages, localizeScenario, selectScenarioText } from './localize';
 export type { LocalizedScenario, ScenarioTextSelection } from './localize';
+export { buildInitialCombatState } from './combatBuilder';
+export type { CombatBuilderOptions } from './combatBuilder';

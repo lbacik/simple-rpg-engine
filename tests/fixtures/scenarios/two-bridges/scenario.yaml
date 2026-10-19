@@ -1,7 +1,7 @@
 # Two Bridges: Translation reference fixture (Base Language en, complete pl
 # Translation). Covers every kind of translatable field, Illustration alt
 # included. Must load with no diagnostics.
-schemaVersion: 1
+schemaVersion: 2
 id: two-bridges
 title: Two Bridges
 description: >-

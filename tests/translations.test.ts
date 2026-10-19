@@ -98,7 +98,8 @@ describe('translation reference fixtures', () => {
     );
     expect(pl?.items['bread']).toEqual({ id: 'bread', name: 'Chleb', description: undefined });
     expect(pl?.enemies['river-wolf']?.name).toBe('Rzeczny wilk');
-    expect(pl?.encounters['wolf-ambush']?.escape?.text).toContain('Brodząc');
+    expect(pl?.encounters['wolf-ambush']?.surrender?.text).toContain('wycofujesz');
+    expect(pl?.encounters['wolf-ambush']?.draw?.text).toContain('zatacza krąg');
     expect(pl?.templates['wayfarer']?.name).toBe('Wędrowiec');
     expect(pl?.endings['home']?.title).toBe('Cicha droga');
     expect(pl?.images['arrival']?.alt).toContain('Przewoźnik');
@@ -662,7 +663,9 @@ describe('duplicate connection targets', () => {
   });
 
   it('the shipped Scenarios still pass with no diagnostics', () => {
-    for (const name of ['whispering-woods', 'the-drowned-ledger']) {
+    // P3a converts whispering-woods only; P3b (#235) converts the other four
+    // and restores them to this list. See the Q17 CI gate in #184.
+    for (const name of ['whispering-woods']) {
       const result = loadScenario(path.join(repoRoot, 'scenarios', name));
       expect(result.ok).toBe(true);
       if (!result.ok) continue;

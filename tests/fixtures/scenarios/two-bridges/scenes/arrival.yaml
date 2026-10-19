@@ -26,7 +26,7 @@ choices:
         text: |
           A plank cracks under you and you go down hard among the reeds.
         effects:
-          - damage: 2
+          - damage: 7
   - id: leave
     text: Turn back down the road.
     outcome:

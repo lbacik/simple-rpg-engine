@@ -13,6 +13,7 @@
     "./schemas/items.json": "scenarios/*/items*.yaml",
     "./schemas/enemies.json": "scenarios/*/enemies*.yaml",
     "./schemas/encounters.json": "scenarios/*/encounters*.yaml",
+    "./schemas/companions.json": "scenarios/*/companions*.yaml",
     "./schemas/templates.json": "scenarios/*/templates*.yaml",
     "./schemas/endings.json": "scenarios/*/endings*.yaml",
     "./schemas/images.json": "scenarios/*/images*.yaml",
@@ -22,6 +23,7 @@
     "./schemas/translation-items.json": "scenarios/*/translations/*/items*.yaml",
     "./schemas/translation-enemies.json": "scenarios/*/translations/*/enemies*.yaml",
     "./schemas/translation-encounters.json": "scenarios/*/translations/*/encounters*.yaml",
+    "./schemas/translation-companions.json": "scenarios/*/translations/*/companions*.yaml",
     "./schemas/translation-templates.json": "scenarios/*/translations/*/templates*.yaml",
     "./schemas/translation-endings.json": "scenarios/*/translations/*/endings*.yaml",
     "./schemas/translation-images.json": "scenarios/*/translations/*/images*.yaml"

@@ -4,6 +4,10 @@
   victory:
     text: |
       Wilk utyka w dal. Brzeg znów cichnie.
-  escape:
+  surrender:
     text: |
-      Brodząc, wracasz na bliski brzeg.
+      Spuszczasz wzrok i wycofujesz się w płyciznę, aż trzciny cię ukryją.
+      Wilk patrzy, po czym odwraca się.
+  draw:
+    text: |
+      Trwasz w miejscu bez ataku. Wilk zatacza krąg i znika w trzcinach.
