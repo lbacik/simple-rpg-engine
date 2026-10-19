@@ -737,7 +737,9 @@ function Forecast({
     );
   }
   const { forecast } = derived;
-  const terminalCut = forecast.terminal && (forecast.result === 'WIN' || forecast.result === 'LOSS');
+  // Every terminal result (WIN, LOSS and DRAW_LIMIT) cuts the round short:
+  // the cutoff line renders and regeneration shows as none (handoff U4).
+  const terminalCut = forecast.terminal;
   return (
     <div className="cp-step">
       <h3>{text.panel.forecastHeading}</h3>

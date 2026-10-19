@@ -7,7 +7,7 @@
 
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { startCombat, submitRound } from '../src/engine/combat/index';
+import { planRound, startCombat, submitRound } from '../src/engine/combat/index';
 import type { CombatState } from '../src/engine/combat/index';
 import { CommandPanel } from '../src/app/combat/command-panel';
 import { parseSelection } from '../src/app/combat/selection';
@@ -146,6 +146,20 @@ describe('CommandPanel forecast (U4)', () => {
     expect(markup).toContain('The fight ends here — these blows do not happen: e01.');
     expect(markup).toContain('No regeneration in a terminal round.');
     expect(markup).toContain('Victory');
+  });
+
+  it('shows no regeneration after a DRAW_LIMIT terminal round', () => {
+    // Round 30 ends the fight by the round limit even when nobody falls: the
+    // core emits regenerated events and then finished/DRAW_LIMIT, so the
+    // panel must still summarize regeneration as none (handoff U4). The
+    // round-30 state is planned honestly (planRound) so its frozen plans
+    // verify.
+    const base = t1Choose();
+    const state = planRound({ ...base, phase: 'PLAN', round: 30, frozenEnemyPlans: [], frozenCompanionPlan: null });
+    const markup = render(state, { stance: 'defensive', action: 'counter', target: 'h01' });
+    expect(markup).toContain('Draw after 30 rounds');
+    expect(markup).toContain('No regeneration in a terminal round.');
+    expect(markup).not.toContain('Regenerated: h01');
   });
 
   it('renders cancellations with their reasons', () => {
