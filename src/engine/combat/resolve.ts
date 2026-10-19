@@ -42,12 +42,51 @@ import type {
   ActorId,
   CombatActor,
   CombatEvent,
+  CombatEventType,
+  CombatResult,
   CombatState,
   CommandOption,
   ParseIssue,
   ReasonCode,
   RoundCommand,
 } from './types';
+
+/**
+ * Every event type the resolver emits, and every Combat result it can finish
+ * with. The client catalogue slice checks completeness against these lists;
+ * each const below fails typecheck when the union gains a member missing here.
+ */
+export const COMBAT_EVENT_TYPES = [
+  'round-planned',
+  'declared',
+  'effect-established',
+  'moved',
+  'attack',
+  'riposte',
+  'cancelled',
+  'eliminated',
+  'regenerated',
+  'wait-age-updated',
+  'finished',
+] as const;
+
+export const COMBAT_RESULTS = ['WIN', 'LOSS', 'LOSS_SURRENDER', 'DRAW_LIMIT'] as const;
+
+type CombatEventsComplete = Exclude<CombatEventType, (typeof COMBAT_EVENT_TYPES)[number]> extends never
+  ? Exclude<(typeof COMBAT_EVENT_TYPES)[number], CombatEventType> extends never
+    ? true
+    : false
+  : false;
+const combatEventsComplete: CombatEventsComplete = true;
+void combatEventsComplete;
+
+type CombatResultsComplete = Exclude<CombatResult, (typeof COMBAT_RESULTS)[number]> extends never
+  ? Exclude<(typeof COMBAT_RESULTS)[number], CombatResult> extends never
+    ? true
+    : false
+  : false;
+const combatResultsComplete: CombatResultsComplete = true;
+void combatResultsComplete;
 
 /** Accepted commit: the next persisted state plus the round's new events. */
 export interface Accepted {

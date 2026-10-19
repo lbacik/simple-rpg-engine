@@ -9,6 +9,7 @@ export type {
   CardId,
   CombatActor,
   CombatEvent,
+  CombatEventType,
   CombatPhase,
   CombatResult,
   CombatState,
@@ -64,9 +65,9 @@ export {
   rangeOf,
   removeEngagementsOf,
 } from './range';
-export { findOption, listOptions } from './options';
+export { findOption, listOptions, REASON_ORDER } from './options';
 export { isPrimaryAttack, planRound, verifyFrozenPlans } from './plan';
-export { parseCombatState } from './parse';
+export { PARSE_ISSUE_CODES, parseCombatState } from './parse';
 export {
   ARENA_RUN_SCHEMA_VERSION,
   parseArenaRunDocument,
@@ -80,4 +81,4 @@ export type {
   VerifyFrozenPlans,
 } from './arena-run';
 export type { Accepted, Previewed, PreviewResult, Rejected, StartResult, SubmitResult, SurrenderResult } from './resolve';
-export { previewRound, startCombat, submitRound, surrender } from './resolve';
+export { COMBAT_EVENT_TYPES, COMBAT_RESULTS, previewRound, startCombat, submitRound, surrender } from './resolve';

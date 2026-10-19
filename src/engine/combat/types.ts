@@ -87,6 +87,24 @@ export interface CombatEvent {
   [key: string]: string | number | boolean | null;
 }
 
+/**
+ * Typed core event kinds (combat-contract.md, event types). Every event the
+ * resolver emits carries one of these in its `type` field, plus `round` and
+ * a sequence number, and holds only ids (as strings) and numbers, never text.
+ */
+export type CombatEventType =
+  | 'round-planned'
+  | 'declared'
+  | 'effect-established'
+  | 'moved'
+  | 'attack'
+  | 'riposte'
+  | 'cancelled'
+  | 'eliminated'
+  | 'regenerated'
+  | 'wait-age-updated'
+  | 'finished';
+
 export interface CombatState {
   rulesVersion: RulesVersion;
   /** 1..30. */
