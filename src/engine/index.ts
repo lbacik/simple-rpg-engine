@@ -13,12 +13,6 @@ import type {
   CompiledScene,
 } from '../content/model';
 import { effectiveAttributes, evaluateCondition } from './conditions';
-import {
-  legacyEncounterRange,
-  legacyEnemyStats,
-  legacyEscapeOutcome,
-  legacyParticipantRange,
-} from './legacyStats';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';

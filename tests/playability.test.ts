@@ -720,9 +720,10 @@ choices:
     mutate(target, 'scenario.yaml', '  - scenes/gate.yaml', '  - scenes/gate.yaml\n  - scenes/first.yaml\n  - scenes/mid.yaml');
     expect(succeed(target)).toEqual([]);
 
-    // An encounter surrender/draw leading to mid warns.
-    const escape = freshBase(
-      'next-escape',
+    // An encounter surrender/draw leading to mid warns. Both Outcomes share
+    // one `encounter:<id>` sourceKey, so the check reports a single warning.
+    const surrender = freshBase(
+      'next-surrender',
       {
         'enemies.yaml': `- id: rat
   name: Rat
@@ -764,8 +765,8 @@ choices:
       },
       'enemies:\n  - enemies.yaml\nencounters:\n  - encounters.yaml\n',
     );
-    mutate(escape, 'scenario.yaml', '  - scenes/gate.yaml', '  - scenes/gate.yaml\n  - scenes/mid.yaml');
-    only(succeed(escape), 'play/next-to-fired-scene');
+    mutate(surrender, 'scenario.yaml', '  - scenes/gate.yaml', '  - scenes/gate.yaml\n  - scenes/mid.yaml');
+    only(succeed(surrender), 'play/next-to-fired-scene');
   });
 
   it('play/flag-never-set and play/flag-never-read', () => {

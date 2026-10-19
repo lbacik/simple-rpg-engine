@@ -67,7 +67,7 @@ type Diagnostic = {
 
 Every rule has a stable code. **(W)** marks a warning; everything else is an error.
 
-> **Frozen pending the content migration (format v1).** This catalog is what the loader still enforces. Its tactical Combat assumptions — weapon Damage and Reach, Enemy Attributes/Health/Damage/Reach/Behaviour, Encounter-wide `startRange`, the required `escape` Outcome, Health 1–12 — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md). The v2 validation catalogue (`schema/retired-format`, `schema/retired-field`, required `surrender`/`draw`, Companion rules, Health 1–40) lands with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)).
+> **Content format v2.** The manifest's `schemaVersion` must be `2`; a version 1 package is rejected with `schema/retired-format`, and every retired v1 field fails with `schema/retired-field`, which names its replacement. Enemy statistics come from the fixed Combat profiles, Encounters carry per-Participant `startRange` with required `surrender` and `draw` Outcomes, and Health runs 1–40 ([content package](https://github.com/lbacik/simple-rpg-engine/issues/184)).
 
 ### Phase 1: Package
 
@@ -78,7 +78,7 @@ Every rule has a stable code. **(W)** marks a warning; everything else is an err
 | `package/multiple-documents` | A file contains more than one YAML document. |
 | `package/forbidden-yaml` | An anchor, alias, merge key or custom tag is used. |
 | `package/duplicate-key` | A mapping has the same key twice. |
-| `package/unsupported-schema-version` | `schemaVersion` is missing or not a supported version (currently only `1`). |
+| `package/unsupported-schema-version` | `schemaVersion` is missing or not a supported version (currently only `2`; the exact value `1` maps to `schema/retired-format` instead). |
 | `package/invalid-manifest` | The manifest's file-list sections are missing where required or are not lists of strings. Other manifest fields are checked in phase 2. |
 | `package/invalid-path` | A listed path is absolute, contains `..`, is a URL, lacks the `.yaml` extension, or is a symlink resolving outside the Scenario directory. |
 | `package/missing-file` | A listed file is missing or unreadable. |
@@ -105,7 +105,8 @@ Files present in the directory but not listed produce no diagnostic.
 | `schema/empty-motion` | An image's `motion` has neither `layers` nor `camera`, or `layers` is an empty list. |
 | `schema/drift-and-at` | A Layer has both `drift` and `at`. |
 | `schema/frames-fps` | A Layer has `frames` without `fps`, or `fps` without `frames`. |
-| `schema/weapon-only-field` | `reach` or `damage` on an item that is not a weapon, or a weapon without `damage`. |
+| `schema/retired-format` | The manifest pins `schemaVersion: 1`. The package uses the retired content format v1; migrate it to format v2 (see `docs/spec/content-migration-1.0.md`). There is no dual-format support. |
+| `schema/retired-field` | A retired v1 field in a v2 package, naming its replacement: Enemy `attributes`/`health`/`damage`/`reach`/`behaviour` (statistics come from the profile); Encounter-level `startRange` (set `startRange` on each Participant) and `escape` (use `surrender` and `draw`); weapon `damage`/`reach` (equipment keeps only an attribute `bonus`). Retired fields are never ignored and never translated. |
 | `schema/invalid-language` | `language` is not a valid BCP 47 tag (checked with `Intl.getCanonicalLocales`). |
 | `schema/narration-brace` | A `{` in narration other than in `{name}`. |
 | `schema/markdown-outside-subset` **(W)** | Narration uses Markdown outside the subset: headings, links, images, lists or raw HTML. It is rendered literally, with HTML escaped. |
@@ -114,13 +115,14 @@ Ranges and shapes checked under `schema/invalid-value` and `schema/missing-field
 
 - **Manifest** (beyond the file lists and `schemaVersion`, which phase 1 checks): `version` a non-empty YAML string (no semver enforcement); at least one Character Template in total across the `templates` catalogs.
 - **Character Template**: base Attributes integers 0–3, all four present; starting item `quantity` ≥ 1.
-- **Equipment**: `slot` `weapon` | `outfit` | `talisman`; `bonus` an Attribute; weapon `reach` `melee` | `ranged`; `melee` weapon `damage` 2–4, `ranged` weapon `damage` 2–3.
-- **Consumable**: `heal` 1–12.
-- **Enemy**: Attributes integers 0–3, all four present; `health` 1–30; `damage` 1–6; `reach` `melee` | `ranged`; `behaviour` `steady` | `heavy`.
-- **Encounter**: `escape` present; `startRange` `near` | `far`; `participants` a list of 1–2 entries, each with `enemy`.
+- **Equipment**: `slot` `weapon` | `outfit` | `talisman`; `bonus` an Attribute. Equipment carries no `damage` or `reach` (retired).
+- **Consumable**: `heal` 1–40.
+- **Enemy**: `id`, `name`, optional `description`, and a required `profile` (`raider` | `brute` | `sentinel` | `archer`). All statistics come from the profile; a `party-*` profile on an Enemy is rejected.
+- **Encounter**: exactly one of the `enemy` shorthand (with that Participant's `startRange` beside it) and `participants` (a list of 1–5 entries); an Encounter-level `startRange` beside `participants` is retired. Each Participant has `enemy`, a required `startRange` (`melee` | `near` | `far`), an optional `phaseOffset` (default 0, below the profile's cycle length: `raider` 0–3, others 0–2) and an optional integer `power` 0–3 (default 0). `surrender` and `draw` Outcomes are required; `victory` is optional.
+- **Companion**: `id`, `name`, optional `description`, and a `profile` (`party-sentinel` | `party-archer`); an enemy profile on a Companion is rejected. The Companion is Playthrough state, never an Encounter Participant, and does not count towards the 1–5 limit.
 - **Ending**: `kind` `victory` | `defeat`.
-- **Effects**: `heal` and `damage` 1–12; `give-item` and `take-item` `quantity` ≥ 1, no upper bound.
-- **Conditions**: `has.atLeast` ≥ 1; `attribute` `atLeast` 1–5 or `atMost` 0–4; `health` `atLeast` 2–12 or `atMost` 1–11.
+- **Effects**: `heal` and `damage` 1–40; `give-item` and `take-item` `quantity` ≥ 1, no upper bound. `companion-join` names a Companion; `companion-leave` is a bare marker with no id.
+- **Conditions**: `has.atLeast` ≥ 1; `attribute` `atLeast` 1–5 or `atMost` 0–4; `health` `atLeast` 2–40 or `atMost` 1–39; `companion` and `companionLost` name a Companion.
 - **Tests**: `difficulty` `easy` | `ordinary` | `hard` | `very-hard`.
 - **Location `map`**: both `x` and `y` present, numbers 0–100.
 - **Image**: `alt` present (and non-empty, under `schema/empty-text`).
@@ -137,6 +139,8 @@ Optional text fields (Connection `label`, item, Enemy and Template `description`
 | `ref/duplicate-id` | Two entities of the same type share an ID within the Scenario. |
 | `ref/duplicate-choice-id` | Two Choices of one Scene share an ID. |
 | `ref/duplicate-participant-id` | Two participants of one Encounter share an ID, whether explicit or defaulted from `enemy` (two participants of the same Enemy kind without explicit IDs). The message suggests explicit IDs. |
+| `ref/phase-offset-out-of-cycle` | A Participant's `phaseOffset` is at or above the cycle length of its Enemy's profile. |
+| `ref/unknown-companion` | A `companion-join` Effect, or a `companion` / `companionLost` Condition, names a Companion that does not exist. |
 | `ref/duplicate-connection-target` | Two Connections of one Location have the same `to`. (A Translation keys Connection `label`s by `to`.) |
 | `ref/unknown-location` | A reference to a Location that does not exist: `startLocation`, Connection `to`, `move`, `reveal`, `visited`. |
 | `ref/unknown-scene` | A reference to a Scene that does not exist: Location `scenes`, `next`, `fired`. |
@@ -172,13 +176,14 @@ An **over-approximating fixpoint** over obtainable state. "Unreachable" therefor
    - `has: { item }` is false if the item is neither a starting item nor given by any reachable Outcome;
    - `visited: L`, `fired: S`, `defeated: E` are false if L, S or E is not (yet) reachable;
    - `attribute: { name, atLeast: n }` is false if n exceeds the highest base value of that Attribute among the Templates plus `min(2, k)`, where k is the number of slots in which some obtainable Equipment grants that bonus; `atMost: n` is false if n is below the lowest base value among the Templates;
-   - `health` facts are unknown.
+   - `health` facts are unknown;
+   - `companion` / `companionLost` facts are unknown, like `health`, because Companion presence and loss depend on Combat results.
 
    `all`, `any` and `not` combine these with three-valued (Kleene) logic, where `not` of unknown is unknown. A Condition is **satisfiable** unless it evaluates to false.
 3. **Expand** reachable content:
    - a reachable Location makes reachable its listed Scenes whose `when` is satisfiable, and the targets of its Connections whose `when` is satisfiable;
    - a reachable Scene makes reachable the Outcomes of its Choices whose `when` is satisfiable (both Test results);
-   - a reachable Encounter makes reachable its `victory` and `escape` Outcomes;
+   - a reachable Encounter makes reachable its `victory` (if present), `surrender` and `draw` Outcomes;
    - a reachable Outcome makes its `next` Scene, `move` Location, `start-combat` Encounter and `end` Ending reachable, and records the Flags it sets and the items it gives.
 4. **Repeat** until nothing changes.
 
@@ -186,7 +191,7 @@ Ordering, `clear-flag`, `take-item`, Health and dice are ignored.
 
 #### Way-out analysis
 
-For `play/no-way-out`, take the graph of play positions, each paired with the current Location, **ignoring every Condition**. A Location reaches its listed Scenes and its Connection targets; a Scene reaches its Outcomes and, through the implicit Continue, the Location view; an Outcome follows its transition, or with none returns to the current Location; an Encounter reaches both its Outcomes, and without a `victory` Outcome returns to the current Location. An Ending is reached only through an `end` transition (an explicit `end` to the death Ending counts). **Death is not a way out**, otherwise every Location reachable after `damage` would pass trivially.
+For `play/no-way-out`, take the graph of play positions, each paired with the current Location, **ignoring every Condition**. A Location reaches its listed Scenes and its Connection targets; a Scene reaches its Outcomes and, through the implicit Continue, the Location view; an Outcome follows its transition, or with none returns to the current Location; an Encounter reaches its `victory` (if present), `surrender` and `draw` Outcomes, and without a `victory` Outcome returns to the current Location. An Ending is reached only through an `end` transition (an explicit `end` to the death Ending counts). **Death is not a way out**, otherwise every Location reachable after `damage` would pass trivially.
 
 #### Rules
 
@@ -200,13 +205,14 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 | `play/unreachable-ending` **(W)** | An Ending is not reachable. The death Ending is exempt. |
 | `play/all-choices-conditional` **(W)** | A Scene has at least one Choice, and every one of them has a `when`. (The engine offers the implicit Continue when none is visible.) |
 | `play/take-without-has` **(W)** | An Outcome has `take-item: { item: X }` but is not gated by a `has: { item: X }`. It is gated when the `when` of its Choice or Scene is that `has`, or contains it as a direct entry of a top-level `all`. (An Encounter Outcome can never be gated this way, so a `take-item` there always warns.) |
-| `play/repeatable-combat` **(W)** | `start-combat: E` in any Outcome (Test results included) of a Scene with `repeatable: true`, not gated by `not: { defeated: E }`. It is gated when the `when` of its Scene or Choice is that `not`, or contains it as a direct entry of a top-level `all`. Deeper nesting (inside `any`, a double `not`) and Flag-based Conditions do not count. The engine treats the start as a no-op anyway. |
-| `play/next-to-fired-scene` **(W)** | `next: T` where T is not repeatable and at least one holds: (a) Outcomes of **two or more distinct sources** have `next: T` (a source is a Scene or an Encounter; several Outcomes of one Scene count once); (b) a source is **repeatable** (a Scene with `repeatable: true`, or an Encounter's `escape` Outcome); (c) T is its own source. False positives on mutually exclusive Outcomes are accepted. |
+| `play/repeatable-combat` **(W)** | `start-combat: E` in any Outcome (Test results included) of a Scene with `repeatable: true`, not gated by `not: { defeated: E }`. It is gated when the `when` of its Scene or Choice is that `not`, or contains it as a direct entry of a top-level `all`. Deeper nesting (inside `any`, a double `not`) and Flag-based Conditions do not count. The engine treats the start as a no-op anyway. Surrender and draw leave the Encounter undefeated, so a repeat fight starts again. |
+| `play/next-to-fired-scene` **(W)** | `next: T` where T is not repeatable and at least one holds: (a) Outcomes of **two or more distinct sources** have `next: T` (a source is a Scene or an Encounter; several Outcomes of one Scene, and an Encounter's `surrender` with its `draw`, count once each); (b) a source is **repeatable** (a Scene with `repeatable: true`, or an Encounter's `surrender`/`draw` Outcomes); (c) T is its own source. False positives on mutually exclusive Outcomes are accepted. |
 | `play/flag-never-set` **(W)** | A declared Flag is never set by any `set-flag`. |
 | `play/flag-never-read` **(W)** | A Flag is set but never used in a Condition. |
 | `play/item-never-obtainable` **(W)** | An item is in no Template and given by no `give-item`. |
 | `play/key-item-unused` **(W)** | A Key Item is used in no Condition. |
 | `play/enemy-unused` **(W)** | An Enemy is a participant of no Encounter. |
+| `play/companion-unused` **(W)** | A Companion is named by no `companion-join`. |
 | `play/image-unused` **(W)** | A declared image is referenced by no Scene. |
 | `play/static-layer` **(W)** | A Layer has none of `frames`, `drift` or `flicker`. Layers are shown only while Motion is on, so a static Layer vanishes under reduced motion or Pause, and the composition at rest differs from the Still. |
 | `play/motionless` **(W)** | A Drift whose `from` equals its `to`, or a Camera whose `to` equals its `from` (given or defaulted). |
@@ -249,6 +255,7 @@ What the earlier stages catch, with existing codes:
 - A non-translatable field in a Translation file (`when`, `effects`, `map`, `motion`, …) is `schema/unknown-key`.
 - A missing `language` or `baseVersion` is `schema/missing-field`, and an invalid tag is `schema/invalid-language`.
 - Translation text follows the base text rules: `schema/empty-text`, `schema/narration-brace` and the `schema/markdown-outside-subset` warning.
+- Encounter `surrender` and `draw` texts are matched like `victory` text: each is `translation/missing-text` when the base has it and the Translation does not, and `translation/unmatched` for the reverse. `companions.yaml` entries are matched like the other named kinds (name, plus description when the base has one).
 - `{name}` is not compared with the base. A Translation may drop it where the base has it, or use it where the base does not, as its grammar requires.
 
 ### Stage T3: Match
@@ -285,6 +292,8 @@ Translations have two reference fixtures of their own, `two-bridges` and `stara-
 
 - [Test strategy for two languages](https://github.com/lbacik/simple-rpg-engine/issues/91) (Translation reference fixtures)
 - [Translation validation and staleness](https://github.com/lbacik/simple-rpg-engine/issues/58) (Translations, scoped rejection, `baseVersion`)
+- [Content format v2: validation catalogue and acceptance](https://github.com/lbacik/simple-rpg-engine/issues/184) (retired format and fields, Encounter and Companion rules, Health 1–40, translation companions)
+- [Companion shapes](https://github.com/lbacik/simple-rpg-engine/issues/183) (`companion-join`, bare `companion-leave`, `companion` / `companionLost` Conditions)
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (rule catalog changes, death Ending, the "not defeated" and `next` warning definitions)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (image rules)

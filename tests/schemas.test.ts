@@ -76,9 +76,12 @@ describe('generated schemas', () => {
     expect(validateItems(readScenarioYaml('items.yaml'))).toBe(true);
     const items = readScenarioYaml('items.yaml') as Record<string, unknown>[];
     const broken = structuredClone(items);
-    (broken[0] as Record<string, unknown>)['damage'] = 99;
+    // healing-herbs (index 7) is a consumable with `heal` in range 1–40 (#184 Q6).
+    (broken[7] as Record<string, unknown>)['heal'] = 99;
     expect(validateItems(broken)).toBe(false);
-    expect(validateItems.errors?.[0]).toMatchObject({ keyword: 'maximum' });
+    // `items` is a oneOf union: errors[0] belongs to the equipment branch,
+    // so assert the consumable branch reports `maximum` on `heal` (1–40).
+    expect(validateItems.errors?.some((error) => error.keyword === 'maximum')).toBe(true);
 
     const validateScene = ajv.compile(readCommitted('scene'));
     expect(validateScene(readScenarioYaml('scenes/barrow-door.yaml'))).toBe(true);
