@@ -50,7 +50,7 @@ function loadDoomScenario(): Scenario {
   write(
     'scenario.yaml',
     [
-      'schemaVersion: 1',
+      'schemaVersion: 2',
       'id: doom',
       'title: Doom',
       'description: A package for ending tests.',
@@ -112,7 +112,6 @@ function loadDoomScenario(): Scenario {
       '  kind: equipment',
       '  name: Sword',
       '  slot: weapon',
-      '  damage: 3',
       '- id: herb',
       '  kind: consumable',
       '  name: Herb',

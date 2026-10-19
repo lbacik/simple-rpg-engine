@@ -19,7 +19,7 @@ describe('scenario registry', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rpg-collection-'));
     writeFiles(path.join(root, 'good'), {
       'scenario.yaml': [
-        'schemaVersion: 1',
+        'schemaVersion: 2',
         'id: good',
         'title: Good',
         'description: Fine.',
@@ -46,7 +46,7 @@ describe('scenario registry', () => {
         '- id: e\n  kind: defeat\n  title: E\n  text: The end.\n- id: w\n  kind: victory\n  title: W\n  text: You win.\n',
     });
     writeFiles(path.join(root, 'bad'), {
-      'scenario.yaml': 'schemaVersion: 1\nid: wrong-id\ntitle: Bad\ndescription: Broken.\n',
+      'scenario.yaml': 'schemaVersion: 2\nid: wrong-id\ntitle: Bad\ndescription: Broken.\n',
     });
 
     const registry = loadAllScenarios(root);
@@ -60,7 +60,7 @@ describe('dev registry reload', () => {
   function writeScenario(root: string, sceneText: string): void {
     const files: Record<string, string> = {
       'solo/scenario.yaml': [
-        'schemaVersion: 1',
+        'schemaVersion: 2',
         'id: solo',
         'title: Solo',
         'description: One room.',

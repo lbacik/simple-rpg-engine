@@ -45,7 +45,7 @@ function loadFixture(): Scenario {
     scenarioDir,
     'scenario.yaml',
     [
-      'schemaVersion: 1',
+      'schemaVersion: 2',
       'id: gatedworld',
       'title: Gatedworld',
       'description: A world for map modal tests.',
@@ -114,7 +114,7 @@ function loadFixture(): Scenario {
   write(
     scenarioDir,
     'items.yaml',
-    '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n  damage: 3\n',
+    '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n',
   );
   write(
     scenarioDir,

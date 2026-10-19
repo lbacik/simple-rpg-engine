@@ -25,7 +25,7 @@ function loadFixture(): Scenario {
   const scenarioDir = path.join(dir, name);
   writeFiles(scenarioDir, {
     'scenario.yaml': [
-      'schemaVersion: 1',
+      'schemaVersion: 2',
       `id: ${name}`,
       'title: Meadow',
       'description: A quiet meadow.',
@@ -57,7 +57,6 @@ function loadFixture(): Scenario {
       '  kind: equipment',
       '  name: Sword',
       '  slot: weapon',
-      '  damage: 3',
       '- id: cloak',
       '  kind: equipment',
       '  name: Cloak',

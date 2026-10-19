@@ -35,7 +35,7 @@ function writePackage(dir: string, files: Record<string, string | Buffer>): void
 // Every variant below starts from this package and adds one construct.
 // ---------------------------------------------------------------------------
 
-const MANIFEST = `schemaVersion: 1
+const MANIFEST = `schemaVersion: 2
 id: __ID__
 title: Test Scenario
 description: A test scenario.
@@ -234,15 +234,16 @@ text: Nobody comes here.
 `,
         'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
         'encounters.yaml': `- id: rats
   enemy: rat
+  startRange: melee
   text: Rats.
-  escape:
-    text: You run.
+  surrender:
+    text: You yield.
+  draw:
+    text: You break off.
 `,
         'endings.yaml': `${ENDINGS}- id: win2
   kind: victory
@@ -418,20 +419,21 @@ choices:
       {
         'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
         'encounters.yaml': `- id: rats
   enemy: rat
+  startRange: melee
   text: Rats.
   victory:
     text: Won.
     effects:
       - take-item: { item: bread }
     end: win
-  escape:
-    text: You run.
+  surrender:
+    text: You yield.
+  draw:
+    text: You break off.
 `,
         'items.yaml': '- id: bread\n  kind: consumable\n  name: Bread\n  heal: 2\n',
         'templates.yaml': `${TEMPLATES}  items:\n    - { item: bread }\n`,
@@ -451,18 +453,19 @@ choices:
     const combatPackage = (scene: string): Record<string, string> => ({
       'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
       'encounters.yaml': `- id: rats
   enemy: rat
+  startRange: melee
   text: Rats.
   victory:
     text: Won.
     end: win
-  escape:
-    text: You run.
+  surrender:
+    text: You yield.
+  draw:
+    text: You break off.
 `,
       'scenes/gate.yaml': scene,
     });
@@ -717,24 +720,26 @@ choices:
     mutate(target, 'scenario.yaml', '  - scenes/gate.yaml', '  - scenes/gate.yaml\n  - scenes/first.yaml\n  - scenes/mid.yaml');
     expect(succeed(target)).toEqual([]);
 
-    // An encounter escape leading to mid warns.
+    // An encounter surrender/draw leading to mid warns.
     const escape = freshBase(
       'next-escape',
       {
         'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
         'encounters.yaml': `- id: rats
   enemy: rat
+  startRange: melee
   text: Rats.
   victory:
     text: Won.
     end: win
-  escape:
-    text: You run.
+  surrender:
+    text: You yield.
+    next: mid
+  draw:
+    text: You break off.
     next: mid
 `,
         'scenes/gate.yaml': `id: gate
@@ -858,9 +863,7 @@ choices:
       {
         'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
       },
       'enemies:\n  - enemies.yaml\n',
@@ -872,18 +875,19 @@ choices:
       {
         'enemies.yaml': `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 1, wits: 1, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `,
         'encounters.yaml': `- id: rats
   enemy: rat
+  startRange: melee
   text: Rats.
   victory:
     text: Won.
     end: win
-  escape:
-    text: You run.
+  surrender:
+    text: You yield.
+  draw:
+    text: You break off.
 `,
       },
       'enemies:\n  - enemies.yaml\nencounters:\n  - encounters.yaml\n',
