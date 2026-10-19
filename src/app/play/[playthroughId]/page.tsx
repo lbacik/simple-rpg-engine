@@ -7,7 +7,7 @@ import {
   renderNarration,
   renderStoredText,
   OUTCOME_MODAL_ENTRY_TYPES,
-  sceneIllustrationUrl,
+  illustrationView,
   tacticalCombatRounds,
   view,
   visibleExits,
@@ -40,7 +40,7 @@ import {
 } from '@/app/lib/panel';
 import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
 import { CombatPanel } from './combat-panel';
-import { SceneIllustration } from './scene-illustration';
+import { Illustration } from './illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
@@ -449,15 +449,7 @@ export default async function PlayPage({
   if (showIntro) {
     const baseLocation =
       scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
-    const baseIllustration =
-      baseLocation.illustration === undefined
-        ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, baseLocation.illustration),
-            width: baseLocation.illustration.width,
-            height: baseLocation.illustration.height,
-            alt: baseLocation.illustration.alt,
-          };
+    const baseIllustration = illustrationView(scenario.id, baseLocation.illustration);
     const baseExits = visibleExits(scenario, state);
     const baseOnDemand = onDemandScenes(scenario, state);
     const introBaseView = {
@@ -517,7 +509,7 @@ export default async function PlayPage({
             </div>
             {baseIllustration ? (
               <figure className="reading-art">
-                <SceneIllustration
+                <Illustration
                   src={baseIllustration.src}
                   width={baseIllustration.width}
                   height={baseIllustration.height}
@@ -605,15 +597,10 @@ export default async function PlayPage({
   if (showOutcome) {
     const backgroundLocation =
       scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
-    const backgroundIllustration =
-      backgroundLocation.illustration === undefined
-        ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, backgroundLocation.illustration),
-            width: backgroundLocation.illustration.width,
-            height: backgroundLocation.illustration.height,
-            alt: backgroundLocation.illustration.alt,
-          };
+    const backgroundIllustration = illustrationView(
+      scenario.id,
+      backgroundLocation.illustration,
+    );
     const backgroundExits = visibleExits(scenario, state);
     const backgroundOnDemand = onDemandScenes(scenario, state);
     return (
@@ -635,7 +622,7 @@ export default async function PlayPage({
             </div>
             {backgroundIllustration ? (
               <figure className="reading-art">
-                <SceneIllustration
+                <Illustration
                   src={backgroundIllustration.src}
                   width={backgroundIllustration.width}
                   height={backgroundIllustration.height}
@@ -750,7 +737,7 @@ export default async function PlayPage({
               </div>
               {gameView.illustration ? (
                 <figure className="reading-art">
-                  <SceneIllustration
+                  <Illustration
                     src={gameView.illustration.src}
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
@@ -824,7 +811,7 @@ export default async function PlayPage({
               </div>
               {gameView.illustration ? (
                 <figure className="reading-art">
-                  <SceneIllustration
+                  <Illustration
                     src={gameView.illustration.src}
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}

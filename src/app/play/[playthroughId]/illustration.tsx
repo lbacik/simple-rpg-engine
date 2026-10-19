@@ -1,11 +1,12 @@
-// Scene illustration (docs/spec/ui.md, scene illustration): a plain `<img>`
-// with the registry width, height and alt, filling the reading column without
-// cropping. A browser load error removes the element — no frame, no alt-text
-// box, no retry — and play continues.
+// Illustration (docs/spec/ui.md, scene and location illustration): a plain
+// `<img>` with the registry width, height and alt, filling the reading column
+// without cropping. It serves Scenes and Locations alike. A browser load error
+// removes the element — no frame, no alt-text box, no retry — and play
+// continues.
 
 'use client';
 
-export function SceneIllustration({
+export function Illustration({
   src,
   width,
   height,

@@ -9,6 +9,7 @@ import type {
   CompiledChoice,
   CompiledEffect,
   CompiledEncounter,
+  CompiledImageEntry,
   CompiledOutcome,
   CompiledParticipant,
   CompiledScene,
@@ -3189,8 +3190,9 @@ export type ChoiceView = {
 };
 
 /**
- * The active Scene's Illustration (docs/spec/ui.md, scene illustration): the
- * hashed asset route URL with the registry width, height and catalog alt.
+ * A Scene or Location Illustration (docs/spec/ui.md, scene and location
+ * illustration): the hashed asset route URL with the registry width, height
+ * and catalog alt.
  */
 export type IllustrationView = {
   src: string;
@@ -3205,6 +3207,31 @@ export type IllustrationView = {
  */
 export function sceneIllustrationUrl(scenarioId: string, image: { hash: string; path: string }): string {
   return `/scenarios/${scenarioId}/assets/${image.hash}/${image.path}`;
+}
+
+/**
+ * One compiled image entry as the `IllustrationView` the UI renders, or
+ * undefined when the Scene or Location declares no Illustration
+ * (docs/spec/ui.md, scene and location illustration): the hashed asset route
+ * URL with the registry width, height and catalog alt. Every surface that
+ * shows an Illustration — the Location view, the Scene view, the Scenario
+ * intro modal over the starting Location and the Location shown behind
+ * Combat — builds it through this helper, so Motion Layers and the Showing
+ * key (ADR 0007) land in one place.
+ */
+export function illustrationView(
+  scenarioId: string,
+  image: CompiledImageEntry | undefined,
+): IllustrationView | undefined {
+  if (image === undefined) {
+    return undefined;
+  }
+  return {
+    src: sceneIllustrationUrl(scenarioId, image),
+    width: image.width,
+    height: image.height,
+    alt: image.alt,
+  };
 }
 
 /** Derived projection the UI renders: Location view, Scene, Combat or Ended. */
@@ -3370,15 +3397,7 @@ export function view(
         title: scene.title,
         text: scene.text,
         characterName: state.character.name,
-        illustration:
-          scene.illustration === undefined
-            ? undefined
-            : {
-                src: sceneIllustrationUrl(scenario.id, scene.illustration),
-                width: scene.illustration.width,
-                height: scene.illustration.height,
-                alt: scene.illustration.alt,
-              },
+        illustration: illustrationView(scenario.id, scene.illustration),
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
@@ -3402,15 +3421,7 @@ export function view(
     locationId: location.id,
     name: location.name,
     description: location.description,
-    illustration:
-      location.illustration === undefined
-        ? undefined
-        : {
-            src: sceneIllustrationUrl(scenario.id, location.illustration),
-            width: location.illustration.width,
-            height: location.illustration.height,
-            alt: location.illustration.alt,
-          },
+    illustration: illustrationView(scenario.id, location.illustration),
     exits: visibleExits(scenario, state),
     onDemandScenes: onDemandScenes(scenario, state),
     map: deriveMap(scenario, state, options),
