@@ -49,7 +49,9 @@ describe('journalEntryFlag', () => {
     }
   });
 
-  it('marks the Combat opening narration like any other narration', () => {
+  // S4: legacy Combat rows render verbatim and carry no language flag, even
+  // when their stored text is Scenario narration in another language.
+  it('carries no flag on a legacy Combat opening row', () => {
     const flagged = journalEntryFlag(
       {
         type: 'combat-start',
@@ -58,7 +60,7 @@ describe('journalEntryFlag', () => {
       },
       en,
     );
-    expect(flagged).toEqual({ lang: 'pl', label: 'Polish' });
+    expect(flagged).toBeUndefined();
   });
 
   it('names the flag in the Interface Language', () => {

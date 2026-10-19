@@ -379,25 +379,23 @@ describe('map travel availability', () => {
 });
 
 describe('map toggle href', () => {
-  it('flips the setting while preserving the open modal, notice, acknowledgement and target', () => {
+  it('flips the setting while preserving the open modal, notice and acknowledgement', () => {
     expect(
       mapToggleHref('play-1', {
         panel: 'map',
         notice: 'stale',
         seen: 7,
         showUnknownExits: false,
-        target: 'wolf-b',
       }),
-    ).toBe('/play/play-1?panel=map&notice=stale&unknown=1&seen=7&target=wolf-b');
+    ).toBe('/play/play-1?panel=map&notice=stale&unknown=1&seen=7');
     expect(
       mapToggleHref('play-1', {
         panel: 'map',
         notice: 'stale',
         seen: 7,
         showUnknownExits: true,
-        target: 'wolf-b',
       }),
-    ).toBe('/play/play-1?panel=map&notice=stale&seen=7&target=wolf-b');
+    ).toBe('/play/play-1?panel=map&notice=stale&seen=7');
   });
 
   it('keeps the selected inventory tile only on its own modal', () => {

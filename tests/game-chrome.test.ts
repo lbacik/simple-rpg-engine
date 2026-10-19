@@ -44,7 +44,7 @@ describe('game chrome catalogue', () => {
       hard: 'Trudna',
       'very-hard': 'Bardzo trudna',
     });
-    expect(pl.range).toEqual({ near: 'Blisko', far: 'Daleko' });
+    // S4: the Near/Far Range slice belonged to the tactical rules.
     expect(pl.reach).toEqual({ melee: 'wręcz', ranged: 'dystansowy' });
     expect(pl.slots).toEqual({ weapon: 'Broń', outfit: 'Strój', talisman: 'Talizman' });
     expect(pl.itemKinds).toEqual({
@@ -94,8 +94,6 @@ describe('game chrome catalogue', () => {
     expect(en.character.label(9, 12)).toBe('Health 9 of 12');
     expect(pl.character.short(9, 12)).toBe('Zdrowie 9/12');
     expect(pl.character.label(9, 12)).toBe('Zdrowie 9 z 12');
-    expect(en.readOnly.roundRange(2, en.range.near)).toBe('Round 2 · Range: Near');
-    expect(pl.readOnly.roundRange(2, pl.range.near)).toBe('Runda 2 · Dystans: Blisko');
   });
 
   it('places the Scenario name label-shaped, without inflection', () => {

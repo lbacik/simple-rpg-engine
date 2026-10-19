@@ -1,6 +1,6 @@
 // The Arena page (Combat MVP 1.0, S4): a stub. The tactical Arena was
 // removed with the old Combat rules; the Arena returns on the shared Combat
-// core with the adapter tickets (P6). Until then the route renders its title
+// core with the P5 adapter. Until then the route renders its title
 // and description only, so the navigation entry keeps resolving.
 
 import type { Metadata } from 'next';

@@ -4,9 +4,7 @@ import { expect, test } from '@playwright/test';
 // strategy; docs/spec/ui.md, collection, character creation, scenario language
 // flags, language fallback on the game screen): the suite runs against a
 // temporary Scenario directory (see playwright.config.ts) holding the shipped
-// Scenarios, both Translation fixtures, and the tactical-pairs pair-Combat
-// fixture (an English-only test/loader Scenario for the tactical Combat E2E,
-// never shipped), with stara-studnia carrying no
+// Scenarios and both Translation fixtures, with stara-studnia carrying no
 // `en` Translation so it falls back to its Polish base under `en`. The
 // collection groups and flags are covered in both languages, stara-studnia
 // falls back to Polish under `en` with the badge, two-bridges is shown in
@@ -20,17 +18,12 @@ test('the collection groups and flags under en', async ({ page }) => {
   await page.goto('/');
 
   const here = page.getByRole('region', { name: 'In English' });
-  // Tactical Pairs is the English-only pair-Combat fixture for the tactical
-  // Combat E2E (see playwright.config.ts): it sorts first by Scenario id and
-  // lists here, never shipped.
   await expect(here.locator('li h2')).toHaveText([
-    'Tactical Pairs',
     'The Drowned Ledger',
     'Two Bridges',
     'The Whispering Woods',
   ]);
   for (const title of [
-    'Tactical Pairs',
     'The Drowned Ledger',
     'Two Bridges',
     'The Whispering Woods',
@@ -95,7 +88,6 @@ test('the collection groups and flags under pl', async ({ browser }) => {
       'Te scenariusze nie mają jeszcze tłumaczenia na język polski. Grasz w nie w oryginale.',
     );
     await expect(other.locator('li h2')).toHaveText([
-      'Tactical Pairs',
       'The Drowned Ledger',
       'The Whispering Woods',
     ]);
