@@ -7,7 +7,7 @@ This spec is **self-contained and normative**. It was assembled from the decisio
 ## Reading order
 
 1. [`CONTEXT.md`](../../CONTEXT.md): the domain glossary. Every capitalised term in the spec (Scenario, Location, Scene, Playthrough, Encounter, …) means exactly what it defines.
-2. [mechanics.md](mechanics.md): Attributes, Tests, Characters, items, Health and Combat.
+2. [mechanics.md](mechanics.md): Attributes, Tests, Characters, items, Health and death. Combat itself lives in the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md).
 3. [scenario-format.md](scenario-format.md): the package layout and the normative field-level YAML syntax; the input to the Zod definitions.
 4. [content-semantics.md](content-semantics.md): how the engine interprets Locations, Scenes, Choices, Outcomes, Effects, Conditions, Encounters and Endings.
 5. [validation.md](validation.md): validation phases, the diagnostic format, the CLI and the full rule catalog.
@@ -22,11 +22,17 @@ Supporting material:
 - [ADR 0003: the engine emits no Interface Text; a typed catalogue renders it](../adr/0003-interface-text-from-a-typed-catalogue.md).
 - [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md).
 - [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md).
+- [ADR 0006: the Arena is a mode next to Scenarios](../adr/0006-arena-as-a-mode-next-to-scenarios.md).
 - [ADR 0007: Illustration Motion is engine-composed Layers over a Still, not an animated file](../adr/0007-motion-as-engine-composed-layers-over-a-still.md). The Motion spec was assembled from the planning map [Map: animated Illustrations (ambient motion for Scenes and Locations)](https://github.com/lbacik/simple-rpg-engine/issues/193).
+- [ADR 0008: a shared Combat core replaces the tactical rules](../adr/0008-shared-combat-core-replacing-tactical-rules.md).
+- [ADR 0009: game data from earlier Combat rules is discarded at the v0.6.0 release](../adr/0009-game-data-from-earlier-combat-rules-is-discarded-at-release.md).
+- [ADR 0010: campaign Health is the hero's Combat HP](../adr/0010-campaign-health-is-the-hero-combat-hp.md).
+- [ADR 0011: Combat Interface Text is a typed catalogue slice shipped to the browser](../adr/0011-combat-interface-text-as-client-catalogue-slice.md).
+- [Combat contract](combat-contract.md): the public core contract — actor ids, reason codes, event types, document shapes and the named deviations from MVP 1.0 — that the core, the adapters and the UI implement against.
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
-- [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
-- [Tactical Combat implementation handoff](tactical-combat-handoff.md): the accepted package boundaries, dependencies, acceptance matrix and release verification for tactical Combat. It supplements the normative rules; production implementation is a subsequent effort.
-- [Combat MVP 1.0 implementation handoff](combat-mvp-1.0-handoff.md): the accepted packages, gates, release and rollback procedure for replacing tactical Combat with the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) in release v0.6.0. Until its first package reconciles this spec, the documents here still describe the tactical rules.
+- [Mockups](mockups/): throwaway HTML prototypes of the game screen and Location map. [ui.md](ui.md) says what in them is normative. The tactical Combat mockups ([tactical-combat](mockups/tactical-combat/), [combat-presentation](mockups/combat-presentation/)) are historical.
+- [Tactical Combat implementation handoff](tactical-combat-handoff.md): historical. It planned the tactical Combat that the MVP 1.0 rules replace; it is kept for provenance only.
+- [Combat MVP 1.0 implementation handoff](combat-mvp-1.0-handoff.md): the accepted packages, gates, release and rollback procedure for replacing tactical Combat with the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) in release v0.6.0. Its first package reconciles this spec: the documents here now describe the MVP 1.0 Combat as current, and tactical passages that remain are marked historical pending their owning package.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
 
 ## Standing decisions
@@ -37,7 +43,7 @@ Supporting material:
 - Each Scenario is written in one Base Language, declared in its manifest, and may carry complete Translations as text-only overlays ([scenario-format.md](scenario-format.md#translations)). The player chooses an Interface Language, English or Polish; it sets the language of all Interface Text and selects the Translation shown ([architecture.md](architecture.md#interface-language)).
 - Mechanics are a closed vocabulary owned by the engine. Scenarios define items, Enemies and Tests only in terms of engine Attributes and Effects; they cannot add Attributes or change the dice.
 - Scenarios enter the collection as directories in a server-side Scenario directory, gated by validation (the CLI, and again at startup). Invalid Scenarios are left out.
-- Combat is abstract, with two Ranges (Near and Far) and no grid board.
+- Combat is fought under the MVP 1.0 stance, card and range rules ([rules](../sources/combat-mvp-1.0/rules.md), [contract](combat-contract.md)), with Melee/Near/Far range as a relation and no grid board.
 
 ## Ready for implementation
 
@@ -49,7 +55,7 @@ The spec is ready for implementation when all of these hold:
 4. The spec uses the vocabulary of [`CONTEXT.md`](../../CONTEXT.md).
 5. The driving developer has reviewed and accepted the spec.
 
-The original platform specification has no general implementation-ticket breakdown. The subsequent [Tactical Combat implementation handoff](tactical-combat-handoff.md) supplies the ordered plan for that change; its execution issues and production implementation remain outside the planning map.
+The original platform specification has no general implementation-ticket breakdown. The subsequent [Combat MVP 1.0 implementation handoff](combat-mvp-1.0-handoff.md) supplies the ordered plan for replacing tactical Combat; its execution issues and production implementation remain outside the planning map.
 
 ## Implementer's discretion
 
@@ -58,7 +64,7 @@ These are intentionally left open. Choose freely within the constraints of the s
 - The TypeScript shapes of the compiled `Scenario` model, `GameView`, actions, Journal entry payloads, the engine's structured events and the internal layout of the `state` JSON document, as long as they carry what the spec requires and stored state refers to content only by ID.
 - The content hash and image hash algorithms (for example SHA-256), as long as they are deterministic and the content hash covers everything [architecture.md](architecture.md#content-compatibility) lists.
 - Diagnostic message wording, and any additional `schema/` codes for finer-grained Zod issues, as long as the codes in [validation.md](validation.md) keep their meaning.
-- UI copy in both Interface Languages (Polish copy uses the [Polish terms](ui.md#polish-terms) and the [Interface Text rules](ui.md#interface-text)), including exact Polish tactical wording where no canonical term has been settled by the separate language effort; visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
+- UI copy in both Interface Languages (Polish copy uses the [Polish terms](ui.md#polish-terms) and the [Interface Text rules](ui.md#interface-text)), including exact Polish MVP Combat wording where no canonical term has been settled by the separate language effort; visual styling and component structure within the approved layout; the exact map aspect ratio and the fallback-placement offsets; the Journal page size.
 - How the off-by-default "?" exit-stub map setting is configured.
 - The Session cookie name, the Interface Language cookie name, and the hash used to store the Session id (for example SHA-256).
 - How the Scenario directory is configured (default `scenarios/` at the repository root), and where the example VS Code schema configuration lives.
@@ -74,7 +80,7 @@ These are intentionally left open. Choose freely within the constraints of the s
 - Character progression (experience, levels) during a Playthrough.
 - Spells, charges, temporary bonuses and other magic effects.
 - Requiring artwork for every Scene or Scenario.
-- A tactical grid board, three or more Range bands, and ranged attacks that roll Agility.
+- A tactical grid board, three or more Range bands beyond the MVP relation model, and Combat outside the MVP 1.0 rules (its optional extensions are listed in [rules §16](../sources/combat-mvp-1.0/rules.md)).
 - Fast travel to non-adjacent visited Locations, and auto-laid-out maps.
 - External image URLs, and Illustrations for Endings, Encounters or a Scenario cover.
 - Animated files (video, animated AVIF, WebP, GIF or PNG, SVG, Lottie, Rive) and engine effect presets: Motion is Layers over a Still only.

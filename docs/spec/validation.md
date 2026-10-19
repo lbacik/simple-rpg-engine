@@ -67,6 +67,8 @@ type Diagnostic = {
 
 Every rule has a stable code. **(W)** marks a warning; everything else is an error.
 
+> **Frozen pending the content migration (format v1).** This catalog is what the loader still enforces. Its tactical Combat assumptions — weapon Damage and Reach, Enemy Attributes/Health/Damage/Reach/Behaviour, Encounter-wide `startRange`, the required `escape` Outcome, Health 1–12 — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md). The v2 validation catalogue (`schema/retired-format`, `schema/retired-field`, required `surrender`/`draw`, Companion rules, Health 1–40) lands with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)).
+
 ### Phase 1: Package
 
 | Code | Rule |
@@ -215,7 +217,7 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 #### Deliberately not checked
 
 - **State-dependent soft-locks** (for example, a key given away before the only locked exit) cannot be proven statically. A warning for "every way out is conditional" was rejected as too noisy, because locked doors with a puzzle are a normal pattern.
-- **Combat balance**: within the mechanics limits no fight is unwinnable by construction (see [mechanics.md](mechanics.md#tactical-notes-consequences-not-extra-rules)). Difficulty estimates are out of scope.
+- **Combat balance**: historical. Difficulty estimates are out of scope; converted Encounters pass a per-Encounter winnability gate in the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)).
 - **Motion**:
   - a Layer file that is also a Still is allowed;
   - files in a Layer directory that no Layer references produce no diagnostic, as with unlisted files; there is no catalog for a Layer file to be unused from;

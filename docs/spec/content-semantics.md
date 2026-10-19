@@ -113,7 +113,9 @@ Conditions are evaluated live: when rendering a view and again when an action is
 
 ## Encounters and Combat
 
-An **Enemy** is a reusable definition. An **Encounter** is a named placement of one or two Enemies as **participants** (see [mechanics.md](mechanics.md#participants)), with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Each participant carries its own wounds under the persistence rules in [mechanics.md](mechanics.md#persistence-of-wounds).
+> **Frozen pending the content migration (format v1).** This section describes the content semantics the engine still implements. The Combat rules it assumes — escape, Encounter-wide `startRange`, Enemy statistics, the Enemy-defeated notice — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md): `LOSS_SURRENDER` routes to a required `surrender` Outcome, `DRAW_LIMIT` to a required `draw` Outcome, and only Health, wounds and Companion presence cross the Combat boundary. The v2 semantics land with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)).
+
+An **Enemy** is a reusable definition. An **Encounter** is a named placement of one or two Enemies as **participants**, with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Each participant carries its own wounds under the wound persistence rules in [playthrough-state.md](playthrough-state.md#combat).
 
 - `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; each surviving participant keeps its wounds, and with unchanged content a participant defeated earlier does not return.
 - `start-combat: E` on an Encounter that is **already defeated** is a **no-op**: no fight, the victory Outcome is not applied again, play returns to the Location view.
