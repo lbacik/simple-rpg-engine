@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { previewRound, startCombat } from '../src/engine/combat/index';
 import type { CombatState, RoundCommand } from '../src/engine/combat/index';
-import { duelChooseState, scenarioInitial } from './combat-core-fixtures';
+import { scenarioInitial } from './combat-core-fixtures';
 import { deriveForecast } from '../src/app/combat/forecast';
 
 function t1Choose(): CombatState {

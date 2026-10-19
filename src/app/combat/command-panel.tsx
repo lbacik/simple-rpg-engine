@@ -312,7 +312,6 @@ function HeroCard({
       {selfRow === undefined ? null : (
         <p>
           <TargetLink
-            state={state}
             selection={selection}
             basePath={basePath}
             targetId={hero.id}
@@ -373,7 +372,6 @@ function CompanionCard({
           {allyRow === undefined ? null : (
             <p>
               <TargetLink
-                state={state}
                 selection={selection}
                 basePath={basePath}
                 targetId={companion.id}
@@ -390,14 +388,12 @@ function CompanionCard({
 }
 
 function TargetLink({
-  state,
   selection,
   basePath,
   targetId,
   legal,
   label,
 }: {
-  state: CombatState;
   selection: PanelSelection;
   basePath: string;
   targetId: ActorId;
