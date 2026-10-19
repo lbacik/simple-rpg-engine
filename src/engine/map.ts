@@ -204,9 +204,8 @@ export function deriveMap(
     edges.push({ from: line.from, to: line.to, twoWay: hasReturn });
   }
 
-  // No travel while a Scene or Combat is active, and none after the end.
-  const canTravel =
-    state.status === 'active' && state.activeSceneId == null && state.activeCombat == null;
+  // No travel while a Scene is active, and none after the end.
+  const canTravel = state.status === 'active' && state.activeSceneId == null;
   const travelTargetIds = canTravel
     ? visibleConnectionsFrom(scenario, state, currentLocationId).map(
         (connection) => connection.to.id,
