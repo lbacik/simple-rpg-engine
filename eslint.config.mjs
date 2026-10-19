@@ -107,6 +107,75 @@ const i18nBoundaries = {
   },
 };
 
+// The shared Combat core (src/engine/combat) is pure and isomorphic: no IO,
+// no Date, no randomness and no catalogue imports, so the browser can import
+// it for previews (see docs/spec/combat-contract.md). Statistics come only
+// from the versioned rules table keyed by rulesVersion.
+const combatPurity = {
+  rules: {
+    'no-console': 'error',
+    'no-restricted-globals': [
+      'error',
+      {
+        name: 'Date',
+        message: 'src/engine/combat must not read Date (see docs/spec/combat-contract.md).',
+      },
+      {
+        name: 'fetch',
+        message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+      },
+      {
+        name: 'process',
+        message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+      },
+      {
+        name: 'crypto',
+        message: 'src/engine/combat takes no randomness (see docs/spec/combat-contract.md).',
+      },
+      {
+        name: 'setTimeout',
+        message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+      },
+      {
+        name: 'setInterval',
+        message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+      },
+    ],
+    'no-restricted-properties': [
+      'error',
+      {
+        object: 'Math',
+        property: 'random',
+        message: 'src/engine/combat takes no Rng (see docs/spec/combat-contract.md).',
+      },
+    ],
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['fs', 'path', 'os', 'child_process', 'worker_threads', 'node:*'],
+            message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+          },
+          {
+            group: ['**/content', '**/content/**'],
+            message:
+              'src/engine/combat statistics come only from the rules table (see docs/spec/combat-contract.md).',
+          },
+          {
+            group: ['**/i18n', '**/i18n/**'],
+            message: 'src/engine/combat holds no text (see docs/spec/combat-contract.md).',
+          },
+          {
+            group: ['**/persistence', '**/persistence/**'],
+            message: 'src/engine/combat performs no IO (see docs/spec/combat-contract.md).',
+          },
+        ],
+      },
+    ],
+  },
+};
+
 export default tseslint.config(
   {
     // docs/ holds the spec and throwaway mockups, scenarios/ the Scenario
@@ -126,5 +195,9 @@ export default tseslint.config(
   {
     files: ['src/i18n/**/*.ts'],
     ...i18nBoundaries,
+  },
+  {
+    files: ['src/engine/combat/**/*.ts'],
+    ...combatPurity,
   },
 );
