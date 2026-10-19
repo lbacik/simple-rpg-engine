@@ -84,64 +84,8 @@ describe('public contract', () => {
   });
 });
 
-describe('§11.1 duel golden', () => {
-  it('plays Counter → Feint → Heavy to WIN in round 3, hero 30 HP and 5 stamina', () => {
-    let state = accepted(submitRound(duelRound1(), cmd(1, 'defensive', 'counter', 'h01'))).state;
-    expect(state.actors[0]).toMatchObject({ hp: 40, stamina: 9 });
-    expect(state.actors[1]).toMatchObject({ hp: 20 });
-    expect(state.actors[0]?.availableRound['counter']).toBe(3);
-
-    state = accepted(submitRound(state, cmd(2, 'balanced', 'feint', 'e01'))).state;
-    expect(state.actors[0]).toMatchObject({ hp: 40, stamina: 9 });
-    expect(state.actors[1]).toMatchObject({ hp: 12 });
-
-    const terminal = accepted(submitRound(state, cmd(3, 'aggressive', 'heavy', 'e01')));
-    expect(terminal.state.result).toBe('WIN');
-    expect(terminal.state.phase).toBe('FINISHED');
-    expect(terminal.state.actors[0]).toMatchObject({ hp: 30, stamina: 5 });
-    expect(terminal.state.actors[1]).toMatchObject({ hp: 0 });
-    // Terminal cutoff: the killing round regenerates nothing.
-    expect(eventsOf(terminal.state, 'regenerated').filter((event) => event['round'] === 3)).toHaveLength(0);
-    expect(terminal.events.map((event) => event['type'])).toContain('finished');
-  });
-});
-
-describe('§11.4 far → near → melee golden', () => {
-  function archerFar(round: number): CombatState {
-    return chooseOf({
-      rulesVersion: 'simple-rpg-engine-stance-cards-1.0',
-      round,
-      phase: 'PLAN',
-      result: null,
-      nextGroupSerial: 2,
-      actors: [heroActor({ groupId: 'g0' }), enemyActor('e01', 'archer', { groupId: 'g1' })],
-      engagements: [],
-      frozenEnemyPlans: [],
-      frozenCompanionPlan: null,
-      log: [],
-    });
-  }
-
-  it('plays Approach → Charge → Strike to WIN in round 3, hero 40 HP and 9 stamina', () => {
-    const r1 = accepted(submitRound(archerFar(1), cmd(1, 'defensive', 'approach', 'e01'))).state;
-    expect(r1.actors[0]).toMatchObject({ hp: 40, stamina: 10, groupId: 'g1' });
-    expect(eventsOf(r1, 'attack')).toHaveLength(1);
-    expect(eventsOf(r1, 'attack')[0]).toMatchObject({ hit: 0 });
-
-    // The r1 output is already the round-2 CHOOSE state.
-    const r2 = accepted(submitRound(r1, cmd(2, 'aggressive', 'charge', 'e01'))).state;
-    expect(r2.actors[1]).toMatchObject({ hp: 6 });
-    expect(eventsOf(r2, 'cancelled').filter((event) => event['reason'] === 'shooter_engaged')).toHaveLength(1);
-    expect(r2.actors[0]).toMatchObject({ hp: 40, stamina: 9 });
-    expect(r2.engagements).toEqual([['e01', 'h01']]);
-
-    const r3 = accepted(submitRound(r2, cmd(3, 'aggressive', 'strike', 'e01')));
-    expect(r3.state.result).toBe('WIN');
-    expect(r3.state.actors[0]).toMatchObject({ hp: 40, stamina: 9 });
-    expect(eventsOf(r3.state, 'attack').filter((event) => event['actor'] === 'e01' && event['round'] === 3)).toHaveLength(0);
-    expect(eventsOf(r3.state, 'regenerated').filter((event) => event['round'] === 3)).toHaveLength(0);
-  });
-});
+// §11.1 and §11.4 goldens moved to combat-core-golden.test.ts (K8); the
+// mechanics below stay here as the K7 evidence.
 
 describe('hit ties and reductions', () => {
   it('a 6-against-6 tie hits (K7)', () => {
