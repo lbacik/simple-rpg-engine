@@ -1,3 +1,4 @@
+# Surrender and draw texts are drafts for human review in P3b (#235).
 - id: wolf-fight
   text: |
     Szary wilk odrywa się od ziemi jak zwolniona cięciwa. Za nim Leszy patrzy bez ruchu,
@@ -6,10 +7,15 @@
     text: |
       Wilk leży nieruchomo wśród paproci. Leszy długo ci się przygląda. „Zęby” — mówi
       wreszcie. „Dębina zawsze miała zęby”. Ale zaczyna mówić.
-  escape:
+  surrender:
     text: |
-      Uciekasz, a las ci na to pozwala, co jest jakoś gorsze. Wychodzisz spomiędzy drzew
-      dokładnie w tym miejscu, w którym zaczęła się twoja droga.
+      Stajesz w miejscu, odwracasz wzrok i wycofujesz się z otwartymi dłońmi.
+      Wilk zatrzymuje się w pół kroku, stawia uszy i puszcza cię wolno — to nie
+      na ciebie poluje Leszy.
+  draw:
+    text: |
+      Opirasz się plecami o wywrot i ani nie nacierasz, ani nie uciekasz. Wilk
+      zatacza krąg, raz i drugi, po czym znika w paprociach za łatwiejszą zdobyczą.
 - id: utopiec-fight
   text: |
     Utopiec nie puszcza jazu, więc jaz rusza razem z nim. Staw wzbiera czarną falą. Nagle
@@ -23,7 +29,13 @@
       potłuczonych glinianych garnków. Z odłamków wznoszą się blade światełka jak bąbelki
       i odpływają nad trzciny. Jedno z nich zatrzymuje się przy grobli, blisko młyna, zanim
       odejdzie.
-  escape:
+  surrender:
     text: |
-      Wyrywasz się z wody i wdrapujesz na groblę. Za twoimi plecami staw się uspokaja,
-      czarny i cierpliwy, a mały człowieczek znów siedzi na jazie i wyżyma połę kapoty.
+      Rozkładasz puste dłonie i pozwalasz czarnej wodzie nieść cię ku tyłowi,
+      krok po kroku, aż stopy znajdą groblę. Mały człowieczek patrzy, jak się
+      wydostajesz, po czym wraca na swój jaz i wyżyma połę kapoty.
+  draw:
+    text: |
+      Wpierasz się w słup jazu i trzymasz wąski przyczółek: ani kroku w tył,
+      ani kroku naprzód. Staw w końcu opada, czarny i cierpliwy, a utopiec
+      puszcza cię — tym razem.

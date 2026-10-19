@@ -29,4 +29,4 @@ choices:
           Your boot catches the edge. The rail saves you from a fall, but your shin takes the
           blow.
         effects:
-          - damage: 1
+          - damage: 3

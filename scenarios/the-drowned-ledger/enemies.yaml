@@ -1,45 +1,25 @@
+# Enemy catalog: reusable kinds of opponents, placed through Encounters.
+
+# Profiles follow the #184 Q11 table: drowned-porter → raider, iron-foreman →
+# brute, brass-auditor → sentinel, channel-watchman → archer. All statistics
+# come from the profile table.
+
 - id: drowned-porter
   name: Elias Rook
   description: A frightened porter bound to the last instruction he received.
-  attributes:
-    might: 1
-    agility: 1
-    wits: 1
-    presence: 1
-  health: 6
-  damage: 1
-  behaviour: steady
+  profile: raider
+
 - id: iron-foreman
   name: The Iron Foreman
   description: A workshop guardian made of protective equipment and unfinished orders.
-  attributes:
-    might: 2
-    agility: 0
-    wits: 1
-    presence: 1
-  health: 9
-  damage: 2
-  behaviour: heavy
+  profile: brute
+
 - id: channel-watchman
   name: The Channel Watchman
   description: A dead archer trying to keep the harbour clear according to obsolete orders.
-  attributes:
-    might: 1
-    agility: 2
-    wits: 1
-    presence: 1
-  health: 7
-  damage: 2
-  reach: ranged
-  behaviour: heavy
+  profile: archer
+
 - id: brass-auditor
   name: The Brass Auditor
   description: An account guardian made of tally sticks, brass clasps and borrowed authority.
-  attributes:
-    might: 2
-    agility: 1
-    wits: 2
-    presence: 0
-  health: 10
-  damage: 2
-  behaviour: steady
+  profile: sentinel

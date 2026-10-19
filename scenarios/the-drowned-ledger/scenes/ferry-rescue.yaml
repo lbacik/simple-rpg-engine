@@ -52,7 +52,7 @@ choices:
           rescue with the slow winch. Everyone reaches Mercy, though the medicine crate washes
           away.
         effects:
-          - damage: 1
+          - damage: 3
           - set-flag: ferry-rescued
           - give-item:
               item: lamp-oil

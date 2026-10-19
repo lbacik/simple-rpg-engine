@@ -118,7 +118,7 @@ Ranges and shapes checked under `schema/invalid-value` and `schema/missing-field
 - **Equipment**: `slot` `weapon` | `outfit` | `talisman`; `bonus` an Attribute. Equipment carries no `damage` or `reach` (retired).
 - **Consumable**: `heal` 1–40.
 - **Enemy**: `id`, `name`, optional `description`, and a required `profile` (`raider` | `brute` | `sentinel` | `archer`). All statistics come from the profile; a `party-*` profile on an Enemy is rejected.
-- **Encounter**: exactly one of the `enemy` shorthand (with that Participant's `startRange` beside it) and `participants` (a list of 1–5 entries); an Encounter-level `startRange` beside `participants` is retired. Each Participant has `enemy`, a required `startRange` (`melee` | `near` | `far`), an optional `phaseOffset` (default 0, below the profile's cycle length: `raider` 0–3, others 0–2) and an optional integer `power` 0–3 (default 0). `surrender` and `draw` Outcomes are required; `victory` is optional.
+- **Encounter**: exactly one of the `enemy` shorthand (with that Participant's `startRange` beside it) and `participants` (a list of 1–5 entries); an Encounter-level `startRange` beside `participants` is retired. A roster of 0 or 6+ Participants fails as `schema/invalid-value` (the 1–5 bound is a Zod range); neither spelling is `schema/encounter-enemies`, and both spellings is too. Each Participant has `enemy`, a required `startRange` (`melee` | `near` | `far`), an optional `phaseOffset` (default 0, below the profile's cycle length: `raider` 0–3, others 0–2) and an optional integer `power` 0–3 (default 0). A missing `startRange` or a value outside `melee` | `near` | `far` is `schema/missing-field` or `schema/invalid-value`; a non-integer or out-of-range `power` is `schema/invalid-value`. An unknown `profile`, a `party-*` profile on an Enemy, or an enemy profile on a Companion is `schema/invalid-value`. A missing `surrender` or `draw` Outcome is `schema/missing-field`.
 - **Companion**: `id`, `name`, optional `description`, and a `profile` (`party-sentinel` | `party-archer`); an enemy profile on a Companion is rejected. The Companion is Playthrough state, never an Encounter Participant, and does not count towards the 1–5 limit.
 - **Ending**: `kind` `victory` | `defeat`.
 - **Effects**: `heal` and `damage` 1–40; `give-item` and `take-item` `quantity` ≥ 1, no upper bound. `companion-join` names a Companion; `companion-leave` is a bare marker with no id.
@@ -136,7 +136,7 @@ Optional text fields (Connection `label`, item, Enemy and Template `description`
 | Code | Rule |
 |---|---|
 | `ref/invalid-id` | An ID, including a participant ID, does not match `[a-z][a-z0-9-]*`. |
-| `ref/duplicate-id` | Two entities of the same type share an ID within the Scenario. |
+| `ref/duplicate-id` | Two entities of the same type share an ID within the Scenario. Each content type is its own namespace, Companions included: two Companions with one id fail here. |
 | `ref/duplicate-choice-id` | Two Choices of one Scene share an ID. |
 | `ref/duplicate-participant-id` | Two participants of one Encounter share an ID, whether explicit or defaulted from `enemy` (two participants of the same Enemy kind without explicit IDs). The message suggests explicit IDs. |
 | `ref/phase-offset-out-of-cycle` | A Participant's `phaseOffset` is at or above the cycle length of its Enemy's profile. |

@@ -4,33 +4,27 @@
   description: A broad working knife from the harbour watch stores.
   slot: weapon
   bonus: might
-  damage: 3
 - id: boat-hook
   kind: equipment
   name: Boat Hook
   description: A long hook worn smooth by work among mooring ropes.
   slot: weapon
-  damage: 3
 - id: survey-staff
   kind: equipment
   name: Survey Staff
   description: A measuring staff reinforced for journeys over uncertain ground.
   slot: weapon
-  damage: 2
 - id: signal-crossbow
   kind: equipment
   name: Signal Crossbow
   description: A compact crossbow carried by channel watchkeepers.
   slot: weapon
-  reach: ranged
-  damage: 3
 - id: foundry-pryblade
   kind: equipment
   name: Nera's Pryblade
   description: A perfectly balanced repair tool with a keen edge.
   slot: weapon
   bonus: might
-  damage: 4
 - id: watch-coat
   kind: equipment
   name: Padded Watch Coat
@@ -59,12 +53,12 @@
   kind: consumable
   name: Salt Tonic
   description: A sealed emergency draught prepared for harbour crews.
-  heal: 4
+  heal: 13
 - id: field-dressings
   kind: consumable
   name: Field Dressings
   description: Clean bandages and a tin of cooling salve.
-  heal: 6
+  heal: 20
 - id: survey-chart
   kind: key
   name: Ivo's Survey Chart

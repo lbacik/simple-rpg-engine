@@ -4,7 +4,7 @@ title: A Bowl of Hot Broth
 trigger: on-demand
 when:
   health:
-    atMost: 11
+    atMost: 39
 text: |
   The refuge kitchen has a stove, a patient cook and a kettle that never quite stops
   boiling. You are offered a bowl of broth and a dry place to sit.
@@ -19,6 +19,6 @@ choices:
         Your hands stop shaking. Before you rise, the cook puts a sealed medical tin in your
         pack. "You may be needed again. That does not mean you have to go hungry."
       effects:
-        - heal: 6
+        - heal: 20
         - give-item:
             item: field-dressings

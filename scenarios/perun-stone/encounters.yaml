@@ -1,3 +1,9 @@
+# Encounter catalog: named, single placements of Enemies.
+# Each has opening narration, required surrender and draw Outcomes (both
+# inherit the old escape move) and an optional victory Outcome. Surrender and
+# draw texts are drafts for human review in P3b (#235). startRanges follow
+# the #184 Q12 table (far stays far; near + non-archer becomes melee).
+
 - id: wolf-fight
   enemy: leszy-wolf
   startRange: far
@@ -9,14 +15,21 @@
       The wolf lies still among the ferns. The Leszy looks at you for a long time. "Teeth,"
       he says at last. "Dębina always has teeth." But he speaks.
     next: leszy-testimony
-  escape:
+  surrender:
     text: |
-      You run, and the forest lets you, which is somehow worse. You stumble out of the trees
-      exactly where you went in.
+      You go still, turn your eyes aside and back away with open hands. The wolf
+      stops mid-stride, ears up, and lets you go — the Leszy's hunt is not for
+      you today.
     move: forest-edge
+  draw:
+    text: |
+      You set your back against a windfall and neither advance nor flee. The wolf
+      circles once, twice, then melts into the ferns to find easier prey.
+    move: forest-edge
+
 - id: utopiec-fight
   enemy: utopiec
-  startRange: near
+  startRange: melee
   text: |
     The utopiec does not let go of the weir, and the weir comes with him. The pond rises in
     a black wave. Suddenly you are knee-deep, then waist-deep, and the little man is not
@@ -32,9 +45,15 @@
     effects:
       - give-item:
           item: thunderstone
-  escape:
+  surrender:
     text: |
-      You tear yourself out of the water and scramble up the dyke. Behind you the pond
-      settles, black and patient, and the little man is back on his weir, wringing out his
-      coat-tail.
+      You spread empty hands and let the black water carry you back, step by step,
+      until your feet find the dyke. The little man watches you climb out, then
+      settles back onto his weir, wringing out his coat-tail.
+    move: mill
+  draw:
+    text: |
+      You brace against a weir-post and hold the narrow footing, giving no ground
+      and taking none. The pond sinks back at last, black and patient, and the
+      utopiec lets the water have you — this time.
     move: mill

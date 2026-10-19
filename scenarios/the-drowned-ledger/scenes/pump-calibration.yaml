@@ -45,7 +45,7 @@ choices:
           - take-item:
               item: locking-pin
           - set-flag: pumps-set
-          - heal: 2
+          - heal: 7
           - give-item:
               item: salt-tonic
       failure:

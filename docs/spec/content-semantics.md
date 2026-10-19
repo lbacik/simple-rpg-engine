@@ -89,9 +89,11 @@ The vocabulary is closed.
 | `set-flag: F` / `clear-flag: F` | make the Flag true / false (idempotent) |
 | `give-item: { item, quantity }` | add that many; never equips |
 | `take-item: { item, quantity }` | remove up to that many, without error if fewer are held; removing the last copy of an equipped item unequips it first |
-| `heal: n` | restore up to n Health, capped at 12; a no-op at full Health |
+| `heal: n` | restore up to n Health, capped at 40; a no-op at full Health |
 | `damage: n` | lose n Health; can kill |
 | `reveal: L` | put the Location on the player's map (a no-op if already visited) |
+| `companion-join: C` | Companion C joins the party (replaces the current Companion, recording a departure; joining a lost Companion is a no-op) |
+| `companion-leave:` | the current Companion, if any, leaves the party |
 
 There is no Effect that equips or unequips an item, and none that changes Attributes. Content-driven `heal` at full Health is a silent no-op, unlike the player's use of a Consumable, which is rejected (see [mechanics.md](mechanics.md#consumables)).
 
@@ -113,23 +115,25 @@ Conditions are evaluated live: when rendering a view and again when an action is
 
 ## Encounters and Combat
 
-> **Frozen pending the content migration (format v1).** This section describes the content semantics the engine still implements. The Combat rules it assumes — escape, Encounter-wide `startRange`, Enemy statistics, the Enemy-defeated notice — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md): `LOSS_SURRENDER` routes to a required `surrender` Outcome, `DRAW_LIMIT` to a required `draw` Outcome, and only Health, wounds and Companion presence cross the Combat boundary. The v2 semantics land with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)).
+Combat follows the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md); the integration surface is in the [Combat contract](combat-contract.md).
 
-An **Enemy** is a reusable definition. An **Encounter** is a named placement of one or two Enemies as **participants**, with opening narration, a required `escape` Outcome and an optional `victory` Outcome. Each participant carries its own wounds under the wound persistence rules in [playthrough-state.md](playthrough-state.md#combat).
+An **Enemy** is a reusable definition: a named kind of opponent bound to one fixed Combat profile. An **Encounter** is a named placement of one to five Enemies as **participants**, each with its own starting Range, with opening narration, an optional `victory` Outcome and required `surrender` and `draw` Outcomes. Each participant carries its own wounds under the wound persistence rules in [playthrough-state.md](playthrough-state.md#combat).
 
-- `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants at E's `startRange` and shows E's opening narration. This also happens again when the player returns after an escape; each surviving participant keeps its wounds, and with unchanged content a participant defeated earlier does not return.
+Only three things cross the Combat boundary: the hero's **Health** (the hero enters a Combat at the Character's current Health), each participant's recorded **wounds**, and the **Companion's** presence. A Companion at 0 HP in Combat is lost permanently: removed from the Playthrough, recorded as lost (so `{companionLost: C}` holds), and the fight continues.
+
+- `start-combat: E` on an Encounter that is **not defeated** starts a Combat against its surviving participants in E's authored arrangement (each participant's `startRange`, in authored order) and shows E's opening narration. This also happens again when the player returns after a surrender or a draw; each surviving participant keeps its wounds, and with unchanged content a participant defeated earlier does not return.
 - `start-combat: E` on an Encounter that is **already defeated** is a **no-op**: no fight, the victory Outcome is not applied again, play returns to the Location view.
-- **Victory** (the last participant defeated) applies the `victory` Outcome. Defeating one of two participants is not a victory and applies nothing. Without one, the engine shows a brief **Enemy-defeated notice**, and play returns to the Location view of the Location where the fight happened.
-- **Escape** applies the `escape` Outcome.
-- **Character death** is not an Encounter Outcome. It always ends the Playthrough on the Scenario's death Ending.
+- **Victory** (the last participant defeated) applies the `victory` Outcome. Defeating one of several participants is not a victory and applies nothing. Without one, the engine shows a brief **Enemy-defeated notice**, and play returns to the Location view of the Location where the fight happened.
+- **Surrender** (`LOSS_SURRENDER`) applies the `surrender` Outcome; a **draw** (`DRAW_LIMIT`, after 30 full Rounds) applies the `draw` Outcome. Both leave the Encounter undefeated, so a repeat fight starts again with the survivors.
+- **Character death** (`LOSS`) is not an Encounter Outcome. It always ends the Playthrough on the Scenario's death Ending.
 
-Defeat is checked against current content, not remembered as a separate victory flag. A content change outside Combat may revive a previously defeated participant by increasing its maximum Health above its recorded Damage. In an active Playthrough, a later `start-combat` then fights the current survivors, and the next victory applies the `victory` Outcome and its Effects again. The usual once-only guarantee holds while content remains unchanged. Revival that changes the surviving membership of an active Combat makes the Playthrough incompatible instead ([architecture.md](architecture.md#content-compatibility)); content edits never reopen an ended Playthrough or automatically start a Combat.
+Defeat is checked against current content, not remembered as a separate victory flag: a participant is defeated when its recorded Damage reaches its Enemy profile's maximum Health. A content change outside Combat may revive a previously defeated participant by raising the profile above its recorded Damage. In an active Playthrough, a later `start-combat` then fights the current survivors, and the next victory applies the `victory` Outcome and its Effects again. The usual once-only guarantee holds while content remains unchanged. Revival that changes the surviving membership of an active Combat makes the Playthrough incompatible instead ([architecture.md](architecture.md#content-compatibility)); content edits never reopen an ended Playthrough or automatically start a Combat.
 
 An Arena fight bypasses all of the above: it starts from an Arena Setup, never touches an Encounter record, and ends in a plain result with no Outcome and no Ending.
 
-### Authoring pattern: re-offering an escapable fight
+### Authoring pattern: re-offering a fight
 
-An on-enter Scene that starts a fight is once-only by default, so after an escape the fight would not be offered again. To re-offer it, either:
+An on-enter Scene that starts a fight is once-only by default, so after a surrender or a draw the fight would not be offered again. To re-offer it, either:
 
 - add an on-demand Scene gated by the Condition `not: { defeated: E }` (the example's `wolf-again`), or
 - make the on-enter Scene `repeatable: true` with that Condition in its `when` (the example's `camp-standoff`).
@@ -153,6 +157,7 @@ An on-enter Scene that starts a fight is once-only by default, so after an escap
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109) (implicit Continue when every Choice is hidden)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (empty Outcome, follow-on Scenes without `when`, `next` only to follow-on Scenes)
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (re-offering pattern)
+- [Define Scenario authoring and content migration for simple-rpg-engine](https://github.com/lbacik/simple-rpg-engine/issues/184) (content format v2: profiles, per-participant `startRange`, `surrender`/`draw`, Companions, Health 1–40)
 - [Encounter participants: stable identity, individual wounds and partial victory](https://github.com/lbacik/simple-rpg-engine/issues/80) (participants, `defeated`)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (Combat position)
 - [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) (content-driven revival and victory Outcomes)

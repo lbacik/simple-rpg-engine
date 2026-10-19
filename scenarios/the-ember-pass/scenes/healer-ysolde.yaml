@@ -25,13 +25,13 @@ choices:
     when:
       all:
         - { flag: tower-taken }
-        - { health: { atMost: 11 } }
+        - { health: { atMost: 39 } }
     outcome:
       text: |
         She cleans and stitches and binds, muttering about raiders and their dirty blades.
         You leave feeling stiff, but whole.
       effects:
-        - heal: 6
+        - heal: 20
   - id: tend-camp
     text: Have her see to you properly before the summit.
     once: true
@@ -40,12 +40,12 @@ choices:
         - any:
             - { defeated: shaman-rite }
             - { flag: captives-freed }
-        - { health: { atMost: 11 } }
+        - { health: { atMost: 39 } }
     outcome:
       text: |
         Ysolde works on you for an hour by the fire, and does not charge you for the
         herbs. "Bring them home," she says when she is done. "Then we are even."
       effects:
-        - heal: 12
+        - heal: 40
   - id: leave
     text: Thank her and go.

@@ -33,7 +33,7 @@ choices:
         "At noon?" she says. "Look down." You do, and you have no shadow at all. Then the
         heat takes you, and you wake in the furrow with a burning face.
       effects:
-        - damage: 2
+        - damage: 7
   - id: sun
     text: "\"The sun.\""
     outcome:
@@ -41,4 +41,4 @@ choices:
         "The gods see the sun every day. They made it." The sickle flashes white, and you
         wake in the furrow, alone and aching.
       effects:
-        - damage: 2
+        - damage: 7

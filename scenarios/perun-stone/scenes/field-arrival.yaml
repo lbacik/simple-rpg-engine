@@ -38,7 +38,7 @@ choices:
           a sack of grain. You come to in the furrow with a pounding head and a mouth full of
           dust. The sun still stands at its height.
         effects:
-          - damage: 2
+          - damage: 7
   - id: wait
     text: Retreat to the shade of the wild pear tree and wait for dusk.
     outcome:

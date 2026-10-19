@@ -1,3 +1,4 @@
+# Surrender and draw texts are drafts for human review in P3b (#235).
 - id: road-wolves
   text: |
     Wilki rozdzielają się w biegu, jeden na każdą stronę drogi, tak żeby nie dało się
@@ -6,10 +7,16 @@
     text: |
       Drugi wilk pada we wrzosy. Droga przed tobą cichnie, a gdzieś w górze kruk skarży się
       na hałas.
-  escape:
+  surrender:
     text: |
-      Cofasz się w dół drogi z bronią w górze, aż wilki tracą zainteresowanie i wracają
-      do padłego muła.
+      Upuszczasz broń, kucasz nisko i trwasz bez ruchu. Wilki podchodzą, węsżą
+      wokół ciebie powietrze i uznają, że sprawiasz więcej kłopotu niż padły muł.
+      Wracają truchtem w dół drogi.
+  draw:
+    text: |
+      Wycofujesz się w dół drogi krok po kroku, z bronią w górze, nie odwracając
+      się. Wilki odprowadzają cię do zakrętu, potem odpuszczają i wracają do
+      padłego muła.
 
 - id: tower-assault
   text: |
@@ -20,10 +27,16 @@
       Greywatch należy do ciebie. W wartowni znajdujesz łupy rabusiów: dwa rogi napoju
       leczniczego i sztabę czarnego żelaza klanu, którą kowal Dunric na pewno chciałby
       zobaczyć.
-  escape:
+  surrender:
     text: |
-      Biegniesz w stronę drogi, a strzały stukają o kamienie za tobą. Nikt cię nie goni;
-      klanowi wystarczy, że zatrzyma wieżę.
+      Rzucasz broń i unosisz puste dłonie tak, by łucznik je widział. Strażnik
+      spod drzwi macha tasakiem, odprawiając cię — klan chętnie zatrzyma wieżę,
+      a ty chętnie zachowasz życie i pójdziesz dalej.
+  draw:
+    text: |
+      Wycofujesz się na drogę, trzymając mur wieży między sobą a blankami, aż
+      strzały przestają stukać o kamienie. Nikt cię nie goni; klanowi wystarczy,
+      że zatrzyma wieżę.
 
 - id: tower-roof
   text: |
@@ -32,9 +45,16 @@
     text: |
       Łucznik leci za blanki. Pod tobą trzaskają drzwi i ciężkie buty zaczynają dudnić po
       schodach wieży.
-  escape:
+  surrender:
     text: |
-      Przerzucasz się z powrotem przez blanki i schodzisz szybciej, niż udało się wejść.
+      Puszczasz nóż i cofasz się pod blanki z otwartymi dłońmi. Łucznik trzyma
+      cię na ostrzu przez całą drogę w dół muru — schodzisz szybciej, niż
+      udało się wejść, a on pozwala ci odejść.
+  draw:
+    text: |
+      Przerzucasz się z powrotem przez blanki i zamierasz na murze, w połowie
+      drogi w dół, aż łucznik wróci do swojej warty. Potem schodzisz szybciej,
+      niż udało się wejść.
 
 - id: tower-stairs
   text: |
@@ -45,10 +65,16 @@
       Greywatch należy do ciebie. W wartowni znajdujesz łupy rabusiów: dwa rogi napoju
       leczniczego i sztabę czarnego żelaza klanu, którą kowal Dunric na pewno chciałby
       zobaczyć.
-  escape:
+  surrender:
     text: |
-      Przechodzisz przez blanki i schodzisz po murze. Strażnik ryczy za tobą, ale nie
-      opuści swojej wieży.
+      Upuszczasz broń na dachówki i klękasz. Strażnik ryczy na pozostałych, po czym
+      rezygnuje z opuszczania wieży — macha cię ku blankom, a ty przechodzisz
+      przez nie i schodzisz po murze.
+  draw:
+    text: |
+      Oddajesz pole na dachu krok po kroku, aż plecami dotykasz blanków. Strażnik
+      trzyma drzwi schodów i nie opuści swojej wieży; przechodzisz przez blanki
+      i schodzisz po murze.
 
 - id: ford-troll
   text: |
@@ -57,10 +83,16 @@
     text: |
       Troll wali się w bród z pluskiem, który moczy cię do pasa. Pod mostem znajdujesz jego
       skarb: rzeczne śmieci, stare kości i kilka rzeczy, które warto zatrzymać.
-  escape:
+  surrender:
     text: |
-      Wdrapujesz się na brzeg. Troll jest zbyt powolny, by cię gonić, i wraca dąsać się pod
-      swój most.
+      Kładziesz broń na brzegu i wycofujesz się z brodu tyłem, z otwartymi
+      dłońmi. Troll patrzy, jak odchodzisz, z wciąż uniesionym głazem, po czym
+      zapada się z powrotem w dąsanie pod swoim mostem.
+  draw:
+    text: |
+      Wdrapujesz się na brzeg i trzymasz wyższy grunt, rzucając kamieniami, by
+      trzymać go w szachu, aż troll traci zainteresowanie. Jest zbyt powolny,
+      by cię gonić, i wraca dąsać się pod swój most.
 
 - id: mine-crawler
   text: |
@@ -70,9 +102,15 @@
     text: |
       Pełzacz zwija się i przestaje drgać. Dalej tunel opada w stronę kapiącej wody
       i powolnego, cierpliwego stukania.
-  escape:
+  surrender:
     text: |
-      Wytaczasz się na światło dnia. Pełzacz nie pójdzie za tobą na słońce.
+      Stawiasz latarnię delikatnie na ziemi i pełzniesz w tył, nisko i cicho.
+      Pełzacz idzie za światłem, nie za tobą — a na słońce za tobą nie wyjdzie.
+  draw:
+    text: |
+      Wycofujesz się ku światłu dnia z latarnią wyciągniętą jak tarczą, aż wylot
+      sztolni znajdzie się za twoimi plecami. Pełzacz nie pójdzie za tobą
+      na słońce.
 
 - id: depths-pair
   text: |
@@ -82,9 +120,15 @@
     text: |
       Ghul wreszcie nieruchomieje, a pełzacz razem z nim. Za nimi zardzewiałe żelazne drzwi
       stoją uchylone na suchą komorę.
-  escape:
+  surrender:
     text: |
-      Uciekasz w stronę światła, a za tobą zgrzyta kilof i grzechoczą nogi.
+      Gasisz latarnię, przylegasz płasko do szczeliny i przestajesz się ruszać.
+      Kilof przestaje świstać; nogi przestają grzechotać. Gdy się wyczołgujesz,
+      ciemność zabrała ich z powrotem — biegniesz ku światłu dnia.
+  draw:
+    text: |
+      Biegniesz ku światłu dnia ze zgrzytem kilofa i grzechotem nóg za plecami
+      i trzymasz wylot sztolni plecami do słońca, aż cofną się w mrok.
 
 - id: gate-guards
   text: |
@@ -94,9 +138,16 @@
     text: |
       Drugi strażnik osuwa się na belki bramy. Odsuwasz rygiel, a przy jednym z ciał
       znajdujesz róg napoju leczniczego.
-  escape:
+  surrender:
     text: |
-      Wycofujesz się w dół serpentyn, a strażnicy drwią z ciebie za plecami.
+      Upuszczasz broń i klękasz na serpentynach z rękami na głowie. Strażnicy
+      drwią — i puszczają cię wolno w dół. Nie opuszczą bramy dla kogoś takiego
+      jak ty.
+  draw:
+    text: |
+      Wycofujesz się w dół serpentyn spacerem, z bronią w górze, a strażnicy
+      drwią za twoimi plecami. Żadna ze stron nie chce kolejnego kroku
+      wystarczająco mocno.
 
 - id: gate-lone-guard
   text: |
@@ -105,9 +156,15 @@
     text: |
       Strażnik pada. Zdejmujesz rygiel z bramy, zanim wróci jego kompan, i bierzesz róg
       napoju leczniczego z jego pasa.
-  escape:
+  surrender:
     text: |
-      Wycofujesz się w dół serpentyn. Strażnik nie odważy się zostawić bramy bez straży.
+      Upuszczasz broń i wycofujesz się z otwartymi dłońmi. Strażnik nie odważy
+      się zostawić bramy bez straży — zamiast cię gonić, obrzuca cię wyzwiskami
+      w dół serpentyn.
+  draw:
+    text: |
+      Wycofujesz się w dół serpentyn z gardą w górze, aż brama stanie się
+      ciemną linią w górze. Strażnik nie odważy się zostawić bramy bez straży.
 
 - id: shrine-brute
   text: |
@@ -117,9 +174,15 @@
     text: |
       Osiłek wali się między skorupy kamienia paleniska. W kapliczce zapada cisza, a mały
       ogień w niszy, który próbował zadeptać, wciąż się tli.
-  escape:
+  surrender:
     text: |
-      Zbiegasz z powrotem boczną ścieżką. Osiłek śmieje się i wraca do swojej roboty.
+      Klękasz i kładziesz broń na posadzce kapliczki. Osiłek śmieje się, kopie
+      jeszcze raz kamień paleniska dla zasady i macha cię w dół bocznej ścieżki —
+      nigdy nie byłeś wart przerywania jego roboty.
+  draw:
+    text: |
+      Zbiegasz boczną ścieżką w dół i trzymasz przesmyk, wyzywając go, by zszedł.
+      Osiłek śmieje się i wraca do swojej roboty.
 
 - id: pen-brute
   text: |
@@ -129,9 +192,15 @@
       Osiłek wali się w błoto. Bierzesz nóż z jego pasa i przecinasz więzy jeńców, a oni
       wciskają ci w ręce zapasy, które zdołali ukraść. „Będziemy na ścieżce na szczyt”,
       mówi chłopak o bystrej twarzy Maren Holt. „Kiedy pójdziesz w górę, pójdziemy z tobą”.
-  escape:
+  surrender:
     text: |
-      Uskakujesz między namiotami i gubisz go w dymie.
+      Padasz w błoto z rękami na głowie i udajesz bezwładne ciało. Osiłek kopie
+      cię raz dla zasady, ryczy na pozostałych — a dym obozowy połyka cię, gdy
+      pełzniesz precz między namiotami.
+  draw:
+    text: |
+      Uskakujesz między namiotami i gubisz go w dymie, wracając wzdłuż lin
+      odciągowych, aż jego ryk oddali się w drugą stronę.
 
 - id: shaman-rite
   text: |
@@ -141,9 +210,16 @@
     text: |
       Szaman pada we własny ogień, a płomienie z czerwonych stają się zwyczajnie żółte.
       W górze, na szczycie, puszcza coś, co trzymało ognisko w chłodzie.
-  escape:
+  surrender:
     text: |
-      Wycofujesz się między namioty, wytrzepując iskry z ubrania.
+      Padasz na kolana, gasząc tlące się ubranie otwartymi dłońmi na znak, że
+      masz dość. Szaman odczytuje ten gest wystarczająco dobrze — wraca do swego
+      obrzędu, a ogar pozwala ci odpełznąć między namioty.
+  draw:
+    text: |
+      Wycofujesz się między namioty, wytrzepując iskry z ubrania, z płótnem
+      namiotu za plecami, aż pieśń wciągnie szamana z powrotem, a ogar zgubi
+      twój zapach w dymie.
 
 - id: warlord-duel
   text: |
@@ -153,10 +229,15 @@
     text: |
       Wodzini osuwa się na kolana obok zimnego stosu, a potem pada. Tu, ponad chmurami, nic
       już nie stoi między tobą a ogniem.
-  escape:
+  surrender:
     text: |
-      Wyrywasz się i zbiegasz ścieżką ze szczytu. Gharra pozwala ci odejść; ma przed sobą
-      całą noc.
+      Wbijasz broń w ziemię i klękasz na otwartej przestrzeni. Gharra przygląda
+      ci się dłuższą chwilę, po czym opuszcza topór — klęczący wróg to nie wróg,
+      a ona ma przed sobą całą noc. Schodzisz ścieżką ze szczytu żywy.
+  draw:
+    text: |
+      Wyrywasz się i zbiegasz ścieżką ze szczytu, trzymając kamienie ogniska
+      między sobą a jej toporem. Gharra pozwala ci odejść; ma przed sobą całą noc.
 
 - id: warlord-and-guard
   text: |
@@ -166,7 +247,13 @@
     text: |
       Wodzini osuwa się na kolana obok zimnego stosu, a potem pada. Tu, ponad chmurami, nic
       już nie stoi między tobą a ogniem.
-  escape:
+  surrender:
     text: |
-      Wyrywasz się i zbiegasz ścieżką ze szczytu, a obok świszczą strzały. Gharra pozwala ci
-      odejść; ma przed sobą całą noc.
+      Wbijasz broń w ziemię i klękasz tak, by łucznik widział, co robisz.
+      Gharra odwołuje strzał — klęczący wróg to nie wróg, a ona ma przed sobą
+      całą noc. Schodzisz ścieżką ze szczytu przy strzałach nałożonych, lecz
+      niewypuszczonych.
+  draw:
+    text: |
+      Wyrywasz się i zbiegasz ścieżką ze szczytu, a obok świszczą strzały,
+      nisko za skałami. Gharra pozwala ci odejść; ma przed sobą całą noc.
