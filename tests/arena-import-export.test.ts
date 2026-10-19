@@ -127,7 +127,7 @@ describe('prepareArenaImport (A3: PLAN starts, CHOOSE verifies, FINISHED views)'
     const prepared = prepareArenaImport(JSON.stringify(tampered));
     expect(prepared.ok).toBe(false);
     if (prepared.ok) return;
-    expect(prepared.issues).toEqual([{ code: 'bad_frozen_plans' }]);
+    expect(prepared.issues).toEqual([{ code: 'bad_frozen_plans', params: { reason: 'mismatch' } }]);
   });
 
   it('stores a FINISHED import view-only with no opening state', () => {

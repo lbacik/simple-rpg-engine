@@ -157,12 +157,14 @@ function parseIssueText(
       return issues.bad_engagement({
         a: paramText(params, 'a'),
         b: paramText(params, 'b'),
-        reason: paramText(params, 'reason'),
+        // `reason` carries the issue code on the URL as `detail` (the route
+        // renames it so it never overwrites the issue code itself).
+        reason: paramText(params, 'detail'),
       });
     case 'bad_frozen_plans':
       return issues.bad_frozen_plans;
     case 'bad_frozen_plan':
-      return issues.bad_frozen_plan(paramText(params, 'reason'));
+      return issues.bad_frozen_plan(paramText(params, 'detail'));
     case 'bad_log':
       return issues.bad_log;
   }
