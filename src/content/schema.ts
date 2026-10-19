@@ -343,7 +343,9 @@ export const EndingSchema = z.strictObject({
 // placement over the Still. `at` has no .default(): it is mutually exclusive
 // with the future `drift` (schema/drift-and-at), so the engine applies the
 // { x: 50, y: 50 } default when a Layer declares neither. `anchor` places the
-// Layer only and never conflicts, so it defaults here. `frames`, `drift`,
+// Layer only and never conflicts, so it defaults here. `frames` and `fps`
+// describe a horizontal sprite strip (frames 2-64, fps 1-30); the exactly-one
+// rule is a custom check (schema/frames-fps), so both stay optional here.
 // `flicker` and `camera` arrive with their own tickets; the strict objects
 // below reject them as schema/unknown-key until then.
 // ---------------------------------------------------------------------------
@@ -358,6 +360,8 @@ export const LayerSchema = z.strictObject({
   at: motionPointSchema.optional(),
   anchor: motionPointSchema.default({ x: 50, y: 50 }),
   width: z.number().gt(0).max(400).default(100),
+  frames: z.number().int().min(2).max(64).optional(),
+  fps: z.number().min(1).max(30).optional(),
   blend: z.enum(['normal', 'multiply', 'screen']).default('normal'),
 });
 

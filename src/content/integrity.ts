@@ -958,6 +958,10 @@ export type IntegrityMotionLayer = {
   at: { x: number; y: number };
   anchor: { x: number; y: number };
   width: number;
+  /** The sprite strip frame count; present exactly when `fps` is. */
+  frames?: number;
+  /** Frames per second; present exactly when `frames` is. */
+  fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
   file: IntegrityLayerFile;
 };
@@ -1160,9 +1164,11 @@ function readImageFile(
 /**
  * Check an image entry's Motion Layers (docs/spec/validation.md, Phase 3):
  * every Layer `path` gets the image codes with the range on the Layer's
- * `path`, and the Still plus every distinct Layer file must total at most 4
- * MiB (ref/illustration-too-large). Returns the registry's distinct Layer
- * files in first-use order, or undefined when the image is rejected.
+ * `path`, a Layer with `frames` gets ref/sprite-strip-width there when the
+ * file's pixel width does not divide by `frames`, and the Still plus every
+ * distinct Layer file must total at most 4 MiB (ref/illustration-too-large).
+ * Returns the registry's distinct Layer files in first-use order, or
+ * undefined when the image is rejected.
  *
  * Phase 2 already proved the shapes, so the guards below only protect
  * against programmer error: a non-record motion, a non-list `layers` or a
@@ -1187,6 +1193,30 @@ function checkMotionLayers(
     const read = readImageFile(scenarioDir, layerPath, 'Layer file', entry.file, nodePath, ctx);
     if (read === undefined) {
       failed = true;
+      return;
+    }
+    // A sprite strip's frames must fall on whole pixels: the file's pixel
+    // width divided by `frames` (docs/spec/validation.md,
+    // ref/sprite-strip-width). Phase 2 proved `frames` an integer 2-64, so a
+    // non-integer here only guards against programmer error.
+    const frames = isRecord(layer) && typeof layer['frames'] === 'number' ? layer['frames'] : undefined;
+    if (
+      frames !== undefined &&
+      Number.isInteger(frames) &&
+      frames > 0 &&
+      read.width % frames !== 0
+    ) {
+      failed = true;
+      ctx.push({
+        severity: 'error',
+        code: 'ref/sprite-strip-width',
+        message:
+          `Layer file "${layerPath}" is ${read.width} px wide, which does not divide ` +
+          `by the Layer's "frames" (${frames}); its frames would fall on fractions of a pixel`,
+        file: entry.file.file,
+        range: nodeRangeOf(entry.file, nodePath),
+        path: nodePath,
+      });
       return;
     }
     const key = normalizeListedPath(layerPath);
