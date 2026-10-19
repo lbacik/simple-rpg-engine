@@ -8,9 +8,11 @@
 // (docs/spec/ui.md, motion): after hydration the client fetches every distinct
 // Layer file once, and once the Still and every Layer file have loaded it
 // composes the Layers over the Still in list order with a linear 1 s fade-in.
-// Any Layer failure leaves the Still for this Showing. Under
-// `prefers-reduced-motion: reduce` Motion stays off and no Layer file is
-// fetched. Without JavaScript only the Still shows.
+// A Layer with `drift` moves its anchor from `from` to `to` on the
+// Web Animations API from the shared timeline t = 0, clipped to the box by
+// the composition's overflow. Any Layer failure leaves the Still for this
+// Showing. Under `prefers-reduced-motion: reduce` Motion stays off and no
+// Layer file is fetched. Without JavaScript only the Still shows.
 
 'use client';
 
@@ -27,30 +29,87 @@ export type IllustrationMotionLayer = {
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
+  drift?: IllustrationMotionDrift;
   pixelWidth: number;
   pixelHeight: number;
 };
+
+/** A Layer's Drift as the Illustration view carries it, with defaults applied. */
+export type IllustrationMotionDrift = {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  duration: number;
+  delay: number;
+  loop: boolean;
+};
+
+function geometryForPoint(
+  point: { x: number; y: number },
+  layer: Pick<IllustrationMotionLayer, 'anchor' | 'width'> & { frames?: number },
+  file: Pick<IllustrationMotionLayer, 'pixelWidth' | 'pixelHeight'>,
+  still: { width: number; height: number },
+): { widthPct: number; leftPct: number; topPct: number } {
+  const frameWidth = layer.frames === undefined ? file.pixelWidth : file.pixelWidth / layer.frames;
+  const widthPct = layer.width;
+  const leftPct = point.x - (layer.anchor.x * layer.width) / 100;
+  const heightPctOfBoxHeight =
+    layer.width * (file.pixelHeight / frameWidth) * (still.width / still.height);
+  const topPct = point.y - (layer.anchor.y * heightPctOfBoxHeight) / 100;
+  return { widthPct, leftPct, topPct };
+}
 
 /**
  * A Layer's geometry over the Still's box, in percent
  * (docs/spec/ui.md, a Layer's size and place): the Layer's width is `width`
  * percent of the Still's width with its height following from the aspect ratio
  * of one frame (the file's pixel width divided by `frames` for a sprite
- * strip), and the Layer's `anchor` point sits on `at`. `leftPct` is a
- * percent of the box width, `topPct` a percent of the box height.
+ * strip), and the Layer's `anchor` point sits on `at`, or on the Drift's
+ * `from` point while it drifts (so a Layer entering the picture starts
+ * outside the box, clipped by the composition). `leftPct` is a percent of the
+ * box width, `topPct` a percent of the box height.
  */
 export function layerGeometry(
-  layer: Pick<IllustrationMotionLayer, 'at' | 'anchor' | 'width'> & { frames?: number },
+  layer: Pick<IllustrationMotionLayer, 'at' | 'anchor' | 'width' | 'drift'> & { frames?: number },
   file: Pick<IllustrationMotionLayer, 'pixelWidth' | 'pixelHeight'>,
   still: { width: number; height: number },
 ): { widthPct: number; leftPct: number; topPct: number } {
-  const frameWidth = layer.frames === undefined ? file.pixelWidth : file.pixelWidth / layer.frames;
-  const widthPct = layer.width;
-  const leftPct = layer.at.x - (layer.anchor.x * layer.width) / 100;
-  const heightPctOfBoxHeight =
-    layer.width * (file.pixelHeight / frameWidth) * (still.width / still.height);
-  const topPct = layer.at.y - (layer.anchor.y * heightPctOfBoxHeight) / 100;
-  return { widthPct, leftPct, topPct };
+  return geometryForPoint(
+    layer.drift === undefined ? layer.at : layer.drift.from,
+    layer,
+    file,
+    still,
+  );
+}
+
+function lerpPoint(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  progress: number,
+): { x: number; y: number } {
+  return { x: from.x + (to.x - from.x) * progress, y: from.y + (to.y - from.y) * progress };
+}
+
+/**
+ * A drifting anchor's point on the Still `timeSec` seconds into the shared
+ * timeline (docs/spec/ui.md, drift and timeline; t = 0 is the start of the
+ * fade): it waits at `from` until `delay` ends, then moves linearly to `to`
+ * in `duration` seconds. A one-shot Drift then holds at `to`; a looping Drift
+ * jumps back to `from` at the end of each pass and starts again at once, its
+ * `delay` applying only before the first pass.
+ */
+export function driftPosition(
+  drift: Pick<IllustrationMotionDrift, 'from' | 'to' | 'duration' | 'delay' | 'loop'>,
+  timeSec: number,
+): { x: number; y: number } {
+  const elapsed = timeSec - drift.delay;
+  if (elapsed <= 0) return { ...drift.from };
+  if (!drift.loop) {
+    if (elapsed >= drift.duration) return { ...drift.to };
+    return lerpPoint(drift.from, drift.to, elapsed / drift.duration);
+  }
+  const cycle = elapsed % drift.duration;
+  if (cycle === 0) return { ...drift.from };
+  return lerpPoint(drift.from, drift.to, cycle / drift.duration);
 }
 
 /**
@@ -94,9 +153,22 @@ export function Illustration({
   const [stillLoaded, setStillLoaded] = useState(false);
   const [stillFailed, setStillFailed] = useState(false);
   const stillRef = useRef<HTMLImageElement>(null);
+  const layerRefs = useRef<(HTMLElement | null)[]>([]);
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
+  // The Drift animation inputs of this Showing, as a stable key: the engine
+  // view rebuilds the Layer array on every render, but the declarations only
+  // change with the Showing (or the image). The key covers the Drift and the
+  // anchor and width its endpoints are computed from, so a changed endpoint
+  // restarts the animation.
+  const driftAnimKey = JSON.stringify(
+    (layers ?? []).map((layer) => ({
+      drift: layer.drift ?? null,
+      anchor: layer.anchor,
+      width: layer.width,
+    })),
+  );
 
   // A new Still restarts Motion's start conditions. A Still already in the
   // browser cache reports `complete`, since its `load` event fired before
@@ -162,6 +234,58 @@ export function Illustration({
     layers.length > 0 &&
     showingKey !== undefined;
 
+  // Drift runs on the Web Animations API from the shared timeline t = 0: the
+  // composition mounts when Motion starts (keyed by the Showing key), so an
+  // animation with `delay`, linear easing and a forwards fill waits at `from`,
+  // moves to `to` and holds there; a looping Drift repeats at once, since
+  // the delay applies only before the first pass. The effect keys on the
+  // Showing, never on the Layer array identity, so a re-render with the same
+  // key continues the Showing instead of restarting it. Freezing the timeline
+  // while the Illustration is off-screen or the tab is hidden (docs/spec/ui.md,
+  // timeline) is a follow-up: these animations keep wall-clock time.
+  useEffect(() => {
+    if (!motionReady || layers === undefined || showingKey === undefined) {
+      return;
+    }
+    const animations: Animation[] = [];
+    layers.forEach((layer, index) => {
+      if (layer.drift === undefined) return;
+      const img = layerRefs.current[index];
+      if (!img || typeof img.animate !== 'function') return;
+      const fromGeometry = geometryForPoint(layer.drift.from, layer, layer, { width, height });
+      const toGeometry = geometryForPoint(layer.drift.to, layer, layer, { width, height });
+      try {
+        animations.push(
+          img.animate(
+            [
+              { left: `${fromGeometry.leftPct}%`, top: `${fromGeometry.topPct}%` },
+              { left: `${toGeometry.leftPct}%`, top: `${toGeometry.topPct}%` },
+            ],
+            {
+              duration: layer.drift.duration * 1000,
+              delay: layer.drift.delay * 1000,
+              easing: 'linear',
+              fill: 'forwards',
+              ...(layer.drift.loop ? { iterations: Infinity } : {}),
+            },
+          ),
+        );
+      } catch {
+        // The browser refuses to animate: the Layer stays at its from point
+        // over the Still (docs/spec/ui.md, the browser refuses to animate).
+      }
+    });
+    return () => {
+      for (const animation of animations) {
+        try {
+          animation.cancel();
+        } catch {
+          // Already finished or never started; nothing to stop.
+        }
+      }
+    };
+  }, [motionReady, showingKey, driftAnimKey, width, height]);
+
   return (
     <span
       className="illustration-box"
@@ -202,6 +326,9 @@ export function Illustration({
               layer={layer}
               still={{ width, height }}
               index={index}
+              elementRef={(element) => {
+                layerRefs.current[index] = element;
+              }}
             />
           ))}
         </span>
@@ -220,11 +347,14 @@ export function MotionLayer({
   layer,
   still,
   index,
+  elementRef,
 }: {
   layer: IllustrationMotionLayer;
   still: { width: number; height: number };
   /** The Layer's position in list order (Layers have no id); disambiguates shared files. */
   index: number;
+  /** Receives the positioned element, the one a Drift animates. */
+  elementRef?: (element: HTMLElement | null) => void;
 }) {
   const geometry = layerGeometry(layer, layer, still);
   const blend = layer.blend === 'normal' ? {} : { mixBlendMode: layer.blend };
@@ -243,6 +373,7 @@ export function MotionLayer({
     return (
       <span
         key={key}
+        ref={elementRef}
         style={{
           position: 'absolute',
           width: `${geometry.widthPct}%`,
@@ -271,6 +402,7 @@ export function MotionLayer({
   return (
     <img
       key={key}
+      ref={elementRef}
       src={layer.src}
       alt=""
       draggable={false}

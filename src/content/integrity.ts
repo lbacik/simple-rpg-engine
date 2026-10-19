@@ -952,6 +952,15 @@ export type IntegrityLayerFile = {
   hash: string;
 };
 
+/** A Layer's Drift as the registry holds it: declaration with defaults applied. */
+export type IntegrityDrift = {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  duration: number;
+  delay: number;
+  loop: boolean;
+};
+
 /** One Motion Layer with its declaration (defaults applied) and its file. */
 export type IntegrityMotionLayer = {
   path: string;
@@ -963,6 +972,7 @@ export type IntegrityMotionLayer = {
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
+  drift?: IntegrityDrift;
   file: IntegrityLayerFile;
 };
 

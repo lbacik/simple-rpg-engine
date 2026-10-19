@@ -441,10 +441,10 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   const itemById = new Map(items.map((item) => [item.id, item]));
   const enemyById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
   const endingById = new Map(endings.map((ending) => [ending.id, ending]));
-  // Zod parsing applies the Motion defaults (anchor, width, blend); `at`
-  // keeps no schema default (it excludes the future `drift`), so the model
-  // centres it here. Phase 3 proved every Layer file, so the registry lookup
-  // below is total.
+  // Zod parsing applies the Motion defaults (anchor, width, blend, drift
+  // delay and loop); `at` keeps no schema default (it excludes `drift`), so
+  // the model centres it here. Phase 3 proved every Layer file, so the
+  // registry lookup below is total.
   const parsedImageById = new Map(parsedImages.map((parsed) => [parsed.id, parsed]));
   const images: IntegrityImage[] = inputs.images.map((image) => {
     const parsed = required(parsedImageById.get(image.id), `image "${image.id}"`);
@@ -462,6 +462,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
         ...(layer.frames === undefined ? {} : { frames: layer.frames }),
         ...(layer.fps === undefined ? {} : { fps: layer.fps }),
         blend: layer.blend,
+        ...(layer.drift === undefined ? {} : { drift: layer.drift }),
         file: required(fileByPath.get(layerPath), `Layer file "${layer.path}"`),
       };
     });
