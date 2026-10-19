@@ -461,6 +461,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
         width: layer.width,
         ...(layer.frames === undefined ? {} : { frames: layer.frames }),
         ...(layer.fps === undefined ? {} : { fps: layer.fps }),
+        ...(layer.flicker === undefined ? {} : { flicker: layer.flicker }),
         blend: layer.blend,
         ...(layer.drift === undefined ? {} : { drift: layer.drift }),
         file: required(fileByPath.get(layerPath), `Layer file "${layer.path}"`),

@@ -738,10 +738,10 @@ function checkImage(value: unknown, path: readonly (string | number)[], ctx: Ctx
  * `motion` with neither `layers` nor `camera`, or with an empty `layers`
  * list. `camera` arrives with its own ticket; until then a motion without
  * layers is empty. Ranges and defaults live in the Zod definitions
- * (schema/invalid-value, schema/missing-field); the flicker refinements
- * arrive with their ticket. The drift-and-at refinement and the frames/fps
- * pairing (schema/frames-fps) are checked per Layer below: JSON Schema
- * cannot express either.
+ * (schema/invalid-value, schema/missing-field); `flicker` needs no
+ * refinement (its `depth` is a required Zod key). The drift-and-at refinement
+ * and the frames/fps pairing (schema/frames-fps) are checked per Layer below:
+ * JSON Schema cannot express either.
  */
 function checkMotion(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;

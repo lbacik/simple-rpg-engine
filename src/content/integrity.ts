@@ -971,6 +971,8 @@ export type IntegrityMotionLayer = {
   frames?: number;
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
+  /** The Flicker depth, the deepest opacity dip in percent; present only when the Layer flickers. */
+  flicker?: { depth: number };
   blend: 'normal' | 'multiply' | 'screen';
   drift?: IntegrityDrift;
   file: IntegrityLayerFile;
