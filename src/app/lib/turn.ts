@@ -39,7 +39,13 @@ import type { Database } from '../../persistence/schema';
 
 export type TurnResult =
   | { ok: true; step: number }
-  | { ok: false; reason: 'not-found' | 'stale' | 'illegal' | 'ended' | 'incompatible' };
+  | { ok: false; reason: 'not-found' | 'stale' | 'ended' | 'incompatible' }
+  // Illegal carries the engine's reason code (`illegal-action` on the v2
+  // path; `illegal-action` or `stale-round` mapped siblings on v3), so the
+  // Combat adapters can redirect with `?notice=rejected&reason=` as in the
+  // Arena (the contract's "rejection returns a reason code"). Callers that
+  // only need the notice kind read `reason`.
+  | { ok: false; reason: 'illegal'; detail?: string };
 
 export async function executeTurn(
   db: Kysely<Database>,
@@ -107,7 +113,7 @@ export async function executeTurn(
         return { ok: false, reason: 'stale' };
       }
       if (v3applied.reason === 'ended') return { ok: false, reason: 'ended' };
-      return { ok: false, reason: 'illegal' };
+      return { ok: false, reason: 'illegal', detail: v3applied.reason };
     }
     const v3committed = await store.commitTurn(
       playthroughId,
@@ -156,7 +162,7 @@ export async function executeTurn(
     }
     if (applied.reason === 'stale-step') return { ok: false, reason: 'stale' };
     if (applied.reason === 'ended') return { ok: false, reason: 'ended' };
-    return { ok: false, reason: 'illegal' };
+    return { ok: false, reason: 'illegal', detail: applied.reason };
   }
   const committed = await store.commitTurn(
     playthroughId,

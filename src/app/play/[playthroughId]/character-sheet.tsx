@@ -6,13 +6,13 @@
 // module directly with react-dom/server.
 
 import type { AttributeName, Scenario } from '../../../content/model';
-import { effectiveAttributes } from '../../../engine/index';
+import { effectiveAttributes, maxHealthFor, type JourneyState } from '../../../engine/index';
 import {
   equipmentBonusSources,
   EQUIPMENT_SLOTS,
   type EquipmentSlot,
 } from '../../../engine/inventory';
-import { MAX_HEALTH, type PlaythroughState } from '../../../engine/state';
+import { MAX_HEALTH } from '../../../engine/state';
 import { en, type Catalogue } from '../../../i18n/en';
 import { formatNumber } from '../../../i18n/format';
 import type { InterfaceLanguage } from '../../../i18n/languages';
@@ -144,7 +144,7 @@ export function CharacterSheet({
   language = 'en',
 }: {
   scenario: Scenario;
-  state: PlaythroughState;
+  state: JourneyState;
   /** The current Location's name, resolved by the caller from the game view. */
   locationName: string;
   /** Interface Text: the game screen passes the current catalogue. */
@@ -154,8 +154,9 @@ export function CharacterSheet({
   const template = scenario.templatesById[state.character.templateId];
   const effective = effectiveAttributes(scenario, state);
   const sources = equipmentBonusSources(scenario, state);
-  const percent = healthPercent(state.character.health, MAX_HEALTH);
-  const low = isLowHealth(state.character.health, MAX_HEALTH);
+  const maxHealth = maxHealthFor(state);
+  const percent = healthPercent(state.character.health, maxHealth);
+  const low = isLowHealth(state.character.health, maxHealth);
   return (
     <section aria-label={catalogue.character.title} className="sheet">
       <header className="sheet-hero">
@@ -210,14 +211,14 @@ export function CharacterSheet({
             <h3>{catalogue.character.health}</h3>
             <p className="sheet-health">
               {formatNumber(language, state.character.health)}
-              <span className="meta"> / {formatNumber(language, MAX_HEALTH)}</span>
+              <span className="meta"> / {formatNumber(language, maxHealth)}</span>
             </p>
             <span
               className={low ? 'health-segments low' : 'health-segments'}
               role="img"
-              aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
+              aria-label={catalogue.character.label(state.character.health, maxHealth)}
             >
-              {Array.from({ length: MAX_HEALTH }, (_, index) => (
+              {Array.from({ length: maxHealth }, (_, index) => (
                 <span key={index} className={index < state.character.health ? 'on' : ''} />
               ))}
             </span>

@@ -200,6 +200,10 @@ export const OUTCOME_MODAL_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'test',
   'outcome',
   'state-change',
+  // The v3 Combat end frame joins the routed Outcome narration when a fight
+  // ends the step (P6 G3/G6): win, surrender and draw each present the Combat
+  // result over the destination. LOSS ends on the death Ending instead.
+  'combat-end',
 ]);
 
 export type StartPlaythroughSuccess = {

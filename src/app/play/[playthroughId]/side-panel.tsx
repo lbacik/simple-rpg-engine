@@ -25,7 +25,6 @@ import {
   type JourneyState,
 } from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
-import type { PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { playHref, type PanelId } from '@/app/lib/panel';
 import { journalEntriesText, type RenderedJournalEntry } from '@/app/lib/journal';

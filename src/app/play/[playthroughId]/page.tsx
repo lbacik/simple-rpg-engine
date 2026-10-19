@@ -5,12 +5,17 @@ import {
   onDemandScenes,
   renderNarration,
   renderStoredText,
+  isV3State,
   OUTCOME_MODAL_ENTRY_TYPES,
   illustrationView,
   view,
   visibleExits,
 } from '@/engine/index';
+import { getCombatCatalogue } from '@/i18n/combat';
 import { getCatalogue, type Catalogue } from '@/i18n/index';
+import { CommandPanel, type CommandPanelNotice } from '@/app/combat/command-panel';
+import { CommandPanelInteractive } from '@/app/combat/command-panel-interactive';
+import { parseSelection } from '@/app/combat/selection';
 import { ScenarioFallbackBadge } from '@/app/flag';
 import { getInterfaceLanguage } from '@/app/lib/language';
 import { getDatabase, PlaythroughStore } from '@/persistence/index';
@@ -50,14 +55,46 @@ export const dynamic = 'force-dynamic';
  * action redirects to, in the language current at that moment. Anything else
  * (a forged `notice` value) renders no notice.
  */
-function noticeTextFor(catalogue: Catalogue, notice: string | undefined): string | undefined {
+function noticeTextFor(
+  catalogue: Catalogue,
+  notice: string | undefined,
+  reason: string | undefined,
+): string | undefined {
   if (notice === 'stale') return catalogue.notices.stale;
   if (notice === 'unavailable') return catalogue.notices.unavailable;
+  // Combat rejections carry the engine's reason code on the URL, as in the
+  // Arena: a forged code reads back raw, never crashing.
+  if (notice === 'rejected') return getCombatCatalogue(catalogue.code).notices.rejected(reason ?? '');
   return undefined;
 }
 
 /** Query helpers shared by the compatible and incompatible game screens. */
 
+/** The selection links the command panel navigates by: never game state. */
+function initialCombatQuery(params: Record<string, string | string[] | undefined>): Record<string, string> {
+  const query: Record<string, string> = {};
+  for (const [key, value] of Object.entries(params)) {
+    const single = Array.isArray(value) ? value[0] : value;
+    if (single !== undefined) query[key] = single;
+  }
+  return query;
+}
+
+/** The transient Combat rejection notice, rendered from its code like the Arena's. */
+function combatPanelNotice(
+  notice: string | undefined,
+  reason: string | undefined,
+  catalogue: Catalogue,
+): CommandPanelNotice | null {
+  if (notice === 'stale') return { kind: 'stale' };
+  if (notice === 'rejected') {
+    return {
+      kind: 'rejected',
+      text: getCombatCatalogue(catalogue.code).notices.rejected(reason ?? ''),
+    };
+  }
+  return null;
+}
 
 export default async function PlayPage({
   params,
@@ -66,22 +103,29 @@ export default async function PlayPage({
   params: Promise<{ playthroughId: string }>;
   searchParams: Promise<{
     notice?: string;
+    reason?: string;
     panel?: string;
     tab?: string;
     unknown?: string;
     seen?: string;
     item?: string;
+    stance?: string;
+    action?: string;
+    target?: string;
+    perspective?: string;
   }>;
 }) {
   const { playthroughId } = await params;
+  const query = await searchParams;
   const {
     notice,
+    reason,
     panel: panelParam,
     tab: legacyTab,
     unknown,
     seen: seenParam,
     item: itemParam,
-  } = await searchParams;
+  } = query;
   // The open side-panel modal. `?tab=` is the previous name of this parameter
   // and is still honoured so older links land on the same panel.
   const panel = parsePanel(panelParam ?? legacyTab);
@@ -96,7 +140,7 @@ export default async function PlayPage({
   // it is read; Scenario text stays as presented with the entry's own `lang`.
   const language = await getInterfaceLanguage();
   const catalogue = getCatalogue(language);
-  const noticeText = noticeTextFor(catalogue, notice);
+  const noticeText = noticeTextFor(catalogue, notice, reason);
   const sessionHash = await getSessionHash();
   const store = new PlaythroughStore(getDatabase());
   const resolved = await resolvePlaythrough(getDatabase(), getScenario, playthroughId, sessionHash);
@@ -396,6 +440,97 @@ export default async function PlayPage({
       </span>
     </header>
   );
+
+  // A running Combat replaces the reading column with the command panel
+  // (Combat MVP 1.0, P6 G1): the hero fights Round by Round from the authored
+  // arrangement, while the side panel stays visible with map travel disabled
+  // and the inventory locked to `in-combat` (G5). Selection links never touch
+  // game state; Confirm and Surrender post to the Combat routes. There is no
+  // restart in a Playthrough (G5), so the panel renders without a footer. A
+  // FINISHED Combat never persists (the engine clears it when the fight ends),
+  // but reads defensively through the server panel if one ever does.
+  if (isV3State(state) && state.activeCombat !== null) {
+    const combat = state.activeCombat.combat;
+    const combatBase = `/play/${playthrough.id}`;
+    const encounter = scenario.encountersById[state.activeCombat.encounterId];
+    const participantNames = new Map(
+      (encounter?.participants ?? []).map((participant) => [
+        participant.id,
+        participant.enemy.name,
+      ]),
+    );
+    // Serializable display names by actor id: the Character's name for the
+    // hero, the Scenario participant name by `ref` for enemies, the actor id
+    // when content is gone. Functions cannot cross the server/client boundary,
+    // so the interactive panel takes these names.
+    const combatNames: Record<string, string> = {};
+    for (const actor of combat.actors) {
+      combatNames[actor.id] =
+        actor.role === 'hero'
+          ? state.character.name
+          : (participantNames.get(actor.ref ?? '') ?? actor.id);
+    }
+    const combatSelection = parseSelection(query, combat);
+    const combatNotice = combatPanelNotice(notice, reason, catalogue);
+    return (
+      <main>
+        {chronicleHead}
+        <div className="game">
+          <article className="reading-card">
+            {noticeText ? (
+              <p className="notice" role="status">
+                {noticeText}
+              </p>
+            ) : null}
+            {combat.phase === 'FINISHED' ? (
+              <CommandPanel
+                state={combat}
+                language={language}
+                selection={combatSelection}
+                basePath={combatBase}
+                confirmAction={`${combatBase}/combat/confirm`}
+                surrenderAction={`${combatBase}/combat/surrender`}
+                getActorName={(actor) => combatNames[actor.id] ?? actor.id}
+                notice={combatNotice}
+              />
+            ) : (
+              <CommandPanelInteractive
+                state={combat}
+                language={language}
+                initialQuery={initialCombatQuery(query)}
+                basePath={combatBase}
+                confirmAction={`${combatBase}/combat/confirm`}
+                surrenderAction={`${combatBase}/combat/surrender`}
+                confirmFields={{ expectedStep: String(playthrough.step) }}
+                names={combatNames}
+                notice={combatNotice}
+              />
+            )}
+          </article>
+          <SidePanel
+            scenario={scenario}
+            state={state}
+            playthroughId={playthrough.id}
+            step={playthrough.step}
+            panel={panel}
+            notice={notice}
+            noticeText={noticeText}
+            gameView={gameView}
+            showUnknownExits={showUnknownExits}
+            toggleHref={mapToggle}
+            canTravel={false}
+            journalTotal={modalJournal.total}
+            journalEntries={modalJournal.entries}
+            journalNextCursor={modalJournal.nextCursor}
+            seen={preservedSeen}
+            selectedItem={selectedItem}
+            catalogue={catalogue}
+            language={language}
+          />
+        </div>
+      </main>
+    );
+  }
 
   // The intro modal over the starting Location: the base view stays the
   // Scenario's starting Location (name, description, Illustration) with no

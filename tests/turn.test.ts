@@ -121,7 +121,7 @@ describe('executeTurn', () => {
         { kind: 'travel', targetLocationId: 'cave', expectedStep: 0 },
         rng,
       );
-      expect(result).toEqual({ ok: false, reason: 'illegal' });
+      expect(result).toEqual({ ok: false, reason: 'illegal', detail: 'illegal-action' });
       const store = new PlaythroughStore(db);
       expect((await store.findById(playthroughId))?.step).toBe(0);
       expect((await store.listJournal(playthroughId)).map((e) => e.type)).toEqual(['intro']);

@@ -82,7 +82,9 @@ export function validateStoredState(value: unknown): PlaythroughState | undefine
 export function safeCharacterName(rawState: unknown, fallback: string): string {
   const parsed = validateStoredState(rawState);
   if (parsed !== undefined) return parsed.character.name;
-  const v3 = readPlaythroughV3Document(rawState);
+  // The v3 attempt verifies frozen plans like every other read path (S2): a
+  // document the game screen treats as invalid never supplies a name here.
+  const v3 = readPlaythroughV3Document(rawState, { verifyFrozenPlans: verifyStoredFrozenPlans });
   if (v3.ok) return v3.state.character.name;
   const record = (rawState ?? {}) as Record<string, unknown>;
   const character = record.character as Record<string, unknown> | undefined;
