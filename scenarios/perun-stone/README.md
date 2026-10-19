@@ -43,6 +43,19 @@ An alternative route reaches the pond through the forest: Jagna's `ask-forest`, 
 
 The Tests are shortcuts: Presence (hard) to talk the Noon Wraith past noon, Wits (ordinary) to cross the forest maze, and Presence (hard) to win the Leszy over with a promise. Both Encounters are optional. The Leszy's wolf is an ordinary duel, and the utopiec is a boss duel comparable to the Barrow Wight.
 
+## Encounters (content format v2, #184)
+
+| Encounter | Participant (profile) | Start | Role |
+|---|---|---|---|
+| `wolf-fight` | Leszy's Wolf (raider) | far | optional duel |
+| `utopiec-fight` | Utopiec (brute) | melee | boss duel |
+
+Profiles follow the #184 Q11 table (leszy-wolf → raider; utopiec →
+brute). `startRange` values follow the Q12 table; all `power` and
+`phaseOffset` values are 0 (no Q13 tuning was needed). Both Encounters
+carry required `surrender` and `draw` Outcomes (draft text, pending
+driving-developer review).
+
 ## Endings
 
 | Ending | Requirement |

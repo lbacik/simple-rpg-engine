@@ -143,6 +143,26 @@ describe('playability phase: reference fixtures', () => {
     if (result.ok) expect(result.warnings).toEqual([]);
   });
 
+  // P3 C4: every shipped Scenario loads with 0 errors and 0 warnings, with
+  // no rejected Translations. The CI validates the same five directories.
+  it('loads all five shipped Scenarios with 0 errors and 0 warnings', () => {
+    const shipped = [
+      'scenarios/whispering-woods',
+      'scenarios/perun-stone',
+      'scenarios/the-drowned-ledger',
+      'scenarios/the-ember-pass',
+      'scenarios/the-frost-cairn',
+    ];
+    expect(shipped).toHaveLength(5);
+    for (const name of shipped) {
+      const result = loadScenario(path.join(repoRoot, name));
+      expect(result.ok, `${name} loads`).toBe(true);
+      if (!result.ok) continue;
+      expect(result.warnings, `${name} warnings`).toEqual([]);
+      expect(result.rejectedTranslations, `${name} rejected Translations`).toEqual([]);
+    }
+  });
+
   it('loads the minimal base with no diagnostics', () => {
     expect(succeed(freshBase('base-clean'))).toEqual([]);
   });

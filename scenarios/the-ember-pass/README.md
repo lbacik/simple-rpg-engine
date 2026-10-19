@@ -15,7 +15,17 @@ The package contains 9 Locations, 21 Scenes, 10 Enemies, 14 Encounters (6 agains
 
 ## Encounters and balance
 
-All figures come from a Monte Carlo run of the real engine (`applyAction`): 1,500 fights per cell, starting at full Health, with a reasonable heuristic player who never escapes. "Late gear" means the upgrades a player usually holds by then (Highland Blade, Deepdelver Mail, Hearth Amulet). The tiers follow [mechanics.md](../../docs/spec/mechanics.md#balance-targets).
+Content format v2 (#184): enemies bind the fixed Combat profiles —
+ridge-wolf, cinder-raider, tunnel-crawler, deep-ghoul and ash-hound are
+`raider`; stone-troll, clan-brute and gharra are `brute`; clan-bowman and
+ember-shaman are `archer`. `startRange` values follow the Q12 table (far
+stays far; near + non-archer becomes melee, near + archer stays near);
+`power` is non-zero only for gharra (2) per Q13, and no `phaseOffset`
+tuning was needed. Every Encounter carries required `surrender` and `draw`
+Outcomes (draft text, pending driving-developer review).
+
+All figures below come from a Monte Carlo run of the retired tactical engine
+(`applyAction`): 1,500 fights per cell, starting at full Health, with a reasonable heuristic player who never escapes. "Late gear" means the upgrades a player usually holds by then (Highland Blade, Deepdelver Mail, Hearth Amulet). The tiers follow [mechanics.md](../../docs/spec/mechanics.md#balance-targets).
 
 | Encounter | Participants | Start | Sellsword | Ranger | Warden | Witch | Role |
 |---|---|---|---|---|---|---|---|

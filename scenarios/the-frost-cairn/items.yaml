@@ -1,10 +1,11 @@
+# Equipment keeps only slot and Attribute bonus: weapon `damage`/`reach`
+# are retired in format v2 (#184 Q1). The broad-axe becomes flavour only.
+
 - id: bearded-axe
   kind: equipment
   name: Bearded Axe
   description: A balanced woodman's axe with a hooked beard, sturdy in the shield-wall.
   slot: weapon
-  reach: melee
-  damage: 3
   bonus: might
 
 - id: broad-axe
@@ -12,16 +13,12 @@
   name: Heavy Broad-Axe
   description: A massive two-handed iron head that cleaves shields and bone with terrifying weight.
   slot: weapon
-  reach: melee
-  damage: 4
 
 - id: yew-bow
   kind: equipment
   name: Fjord Yew Bow
   description: A stiff coastal bow carved from seasoned yew, strung with waxed linen.
   slot: weapon
-  reach: ranged
-  damage: 2
   bonus: agility
 
 - id: seax-knife
@@ -29,8 +26,6 @@
   name: Rune-Carved Seax
   description: A heavy single-edged fighting knife etched with protective knots along the spine.
   slot: weapon
-  reach: melee
-  damage: 2
   bonus: wits
 
 - id: frost-cleaver
@@ -38,8 +33,6 @@
   name: Frost-Cleaver
   description: An ancient blade recovered from the burial mound, biting cold to the touch.
   slot: weapon
-  reach: melee
-  damage: 4
   bonus: might
   magic: true
 
@@ -102,30 +95,33 @@
   bonus: presence
   magic: true
 
+# Consumable `heal` is rescaled by the #184 Q6 rule (round(v × 10/3)):
+# 3 → 10, 5 → 17, 8 → 27, 2 → 7.
+
 - id: tallow-salve
   kind: consumable
   name: Tallow Salve
   description: A pot of rendered fat, crushed wintergreen and pine resin to soothe raw wounds and frostbite.
-  heal: 3
+  heal: 10
 
 - id: spiced-mead
   kind: consumable
   name: Spiced Winter Mead
   description: Sweet fermented honey warmed with cloves and mountain bark, restoring fire to numb limbs.
-  heal: 5
+  heal: 17
 
 - id: runic-tincture
   kind: consumable
   name: Elder Runic Tincture
   description: A bitter brew distilled by the runewives from moss collected beneath ancient menhirs.
-  heal: 8
+  heal: 27
   magic: true
 
 - id: smoked-herring
   kind: consumable
   name: Smoked Fjord Herring
   description: Dried salted fish wrapped in dock leaves, tough chewing but full of salt and fat.
-  heal: 2
+  heal: 7
 
 - id: hearth-rune
   kind: key

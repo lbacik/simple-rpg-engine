@@ -1,64 +1,30 @@
+# Enemy catalog: reusable kinds of opponents, placed through Encounters.
+
+# Profiles follow the #184 Q11 table: fen-hound → raider; draugr-berserker and
+# jarl-harek → brute; draugr-sentry → sentinel; frost-archer → archer. All
+# statistics come from the profile table.
+
 - id: fen-hound
   name: Shore Fen-Hound
   description: A gaunt, snow-crusted hound with wild amber eyes and fangs that snap in ravenous packs.
-  attributes:
-    might: 1
-    agility: 2
-    wits: 0
-    presence: 0
-  health: 6
-  damage: 2
-  reach: melee
-  behaviour: steady
+  profile: raider
 
 - id: draugr-sentry
   name: Draugr Sentry
   description: A desiccated warrior in rusted chainmail, wielding an ancient notched spear with cold fury.
-  attributes:
-    might: 2
-    agility: 1
-    wits: 1
-    presence: 0
-  health: 9
-  damage: 3
-  reach: melee
-  behaviour: steady
+  profile: sentinel
 
 - id: frost-archer
   name: Draugr Frost-Archer
   description: A withered corpse clutching a horn bow, loosing bone-tipped arrows out of the howling dark.
-  attributes:
-    might: 1
-    agility: 2
-    wits: 1
-    presence: 0
-  health: 7
-  damage: 2
-  reach: ranged
-  behaviour: steady
+  profile: archer
 
 - id: draugr-berserker
   name: Draugr Berserker
   description: A towering warrior whose skin is grey as sea-slate, brandishing a two-handed iron war axe.
-  attributes:
-    might: 3
-    agility: 1
-    wits: 0
-    presence: 1
-  health: 14
-  damage: 4
-  reach: melee
-  behaviour: heavy
+  profile: brute
 
 - id: jarl-harek
   name: Jarl Harek Iron-Tooth
   description: The ancient sea-king of the barrow, crowned with frosted bone and wreathed in freezing grave-mist.
-  attributes:
-    might: 3
-    agility: 2
-    wits: 2
-    presence: 2
-  health: 22
-  damage: 4
-  reach: melee
-  behaviour: heavy
+  profile: brute

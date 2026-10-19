@@ -5,15 +5,10 @@ text: |
 
   Na potężnym kamiennym tronie zasiada jarl Harek Żelaznozęby. Korona ze zmrożonej kości spoczywa na jego rogatej czaszce, a błękitny szron dymi ze spojeniach jego czernionej kolczugi. Na jego zamarzniętych kolanach spoczywa jarząca się Runa Ogniska ze Skallavik.
 choices:
-  - id: challenge-with-astrid
-    text: Wystąp naprzód, gdy Astrid zaczyna śpiewać pieśni spętania.
+  - id: challenge-harek
+    text: Dobądź broni i rusz ku tronowi.
     outcome:
       text: |
-        Głos Astrid wznosi się pod lodowe sklepienie niczym srebrne dzwony, tkając pradawne wersety spętania. Cienie niewolników flankujących podwyższenie wrzeszczą i rozwiewają się w szarą mgłę!
+        Jarl Harek podnosi się z oszronionego tronu, unosząc potężny zmrożony miecz, który trzeszczy lodowymi błyskawicami. Z lodowatego cienia wyłania się nieumarły włócznik, by walczyć u jego boku — a u twego boku Astrid staje mocno, gotowa osłaniać twoją flankę.
 
-        Jarl Harek podnosi się z tronu w samotności, unosząc potężny zmrożony miecz, który trzeszczy lodowymi błyskawicami!
-  - id: challenge-alone
-    text: Dobądź broni i rusz samotnie ku tronowi.
-    outcome:
-      text: |
-        Bez świętej pieśni, która powstrzymałaby zmarłych, nieumarły włócznik wyłania się z lodowatego cienia, by walczyć u boku jarla Hareka!
+        Tym razem żadna pieśń spętania nie rozproszy straży. Rozstrzygnie stal.

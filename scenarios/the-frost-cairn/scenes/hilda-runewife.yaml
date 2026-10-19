@@ -24,11 +24,11 @@ choices:
     text: Ask Hilda to dress your wounds with boiled cedar bark.
     when:
       health:
-        atMost: 9
+        atMost: 30
     outcome:
       text: |
         Her hands work swiftly with hot linen and sharp-smelling salve, soothing your cuts and drawing out the frostbite.
       effects:
-        - heal: 4
+        - heal: 13
   - id: leave-hilda
     text: Thank the runewife and step back.

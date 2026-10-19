@@ -4,9 +4,16 @@
   victory:
     text: |
       Bestie leżą bez ruchu na zmarzniętym żwirze. Wśród szczątków wraku znajdujesz róg korzennego miodu zimowego.
-  escape:
+  surrender:
     text: |
-      Cofasz się po oślizgłych od piany kamieniach, aż ogary tracą zainteresowanie w huku fal.
+      Przestajesz biec, kucasz nisko na żwirze i trwasz w bezruchu. Ogary
+      zataczają krąg, węszą morski wiatr i uznają, że nie jesteś wart zachodu.
+      Wracają truchtem za drakkar.
+  draw:
+    text: |
+      Wycofujesz się krok po kroku po oślizgłych od piany kamieniach, z bronią
+      w górze, nie odwracając się. Ogary odprowadzają cię do linii wody, po
+      czym dają spokój i wracają do wraku.
 
 - id: ridge-sentry
   text: |
@@ -14,9 +21,16 @@
   victory:
     text: |
       Draugr rozsypuje się w suchy szron i zardzewiałe żelazo. W jego sparciałej sakwie znajdujesz słoik maści łojowej.
-  escape:
+  surrender:
     text: |
-      Staczasz się po zaśnieżonym zboczu pod osłonę ugiętych od wiatru sosen.
+      Upuszczasz broń w śnieg i cofasz się w dół zbocza z pustymi dłońmi.
+      Strażnik patrzy, jak odchodzisz, z opuszczoną włócznią — zmarli trzymają
+      grań, a ty chętnie im ją zostawiasz.
+  draw:
+    text: |
+      Ustępujesz w dół ośnieżonego zbocza, trzymając między sobą a nim
+      ugięte od wiatru sosny, aż strażnik zatrzymuje się na skraju lasu.
+      Żadne z was nie idzie dalej; grań zostaje jego, zbocze twoje.
 
 - id: gate-guards
   text: |
@@ -24,9 +38,16 @@
   victory:
     text: |
       Oba trupy rozsypują się w zimny proch na głazach progu. Odsunięto ciężką kamienną zasuwę i zdejmujesz klucz smoczego splotu ze zardzewiałego naszyjnika.
-  escape:
+  surrender:
     text: |
-      Kościane strzały grzechoczą o kamienie, gdy wycofujesz się w dół ośnieżonej ścieżki na grani.
+      Składasz broń na kamieniach progu i wycofujesz się w dół zbocza
+      z pustymi dłońmi. Kościane strzały grzechoczą krótko u twoich pięt
+      i milkną — zmarli trzymają bramę, a ty chętnie im ją zostawiasz.
+  draw:
+    text: |
+      Wycofujesz się w dół ośnieżonej ścieżki na grani, trzymając menhiry
+      między sobą a łukiem, aż strzały przestają grzechotać o kamienie.
+      Nikt nie idzie za tobą; brama zostaje ich.
 
 - id: gate-sentry-lone
   text: |
@@ -34,9 +55,15 @@
   victory:
     text: |
       Włócznik pada. Zdejmujesz rygiel z wrót przed powrotem łucznika i odpinasz klucz smoczego splotu z pasa wartownika.
-  escape:
+  surrender:
     text: |
-      Rzucasz się w tył pod cień menhirów, podczas gdy strażnik tupie ciężko po śniegu.
+      Upuszczasz broń i turlasz się w cień menhirów z pustymi dłońmi.
+      Strażnik tupie ciężko po śniegu i trzyma bramę — nie opuści jej,
+      a ty go o to nie prosisz.
+  draw:
+    text: |
+      Odrywasz się i cofasz w cień menhirów z gardą w górze, aż strażnik
+      zatrzymuje się przy kamieniach bramy. On trzyma wrota; ty trzymasz ścieżkę.
 
 - id: gallery-patrol
   text: |
@@ -44,9 +71,16 @@
   victory:
     text: |
       Nieumarli z łomotem uderzają o posadzkę. W otwartej niszy ściennej odkrywasz grób dawnego wojownika, a w nim pancerz z grobowego srebra oraz flaszę starorunicznej nalewki.
-  escape:
+  surrender:
     text: |
-      Wskakujesz do pustej bocznej komory, dopóki szuranie żelaznych butów nie ucichnie w mroku.
+      Gasisz światło, przylegasz płasko do pustej bocznej komory i przestajesz
+      się ruszać. Szuranie żelaznych butów przechodzi w mrok — galeria
+      zatrzymuje swój patrol, a ty zachowujesz życie.
+  draw:
+    text: |
+      Wskakujesz do pustej bocznej komory i bronisz wejścia z plecami przy
+      kamieniu, aż szuranie żelaznych butów cichnie. Patrol odchodzi; ty
+      wymykasz się tą samą drogą, którą przyszedłeś.
 
 - id: crevice-skulker
   text: |
@@ -54,9 +88,16 @@
   victory:
     text: |
       Łucznik spada z półki skalnej, koziołkując w spienione morze poniżej. Na jego opuszczonym stanowisku znajdujesz srebrne pióro kruka.
-  escape:
+  surrender:
     text: |
-      Przylegasz płasko do zamarzniętej ściany skalnej, dopóki świst strzał nie ustanie.
+      Przylegasz płasko do zamarzniętej ściany skalnej z opuszczoną bronią,
+      dopóki świst strzał nie ustanie. Półka zatrzymuje swego łucznika;
+      ty zatrzymujesz dno szczeliny.
+  draw:
+    text: |
+      Posuwasz się wzdłuż zamarzniętej ściany z falami za plecami, poza
+      czystą linią strzału, aż łucznik traci cierpliwość i wraca do swej
+      warty nad falami.
 
 - id: shrine-berserker
   text: |
@@ -64,19 +105,16 @@
   victory:
     text: |
       Olbrzym zwala się w czarną wodę sadzawki z ogłuszającym rozbryzgiem. Astrid wzdycha z ulgą ze swych okowów na kamiennym ołtarzu.
-  escape:
+  surrender:
     text: |
-      Robisz unik pod miażdżącym ciosem topora i umykasz z powrotem w ociekający wodą tunel.
-
-- id: harek-duel
-  text: |
-    W sklepionej lodem komorze grobowej jarl Harek wstaje ze swego kamiennego tronu. Pieśń spętania śpiewana przez Astrid niesie się echem, odstraszając pomniejszych niewolników. Król mórz schodzi z podwyższenia, by zmierzyć się z tobą sam na sam.
-  victory:
+      Rzucasz broń w czarną wodę i umykasz z powrotem w ociekający wodą tunel
+      z pustymi dłońmi. Berserk trzyma ołtarz i swą jeńczynię — nie idzie
+      za tobą, a ty go o to nie prosisz.
+  draw:
     text: |
-      Mroźna korona Hareka rozpryskuje się po kamiennej posadzce. Pradawny władca draugrów rozwiewa się w lodowatą parę, pozostawiając jarzącą się Runę Ogniska na strzaskanym tronie.
-  escape:
-    text: |
-      Wyskakujesz w tył przez lodowy opar, gdy oszronione ostrze Hareka krzesze iskry z kamienia. Wycofujesz się do galerii, by złapać oddech.
+      Robisz unik pod miażdżącym ciosem topora i cofasz się w ociekający wodą
+      tunel, trzymając przewężenie, aż ryk cichnie. Świątynia zostaje jego;
+      tunel zostaje twój.
 
 - id: harek-and-guard
   text: |
@@ -84,6 +122,13 @@
   victory:
     text: |
       Mroźna korona Hareka rozpryskuje się po kamiennej posadzce. Pradawny władca draugrów rozwiewa się w lodowatą parę, pozostawiając jarzącą się Runę Ogniska na strzaskanym tronie.
-  escape:
+  surrender:
     text: |
-      Przedzierasz się przez oślepiający lodowy dym, podczas gdy żelazne ostrza szczękają za twoimi plecami, i uciekasz do galerii grobowej.
+      Wbijasz broń w szron i klękasz tak, by obaj to widzieli. Harek mierzy
+      cię długim, zmrożonym spojrzeniem, po czym wraca na tron — klęczący wróg
+      to żaden wróg, a zmarli mają całą zimę. Wychodzisz z grobowca żywy.
+  draw:
+    text: |
+      Przedzierasz się przez oślepiający lodowy dym, trzymając strzaskane
+      filary między sobą a ich ostrzami, i biegniesz do galerii. Harek
+      puszcza cię wolno; tron to nagroda, a ty ją zostawiłeś.

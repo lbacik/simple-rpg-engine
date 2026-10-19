@@ -1,0 +1,8 @@
+# Companion catalog (#184 Q8, Q14). Astrid is the only Companion: her role
+# in the fiction is guarding your flank, which is Cover, so she binds the
+# `party-sentinel` profile.
+
+- id: astrid
+  name: Astrid the Skald
+  description: A captive skald whose verses bind the restless dead.
+  profile: party-sentinel

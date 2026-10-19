@@ -233,7 +233,16 @@ describe('buildInitialCombatState acceptance matrix', () => {
 
   it('passes startCombat for every shipped v2 Encounter with and without each Companion', () => {
     const repoRoot = path.resolve(__dirname, '..');
-    for (const name of ['tests/fixtures/scenarios/two-bridges', 'scenarios/whispering-woods']) {
+    // P3 C5: every Encounter in all five shipped Scenarios, built with no
+    // Companion and with each party profile, passes startCombat.
+    for (const name of [
+      'tests/fixtures/scenarios/two-bridges',
+      'scenarios/whispering-woods',
+      'scenarios/perun-stone',
+      'scenarios/the-drowned-ledger',
+      'scenarios/the-ember-pass',
+      'scenarios/the-frost-cairn',
+    ]) {
       const result = loadScenario(path.join(repoRoot, name));
       expect(result.ok, `${name} loads`).toBe(true);
       if (!result.ok) continue;

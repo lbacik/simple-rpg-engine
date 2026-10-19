@@ -7,7 +7,7 @@ A bitter, unnatural rime-frost creeps down from the sea cliffs of Skallavik. Las
 The package contains:
 - **8 Locations** with full Euclidean map coordinates
 - **19 Scenes** (triggered on-enter, on-demand, and follow-on scenes)
-- **5 Enemies** and **9 Encounters** (duels and multi-participant pairs)
+- **5 Enemies** and **8 Encounters** (duels and multi-participant pairs), plus the Companion `astrid`
 - **22 Items** (weapons, outfits, talismans, consumables, and quest keys)
 - **4 Character Templates** (Sworn Huscarl, Fjord Scout, Rune-Skald, Bear-Shirt)
 - **4 Endings** (2 victory, 2 defeat including the required death ending)
@@ -37,8 +37,7 @@ The package contains:
    - In the flooded shrine (`sunken-shrine`), a giant draugr berserker prepares to execute Astrid (`shrine-pool`). Playing her lyre stuns the monster before combat. Freeing her (`astrid-rescue`) grants her assistance: she will sing ancient binding verses in the final confrontation!
 6. **The Sepulchre of Jarl Harek (`jarl-barrow`):**
    - Unlocked using the Dragon-Coil Key.
-   - If Astrid was rescued, her sacred binding song suppresses Harek's thralls, allowing a one-on-one duel with the Sea-King (`harek-duel`).
-   - If Astrid was not rescued, Harek is aided by an undead spearguard (`harek-and-guard`).
+   - A single fight against Harek and an undead spearguard (`harek-and-guard`). Freeing Astrid (`astrid-rescue`) makes her join as the Companion `astrid` (`party-sentinel`); she fights alongside you instead of singing the guard away (the old `harek-duel` binding-song variant is removed in format v2).
    - Defeating Harek awards the Hearth-Rune (`sepulchre-victory`).
 7. **The Collapse & Endings (`cairn-collapse`):**
    - Taking the Hearth-Rune collapses the barrow. Sprint to safety with Astrid (`cairn-sealed`) or dive through the rubble alone (`frost-broken`).
@@ -47,17 +46,30 @@ The package contains:
 
 ## Encounters & Combat
 
-| Encounter | Enemy / Participants | Range | Role |
+| Encounter | Participants (profile) | Start | Role |
 |---|---|---|---|
-| `shore-wolves` | 2 × Shore Fen-Hound | far | Strand ambush; avoidable via herring or Presence |
-| `ridge-sentry` | Draugr Sentry | near | Ridge guard; avoidable via Agility sneak |
-| `gate-guards` | Draugr Sentry + Draugr Frost-Archer | far | Frontal gate assault |
-| `gate-sentry-lone` | Draugr Sentry | near | Gate sentry after luring archer away |
-| `gallery-patrol` | 2 × Draugr Sentry | near | Crypt patrol; avoidable via Agility sneak |
-| `crevice-skulker` | Draugr Frost-Archer | far | Sea-fissure ledge sniper |
-| `shrine-berserker` | Draugr Berserker | near | Mini-boss guarding Astrid; stunned with lyre |
-| `harek-duel` | Jarl Harek Iron-Tooth | far | Boss duel (with Astrid singing binding verses) |
-| `harek-and-guard` | Jarl Harek + Draugr Sentry | far | Penalty boss fight if Astrid was not rescued |
+| `shore-wolves` | 2 × Shore Fen-Hound (raider) | far, far | Strand ambush; avoidable via herring or Presence |
+| `ridge-sentry` | Draugr Sentry (sentinel) | melee | Ridge guard; avoidable via Agility sneak |
+| `gate-guards` | Draugr Sentry (sentinel) + Draugr Frost-Archer (archer) | far, far | Frontal gate assault |
+| `gate-sentry-lone` | Draugr Sentry (sentinel) | melee | Gate sentry after luring archer away |
+| `gallery-patrol` | 2 × Draugr Sentry (sentinel) | melee, melee | Crypt patrol; avoidable via Agility sneak |
+| `crevice-skulker` | Draugr Frost-Archer (archer) | far | Sea-fissure ledge sniper |
+| `shrine-berserker` | Draugr Berserker (brute, power 1) | melee | Mini-boss guarding Astrid; stunned with lyre |
+| `harek-and-guard` | Jarl Harek (brute, power 2) + Draugr Sentry (sentinel) | far, far | Boss fight; Astrid fights alongside as Companion when rescued |
+
+Profiles follow the #184 Q11 table (fen-hound → raider; draugr-berserker
+and jarl-harek → brute; draugr-sentry → sentinel; frost-archer → archer).
+`startRange` values follow the Q12 table (far stays far; near +
+non-archer becomes melee). `power` is non-zero only for the berserker (1)
+and jarl-harek (2) per Q13; no `phaseOffset` tuning was needed.
+
+**Companion:** Astrid is the Companion `astrid` (`party-sentinel`).
+Freeing her (`astrid-rescue/free-astrid`) adds `companion-join: astrid`
+alongside the kept `astrid-rescued` flag and a rescaled heal (3 → 10).
+`cairn-collapse/escape-with-astrid` requires `{companion: astrid}`, so a
+slain Astrid cannot "escape" the cairn. Every Encounter carries required
+`surrender` and `draw` Outcomes (draft text, pending driving-developer
+review).
 
 ---
 

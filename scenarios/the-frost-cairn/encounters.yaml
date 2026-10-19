@@ -1,10 +1,21 @@
+# Encounter catalog: named placements of Enemies.
+# Each has opening narration, required surrender and draw Outcomes (both
+# inherit the old escape move) and an optional victory Outcome. Surrender and
+# draw texts are drafts for human review in P3b (#235). startRanges follow
+# the #184 Q12 table (far stays far; near + non-archer becomes melee,
+# near + archer stays near). `power` is non-zero only for the berserker (1)
+# and jarl-harek (2) per Q13. The `harek-duel` Encounter is removed per Q8:
+# Astrid fights alongside as the Companion `astrid` instead of singing the
+# guard away.
+
 - id: shore-wolves
   participants:
     - id: hound-a
       enemy: fen-hound
+      startRange: far
     - id: hound-b
       enemy: fen-hound
-  startRange: far
+      startRange: far
   text: |
     Two gaunt shore-hounds break from behind a frost-shattered longboat, snapping with yellow fangs.
   victory:
@@ -13,14 +24,22 @@
     effects:
       - set-flag: wolves-cleared
       - give-item: { item: spiced-mead }
-  escape:
+  surrender:
     text: |
-      You scramble backward onto the spray-slick stones until the hounds lose interest in the surf.
+      You stop running, crouch low on the shingle and keep still. The hounds
+      circle once, sniff the surf wind, and decide you are more trouble than
+      driftwood carrion. They trot back behind the longboat.
+    move: fjord-strand
+  draw:
+    text: |
+      You back away step by step across the spray-slick stones, weapon up,
+      never turning. The hounds pace you to the water's edge, then give up
+      and return to the wreck.
     move: fjord-strand
 
 - id: ridge-sentry
   enemy: draugr-sentry
-  startRange: near
+  startRange: melee
   text: |
     A withered shape in frozen mail steps out from the stunted pines, lowering an ancient spear.
   victory:
@@ -29,16 +48,25 @@
     effects:
       - set-flag: ridge-scouted
       - give-item: { item: tallow-salve }
-  escape:
+  surrender:
     text: |
-      You tumble down the snowy slope into the shelter of the wind-bent pines.
+      You drop your weapon in the snow and back downhill with open hands. The
+      sentry watches you go, spear lowered — the dead hold the ridge, and you
+      are content to leave it to them.
+    move: howling-ridge
+  draw:
+    text: |
+      You give ground down the snowy slope, keeping the wind-bent pines
+      between you, until the sentry stops at the treeline. Neither of you
+      follows; the ridge stays his, the slope stays yours.
     move: howling-ridge
 
 - id: gate-guards
   participants:
     - enemy: draugr-sentry
+      startRange: far
     - enemy: frost-archer
-  startRange: far
+      startRange: far
   text: |
     Before the cavernous mouth of the cairn, two undead sentinels guard the stones: one with spear raised, the other drawing a frost-glazed bow.
   victory:
@@ -48,14 +76,22 @@
       - set-flag: gate-opened
       - set-flag: cairn-key-found
       - give-item: { item: cairn-key }
-  escape:
+  surrender:
     text: |
-      Bone arrows clatter against stone as you retreat down the snowy ridge path.
+      You lay your weapon on the threshold stones and retreat downhill with
+      open hands. Bone arrows clatter short at your heels and stop — the dead
+      hold the gate, and you are content to leave it to them.
+    move: barrow-threshold
+  draw:
+    text: |
+      You fall back down the snowy ridge path, keeping the monoliths between
+      you and the bow, until the shafts stop clattering on stone. Nobody
+      follows; the gate stays theirs.
     move: barrow-threshold
 
 - id: gate-sentry-lone
   enemy: draugr-sentry
-  startRange: near
+  startRange: melee
   text: |
     Having lured away the archer with a thrown stone, you confront the lone spearguard at close quarters before the stone gate.
   victory:
@@ -65,18 +101,26 @@
       - set-flag: gate-opened
       - set-flag: cairn-key-found
       - give-item: { item: cairn-key }
-  escape:
+  surrender:
     text: |
-      You roll backward into the shadow of the monoliths while the sentry stamps on the snow.
+      You drop your weapon and roll backward into the shadow of the
+      monoliths with open hands. The sentry stamps the snow and holds the
+      gate — he will not leave it, and you do not ask him to.
+    move: barrow-threshold
+  draw:
+    text: |
+      You break away into the shadow of the monoliths, guard up, until the
+      sentry stops at the gate stones. He holds the door; you keep the path.
     move: barrow-threshold
 
 - id: gallery-patrol
   participants:
     - id: sentry-a
       enemy: draugr-sentry
+      startRange: melee
     - id: sentry-b
       enemy: draugr-sentry
-  startRange: near
+      startRange: melee
   text: |
     In the narrow, pitch-dark burial gallery, two rusted figures step down from open niches, blocking your way deeper into the cairn.
   victory:
@@ -85,9 +129,17 @@
     effects:
       - give-item: { item: grave-linen-mail }
       - give-item: { item: runic-tincture }
-  escape:
+  surrender:
     text: |
-      You duck into an empty side chamber until the shuffle of iron boots passes into the darkness.
+      You douse your light, press flat into an empty side chamber and stop
+      moving altogether. The shuffle of iron boots passes into the darkness —
+      the gallery keeps its patrol, and you keep your life.
+    move: burial-gallery
+  draw:
+    text: |
+      You duck into an empty side chamber and hold the doorway with your
+      back to stone until the shuffle of iron boots fades. The patrol moves
+      on; you slip back the way you came.
     move: burial-gallery
 
 - id: crevice-skulker
@@ -100,14 +152,24 @@
       The archer falls from the ledge, tumbling into the frothing sea below. On its abandoned perch lies a silver raven feather.
     effects:
       - give-item: { item: valkyrie-feather }
-  escape:
+  surrender:
     text: |
-      You press yourself flat against the frozen rock wall until the whistling shafts cease.
+      You press yourself flat against the frozen rock wall, weapon lowered,
+      until the whistling shafts cease. The ledge keeps its archer; you keep
+      the crevice floor.
+    move: cliff-crevice
+  draw:
+    text: |
+      You edge along the frozen rock wall with the surf at your back, keeping
+      out of the clean line of fire, until the archer loses patience and
+      turns back to its watch over the waves.
     move: cliff-crevice
 
 - id: shrine-berserker
-  enemy: draugr-berserker
-  startRange: near
+  participants:
+    - enemy: draugr-berserker
+      startRange: melee
+      power: 1
   text: |
     In the torchlight of the sunken shrine, a monstrous draugr berserker roars with the voice of grinding ice, swinging a massive iron war-axe to defend the captive skald.
   victory:
@@ -115,32 +177,26 @@
       The giant collapses into the black water of the pool with a tremendous splash. Astrid gasps in relief from her chains upon the altar stones.
     effects:
       - give-item: { item: frost-cleaver }
-  escape:
+  surrender:
     text: |
-      You dodge under the crushing blow of the war-axe and scramble back into the dripping tunnel.
+      You throw your weapon into the black water and scramble back into the
+      dripping tunnel with open hands. The berserker holds the altar and its
+      captive — it does not follow, and you do not ask it to.
     move: sunken-shrine
-
-- id: harek-duel
-  enemy: jarl-harek
-  startRange: far
-  text: |
-    In the vaulted ice of the sepulchre, Jarl Harek rises from his stone seat. Astrid's song of binding echoes through the vault, warding off his lesser thralls. The Sea-King descends the dais to meet you alone.
-  victory:
+  draw:
     text: |
-      Harek's frosty crown shatters across the stone floor. The ancient draugr lord dissolves into frozen vapour, leaving the glowing Hearth-Rune resting upon his shattered throne.
-    effects:
-      - set-flag: harek-slain
-      - give-item: { item: hearth-rune }
-  escape:
-    text: |
-      You leap backward through the freezing mist as Harek's frosted blade bites stone. You retreat to the gallery to gather your breath.
-    move: burial-gallery
+      You dodge under the crushing blow of the war-axe and fall back into
+      the dripping tunnel, holding the narrows until the roaring settles.
+      The shrine stays his; the tunnel stays yours.
+    move: sunken-shrine
 
 - id: harek-and-guard
   participants:
     - enemy: jarl-harek
+      startRange: far
+      power: 2
     - enemy: draugr-sentry
-  startRange: far
+      startRange: far
   text: |
     Jarl Harek rises from his throne of rime, and with no song to stay their hands, an undead spearman steps forward to fight at his flank.
   victory:
@@ -149,7 +205,16 @@
     effects:
       - set-flag: harek-slain
       - give-item: { item: hearth-rune }
-  escape:
+  surrender:
     text: |
-      You break away through the blinding frost-smoke as iron blades clash behind you, retreating to the burial gallery.
+      You plant your weapon in the rime and kneel where both of them can see
+      you do it. Harek studies you for a long frozen moment, then turns back
+      to his throne — a kneeling foe is no foe, and the dead have all winter.
+      You walk out of the sepulchre alive.
+    move: burial-gallery
+  draw:
+    text: |
+      You break away through the blinding frost-smoke, keeping the shattered
+      pillars between you and their blades, and run for the gallery. Harek
+      lets you go; his throne is the prize, and you have left it.
     move: burial-gallery
