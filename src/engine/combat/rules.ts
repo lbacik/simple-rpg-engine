@@ -96,6 +96,40 @@ export const MOVEMENT_COSTS: Record<'approach' | 'disengage' | 'withdraw', numbe
   withdraw: 0,
 };
 
+export interface CycleEntry {
+  action: 'strike' | 'heavy' | 'brace' | 'prepare' | 'shot';
+  stance: Stance;
+}
+
+/**
+ * Repeating open action cycles (rules §8.1). Stances ride with each
+ * entry; the cycle position is (round - 1 + phaseOffset) mod length.
+ * Part of the versioned rules table: content may only set phaseOffset.
+ */
+export const ENEMY_CYCLES: Record<'raider' | 'brute' | 'sentinel' | 'archer', readonly CycleEntry[]> = {
+  raider: [
+    { action: 'strike', stance: 'aggressive' },
+    { action: 'heavy', stance: 'aggressive' },
+    { action: 'strike', stance: 'balanced' },
+    { action: 'brace', stance: 'defensive' },
+  ],
+  brute: [
+    { action: 'heavy', stance: 'aggressive' },
+    { action: 'prepare', stance: 'defensive' },
+    { action: 'strike', stance: 'balanced' },
+  ],
+  sentinel: [
+    { action: 'brace', stance: 'defensive' },
+    { action: 'strike', stance: 'balanced' },
+    { action: 'heavy', stance: 'aggressive' },
+  ],
+  archer: [
+    { action: 'shot', stance: 'balanced' },
+    { action: 'shot', stance: 'balanced' },
+    { action: 'prepare', stance: 'defensive' },
+  ],
+};
+
 /** Guard pools established in the declaration phase. */
 export const GUARD: Record<'brace' | 'cover' | 'wait', number> = {
   brace: 6,
