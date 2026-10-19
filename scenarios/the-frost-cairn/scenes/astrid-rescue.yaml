@@ -18,6 +18,7 @@ choices:
         "The clan sent you... thank the gods, {name}. Harek sits in the frost-sepulchre above. He holds our clan's Hearth-Rune upon his knees, feeding his cold unlife from its warmth. I will come with you. My voice knows the verses of binding—I will sing to keep his thralls from falling upon your flank."
       effects:
         - set-flag: astrid-rescued
-        - heal: 3
+        - companion-join: astrid
+        - heal: 10
   - id: leave-astrid
     text: Tell her to wait while you scout ahead.

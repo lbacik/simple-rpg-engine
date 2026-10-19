@@ -22,7 +22,7 @@ choices:
         text: |
           Rusted iron nails scrape your knuckles in the icy slush. You manage to drag out a jar of tallow salve before the wood cracks shut.
         effects:
-          - damage: 1
+          - damage: 3
           - give-item: { item: tallow-salve }
   - id: step-away
     text: Step away from the slippery wreckage.

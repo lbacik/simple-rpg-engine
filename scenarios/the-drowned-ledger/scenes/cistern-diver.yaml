@@ -36,7 +36,7 @@ choices:
           through the emergency warmer. You both leave the duct steadier than you entered it.
         effects:
           - set-flag: diver-rescued
-          - heal: 2
+          - heal: 7
           - give-item:
               item: field-dressings
       failure:
@@ -44,7 +44,7 @@ choices:
           The lever slips and knocks your shoulder. You stop, reset it and finish the slow drain
           together. Tamsin reaches the passage alive, leaning hard on your arm.
         effects:
-          - damage: 1
+          - damage: 3
           - set-flag: diver-rescued
           - give-item:
               item: field-dressings

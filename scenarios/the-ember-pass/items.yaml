@@ -1,25 +1,22 @@
-# Weapons
+# Weapons keep their slot and optional Attribute bonus only (format v2: damage
+# and reach are retired). A weapon without a bonus is flavour only.
 - id: longsword
   kind: equipment
   name: Longsword
   description: A plain, well-kept blade with a hilt long enough for both hands.
   slot: weapon
-  damage: 3
 
 - id: yew-longbow
   kind: equipment
   name: Yew Longbow
   description: A bow as tall as its owner, strung with waxed gut.
   slot: weapon
-  reach: ranged
-  damage: 3
 
 - id: bearded-axe
   kind: equipment
   name: Bearded Axe
   description: A warden's axe with a long hooked blade for pulling shields aside.
   slot: weapon
-  damage: 3
 
 - id: rowan-staff
   kind: equipment
@@ -28,7 +25,6 @@
   slot: weapon
   bonus: wits
   magic: true
-  damage: 3
 
 - id: highland-blade
   kind: equipment
@@ -36,7 +32,6 @@
   description: Dunric's work, forged from Cinder Clan iron and quenched in snowmelt.
   slot: weapon
   bonus: might
-  damage: 4
 
 # Outfits
 - id: mail-hauberk
@@ -97,13 +92,13 @@
   kind: consumable
   name: Healing Draught
   description: Bitter yarrow and honey in a stoppered horn.
-  heal: 4
+  heal: 13
 
 - id: ember-tonic
   kind: consumable
   name: Ember Tonic
   description: A glowing red cordial that burns all the way down and closes wounds behind it.
-  heal: 8
+  heal: 27
   magic: true
 
 # Key Items

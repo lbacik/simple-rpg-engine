@@ -1,4 +1,4 @@
-schemaVersion: 1
+schemaVersion: 2
 id: the-frost-cairn
 title: The Frost Cairn
 description: Brave the freezing fjords and howling crags of the North, breach the ancient burial mound of Jarl Harek Iron-Tooth, and reclaim the stolen Hearth-Rune before eternal frost engulfs the clan.
@@ -58,6 +58,8 @@ items:
   - items.yaml
 enemies:
   - enemies.yaml
+companions:
+  - companions.yaml
 encounters:
   - encounters.yaml
 templates:

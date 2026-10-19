@@ -10,7 +10,7 @@ choices:
     text: Shield Astrid with your body and sprint together through the collapsing archway.
     when:
       all:
-        - flag: astrid-rescued
+        - companion: astrid
         - has:
             item: hearth-rune
     outcome:

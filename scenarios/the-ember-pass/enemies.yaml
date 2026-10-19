@@ -1,84 +1,56 @@
-# Enemy catalog. Ordinary duels sit around the Grey Wolf; the troll, the brute and the
-# warlord are the heavy hitters; see docs/spec/mechanics.md#balance-targets.
+# Enemy catalog: reusable kinds of opponents, placed through Encounters.
+
+# Profiles follow the #184 Q11 table: ridge-wolf, cinder-raider,
+# tunnel-crawler, deep-ghoul and ash-hound → raider; stone-troll, clan-brute
+# and gharra → brute; clan-bowman and ember-shaman → archer. All statistics
+# come from the profile table.
 
 - id: ridge-wolf
   name: Ridge Wolf
   description: A lean grey wolf that has learned to follow the clan's fires for scraps.
-  attributes: { might: 2, agility: 1, wits: 0, presence: 0 }
-  health: 5
-  damage: 2
-  behaviour: steady
+  profile: raider
 
 - id: cinder-raider
   name: Cinder Raider
   description: A clan warrior in soot-blackened leather with a notched falchion.
-  attributes: { might: 2, agility: 1, wits: 1, presence: 1 }
-  health: 6
-  damage: 2
-  behaviour: steady
+  profile: raider
 
 - id: clan-bowman
   name: Clan Bowman
   description: A raider with a short horn bow who likes to take his time over a shot.
-  attributes: { might: 1, agility: 2, wits: 1, presence: 1 }
-  health: 6
-  damage: 2
-  reach: ranged
-  behaviour: heavy
+  profile: archer
 
 - id: stone-troll
   name: Ford Troll
   description: A slow grey troll with river weed in its beard and a boulder for a club.
-  attributes: { might: 2, agility: 0, wits: 0, presence: 1 }
-  health: 14
-  damage: 3
-  behaviour: heavy
+  profile: brute
 
 - id: tunnel-crawler
   name: Tunnel Crawler
   description: A pale, many-legged thing the size of a hound that hunts by touch.
-  attributes: { might: 1, agility: 2, wits: 0, presence: 0 }
-  health: 5
-  damage: 2
-  behaviour: steady
+  profile: raider
 
 - id: deep-ghoul
   name: Deep Ghoul
   description: A miner who never came up, still swinging his pick at something.
-  attributes: { might: 2, agility: 0, wits: 1, presence: 0 }
-  health: 8
-  damage: 2
-  behaviour: heavy
+  profile: raider
 
 - id: clan-brute
   name: Clan Brute
   description: A giant in a scorched bearskin who fights with a smith's maul.
-  attributes: { might: 3, agility: 1, wits: 0, presence: 1 }
-  health: 9
-  damage: 3
-  behaviour: heavy
+  profile: brute
 
 - id: ash-hound
   name: Ash Hound
   description: A scorched black hound with embers caught in its fur.
-  attributes: { might: 2, agility: 2, wits: 0, presence: 0 }
-  health: 6
-  damage: 2
-  behaviour: steady
+  profile: raider
 
 - id: ember-shaman
   name: Ember Shaman
   description: A clan seer who throws handfuls of burning cinders that stick and sear.
-  attributes: { might: 1, agility: 1, wits: 3, presence: 2 }
-  health: 7
-  damage: 2
-  reach: ranged
-  behaviour: heavy
+  profile: archer
 
 - id: gharra
   name: Gharra Ashmane
   description: The Cinder Warlord, ash-streaked and tireless, with a great two-handed axe.
-  attributes: { might: 3, agility: 1, wits: 2, presence: 3 }
-  health: 13
-  damage: 3
-  behaviour: heavy
+  profile: brute

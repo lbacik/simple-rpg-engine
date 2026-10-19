@@ -4,26 +4,21 @@
   description: A broad axe with a hooked blade, made for war rather than firewood.
   slot: weapon
   bonus: might
-  damage: 3
 - id: hunting-bow
   kind: equipment
   name: Yew Hunting Bow
   description: A short bow of yew, polished dark by years in the same hands.
   slot: weapon
-  reach: ranged
-  damage: 3
 - id: ash-staff
   kind: equipment
   name: Ashwood Staff
   description: A traveller's staff carved with small suns along its length.
   slot: weapon
-  damage: 2
 - id: herb-knife
   kind: equipment
   name: Herb-Cutting Knife
   description: A small curved knife for roots and stems, sharp enough for worse work.
   slot: weapon
-  damage: 2
 - id: noon-sickle
   kind: equipment
   name: The Noon Wraith's Sickle
@@ -31,7 +26,6 @@
   slot: weapon
   bonus: agility
   magic: true
-  damage: 3
 - id: padded-gambeson
   kind: equipment
   name: Padded Gambeson
@@ -60,12 +54,12 @@
   kind: consumable
   name: Herb Draught
   description: A clay flask of bitter brew made from yarrow and St John's wort.
-  heal: 4
+  heal: 13
 - id: yarrow-salve
   kind: consumable
   name: Jagna's Yarrow Salve
   description: A stoppered jar of green ointment that smells of the meadow.
-  heal: 6
+  heal: 20
 - id: bread-and-salt
   kind: key
   name: Bread and Salt

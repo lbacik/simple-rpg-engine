@@ -33,7 +33,23 @@ The following route uses no Tests or Combat and works with every Character Templ
 
 For evacuation preparations, return to `quay`, finish its arrival, and choose `work-winch` in `ferry-rescue`. This rescues the passengers and sets `ferry-rescued`. After opening the causeway, visit `signal-tower`, finish `tower-arrival`, and choose `show-danger` or `show-survey` in `tower-watch`. In `beacon-lighting`, use Mercy's oil or the emergency locker. This sets `beacon-lit`. Lighting the beacon prepares the signal; the actual evacuation signal is sent only in a finale.
 
-All four Encounters can be avoided through guaranteed Choices. After an escape, their wounded Enemies persist and a peaceful approach remains available. The heart auditor is re-offered on entry; the porter, foreman and channel watchman are re-offered as on-demand Scenes. Defeated Encounters are not started again.
+All four Encounters can be avoided through guaranteed Choices. After a surrender or a draw, wounded participants persist and a peaceful approach remains available. The heart auditor is re-offered on entry; the porter, foreman and channel watchman are re-offered as on-demand Scenes. Defeated Encounters are not started again.
+
+## Encounters (content format v2, #184)
+
+| Encounter | Participant (profile) | Start | Role |
+|---|---|---|---|
+| `porter-fight` | Drowned Porter (raider) | melee | optional duel |
+| `foundry-fight` | Iron Foreman (brute) | melee | optional duel |
+| `tower-fight` | Channel Watchman (archer) | far | optional duel |
+| `auditor-fight` | Brass Auditor (sentinel) | melee | heart-vault duel |
+
+Profiles follow the #184 Q11 table (drowned-porter → raider;
+iron-foreman → brute; brass-auditor → sentinel; channel-watchman →
+archer). `startRange` values follow the Q12 table; all `power` and
+`phaseOffset` values are 0 (no Q13 tuning was needed). Every Encounter
+carries required `surrender` and `draw` Outcomes (draft text, pending
+driving-developer review).
 
 ## Ending requirements
 

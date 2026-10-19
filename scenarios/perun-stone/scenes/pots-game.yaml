@@ -26,7 +26,7 @@ choices:
         the bank, coughing up pond water, while the utopiec slaps his knees with laughter.
         The pots are gone. "Again some time?"
       effects:
-        - damage: 3
+        - damage: 10
   - id: lift-bird
     text: Lift the white pot with the bird.
     outcome:
@@ -50,7 +50,7 @@ choices:
         after it. You come to on the bank, retching water, while the utopiec giggles on his
         weir. "That one was a fisherman. He's very lonely."
       effects:
-        - damage: 3
+        - damage: 10
   - id: refuse
     text: Refuse to choose, and step back from the pots.
     outcome:

@@ -1,3 +1,4 @@
+# Surrender and draw texts are drafts for human review in P3b (#235).
 - id: porter-fight
   text: |
     Elias zamyka księgę gości i unosi kasownik do biletów jak ostrze.
@@ -6,10 +7,16 @@
     text: |
       Mundur zapada się wokół suchej księgi gości. Kładziesz ją na spoczniku,
       zanim przejdziesz do Lowwater.
-  escape:
+  surrender:
     text: |
-      Wspinasz się poza jego zasięg. Portier podnosi księgę i wraca na stanowisko;
-      do wejścia nadal można podejść pokojowo.
+      Otwierasz puste dłonie i klękasz na stopniach. Elias opuszcza kasownik,
+      podnosi księgę i wraca na stanowisko — nigdy nie byłeś intruzem, tylko
+      gościem, który nie chciał się podpisać.
+  draw:
+    text: |
+      Stoisz niewzruszenie na schodach, ani nie nacierając, ani nie ustępując,
+      aż Elias cofa się za biurko z księgą uniesioną jak tarcza. Do wejścia
+      nadal można podejść pokojowo.
 - id: foundry-fight
   text: |
     Brygadzista unosi młot, starannie omijając niedokończone formy. Nawet teraz
@@ -18,10 +25,16 @@
     text: |
       Maska pęka i spada obok pieca. Nera patrzy, jak odkładasz młot,
       zanim zaprosi cię do stołu roboczego.
-  escape:
+  surrender:
     text: |
-      Wycofujesz się wzdłuż torów tramwajowych. Brygadzista pozostaje przy piecu,
-      ranny, ale wciąż gotowy wysłuchać, jakie uprawnione zadanie cię tu sprowadza.
+      Kładziesz broń na podłodze i cofasz się z uniesionymi rękami. Brygadzista
+      opuszcza młot, zadowolony, że formy są całe, i wraca do pieca — wciąż
+      wysłucha, jakie uprawnione zadanie cię tu sprowadza.
+  draw:
+    text: |
+      Trzymasz linię między torami, ani nie ustępując, ani nie zdobywając pola,
+      aż brygadzista odstępuje, by strzec swego pieca. Zostaje tam, ranny, lecz
+      wciąż gotowy wysłuchać, jakie uprawnione zadanie cię tu sprowadza.
 - id: tower-fight
   text: |
     Strażnik cofa się do balustrady latarni i napina łuk. Grot jego strzały
@@ -30,10 +43,17 @@
     text: |
       Łuk zamienia się w odcinek mokrej liny. Opierasz go o balustradę
       i zwracasz się ku lampie awaryjnej.
-  escape:
+  surrender:
     text: |
-      Schodzisz poniżej linii strzału. Strażnik pozostaje na posterunku,
-      a ty nadal możesz wrócić z planem pomiarowym lub zgłoszeniem zagrożenia.
+      Wołasz, że się poddajesz, i schodzisz po drabinie z otwartymi dłońmi.
+      Strażnik trzyma napięty łuk, aż znajdziesz się poniżej linii strzału,
+      po czym wraca na posterunek — nadal możesz wrócić z planem pomiarowym
+      lub zgłoszeniem zagrożenia.
+  draw:
+    text: |
+      Trwasz poniżej linii strzału, ani nie wspinając się, ani nie schodząc,
+      aż strażnik opuszcza łuk i wraca do warty. Nadal możesz wrócić z planem
+      pomiarowym lub zgłoszeniem zagrożenia.
 - id: auditor-fight
   text: |
     Rewident rozkłada się w klatkę z karbowników. Jego mosiężne klamry
@@ -42,7 +62,13 @@
     text: |
       Karbowniki rozsypują się po podłodze. Żaden nie nosi imienia.
       Przechodzisz obok nich do biurka rachunkowego.
-  escape:
+  surrender:
     text: |
-      Wycofujesz się przez właz. Hester przytrzymuje drzwi, aż rewident wróci
-      do rejestru; oba dokumenty uprawnień nadal zapewnią ci wejście.
+      Klękasz na jedno kolano i nadstawiasz nadgarstki karbownikom. Klamry
+      zamykają się na niczym, rytm się rwie, a rewident składa się z powrotem
+      w swój rejestr — oba dokumenty uprawnień nadal zapewnią ci wejście.
+  draw:
+    text: |
+      Trzymasz właz, nie posuwając się naprzód i nie cofając szybciej niż
+      kancelista liczący monety, aż rewident wycofuje się do rejestru. Hester
+      przytrzymuje drzwi; oba dokumenty uprawnień nadal zapewnią ci wejście.

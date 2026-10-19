@@ -44,6 +44,8 @@ enemies:
   - translations/pl/enemies.yaml
 encounters:
   - translations/pl/encounters.yaml
+companions:
+  - translations/pl/companions.yaml
 templates:
   - translations/pl/templates.yaml
 endings:

@@ -23,7 +23,7 @@ choices:
         text: |
           The frozen stone slab does not yield, and something in your shoulder sprains under the immense weight.
         effects:
-          - damage: 1
+          - damage: 3
   - id: examine-mechanism
     text: Search the carved dragon knots for a hidden counterweight release.
     test:

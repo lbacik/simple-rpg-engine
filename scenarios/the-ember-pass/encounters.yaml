@@ -1,10 +1,18 @@
 # Encounter catalog. Six Encounters have two participants, eight are duels.
+# Each has opening narration, required surrender and draw Outcomes (both
+# inherit the old escape move) and an optional victory Outcome. Surrender and
+# draw texts are drafts for human review in P3b (#235). startRanges follow
+# the #184 Q12 table (far stays far; near + non-archer becomes melee,
+# near + archer stays near). `power` is non-zero only for gharra (Q13).
 
 - id: road-wolves
   participants:
-    - { id: wolf-a, enemy: ridge-wolf }
-    - { id: wolf-b, enemy: ridge-wolf }
-  startRange: far
+    - id: wolf-a
+      enemy: ridge-wolf
+      startRange: far
+    - id: wolf-b
+      enemy: ridge-wolf
+      startRange: far
   text: |
     The two wolves split apart as they come, one to each side of the road, so that you
     cannot watch both at once.
@@ -12,17 +20,26 @@
     text: |
       The second wolf drops in the heather. The road ahead is quiet, and somewhere above
       you a raven complains about the noise.
-  escape:
+  surrender:
     text: |
-      You back down the road with your weapon up until the wolves lose interest and
-      return to the carcass of a mule.
+      You drop your weapon, crouch low and keep still. The wolves close in, sniff
+      the air around you, and decide you are more trouble than a mule carcass.
+      They trot back down the road.
+    move: kessford
+  draw:
+    text: |
+      You back down the road step by step, weapon up, never turning. The wolves
+      pace you to the bend, then give up and return to the carcass of a mule.
     move: kessford
 
 - id: tower-assault
   participants:
-    - { id: door-guard, enemy: cinder-raider }
-    - { id: roof-bowman, enemy: clan-bowman }
-  startRange: far
+    - id: door-guard
+      enemy: cinder-raider
+      startRange: far
+    - id: roof-bowman
+      enemy: clan-bowman
+      startRange: far
   text: |
     A raider kicks the tower door open and comes down the steps with his falchion out.
     On the parapet above him, a bowman puts an arrow to the string.
@@ -35,10 +52,17 @@
       - give-item: { item: healing-draught, quantity: 2 }
       - give-item: { item: cinder-ingot }
       - reveal: pass-gate
-  escape:
+  surrender:
     text: |
-      You run for the road with arrows clattering on the stones behind you. Nobody
-      follows; the clan is content to keep its tower.
+      You throw down your weapon and raise empty hands where the bowman can see
+      them. The door guard waves you off with his falchion — the clan is content
+      to keep its tower, and you are content to keep walking.
+    move: south-road
+  draw:
+    text: |
+      You fall back to the road, keeping the tower wall between you and the
+      parapet, until the arrows stop clattering on the stones. Nobody follows;
+      the clan is content to keep its tower.
     move: south-road
 
 - id: tower-roof
@@ -52,14 +76,22 @@
       The bowman goes over the parapet. Below you, a door bangs and heavy boots start up
       the tower stairs.
     start-combat: tower-stairs
-  escape:
+  surrender:
     text: |
-      You swing back over the parapet and climb down faster than you came up.
+      You let go of your knife and back against the parapet with open hands. The
+      bowman keeps his blade on you all the way down the wall — you climb down
+      faster than you came up, and he lets you go.
+    move: south-road
+  draw:
+    text: |
+      You swing back over the parapet and freeze on the wall, halfway down, until
+      the bowman turns back to his watch. Then you climb down faster than you
+      came up.
     move: south-road
 
 - id: tower-stairs
   enemy: cinder-raider
-  startRange: near
+  startRange: melee
   text: |
     The door guard bursts out of the stairwell onto the roof, falchion first, and finds
     you waiting for him.
@@ -72,10 +104,17 @@
       - give-item: { item: healing-draught, quantity: 2 }
       - give-item: { item: cinder-ingot }
       - reveal: pass-gate
-  escape:
+  surrender:
     text: |
-      You go over the parapet and down the wall. The guard bellows after you but will not
-      leave his tower.
+      You drop your weapon on the roof slates and kneel. The guard bellows for
+      the others, then thinks better of leaving his tower — he waves you to the
+      parapet, and you go over it and down the wall.
+    move: south-road
+  draw:
+    text: |
+      You give ground across the roof, step by step, until your back is to the
+      parapet. The guard holds the stairwell door and will not leave his tower;
+      you go over the parapet and down the wall.
     move: south-road
 
 - id: ford-troll
@@ -92,15 +131,22 @@
       - give-item: { item: river-pearl }
       - give-item: { item: ember-tonic }
       - give-item: { item: healing-draught }
-  escape:
+  surrender:
     text: |
-      You scramble up the bank. The troll is too slow to follow, and goes back to sulking
-      under its bridge.
+      You lay your weapon on the bank and wade backwards out of the ford with
+      open hands. The troll watches you go, boulder still raised, then sinks
+      back to sulking under its bridge.
+    move: south-road
+  draw:
+    text: |
+      You scramble up the bank and hold the high ground, throwing stones to keep
+      it honest, until the troll loses interest. It is too slow to follow, and
+      goes back to sulking under its bridge.
     move: south-road
 
 - id: mine-crawler
   enemy: tunnel-crawler
-  startRange: near
+  startRange: melee
   text: |
     Something pale drops from the roof of the adit in a rattle of legs, right on top of
     your lantern light.
@@ -108,16 +154,26 @@
     text: |
       The crawler curls up and stops twitching. Deeper in, the tunnel slopes down towards
       the sound of dripping water and a slow, patient tapping.
-  escape:
+  surrender:
     text: |
-      You stumble back out into daylight. The crawler will not follow you into the sun.
+      You set the lantern down gently and crawl backwards, keeping low and quiet.
+      The crawler follows the light, not you — it will not follow you into the sun.
+    move: greywatch
+  draw:
+    text: |
+      You stumble back towards the daylight, lantern held out like a shield,
+      until the mouth of the adit is at your back. The crawler will not follow
+      you into the sun.
     move: greywatch
 
 - id: depths-pair
   participants:
-    - { enemy: deep-ghoul }
-    - { enemy: tunnel-crawler }
-  startRange: far
+    - id: deep-ghoul
+      enemy: deep-ghoul
+      startRange: far
+    - id: tunnel-crawler
+      enemy: tunnel-crawler
+      startRange: far
   text: |
     The tapping stops. A dead miner turns from the rock face with his pick raised, and a
     second crawler skitters out of a side tunnel to join him.
@@ -125,16 +181,27 @@
     text: |
       The ghoul falls still at last, and the crawler with it. Past them, a rusted iron door
       stands half open on a dry chamber.
-  escape:
+  surrender:
     text: |
-      You run for the daylight with the scrape of a pick and the rattle of legs behind you.
+      You douse the lantern, press flat into a crevice and stop moving altogether.
+      The pick stops swinging; the legs stop rattling. When you creep out, the
+      dark has taken them back — you run for the daylight.
+    move: greywatch
+  draw:
+    text: |
+      You run for the daylight with the scrape of a pick and the rattle of legs
+      behind you, and hold the adit mouth with your back to the sun until they
+      fall back into the dark.
     move: greywatch
 
 - id: gate-guards
   participants:
-    - { id: gate-left, enemy: cinder-raider }
-    - { id: gate-right, enemy: cinder-raider }
-  startRange: far
+    - id: gate-left
+      enemy: cinder-raider
+      startRange: far
+    - id: gate-right
+      enemy: cinder-raider
+      startRange: far
   text: |
     Both guards come off the gate together, shouting for each other's courage.
   victory:
@@ -143,14 +210,21 @@
       of the bodies you find a horn of healing draught.
     effects:
       - give-item: { item: healing-draught }
-  escape:
+  surrender:
     text: |
-      You retreat down the switchbacks while the guards jeer at your back.
+      You drop your weapon and kneel on the switchbacks with your hands on your
+      head. The guards jeer — and let you walk back down. They will not leave
+      their gate for the likes of you.
+    move: greywatch
+  draw:
+    text: |
+      You retreat down the switchbacks at a walk, weapon up, while the guards
+      jeer at your back. Neither side wants the next step badly enough.
     move: greywatch
 
 - id: gate-lone-guard
   enemy: cinder-raider
-  startRange: near
+  startRange: melee
   text: |
     The remaining guard realises he has been tricked a moment too late. He draws, alone.
   victory:
@@ -159,9 +233,16 @@
       take a horn of healing draught from his belt.
     effects:
       - give-item: { item: healing-draught }
-  escape:
+  surrender:
     text: |
-      You back away down the switchbacks. The guard does not dare leave the gate alone.
+      You drop your weapon and back away with open hands. The guard does not
+      dare leave the gate alone — he shouts you down the switchbacks instead of
+      following.
+    move: greywatch
+  draw:
+    text: |
+      You back away down the switchbacks, guard up, until the gate is a dark
+      line above you. The guard does not dare leave the gate alone.
     move: greywatch
 
 - id: shrine-brute
@@ -174,14 +255,21 @@
     text: |
       The brute crashes down among the shards of the hearthstone. The shrine is quiet, and
       the little fire in the niche, which he had been kicking, is still alight.
-  escape:
+  surrender:
     text: |
-      You run back down the side path. The brute laughs, and goes back to his work.
+      You kneel and lower your weapon to the shrine floor. The brute laughs,
+      kicks the hearthstone once more for good measure, and waves you down the
+      side path — you were never worth interrupting his work for.
+    move: pass-gate
+  draw:
+    text: |
+      You run back down the side path and hold the narrows, daring him to come
+      down. The brute laughs, and goes back to his work.
     move: pass-gate
 
 - id: pen-brute
   enemy: clan-brute
-  startRange: near
+  startRange: melee
   text: |
     The pen guard comes off his stool with his maul already swinging, roaring for the
     others.
@@ -195,16 +283,26 @@
       - set-flag: captives-freed
       - give-item: { item: healing-draught, quantity: 2 }
       - give-item: { item: ember-tonic }
-  escape:
+  surrender:
     text: |
-      You dodge between the tents and lose him in the smoke.
+      You drop into the mud with your hands over your head and play dead weight.
+      The brute kicks you once for the trouble, roars for the others — and the
+      camp smoke swallows you as you crawl away between the tents.
+    move: war-camp
+  draw:
+    text: |
+      You dodge between the tents and lose him in the smoke, doubling back along
+      the guy-ropes until his roaring moves off the other way.
     move: war-camp
 
 - id: shaman-rite
   participants:
-    - { enemy: ember-shaman }
-    - { enemy: ash-hound }
-  startRange: far
+    - id: ember-shaman
+      enemy: ember-shaman
+      startRange: far
+    - id: ash-hound
+      enemy: ash-hound
+      startRange: far
   text: |
     The shaman breaks off his chant and points at you with a handful of burning cinders.
     The ash hound at his feet lowers its head and comes.
@@ -212,14 +310,24 @@
     text: |
       The shaman falls into his own fire, and the flames go from red to an ordinary
       yellow. Up on the summit, something that was holding the beacon cold lets go.
-  escape:
+  surrender:
     text: |
-      You fall back between the tents, beating sparks out of your clothes.
+      You fall to your knees, beating at your smouldering clothes with open hands
+      to show you are done. The shaman reads the gesture well enough — he turns
+      back to his rite, and the hound lets you crawl away between the tents.
+    move: war-camp
+  draw:
+    text: |
+      You fall back between the tents, beating sparks out of your clothes,
+      keeping a tent wall at your back until the chant takes the shaman back
+      and the hound loses your scent in the smoke.
     move: war-camp
 
 - id: warlord-duel
-  enemy: gharra
-  startRange: far
+  participants:
+    - enemy: gharra
+      startRange: far
+      power: 2
   text: |
     Gharra Ashmane lifts her axe and walks towards you without hurrying. Behind her, the
     captives of Kessford have the last of her bowmen pinned behind the beacon stones.
@@ -229,16 +337,27 @@
       above the clouds, there is nothing left between you and the fire.
     effects:
       - set-flag: warlord-slain
-  escape:
+  surrender:
     text: |
-      You break away and run down the summit path. Gharra lets you go; she has all night.
+      You plant your weapon in the ground and kneel in the open. Gharra studies
+      you for a long moment, then lowers her axe — a kneeling foe is no foe, and
+      she has all night. You walk down the summit path alive.
+    move: war-camp
+  draw:
+    text: |
+      You break away and run down the summit path, keeping the beacon stones
+      between you and her axe. Gharra lets you go; she has all night.
     move: war-camp
 
 - id: warlord-and-guard
   participants:
-    - { enemy: gharra }
-    - { enemy: clan-bowman }
-  startRange: far
+    - id: gharra
+      enemy: gharra
+      startRange: far
+      power: 2
+    - id: clan-bowman
+      enemy: clan-bowman
+      startRange: far
   text: |
     Gharra Ashmane lifts her axe and walks towards you without hurrying. On the beacon
     stones behind her, her last bowman sets an arrow to his string.
@@ -248,8 +367,14 @@
       above the clouds, there is nothing left between you and the fire.
     effects:
       - set-flag: warlord-slain
-  escape:
+  surrender:
     text: |
-      You break away and run down the summit path with arrows hissing past you. Gharra
-      lets you go; she has all night.
+      You plant your weapon in the ground and kneel where the bowman can see you
+      do it. Gharra calls the shot off — a kneeling foe is no foe, and she has
+      all night. You walk down the summit path with arrows nocked but unfired.
+    move: war-camp
+  draw:
+    text: |
+      You break away and run down the summit path with arrows hissing past you,
+      keeping low behind the rocks. Gharra lets you go; she has all night.
     move: war-camp

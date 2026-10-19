@@ -5,7 +5,7 @@ trigger: on-demand
 when:
   all:
     - { flag: tower-taken }
-    - { health: { atMost: 11 } }
+    - { health: { atMost: 39 } }
 text: |
   The raiders left a fire laid in the guardroom hearth and a heap of stolen blankets in
   the corner. The door is oak, and the bar is still good.
@@ -16,4 +16,4 @@ choices:
       text: |
         You wake stiff and cold, but the worst of the bleeding has stopped.
       effects:
-        - heal: 5
+        - heal: 17

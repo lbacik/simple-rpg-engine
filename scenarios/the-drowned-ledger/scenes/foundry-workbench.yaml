@@ -42,7 +42,7 @@ choices:
           The frame judders, splashing hot metal against the apron you borrowed. The weight
           survives intact, though your forearm will remember the pour.
         effects:
-          - damage: 1
+          - damage: 3
         next: smith-memory
   - id: leave
     text: Leave the mould ready for another visit.

@@ -113,8 +113,8 @@ Moving or renaming a file means editing the manifest only. Renaming an ID means 
 | Camera `from` | `{ zoom: 100, x: 50, y: 50 }` |
 | `quantity` | `1` |
 | `has.atLeast` | `1` |
-| `reach` | `melee` |
-| `startRange` | `far` |
+| `phaseOffset` | `0` |
+| `power` | `0` |
 | `choices`, `effects`, `scenes`, `connections`, `flags`, `translations` | `[]` |
 
 ### Narration format
@@ -130,7 +130,7 @@ Narration fields are: Scenario `intro`, Location `description`, Scene `text`, Ou
 ### Manifest `scenario.yaml`
 
 ```yaml
-schemaVersion: 1               # package format version; anything else is rejected
+schemaVersion: 2               # package format version; anything else is rejected
 id: <id>                       # equals the directory name
 title: <text>
 description: <text>            # shown on the Collection card
@@ -146,6 +146,7 @@ scenes?: [<path>]
 items?: [<path>]
 enemies?: [<path>]
 encounters?: [<path>]
+companions?: [<path>]          # Companion definitions; see Companion catalog
 templates: [<path>]            # at least one Character Template in total
 endings: [<path>]
 images?: [<path>]
@@ -215,10 +216,12 @@ Each list entry is a one-key mapping.
 - set-flag: <flag-id>
 - clear-flag: <flag-id>
 - reveal: <location-id>
-- heal: 1-12
-- damage: 1-12
+- heal: 1-40
+- damage: 1-40
 - give-item: { item: <item-id>, quantity?: <integer ≥ 1> }
 - take-item: { item: <item-id>, quantity?: <integer ≥ 1> }
+- companion-join: <companion-id>   # that Companion joins the party
+- companion-leave: null            # the current Companion, if any, leaves
 ```
 
 ### Condition
@@ -232,7 +235,9 @@ fired: <scene-id>              # the Scene has been activated
 defeated: <encounter-id>       # every participant of the Encounter is dead
 has: { item: <item-id>, atLeast?: <integer ≥ 1> }
 attribute: { name: <attribute>, atLeast: 1-5 | atMost: 0-4 }  # effective value
-health: { atLeast: 2-12 | atMost: 1-11 }                       # current Health
+health: { atLeast: 2-40 | atMost: 1-39 }                       # current Health
+companion: <companion-id>      # that Companion is currently in the party
+companionLost: <companion-id>  # that Companion died in Combat (permanent loss)
 all: [<Condition>]             # at least one entry
 any: [<Condition>]             # at least one entry
 not: <Condition>
@@ -244,8 +249,6 @@ not: <Condition>
 
 ### Item catalog
 
-> **Frozen pending the content migration (format v1).** The item, Enemy and Encounter catalogs below are what the loader still implements. Their tactical Combat assumptions — weapon Damage and Reach, Enemy Attributes/Health/Damage/Reach/Behaviour, Encounter-wide `startRange`, the `escape` Outcome, Health 1–12 — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md): escape is removed for required `surrender` and `draw` Outcomes, Enemies bind to fixed profiles, and Health is 0–40. The v2 format, conversion tables and migration guide land with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)). Do not author new content against the tactical fields below.
-
 A sequence of items, discriminated by `kind`.
 
 ```yaml
@@ -256,13 +259,11 @@ A sequence of items, discriminated by `kind`.
   slot: weapon | outfit | talisman
   bonus?: <attribute>          # +1 to that Attribute while equipped
   magic?: <bool>
-  reach?: melee | ranged       # weapon only
-  damage: 2-4                  # weapon only, and required for a weapon; ranged: 2-3
 - id: <id>
   kind: consumable
   name: <text>
   description?: <text>
-  heal: 1-12
+  heal: 1-40
   magic?: <bool>
 - id: <id>
   kind: key
@@ -271,47 +272,67 @@ A sequence of items, discriminated by `kind`.
   magic?: <bool>
 ```
 
+Equipment carries no Damage or Reach: Combat statistics come from the [MVP 1.0 profiles](../sources/combat-mvp-1.0/rules.md), and a weapon's `bonus` is its only mechanical field. A weapon without a `bonus` is flavour only. The retired `damage` and `reach` fields are rejected (see [validation.md](validation.md)).
+
 ### Enemy catalog
 
 ```yaml
 - id: <id>
-  name: <text>                 # shown on the Range strip
+  name: <text>                 # shown for the participant in Combat and the Journal
   description?: <text>
-  attributes: { might: 0-3, agility: 0-3, wits: 0-3, presence: 0-3 }  # all four
-  health: 1-30                 # maximum Health
-  damage: 1-6
-  reach?: melee | ranged
-  behaviour?: steady | heavy   # default steady (frozen v1; see the banner above)
+  profile: raider | brute | sentinel | archer   # required; all statistics come from it
 ```
+
+An Enemy is a named, translatable kind of opponent bound to one of the fixed MVP profiles (rules §8.1; statistics in [combat-contract.md](combat-contract.md#profiles)). It has no Attributes or statistics of its own. A `party-*` profile on an Enemy is rejected, as are the retired v1 fields `attributes`, `health`, `damage`, `reach` and `behaviour`.
 
 ### Encounter catalog
 
 ```yaml
 - id: <id>
   enemy: <enemy-id>            # one participant; exactly one of `enemy` and `participants`
-  participants:                # 1-2 participants, in participant order
+  startRange: melee | near | far   # that participant's starting Range (with `enemy`)
+  participants:                # 1-5 participants, in participant order
     - id?: <participant-id>    # default: the `enemy` id; unique within the Encounter
       enemy: <enemy-id>
-  startRange?: near | far      # every participant's starting Range
+      startRange: melee | near | far   # required; that participant's starting Range
+      phaseOffset?: 0-3        # default 0; below the profile's cycle length
+      power?: 0-3              # default 0; per-instance tuning
   text: <narration>            # opening narration
   victory?: <Outcome>          # omitted: a brief Enemy-defeated notice, then the Location view
-  escape: <Outcome>
+  surrender: <Outcome>         # required
+  draw: <Outcome>              # required
 ```
 
-- `enemy: X` is shorthand for `participants: [{ enemy: X }]`, a single participant with id `X`. It is not deprecated. The two spellings are the same Encounter: converting one into the other changes no participant id.
+- `enemy: X` with a `startRange` beside it is shorthand for a single participant (`participants: [{ enemy: X, startRange: … }]`), with id `X` and zero tuning. It is not deprecated. The two spellings are the same Encounter: converting one into the other changes no participant id. An Encounter-level `startRange` beside `participants` is the retired v1 field and is rejected.
+- `startRange` is required on every participant and has no default, because it is mechanical. The adapter derives the Combat arrangement from it ([combat-contract.md](combat-contract.md); `melee` starts engaged with the hero, `near` in the hero's group, `far` in a shared second group).
+- `phaseOffset` must lie below the profile's cycle length (`raider` 0–3, `brute`/`sentinel`/`archer` 0–2); there is no modulo. `power` is an integer 0–3; the range is a content-validation bound, not a rule (rules §8.1).
+- `surrender` and `draw` are required; the retired `escape` Outcome is rejected. Combat routes `LOSS_SURRENDER` to `surrender` and `DRAW_LIMIT` to `draw` (see [content-semantics.md](content-semantics.md#encounters-and-combat)).
 - A participant id defaults to its `enemy`. Two participants of the same Enemy kind must name explicit, distinct ids:
 
   ```yaml
-  - id: wolf-pack
+  - id: road-wolves
     participants:
-      - { id: wolf-a, enemy: grey-wolf }
-      - { id: wolf-b, enemy: grey-wolf }
+      - { id: wolf-a, enemy: ridge-wolf, startRange: far }
+      - { id: wolf-b, enemy: ridge-wolf, startRange: far }
     text: Two grey shapes slip out of the bracken.
-    escape: { text: You run until the howling fades. }
+    surrender: { text: You back away slowly, and the pack lets you go. }
+    draw: { text: You hold the road until the pack loses interest. }
   ```
 
 - A one-entry `participants` list is valid, for example to give a single participant an id other than its Enemy's.
 - Participants carry no text. On screen and in the Journal a participant is named by its Enemy's `name`; two participants of one kind are told apart by the engine, not by authored names (see [playthrough-state.md](playthrough-state.md#journal)).
+- The Companion is Playthrough state, never an Encounter participant, and does not count towards the 1–5 limit.
+
+### Companion catalog
+
+```yaml
+- id: <id>
+  name: <text>
+  description?: <text>
+  profile: party-sentinel | party-archer   # required
+```
+
+A Scenario-level Companion definition: the id, translatable name and party profile (rules §10.1) of a Companion that may join the party through `companion-join`. Companion ids are a namespace separate from Enemy ids; an enemy profile on a Companion is rejected. Companions fight through the Combat adapter, never as Encounter participants (see [content-semantics.md](content-semantics.md#encounters-and-combat)).
 
 ### Character Template catalog
 
@@ -485,6 +506,7 @@ scenes?: [<path>]
 items?: [<path>]
 enemies?: [<path>]
 encounters?: [<path>]
+companions?: [<path>]
 templates: [<path>]
 endings: [<path>]
 images?: [<path>]
@@ -511,7 +533,7 @@ The keys are:
 
 - `id` for every entity and catalog entry, and for each Choice within its Scene;
 - `to` for a Connection, which is why `to` is unique within a Location;
-- the base's own nesting for Outcomes, which have no IDs: `outcome`, `test.success` and `test.failure` under a Choice; `victory` and `escape` under an Encounter.
+- the base's own nesting for Outcomes, which have no IDs: `outcome`, `test.success` and `test.failure` under a Choice; `victory`, `surrender` and `draw` under an Encounter.
 
 The translatable fields are:
 
@@ -524,7 +546,8 @@ The translatable fields are:
 | Outcome | `text` |
 | item (all kinds) | `name`, `description` |
 | Enemy | `name`, `description` |
-| Encounter | `text` (participants have no text; an Encounter is translated alike in either spelling) |
+| Encounter | `text`, Outcome texts (`victory`, `surrender`, `draw`; participants have no text; an Encounter is translated alike in either spelling) |
+| Companion | `name`, `description` |
 | Character Template | `name`, `description` |
 | Ending | `title`, `text` |
 | image | `alt` |
@@ -572,15 +595,19 @@ choices:
 # translations/pl/encounters.yaml
 - id: wight-fight
   text: |
-    Aldric podnosi się z marów, a chłód grobu przetacza się przez ciebie.
+    Aldric podnosi się z mar, a grobowy chłód zalewa cię falą.
   victory:
     text: |
-      Upiór rozsypuje się w proch i rdzę. Mira otwiera oczy i sięga po
-      twoją dłoń.
-  escape:
+      Upiór rozsypuje się w pył i rdzę. Mira otwiera oczy i wyciąga rękę
+      ku twojej dłoni.
+  surrender:
     text: |
-      Zataczając się, wracasz korytarzem w szare światło dnia. Upiór nie
-      idzie za tobą; nigdy nie opuszcza swojego grobowca.
+      Padasz płasko i czołgasz się korytarzem ku światłu dnia. Upiór nie
+      rusza za tobą; nigdy nie opuszcza grobowca.
+  draw:
+    text: |
+      Wycofujesz się do wylotu korytarza i bronisz wąskiego przejścia
+      ostrzem. Upiór raz próbuje progu, po czym opada z powrotem na mary.
 ```
 
 ### Illustrations in a Translation
@@ -589,7 +616,7 @@ A Translation translates an image's `alt` only. It cannot replace the image file
 
 ## Versioning
 
-- **`schemaVersion: 1`** is the engine's package-format version. An unsupported value rejects the package.
+- **`schemaVersion: 2`** is the engine's package-format version. An unsupported value rejects the package; the exact value `1` is reported as the retired format v1 with a pointer to the [migration guide](content-migration-1.0.md).
 - **`version`** is the author's content version. It is informational: whether existing Playthroughs survive a content change is decided by a reference check, not by this field (see [ADR 0001](../adr/0001-content-compatibility-by-reference-check.md)).
 
 ## Schemas and editor support

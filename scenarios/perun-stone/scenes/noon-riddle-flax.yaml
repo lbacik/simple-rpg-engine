@@ -19,7 +19,7 @@ choices:
         "Cut it? With a sickle?" She looks at her own sickle in disgust, and then at you. The
         heat drops like a lid. You wake in the furrow with the taste of dust in your mouth.
       effects:
-        - damage: 2
+        - damage: 7
   - id: order-break
     text: "\"Sow it, pull it, break it, soak it, comb it, dry it, spin it.\""
     outcome:
@@ -27,4 +27,4 @@ choices:
         "You would break it green?" She sighs like wind through stubble. The world turns
         white, and you wake in the furrow, alone, with a splitting head.
       effects:
-        - damage: 2
+        - damage: 7

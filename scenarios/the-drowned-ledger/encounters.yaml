@@ -1,6 +1,12 @@
+# Encounter catalog: named, single placements of Enemies.
+# Each has opening narration, required surrender and draw Outcomes (both
+# inherit the old escape move) and an optional victory Outcome. Surrender and
+# draw texts are drafts for human review in P3b (#235). startRanges follow
+# the #184 Q12 table (far stays far; near + non-archer becomes melee).
+
 - id: porter-fight
   enemy: drowned-porter
-  startRange: near
+  startRange: melee
   text: |
     Elias closes the visitors' book and raises his ticket punch as though it were a blade.
     "You have not signed," he says, almost pleading.
@@ -11,14 +17,22 @@
     effects:
       - set-flag: porter-passed
       - reveal: sunken-square
-  escape:
+  surrender:
     text: |
-      You climb out of reach. Below, the porter retrieves his book and returns to his
-      station; the entrance can still be approached peacefully.
+      You open your empty hands and kneel on the steps. Elias lowers the ticket
+      punch, takes up his book, and returns to his station — you were never an
+      intruder, only a visitor who would not sign.
     move: lockhouse
+  draw:
+    text: |
+      You stand your ground on the stairs, neither pressing forward nor turning
+      away, until Elias retreats behind his desk with the book held up like a
+      shield. The entrance can still be approached peacefully.
+    move: lockhouse
+
 - id: foundry-fight
   enemy: iron-foreman
-  startRange: near
+  startRange: melee
   text: |
     The foreman brings its hammer up, carefully avoiding the unfinished moulds. Even now,
     it is trying to preserve the workshop.
@@ -28,11 +42,19 @@
       before she invites you to the workbench.
     effects:
       - set-flag: foundry-safe
-  escape:
+  surrender:
     text: |
-      You retreat along the tram rails. The foreman remains at the furnace, injured but
-      still willing to hear the name of a legitimate job.
+      You lay your weapon on the floor and step back with raised hands. The foreman
+      lowers its hammer, satisfied the moulds are safe, and turns back to the
+      furnace — it will still hear the name of a legitimate job.
     move: sunken-square
+  draw:
+    text: |
+      You hold the line between the tram rails, giving no ground and taking none,
+      until the foreman stands down to guard its furnace. It remains there,
+      injured but still willing to hear the name of a legitimate job.
+    move: sunken-square
+
 - id: tower-fight
   enemy: channel-watchman
   startRange: far
@@ -45,14 +67,23 @@
       emergency lamp.
     effects:
       - set-flag: tower-safe
-  escape:
+  surrender:
     text: |
-      You descend below the firing angle. The watchman stays at his post, and you can still
-      return with the survey chart or an emergency report.
+      You call up that you yield and come down the ladder with open hands. The
+      watchman holds his draw until you are below the firing angle, then returns
+      to his post — you can still come back with the survey chart or an
+      emergency report.
     move: causeway
+  draw:
+    text: |
+      You keep below the firing angle, climbing neither up nor down, until the
+      watchman lowers his bow and resumes his watch. You can still return with
+      the survey chart or an emergency report.
+    move: causeway
+
 - id: auditor-fight
   enemy: brass-auditor
-  startRange: near
+  startRange: melee
   text: |
     The auditor unfolds into a cage of tally sticks. Its brass clasps snap open and shut
     in a rhythm copied from the engine.
@@ -62,8 +93,15 @@
       the account desk.
     effects:
       - set-flag: heart-open
-  escape:
+  surrender:
     text: |
-      You back through the hatch. Hester holds the door until the auditor returns to its
-      register; either authority document will still admit you.
+      You drop to one knee and offer your wrists to the tally sticks. The clasps
+      close on nothing, the rhythm falters, and the auditor folds itself back
+      into its register — either authority document will still admit you.
+    move: bell-chamber
+  draw:
+    text: |
+      You hold the hatch, advancing no further and retreating no faster than a
+      clerk counting coin, until the auditor withdraws to its register. Hester
+      holds the door; either authority document will still admit you.
     move: bell-chamber

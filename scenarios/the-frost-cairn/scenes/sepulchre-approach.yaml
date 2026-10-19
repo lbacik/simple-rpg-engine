@@ -11,19 +11,11 @@ text: |
 
   Upon an enormous stone chair sits Jarl Harek Iron-Tooth. A crown of frosted bone rests atop his horned skull, and blue rime smokes from the joints of his blackened ring-mail. In his frozen lap lies the glowing Hearth-Rune of Skallavik.
 choices:
-  - id: challenge-with-astrid
-    text: Step forward as Astrid begins her chanting verses of binding.
-    when:
-      flag: astrid-rescued
+  - id: challenge-harek
+    text: Draw your steel and advance toward the throne.
     outcome:
       text: |
-        Astrid's voice soars into the ice vault like silver bells, weaving the elder verses of binding. The shadowy thralls flanking the dais shriek and dissolve into grey mist!
+        Jarl Harek rises from his throne of rime, lifting a massive frost-covered broadsword that crackles with cold lightning. From the freezing shadows an undead spearman steps forward to fight at his flank — and at your side, Astrid sets her feet, ready to guard your flank.
 
-        Jarl Harek rises from his throne alone, lifting a massive frost-covered broadsword that crackles with cold lightning!
-      start-combat: harek-duel
-  - id: challenge-alone
-    text: Draw your steel and advance alone toward the throne.
-    outcome:
-      text: |
-        With no sacred song to hold the dead at bay, an undead spearguard steps from the freezing shadows to fight at Jarl Harek's side!
+        There will be no binding song to dissolve the guard this time. Steel will decide it.
       start-combat: harek-and-guard

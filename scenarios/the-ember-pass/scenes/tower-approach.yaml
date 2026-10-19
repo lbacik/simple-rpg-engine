@@ -46,7 +46,7 @@ choices:
           A stone comes away in your hand and you fall the last few feet into the road.
           The raider on the step looks up, grins, and shouts to the roof.
         effects:
-          - damage: 2
+          - damage: 7
           - set-flag: tower-stormed
         start-combat: tower-assault
   - id: roof-again

@@ -56,14 +56,14 @@ choices:
     once: true
     when:
       health:
-        atMost: 9
+        atMost: 30
     outcome:
       text: |
         She cleans your cuts with something that stings like nettles and binds them with
         linen. Then she puts a stoppered jar in your bag. "For later. Bogumił would call it
         witchcraft. It's yarrow."
       effects:
-        - heal: 6
+        - heal: 20
         - give-item:
             item: yarrow-salve
   - id: leave

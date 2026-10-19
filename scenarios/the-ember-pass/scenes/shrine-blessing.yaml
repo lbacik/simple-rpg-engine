@@ -16,5 +16,5 @@ choices:
         hot wine, and every cut and bruise closes. When you stand, the amulet is warm in
         your hand.
       effects:
-        - heal: 12
+        - heal: 40
         - give-item: { item: hearth-amulet }

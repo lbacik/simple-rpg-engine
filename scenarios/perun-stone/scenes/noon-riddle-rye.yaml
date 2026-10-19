@@ -20,7 +20,7 @@ choices:
         "Flax is pulled, not cut, and nobody bakes it." The sickle flashes. The heat hits
         you like a fist, and you come to in the furrow with your head ringing. She is gone.
       effects:
-        - damage: 2
+        - damage: 7
   - id: sun
     text: "\"The sun.\""
     outcome:
@@ -28,4 +28,4 @@ choices:
         "Does the sun go into the oven where you come from?" The heat closes over you like
         water. You wake in the furrow, sick and dizzy, and the field is empty.
       effects:
-        - damage: 2
+        - damage: 7
