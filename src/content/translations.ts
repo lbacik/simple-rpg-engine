@@ -27,6 +27,7 @@ import {
 import {
   REQUIRED_TRANSLATION_SECTIONS,
   TRANSLATION_SECTIONS,
+  TranslationCompanionsCatalogSchema,
   TranslationEncountersCatalogSchema,
   TranslationEnemiesCatalogSchema,
   TranslationEndingsCatalogSchema,
@@ -69,6 +70,7 @@ const TRANSLATION_FILE_SCHEMAS: Record<TranslationSection, z.ZodTypeAny> = {
   items: TranslationItemsCatalogSchema,
   enemies: TranslationEnemiesCatalogSchema,
   encounters: TranslationEncountersCatalogSchema,
+  companions: TranslationCompanionsCatalogSchema,
   templates: TranslationTemplatesCatalogSchema,
   endings: TranslationEndingsCatalogSchema,
   images: TranslationImagesCatalogSchema,
@@ -334,8 +336,11 @@ function checkTranslationFile(section: TranslationSection, value: unknown, ctx: 
         if (entry['victory'] !== undefined) {
           checkTranslationOutcome(entry['victory'], [...at, 'victory'], ctx);
         }
-        if (entry['escape'] !== undefined) {
-          checkTranslationOutcome(entry['escape'], [...at, 'escape'], ctx);
+        if (entry['surrender'] !== undefined) {
+          checkTranslationOutcome(entry['surrender'], [...at, 'surrender'], ctx);
+        }
+        if (entry['draw'] !== undefined) {
+          checkTranslationOutcome(entry['draw'], [...at, 'draw'], ctx);
         }
       });
       return;
@@ -359,6 +364,7 @@ function checkTranslationFile(section: TranslationSection, value: unknown, ctx: 
     }
     case 'items':
     case 'enemies':
+    case 'companions':
     case 'templates': {
       if (!Array.isArray(value)) return;
       value.forEach((entry, index) => {
@@ -438,7 +444,8 @@ type BaseIndex = {
   scenes: Map<string, { pos: FilePos; idPath: (string | number)[]; choices: Map<string, BaseChoiceInfo> }>;
   items: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
   enemies: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
-  encounters: Map<string, { pos: FilePos; idPath: (string | number)[]; victory: boolean; victoryText: boolean; escapeText: boolean }>;
+  encounters: Map<string, { pos: FilePos; idPath: (string | number)[]; victory: boolean; victoryText: boolean; surrenderText: boolean; drawText: boolean }>;
+  companions: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
   templates: Map<string, { pos: FilePos; idPath: (string | number)[]; hasDescription: boolean }>;
   endings: Map<string, { pos: FilePos; idPath: (string | number)[] }>;
   images: Map<string, { pos: FilePos; idPath: (string | number)[] }>;
@@ -486,6 +493,7 @@ function buildBaseIndex(manifest: ParsedFile, files: ParsedFile[]): BaseIndex {
     items: new Map(),
     enemies: new Map(),
     encounters: new Map(),
+    companions: new Map(),
     templates: new Map(),
     endings: new Map(),
     images: new Map(),
@@ -558,7 +566,18 @@ function buildBaseIndex(manifest: ParsedFile, files: ParsedFile[]): BaseIndex {
               idPath,
               victory: victory !== undefined,
               victoryText: victory !== undefined && outcomeTextOf(victory),
-              escapeText: isRecord(entry['escape']) && outcomeTextOf(entry['escape']),
+              surrenderText: isRecord(entry['surrender']) && outcomeTextOf(entry['surrender']),
+              drawText: isRecord(entry['draw']) && outcomeTextOf(entry['draw']),
+            });
+          }
+          break;
+        }
+        case 'companions': {
+          if (!index.companions.has(entry['id'])) {
+            index.companions.set(entry['id'], {
+              pos,
+              idPath,
+              hasDescription: typeof entry['description'] === 'string',
             });
           }
           break;
@@ -1054,9 +1073,10 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
   };
   checkNamedCatalog('items', 'item', base.items, 'name');
   checkNamedCatalog('enemies', 'enemy', base.enemies, 'name');
+  checkNamedCatalog('companions', 'companion', base.companions, 'name');
   checkNamedCatalog('templates', 'template', base.templates, 'name');
 
-  // ---- Encounters (text; victory/escape Outcomes by base nesting). ----
+  // ---- Encounters (text; victory/surrender/draw Outcomes by base nesting). ----
   {
     const occurrences: Occurrence[] = [];
     const translated = new Map<
@@ -1068,8 +1088,10 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         victoryText: boolean;
         victoryPath: (string | number)[];
         victoryTextPath: (string | number)[];
-        escapeText: boolean;
-        escapeTextPath: (string | number)[];
+        surrenderText: boolean;
+        surrenderTextPath: (string | number)[];
+        drawText: boolean;
+        drawTextPath: (string | number)[];
       }
     >();
     for (const file of filesBySection('encounters')) {
@@ -1093,8 +1115,10 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
           victoryText: victory !== undefined && typeof victory['text'] === 'string',
           victoryPath: [itemIndex, 'victory'],
           victoryTextPath: [itemIndex, 'victory', 'text'],
-          escapeText: isRecord(item['escape']) && typeof item['escape']['text'] === 'string',
-          escapeTextPath: [itemIndex, 'escape', 'text'],
+          surrenderText: isRecord(item['surrender']) && typeof item['surrender']['text'] === 'string',
+          surrenderTextPath: [itemIndex, 'surrender', 'text'],
+          drawText: isRecord(item['draw']) && typeof item['draw']['text'] === 'string',
+          drawTextPath: [itemIndex, 'draw', 'text'],
         });
       });
     }
@@ -1107,8 +1131,11 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         if (baseEntry.victoryText) {
           missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the victory text of encounter "${id}"`);
         }
-        if (baseEntry.escapeText) {
-          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the escape text of encounter "${id}"`);
+        if (baseEntry.surrenderText) {
+          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the surrender text of encounter "${id}"`);
+        }
+        if (baseEntry.drawText) {
+          missingAtBase(baseEntry.pos, baseEntry.idPath, `translation is missing the draw text of encounter "${id}"`);
         }
         continue;
       }
@@ -1134,10 +1161,19 @@ function runT3(loaded: LoadedTranslation, base: BaseIndex, push: (diagnostic: Di
         baseEntry.pos,
         baseEntry.idPath,
         transPos,
-        baseEntry.escapeText,
-        match.escapeText,
-        match.escapeTextPath,
-        `the escape text of encounter "${id}"`,
+        baseEntry.surrenderText,
+        match.surrenderText,
+        match.surrenderTextPath,
+        `the surrender text of encounter "${id}"`,
+      );
+      checkOutcomeTextPair(
+        baseEntry.pos,
+        baseEntry.idPath,
+        transPos,
+        baseEntry.drawText,
+        match.drawText,
+        match.drawTextPath,
+        `the draw text of encounter "${id}"`,
       );
     }
     for (const [id, match] of translated) {
@@ -1705,12 +1741,14 @@ export function compileTranslation(loaded: LoadedTranslation): CompiledTranslati
           id: string;
           text: string;
           victory?: { text?: string };
-          escape: { text?: string };
+          surrender: { text?: string };
+          draw: { text?: string };
         }[]).map((entry) => ({
           id: entry.id,
           text: entry.text,
           victory: entry.victory === undefined ? undefined : parseOutcome(entry.victory),
-          escape: parseOutcome(entry.escape),
+          surrender: parseOutcome(entry.surrender),
+          draw: parseOutcome(entry.draw),
         })),
     );
   const parseEndingCatalog = (values: unknown[]): TranslationEndingText[] =>
@@ -1737,6 +1775,7 @@ export function compileTranslation(loaded: LoadedTranslation): CompiledTranslati
     items: byId(parseNamedCatalog(TranslationItemsCatalogSchema, filesBySection('items'))),
     enemies: byId(parseNamedCatalog(TranslationEnemiesCatalogSchema, filesBySection('enemies'))),
     encounters: byId(parseEncounterCatalog(filesBySection('encounters'))),
+    companions: byId(parseNamedCatalog(TranslationCompanionsCatalogSchema, filesBySection('companions'))),
     templates: byId(parseNamedCatalog(TranslationTemplatesCatalogSchema, filesBySection('templates'))),
     endings: byId(parseEndingCatalog(filesBySection('endings'))),
     images: byId(parseImageCatalog(filesBySection('images'))),

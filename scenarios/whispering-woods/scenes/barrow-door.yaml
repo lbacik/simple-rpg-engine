@@ -39,7 +39,7 @@ choices:
           You stumble over an ancient word, and the runes flare with a cold
           that burns.
         effects:
-          - damage: 2
+          - damage: 7
   - id: force-door
     text: Put your shoulder to the slab.
     when:
@@ -58,6 +58,6 @@ choices:
         text: |
           The slab does not move, and something in your shoulder does.
         effects:
-          - damage: 1
+          - damage: 3
   - id: step-away
     text: Step away from the door.

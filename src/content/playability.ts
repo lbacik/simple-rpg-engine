@@ -35,6 +35,7 @@ type Namespace =
   | 'endings'
   | 'items'
   | 'enemies'
+  | 'companions'
   | 'images';
 
 type Decl = { file: string; path: (string | number)[] };
@@ -52,6 +53,7 @@ function buildDeclIndex(files: ParsedFile[]): {
     endings: new Map(),
     items: new Map(),
     enemies: new Map(),
+    companions: new Map(),
     images: new Map(),
   };
   const choices = new Map<string, Map<string, Decl>>();
@@ -77,6 +79,7 @@ function buildDeclIndex(files: ParsedFile[]): {
       (file.section === 'items' ||
         file.section === 'enemies' ||
         file.section === 'encounters' ||
+        file.section === 'companions' ||
         file.section === 'endings' ||
         file.section === 'images') &&
       Array.isArray(file.value)
@@ -166,6 +169,11 @@ function evalCondition(
     return 'unknown';
   }
   if ('health' in record) {
+    return 'unknown';
+  }
+  // Companion presence and loss depend on Combat results, so they are
+  // unknown facts like `health` (docs/spec/validation.md, Companion facts).
+  if ('companion' in record || 'companionLost' in record) {
     return 'unknown';
   }
   if ('all' in record) {
@@ -301,7 +309,8 @@ export function computeReachability(scenario: Scenario): Reachability {
     for (const encounter of scenario.encounters) {
       if (!state.encounters.has(encounter.id)) continue;
       if (encounter.victory !== undefined) markOutcome(encounter.victory);
-      markOutcome(encounter.escape);
+      markOutcome(encounter.surrender);
+      markOutcome(encounter.draw);
     }
     for (const outcome of [...reachableOutcomes]) {
       if (outcome.next !== undefined) markScene(outcome.next.id);
@@ -355,7 +364,8 @@ function collectOutcomes(scenario: Scenario): OutcomeEntry[] {
   }
   for (const encounter of scenario.encounters) {
     if (encounter.victory !== undefined) entries.push({ outcome: encounter.victory });
-    entries.push({ outcome: encounter.escape });
+    entries.push({ outcome: encounter.surrender });
+    entries.push({ outcome: encounter.draw });
   }
   return entries;
 }
@@ -414,14 +424,14 @@ function hasWayOut(
         const encounter = encounterById[node.encounter];
         if (!encounter) return [];
         const next: WayNode[] = [];
-        if (encounter.victory !== undefined) {
-          const index = outcomeIndex.get(encounter.victory);
+        const outcomes =
+          encounter.victory !== undefined
+            ? [encounter.victory, encounter.surrender, encounter.draw]
+            : [encounter.surrender, encounter.draw];
+        for (const outcome of outcomes) {
+          const index = outcomeIndex.get(outcome);
           if (index !== undefined) next.push({ kind: 'outcome', index, cur: node.cur });
-        } else {
-          next.push({ kind: 'loc', loc: node.cur, cur: node.cur });
         }
-        const escapeIndex = outcomeIndex.get(encounter.escape);
-        if (escapeIndex !== undefined) next.push({ kind: 'outcome', index: escapeIndex, cur: node.cur });
         return next;
       }
     }
@@ -504,7 +514,8 @@ function allOutcomes(scenario: Scenario): CompiledOutcome[] {
   }
   for (const encounter of scenario.encounters) {
     if (encounter.victory !== undefined) result.push(encounter.victory);
-    result.push(encounter.escape);
+    result.push(encounter.surrender);
+    result.push(encounter.draw);
   }
   return result;
 }
@@ -545,6 +556,7 @@ export function runPlayabilityPhase(
   checkFlags(ctx, manifest);
   checkItems(ctx);
   checkEnemyUnused(ctx);
+  checkCompanionUnused(ctx);
   checkImageUnused(ctx);
   checkStaticLayers(ctx, files);
   checkMotionlessDrifts(ctx, files);
@@ -715,7 +727,10 @@ function checkTakeWithoutHas(
     }
   }
   for (const encounter of ctx.scenario.encounters) {
-    const outcomes = encounter.victory !== undefined ? [encounter.victory, encounter.escape] : [encounter.escape];
+    const outcomes =
+      encounter.victory !== undefined
+        ? [encounter.victory, encounter.surrender, encounter.draw]
+        : [encounter.surrender, encounter.draw];
     for (const outcome of outcomes) {
       for (const item of takeItemsOf(outcome)) {
         ctx.push({
@@ -789,15 +804,18 @@ function checkNextToFiredScene(ctx: Ctx): void {
     if (encounter.victory?.next !== undefined) {
       addSource(encounter.victory.next.id, `encounter:${encounter.id}`, false, false);
     }
-    if (encounter.escape.next !== undefined) {
+    // Surrender and draw leave the Encounter undefeated, so a repeat fight
+    // starts again: both Outcomes are repeatable sources like `escape` was.
+    for (const outcome of [encounter.surrender, encounter.draw]) {
+      if (outcome.next === undefined) continue;
       const key = `encounter:${encounter.id}`;
-      const sources = targets.get(encounter.escape.next.id);
+      const sources = targets.get(outcome.next.id);
       const existing = sources?.get(key);
       if (existing) {
         existing.escape = true;
         existing.repeatable = true;
       } else {
-        addSource(encounter.escape.next.id, key, true, true);
+        addSource(outcome.next.id, key, true, true);
       }
     }
   }
@@ -957,6 +975,31 @@ function checkEnemyUnused(ctx: Ctx): void {
       message: `enemy "${enemy.id}" has no encounter`,
       file: ctx.fileOf('enemies', enemy.id),
       range: ctx.idRange('enemies', enemy.id),
+      path: ['id'],
+    });
+  }
+}
+
+function checkCompanionUnused(ctx: Ctx): void {
+  // A Companion nobody can meet is dead content: warn when no `companion-join`
+  // names it (docs/spec/validation.md, play/companion-unused).
+  const joined = new Set<string>();
+  for (const outcome of allOutcomes(ctx.scenario)) {
+    for (const effect of outcome.effects) {
+      const record = effect as unknown as Record<string, unknown>;
+      if ('companion-join' in record && typeof record['companion-join'] === 'string') {
+        joined.add(record['companion-join']);
+      }
+    }
+  }
+  for (const companion of ctx.scenario.companions) {
+    if (joined.has(companion.id)) continue;
+    ctx.push({
+      severity: 'warning',
+      code: 'play/companion-unused',
+      message: `companion "${companion.id}" is joined by no "companion-join"`,
+      file: ctx.fileOf('companions', companion.id),
+      range: ctx.idRange('companions', companion.id),
       path: ['id'],
     });
   }

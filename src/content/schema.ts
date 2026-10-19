@@ -1,6 +1,16 @@
 // Zod definitions: the source of truth for the structure of every file kind
 // (docs/spec/scenario-format.md, field reference and conventions).
 //
+// Content format v2 (docs/spec/validation.md): the manifest carries
+// `schemaVersion: 2`; Enemies bind to a fixed MVP profile; Encounters place
+// 1-5 Participants with per-participant `startRange` and required `surrender`
+// and `draw` Outcomes; Companions live in their own catalog; Health runs
+// 0-40. The retired v1 fields (`attributes`, `health`, `damage`, `reach`,
+// `behaviour` on Enemies; Encounter-level `startRange` beside `participants`;
+// `escape`; weapon `damage`/`reach`) are absent here, so Zod's strict objects
+// reject them as unknown keys and structure.ts maps them to
+// `schema/retired-field` (see RETIRED_FIELDS there).
+//
 // These schemas check what Phase 2 owns (docs/spec/validation.md): strict
 // objects (unknown keys), required keys, value types, vocabulary tokens and
 // the per-entity mechanics ranges. Refinements that need cross-field logic
@@ -14,9 +24,10 @@
 // - field keys are camelCase, vocabulary tokens kebab-case (plain enums, so
 //   `very hard` is rejected while `very-hard` is accepted);
 // - one form per key, no shorthands (scalar vs mapping forms are fixed), with
-//   one exception: `enemy: X` on an Encounter is shorthand for
-//   `participants: [{ enemy: X }]` (docs/spec/scenario-format.md), normalised
-//   to the same participant model in model.ts;
+//   one exception: `enemy: X` on an Encounter is shorthand for a single
+//   participant, with the participant's `startRange` written beside it
+//   (docs/spec/validation.md, schema/encounter-enemies), normalised to the
+//   same participant model in model.ts;
 // - the Defaults table is encoded with .default(), so omitted keys resolve
 //   to their defaults and the generated JSON Schemas document them.
 //
@@ -60,10 +71,12 @@ const attributeCondition = z.strictObject({
 });
 const healthCondition = z.strictObject({
   health: z.strictObject({
-    atLeast: z.number().int().min(2).max(12).optional(),
-    atMost: z.number().int().min(1).max(11).optional(),
+    atLeast: z.number().int().min(2).max(40).optional(),
+    atMost: z.number().int().min(1).max(39).optional(),
   }),
 });
+const companionCondition = z.strictObject({ companion: referenceSchema });
+const companionLostCondition = z.strictObject({ companionLost: referenceSchema });
 
 // The branch keys in union order; structure.ts uses them to map a failed
 // union to precise diagnostics (unknown keys, single-branch value errors).
@@ -75,6 +88,8 @@ export const CONDITION_BRANCH_KEYS = [
   'has',
   'attribute',
   'health',
+  'companion',
+  'companionLost',
   'all',
   'any',
   'not',
@@ -88,6 +103,8 @@ export const ConditionSchema: z.ZodTypeAny = z.union([
   hasCondition,
   attributeCondition,
   healthCondition,
+  companionCondition,
+  companionLostCondition,
   // Non-empty: an empty combinator is schema/empty-combinator (mapped from
   // the minimum in structure.ts), and minItems also reaches the editor.
   z.strictObject({ all: z.array(z.lazy(() => ConditionSchema)).min(1) }),
@@ -102,8 +119,10 @@ export const ConditionSchema: z.ZodTypeAny = z.union([
 const setFlagEffect = z.strictObject({ 'set-flag': referenceSchema });
 const clearFlagEffect = z.strictObject({ 'clear-flag': referenceSchema });
 const revealEffect = z.strictObject({ reveal: referenceSchema });
-const healEffect = z.strictObject({ heal: z.number().int().min(1).max(12) });
-const damageEffect = z.strictObject({ damage: z.number().int().min(1).max(12) });
+const healEffect = z.strictObject({ heal: z.number().int().min(1).max(40) });
+const damageEffect = z.strictObject({ damage: z.number().int().min(1).max(40) });
+const companionJoinEffect = z.strictObject({ 'companion-join': referenceSchema });
+const companionLeaveEffect = z.strictObject({ 'companion-leave': z.null() });
 const giveItemEffect = z.strictObject({
   'give-item': z.strictObject({
     item: referenceSchema,
@@ -125,6 +144,8 @@ export const EFFECT_BRANCH_KEYS = [
   'damage',
   'give-item',
   'take-item',
+  'companion-join',
+  'companion-leave',
 ] as const;
 
 export const EffectSchema = z.union([
@@ -135,6 +156,8 @@ export const EffectSchema = z.union([
   damageEffect,
   giveItemEffect,
   takeItemEffect,
+  companionJoinEffect,
+  companionLeaveEffect,
 ]);
 
 // ---------------------------------------------------------------------------
@@ -175,7 +198,7 @@ export const ChoiceSchema = z.strictObject({
 // ---------------------------------------------------------------------------
 
 export const ManifestSchema = z.strictObject({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   id: idSchema,
   title: textSchema,
   description: textSchema,
@@ -191,6 +214,7 @@ export const ManifestSchema = z.strictObject({
   items: z.array(z.string()).optional(),
   enemies: z.array(z.string()).optional(),
   encounters: z.array(z.string()).optional(),
+  companions: z.array(z.string()).optional(),
   templates: z.array(z.string()),
   endings: z.array(z.string()),
   images: z.array(z.string()).optional(),
@@ -249,18 +273,13 @@ const equipmentItem = z.strictObject({
   slot: z.enum(['weapon', 'outfit', 'talisman']),
   bonus: attributeSchema.optional(),
   magic: z.boolean().default(false),
-  reach: z.enum(['melee', 'ranged']).default('melee'),
-  // Melee weapons allow 2-4; ranged weapons 2-3. The range depends on the
-  // reach (whose default is melee), so Zod checks 2-4 and structure.ts
-  // narrows ranged weapons to 2-3 (schema/invalid-value).
-  damage: z.number().int().min(2).max(4).optional(),
 });
 const consumableItem = z.strictObject({
   id: idSchema,
   kind: z.literal('consumable'),
   name: textSchema,
   description: textSchema.optional(),
-  heal: z.number().int().min(1).max(12),
+  heal: z.number().int().min(1).max(40),
   magic: z.boolean().default(false),
 });
 const keyItem = z.strictObject({
@@ -284,38 +303,59 @@ const attributesSchema = z.strictObject({
   presence: z.number().int().min(0).max(3),
 });
 
+/** Fixed MVP Combat profiles an Enemy kind may bind to (rules §8.1). */
+export const EnemyProfileSchema = z.enum(['raider', 'brute', 'sentinel', 'archer']);
+
+/** Party profiles a Companion definition may bind to (rules §10.1). */
+export const CompanionProfileSchema = z.enum(['party-sentinel', 'party-archer']);
+
 export const EnemySchema = z.strictObject({
   id: idSchema,
   name: textSchema,
   description: textSchema.optional(),
-  attributes: attributesSchema,
-  health: z.number().int().min(1).max(30),
-  damage: z.number().int().min(1).max(6),
-  reach: z.enum(['melee', 'ranged']).default('melee'),
-  behaviour: z.enum(['steady', 'heavy']).default('steady'),
+  profile: EnemyProfileSchema,
 });
 
+/** Starting ranges a Participant may be authored with (rules §15.2, Q4). */
+export const StartRangeSchema = z.enum(['melee', 'near', 'far']);
+
 /**
- * One Encounter participant: the placed Enemy and its identity within the
- * Encounter. The `id` defaults to the `enemy` id (see model.ts); two
- * participants of the same Enemy kind must name explicit, distinct ids.
+ * One Encounter participant: the placed Enemy, its identity within the
+ * Encounter, its starting Range and its per-instance tuning. The `id`
+ * defaults to the `enemy` id (see model.ts); two participants of the same
+ * Enemy kind must name explicit, distinct ids. `phaseOffset` must lie below
+ * the profile's cycle length (a Phase 3 `ref/phase-offset-out-of-cycle`
+ * check); `power` is a content-validation bound, not a rule (rules §8.1).
  */
 const encounterParticipantSchema = z.strictObject({
   id: idSchema.optional(),
   enemy: referenceSchema,
+  startRange: StartRangeSchema,
+  phaseOffset: z.number().int().min(0).default(0),
+  power: z.number().int().min(0).max(3).default(0),
 });
 
 export const EncounterSchema = z.strictObject({
   id: idSchema,
   // Exactly one of `enemy` and `participants` (the loader-only refinement
-  // schema/encounter-enemies in structure.ts): `enemy: X` is shorthand for
-  // `participants: [{ enemy: X }]`.
+  // schema/encounter-enemies in structure.ts): `enemy: X` is shorthand for a
+  // single participant, with that participant's `startRange` written beside
+  // it. An Encounter-level `startRange` beside `participants` is the retired
+  // v1 field (schema/retired-field).
   enemy: referenceSchema.optional(),
-  participants: z.array(encounterParticipantSchema).min(1).max(2).optional(),
-  startRange: z.enum(['near', 'far']).default('far'),
+  participants: z.array(encounterParticipantSchema).min(1).max(5).optional(),
+  startRange: StartRangeSchema.optional(),
   text: narrationSchema,
   victory: OutcomeSchema.optional(),
-  escape: OutcomeSchema,
+  surrender: OutcomeSchema,
+  draw: OutcomeSchema,
+});
+
+export const CompanionSchema = z.strictObject({
+  id: idSchema,
+  name: textSchema,
+  description: textSchema.optional(),
+  profile: CompanionProfileSchema,
 });
 
 const templateItemSchema = z.strictObject({
@@ -419,6 +459,7 @@ export const ImageSchema = z.strictObject({
 export const ItemsCatalogSchema = z.array(ItemSchema);
 export const EnemiesCatalogSchema = z.array(EnemySchema);
 export const EncountersCatalogSchema = z.array(EncounterSchema);
+export const CompanionsCatalogSchema = z.array(CompanionSchema);
 export const TemplatesCatalogSchema = z.array(TemplateSchema);
 export const EndingsCatalogSchema = z.array(EndingSchema);
 export const ImagesCatalogSchema = z.array(ImageSchema);
@@ -443,6 +484,7 @@ export const TranslationManifestSchema = z.strictObject({
   items: z.array(z.string()).optional(),
   enemies: z.array(z.string()).optional(),
   encounters: z.array(z.string()).optional(),
+  companions: z.array(z.string()).optional(),
   templates: z.array(z.string()),
   endings: z.array(z.string()),
   images: z.array(z.string()).optional(),
@@ -455,6 +497,7 @@ export const TRANSLATION_SECTIONS = [
   'items',
   'enemies',
   'encounters',
+  'companions',
   'templates',
   'endings',
   'images',
@@ -524,9 +567,13 @@ export const TranslationEncounterSchema = z.strictObject({
   id: idSchema,
   text: narrationSchema,
   victory: translationOutcomeSchema.optional(),
-  escape: translationOutcomeSchema,
+  surrender: translationOutcomeSchema,
+  draw: translationOutcomeSchema,
 });
 export const TranslationEncountersCatalogSchema = z.array(TranslationEncounterSchema);
+
+/** A Companion entry: name plus optional description, like other named kinds. */
+export const TranslationCompanionsCatalogSchema = z.array(translationNamedEntrySchema);
 
 export const TranslationEndingSchema = z.strictObject({
   id: idSchema,

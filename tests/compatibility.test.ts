@@ -49,7 +49,7 @@ function stubScenario(): Scenario {
     },
     enemiesById: { wolf: { id: 'wolf' } },
     encountersById: {
-      enc1: { id: 'enc1', participants: [{ id: 'wolf', enemy: { id: 'wolf', name: 'Wolf', health: 6 } }] },
+      enc1: { id: 'enc1', participants: [{ id: 'wolf', enemy: { id: 'wolf', name: 'Wolf', profile: 'raider' } }] },
     },
     templatesById: { hunter: { id: 'hunter' } },
     endingsById: { death: { id: 'death' }, home: { id: 'home' } },

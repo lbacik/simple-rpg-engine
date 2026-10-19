@@ -100,7 +100,7 @@
                         "heal": {
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 12
+                          "maximum": 40
                         }
                       },
                       "required": [
@@ -114,7 +114,7 @@
                         "damage": {
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 12
+                          "maximum": 40
                         }
                       },
                       "required": [
@@ -173,6 +173,30 @@
                       },
                       "required": [
                         "take-item"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "companion-join": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "companion-join"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "companion-leave": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "companion-leave"
                       ],
                       "additionalProperties": false
                     }
@@ -269,7 +293,7 @@
                             "heal": {
                               "type": "integer",
                               "minimum": 1,
-                              "maximum": 12
+                              "maximum": 40
                             }
                           },
                           "required": [
@@ -283,7 +307,7 @@
                             "damage": {
                               "type": "integer",
                               "minimum": 1,
-                              "maximum": 12
+                              "maximum": 40
                             }
                           },
                           "required": [
@@ -342,6 +366,30 @@
                           },
                           "required": [
                             "take-item"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "companion-join": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "companion-join"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "companion-leave": {
+                              "type": "null"
+                            }
+                          },
+                          "required": [
+                            "companion-leave"
                           ],
                           "additionalProperties": false
                         }
@@ -417,7 +465,7 @@
                             "heal": {
                               "type": "integer",
                               "minimum": 1,
-                              "maximum": 12
+                              "maximum": 40
                             }
                           },
                           "required": [
@@ -431,7 +479,7 @@
                             "damage": {
                               "type": "integer",
                               "minimum": 1,
-                              "maximum": 12
+                              "maximum": 40
                             }
                           },
                           "required": [
@@ -490,6 +538,30 @@
                           },
                           "required": [
                             "take-item"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "companion-join": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "companion-join"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "companion-leave": {
+                              "type": "null"
+                            }
+                          },
+                          "required": [
+                            "companion-leave"
                           ],
                           "additionalProperties": false
                         }
@@ -660,12 +732,12 @@
                 "atLeast": {
                   "type": "integer",
                   "minimum": 2,
-                  "maximum": 12
+                  "maximum": 40
                 },
                 "atMost": {
                   "type": "integer",
                   "minimum": 1,
-                  "maximum": 11
+                  "maximum": 39
                 }
               },
               "additionalProperties": false
@@ -673,6 +745,30 @@
           },
           "required": [
             "health"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "companion": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "companion"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "companionLost": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "companionLost"
           ],
           "additionalProperties": false
         },

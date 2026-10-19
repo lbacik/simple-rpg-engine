@@ -27,7 +27,7 @@ function writePackage(dir: string, files: Record<string, string>): void {
 }
 
 function manifestFor(id: string, sections: string): string {
-  return `schemaVersion: 1\nid: ${id}\n${sections}`;
+  return `schemaVersion: 2\nid: ${id}\n${sections}`;
 }
 
 const STANDARD_SECTIONS =
@@ -181,7 +181,7 @@ describe('package phase', () => {
     const dir = makeScenarioDir('unsupported-schema-version');
     const id = path.basename(dir);
     writePackage(dir, {
-      'scenario.yaml': manifestFor(id, STANDARD_SECTIONS).replace('schemaVersion: 1', 'schemaVersion: 2'),
+      'scenario.yaml': manifestFor(id, STANDARD_SECTIONS).replace('schemaVersion: 2', 'schemaVersion: 99'),
       'locations/a.yaml': 'id: a\n',
       'templates.yaml': '- id: t\n',
       'endings.yaml': '- id: e\n',
@@ -192,7 +192,7 @@ describe('package phase', () => {
       severity: 'error',
       code: 'package/unsupported-schema-version',
       file: 'scenario.yaml',
-      range: { line: 1, column: 16, endLine: 1, endColumn: 17 },
+      range: { line: 1, column: 16, endLine: 1, endColumn: 18 },
     });
   });
 

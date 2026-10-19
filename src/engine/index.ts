@@ -890,6 +890,15 @@ function applyEffect(
       },
     };
   }
+  // Companion join/leave are validated content (P3) but take effect only in
+  // the Scenario adapter (P6): the old tactical engine keeps no Companion
+  // state, so they are no-ops here.
+  if ('companion-join' in effect || 'companion-leave' in effect) {
+    return { state, entry: undefined };
+  }
+  if (!('reveal' in effect)) {
+    return { state, entry: undefined };
+  }
   const target = effect.reveal;
   const name = scenario.locationsById[target]?.name ?? target;
   if (state.visited.includes(target)) {

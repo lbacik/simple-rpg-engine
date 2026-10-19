@@ -2,7 +2,7 @@
 # Manifest and entry point. Every content file is listed explicitly by type;
 # the section a file is listed under decides its content type.
 
-schemaVersion: 1
+schemaVersion: 2
 id: whispering-woods
 title: The Whispering Woods
 description: >-

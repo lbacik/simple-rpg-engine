@@ -85,7 +85,9 @@ export type LoadScenarioFailure = {
 export type LoadScenarioResult = LoadScenarioSuccess | LoadScenarioFailure;
 
 const MANIFEST_FILE = 'scenario.yaml';
-const SUPPORTED_SCHEMA_VERSION = 1;
+const SUPPORTED_SCHEMA_VERSION = 2;
+/** The retired format v1: Phase 1 lets it through so Phase 2 reports it as `schema/retired-format`. */
+const RETIRED_SCHEMA_VERSION = 1;
 
 const MANIFEST_SECTIONS: readonly ManifestSection[] = [
   'locations',
@@ -93,6 +95,7 @@ const MANIFEST_SECTIONS: readonly ManifestSection[] = [
   'items',
   'enemies',
   'encounters',
+  'companions',
   'templates',
   'endings',
   'images',
@@ -313,13 +316,17 @@ function checkSchemaVersion(
 ): void {
   const value = isRecord(manifestValue) ? manifestValue['schemaVersion'] : undefined;
   if (value === SUPPORTED_SCHEMA_VERSION) return;
+  // A v1 package is not rejected here: Phase 2 reports it with its location
+  // as `schema/retired-format` (docs/spec/validation.md), alongside every
+  // retired field the package still uses.
+  if (value === RETIRED_SCHEMA_VERSION) return;
   const pair = findPair(manifestRoot, 'schemaVersion');
   const valueNode = pair?.value;
   if (pair && valueNode != null) {
     push({
       severity: 'error',
       code: 'package/unsupported-schema-version',
-      message: `unsupported schemaVersion ${JSON.stringify(value) ?? String(value)}; only version 1 is supported`,
+      message: `unsupported schemaVersion ${JSON.stringify(value) ?? String(value)}; only version 2 is supported`,
       file: MANIFEST_FILE,
       range: nodeRange(valueNode, lineCounter),
     });
@@ -327,7 +334,7 @@ function checkSchemaVersion(
     push({
       severity: 'error',
       code: 'package/unsupported-schema-version',
-      message: 'schemaVersion is missing; only version 1 is supported',
+      message: 'schemaVersion is missing; only version 2 is supported',
       file: MANIFEST_FILE,
     });
   }

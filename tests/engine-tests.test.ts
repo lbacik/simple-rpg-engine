@@ -119,9 +119,9 @@ describe('narrative tests', () => {
       total: 12,
       success: false,
     });
-    // The failure Outcome hurts but leaves the door shut.
+    // The failure Outcome hurts (damage 3 in format v2) but leaves the door shut.
     expect(resolved.state.flags).not.toContain('barrow-open');
-    expect(resolved.state.character.health).toBe(11);
+    expect(resolved.state.character.health).toBe(9);
     expect(resolved.state.activeSceneId).toBe(null);
   });
 

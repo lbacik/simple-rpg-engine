@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import {
+  CompanionsCatalogSchema,
   EncountersCatalogSchema,
   EnemiesCatalogSchema,
   EndingsCatalogSchema,
@@ -19,6 +20,7 @@ import {
   ManifestSchema,
   SceneSchema,
   TemplatesCatalogSchema,
+  TranslationCompanionsCatalogSchema,
   TranslationEncountersCatalogSchema,
   TranslationEnemiesCatalogSchema,
   TranslationEndingsCatalogSchema,
@@ -38,6 +40,7 @@ const FILE_SCHEMAS = {
   items: ItemsCatalogSchema,
   enemies: EnemiesCatalogSchema,
   encounters: EncountersCatalogSchema,
+  companions: CompanionsCatalogSchema,
   templates: TemplatesCatalogSchema,
   endings: EndingsCatalogSchema,
   images: ImagesCatalogSchema,
@@ -47,6 +50,7 @@ const FILE_SCHEMAS = {
   'translation-items': TranslationItemsCatalogSchema,
   'translation-enemies': TranslationEnemiesCatalogSchema,
   'translation-encounters': TranslationEncountersCatalogSchema,
+  'translation-companions': TranslationCompanionsCatalogSchema,
   'translation-templates': TranslationTemplatesCatalogSchema,
   'translation-endings': TranslationEndingsCatalogSchema,
   'translation-images': TranslationImagesCatalogSchema,

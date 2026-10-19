@@ -6,22 +6,18 @@
   name: Hunting Bow
   description: A supple yew bow, good for deer and for keeping trouble at a distance.
   slot: weapon
-  reach: ranged
-  damage: 3
 
 - id: sword
   kind: equipment
   name: Sword
   description: A plain soldier's blade, nicked but well kept.
   slot: weapon
-  damage: 3
 
 - id: walking-staff
   kind: equipment
   name: Walking Staff
   description: An ash staff shod with iron. It steadies the feet as much as it cracks skulls.
   slot: weapon
-  damage: 2
   bonus: agility
 
 - id: woodsman-axe
@@ -29,7 +25,6 @@
   name: Woodsman's Axe
   description: A heavy, long-hafted axe made for felling oaks.
   slot: weapon
-  damage: 4
 
 # Outfits
 - id: hunters-cloak
@@ -62,13 +57,13 @@
   kind: consumable
   name: Healing Herbs
   description: A bundle of yarrow and comfrey, chewed and pressed onto wounds.
-  heal: 3
+  heal: 10
 
 - id: elder-tonic
   kind: consumable
   name: Elder's Tonic
   description: A dark, bitter draught. Brenna swears it once brought a drowned man back.
-  heal: 6
+  heal: 20
   magic: true
 
 # Key Items

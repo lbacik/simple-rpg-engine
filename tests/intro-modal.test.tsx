@@ -40,7 +40,7 @@ function loadFixture(opts: { intro?: string } = {}) {
       : ['intro: |', ...opts.intro.split('\n').map((line) => `  ${line}`)];
   writeFiles(scenarioDir, {
     'scenario.yaml': [
-      'schemaVersion: 1',
+      'schemaVersion: 2',
       `id: ${name}`,
       'title: Meadow',
       'description: A quiet meadow.',
@@ -66,7 +66,7 @@ function loadFixture(opts: { intro?: string } = {}) {
       'id: glade\nname: Glade\ndescription: Sunlight through leaves.\nmap: { x: 10, y: 20 }\nscenes: [path]\n',
     'scenes/path.yaml':
       'id: path\ntitle: Path\ntrigger: on-enter\ntext: A path leads home.\nchoices:\n  - id: go\n    text: Go home.\n    outcome:\n      end: home\n',
-    'items.yaml': '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n  damage: 3\n',
+    'items.yaml': '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n',
     'templates.yaml': [
       '- id: hunter',
       '  name: Hunter',

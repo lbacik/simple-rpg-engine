@@ -20,7 +20,7 @@ choices:
           A flagstone gives way and you drop to the waist into the crypt,
           scraping your ribs on the broken edge.
         effects:
-          - damage: 2
+          - damage: 7
   - id: test-floor
     text: Probe the stones before trusting your weight to them.
     test:
@@ -34,4 +34,4 @@ choices:
         text: |
           The stone you judged sound is the first to crack beneath you.
         effects:
-          - damage: 2
+          - damage: 7

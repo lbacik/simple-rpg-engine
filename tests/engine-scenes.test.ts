@@ -142,10 +142,10 @@ describe('scene activation', () => {
       { sceneId: 'chapel-prayer', title: 'Kneel at the Altar' },
     ]);
     expect(locationOf(scenario, seeded).onDemandScenes).toHaveLength(2);
-    // At full Health the prayer is not offered.
+    // At full Health (40 in format v2) the prayer is not offered.
     const full: PlaythroughState = {
       ...seeded,
-      character: { ...seeded.character, health: 12 },
+      character: { ...seeded.character, health: 40 },
     };
     expect(onDemandScenes(scenario, full)).toEqual([{ sceneId: 'chapel-altar', title: 'The Altar' }]);
   });
@@ -614,15 +614,15 @@ describe('conditions: every fact', () => {
       ...started,
       flags: ['quest-accepted'],
       visited: [...started.visited, 'forest-edge'],
-      encounters: { 'camp-bandit': { 'bandit-archer': 5 } },
+      encounters: { 'camp-bandit': { 'bandit-archer': 11 } },
     };
     expect(evaluateCondition(scenario, flagged, { flag: 'quest-accepted' })).toBe(true);
     expect(evaluateCondition(scenario, flagged, { visited: 'forest-edge' })).toBe(true);
-    // The bandit archer falls at 6 damage taken; 5 is not defeated.
+    // The bandit archer (profile archer, maxHp 12) falls at 12 wounds; 11 is not defeated.
     expect(evaluateCondition(scenario, flagged, { defeated: 'camp-bandit' })).toBe(false);
     const felled: PlaythroughState = {
       ...flagged,
-      encounters: { 'camp-bandit': { 'bandit-archer': 6 } },
+      encounters: { 'camp-bandit': { 'bandit-archer': 12 } },
     };
     expect(evaluateCondition(scenario, felled, { defeated: 'camp-bandit' })).toBe(true);
     // A defeated bandit (or a gone one) opens the search through `any`.
@@ -761,7 +761,7 @@ describe('synthetic package: remaining effects and transitions', () => {
     write(
       'scenario.yaml',
       [
-        'schemaVersion: 1',
+        'schemaVersion: 2',
         'id: synth',
         'title: Synth',
         'description: A synthetic package for Scene tests.',
@@ -901,7 +901,7 @@ describe('synthetic package: remaining effects and transitions', () => {
     );
     write(
       'items.yaml',
-      '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n  damage: 3\n',
+      '- id: sword\n  kind: equipment\n  name: Sword\n  slot: weapon\n',
     );
     write(
       'templates.yaml',

@@ -1,6 +1,6 @@
 # Stara studnia: Translation reference fixture with a non-English Base
 # Language (pl) and a minimal en Translation. Must load with no diagnostics.
-schemaVersion: 1
+schemaVersion: 2
 id: stara-studnia
 title: Stara studnia
 description: Krótka historia o studni na rynku.

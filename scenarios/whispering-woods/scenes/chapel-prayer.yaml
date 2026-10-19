@@ -3,7 +3,7 @@ id: chapel-prayer
 title: Kneel at the Altar
 trigger: on-demand
 when:
-  health: { atMost: 11 }
+  health: { atMost: 39 }
 illustration: chapel-prayer
 text: |
   The stillness of the ruined chapel invites you to rest. Rain drips through
@@ -15,4 +15,4 @@ choices:
       text: |
         A calm settles over you, and the ache of your wounds eases.
       effects:
-        - heal: 4
+        - heal: 13

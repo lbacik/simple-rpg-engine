@@ -173,7 +173,8 @@ describe('localizeScenario', () => {
     const ambush = pl.encountersById['wolf-ambush'];
     expect(ambush?.text).toContain('Trzciny się rozstępują');
     expect(ambush?.victory?.text).toContain('Wilk utyka w dal');
-    expect(ambush?.escape?.text).toContain('Brodząc, wracasz');
+    expect(ambush?.surrender?.text).toContain('wycofujesz');
+    expect(ambush?.draw?.text).toContain('zatacza krąg');
     expect(pl.templatesById['wayfarer']?.name).toBe('Wędrowiec');
     expect(pl.templatesById['wayfarer']?.description).toBe('Idziesz tam, dokąd prowadzi droga.');
     expect(pl.endingsById['home']?.title).toBe('Cicha droga');

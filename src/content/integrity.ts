@@ -9,6 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { ENEMY_CYCLES } from '../engine/combat/rules';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
 import {
   IMAGE_FORMAT_BY_EXTENSION,
@@ -83,6 +84,7 @@ export type NamespaceDeclarations = {
   items: Declaration[];
   enemies: Declaration[];
   encounters: Declaration[];
+  companions: Declaration[];
   templates: Declaration[];
   endings: Declaration[];
   images: Declaration[];
@@ -93,6 +95,7 @@ const CATALOG_NAMESPACES: readonly ManifestSection[] = [
   'items',
   'enemies',
   'encounters',
+  'companions',
   'templates',
   'endings',
   'images',
@@ -128,6 +131,7 @@ function collectDeclarations(
     items: [],
     enemies: [],
     encounters: [],
+    companions: [],
     templates: [],
     endings: [],
     images: [],
@@ -206,11 +210,14 @@ type Index = {
   items: Set<string>;
   enemies: Set<string>;
   encounters: Set<string>;
+  companions: Set<string>;
   endings: Set<string>;
   images: Set<string>;
   flags: Set<string>;
   /** Ending id to its `kind` (victory | defeat). */
   endingKinds: Map<string, string>;
+  /** Enemy id to its MVP profile (`raider` | `brute` | `sentinel` | `archer`). */
+  enemyProfiles: Map<string, keyof typeof ENEMY_CYCLES>;
 };
 
 function buildIndex(namespaces: NamespaceDeclarations, files: ParsedFile[]): Index {
@@ -225,16 +232,35 @@ function buildIndex(namespaces: NamespaceDeclarations, files: ParsedFile[]): Ind
       }
     });
   }
+  const enemyProfiles = new Map<string, keyof typeof ENEMY_CYCLES>();
+  for (const file of files) {
+    if (file.section !== 'enemies' || !Array.isArray(file.value)) continue;
+    file.value.forEach((entry) => {
+      if (
+        isRecord(entry) &&
+        typeof entry['id'] === 'string' &&
+        (entry['profile'] === 'raider' ||
+          entry['profile'] === 'brute' ||
+          entry['profile'] === 'sentinel' ||
+          entry['profile'] === 'archer') &&
+        !enemyProfiles.has(entry['id'])
+      ) {
+        enemyProfiles.set(entry['id'], entry['profile']);
+      }
+    });
+  }
   return {
     locations: setOf(namespaces.locations),
     scenes: setOf(namespaces.scenes),
     items: setOf(namespaces.items),
     enemies: setOf(namespaces.enemies),
     encounters: setOf(namespaces.encounters),
+    companions: setOf(namespaces.companions),
     endings: setOf(namespaces.endings),
     images: setOf(namespaces.images),
     flags: setOf(namespaces.flags),
     endingKinds,
+    enemyProfiles,
   };
 }
 
@@ -350,6 +376,10 @@ function checkCondition(
         checkReference(file, [...innerPath, 'item'], inner['item'], 'item', index.items, 'ref/unknown-item', ctx);
       }
       break;
+    case 'companion':
+    case 'companionLost':
+      checkReference(file, innerPath, inner, 'companion', index.companions, 'ref/unknown-companion', ctx);
+      break;
     case 'all':
     case 'any':
       if (Array.isArray(inner)) {
@@ -392,6 +422,19 @@ function checkEffect(
       if (isRecord(inner)) {
         checkReference(file, [...innerPath, 'item'], inner['item'], 'item', index.items, 'ref/unknown-item', ctx);
       }
+      break;
+    case 'companion-join':
+      checkReference(
+        file,
+        innerPath,
+        inner,
+        'companion',
+        index.companions,
+        'ref/unknown-companion',
+        ctx,
+      );
+      break;
+    case 'companion-leave':
       break;
     default:
       break;
@@ -592,15 +635,50 @@ function checkEncounterReferences(
             ctx,
           );
         }
+        checkPhaseOffset(file, participant, participantBase, index, ctx);
       });
       checkParticipantIds(file, entry, entryIndex, ctx);
     }
     if (entry['victory'] !== undefined) {
       checkOutcome(file, entry['victory'], [...base, 'victory'], index, sceneTriggers, ctx);
     }
-    if (entry['escape'] !== undefined) {
-      checkOutcome(file, entry['escape'], [...base, 'escape'], index, sceneTriggers, ctx);
+    if (entry['surrender'] !== undefined) {
+      checkOutcome(file, entry['surrender'], [...base, 'surrender'], index, sceneTriggers, ctx);
     }
+    if (entry['draw'] !== undefined) {
+      checkOutcome(file, entry['draw'], [...base, 'draw'], index, sceneTriggers, ctx);
+    }
+  });
+}
+
+/**
+ * A participant's `phaseOffset` below its Enemy profile's cycle length
+ * (docs/spec/validation.md, ref/phase-offset-out-of-cycle). There is no
+ * modulo: an offset past the end of the cycle is an authoring error. Unknown
+ * or malformed enemies are left to their own diagnostics, to avoid cascades.
+ */
+function checkPhaseOffset(
+  file: ParsedFile,
+  participant: Record<string, unknown>,
+  participantBase: (string | number)[],
+  index: Index,
+  ctx: Ctx,
+): void {
+  const enemy = participant['enemy'];
+  const offset = participant['phaseOffset'] ?? 0;
+  if (typeof enemy !== 'string' || !ID_PATTERN.test(enemy)) return;
+  const profile = index.enemyProfiles.get(enemy);
+  if (profile === undefined) return;
+  if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0) return;
+  const cycleLength = ENEMY_CYCLES[profile].length;
+  if (offset < cycleLength) return;
+  ctx.push({
+    severity: 'error',
+    code: 'ref/phase-offset-out-of-cycle',
+    message: `phaseOffset ${offset} is outside the "${profile}" cycle of ${cycleLength} entries (enemy "${enemy}"); phase offsets run 0-${cycleLength - 1} with no modulo`,
+    file: file.file,
+    range: nodeRangeOf(file, [...participantBase, 'phaseOffset']),
+    path: [...participantBase, 'phaseOffset'],
   });
 }
 
@@ -1324,6 +1402,7 @@ export function runIntegrityPhase(
     ['items', 'item'],
     ['enemies', 'enemy'],
     ['encounters', 'encounter'],
+    ['companions', 'companion'],
     ['templates', 'template'],
     ['endings', 'ending'],
     ['images', 'image'],

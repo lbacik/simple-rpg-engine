@@ -12,6 +12,7 @@ import type { LineCounter } from 'yaml';
 import { z } from 'zod';
 import type { Diagnostic, DiagnosticRange } from './diagnostic';
 import {
+  CompanionsCatalogSchema,
   CONDITION_BRANCH_KEYS,
   EFFECT_BRANCH_KEYS,
   EncountersCatalogSchema,
@@ -33,6 +34,7 @@ export type ManifestSection =
   | 'items'
   | 'enemies'
   | 'encounters'
+  | 'companions'
   | 'templates'
   | 'endings'
   | 'images';
@@ -56,11 +58,39 @@ export type Ctx = {
   push: (diagnostic: Diagnostic) => void;
 };
 
+/**
+ * Retired v1 fields by catalog section (docs/spec/validation.md,
+ * schema/retired-field): each names its v2 replacement. Zod's strict objects
+ * reject these keys as unknown; convertIssue maps them to the retired code
+ * instead, so an old field is never reported as merely unknown.
+ */
+const RETIRED_FIELDS: Record<string, Record<string, string>> = {
+  enemies: {
+    attributes: 'an Enemy\'s statistics now come from its "profile"',
+    health: 'an Enemy\'s statistics now come from its "profile"',
+    damage: 'an Enemy\'s statistics now come from its "profile"',
+    reach: 'an Enemy\'s statistics now come from its "profile"',
+    behaviour: 'an Enemy\'s statistics now come from its "profile"',
+  },
+  encounters: {
+    escape: 'the "escape" Outcome is retired; use "surrender" and "draw"',
+  },
+  items: {
+    damage: 'weapon "damage" is retired; equipment keeps only an attribute "bonus"',
+    reach: 'weapon "reach" is retired; equipment keeps only an attribute "bonus"',
+  },
+};
+
 /** Run one Zod definition and convert every issue to a schema/ diagnostic. */
-export function runZodCheck(schema: z.ZodTypeAny, value: unknown, ctx: Ctx): void {
+export function runZodCheck(
+  schema: z.ZodTypeAny,
+  value: unknown,
+  ctx: Ctx,
+  section?: ManifestSection,
+): void {
   const result = schema.safeParse(value);
   if (!result.success) {
-    convertIssues(result.error.issues, value, ctx);
+    convertIssues(result.error.issues, value, ctx, section);
   }
 }
 
@@ -110,6 +140,7 @@ const SECTION_SCHEMAS: Record<ManifestSection, z.ZodTypeAny> = {
   items: ItemsCatalogSchema,
   enemies: EnemiesCatalogSchema,
   encounters: EncountersCatalogSchema,
+  companions: CompanionsCatalogSchema,
   templates: TemplatesCatalogSchema,
   endings: EndingsCatalogSchema,
   images: ImagesCatalogSchema,
@@ -177,8 +208,13 @@ function rangeOf(ctx: Ctx, path: readonly (string | number)[]): DiagnosticRange 
 
 type Issue = z.core.$ZodIssue;
 
-function convertIssues(issues: readonly Issue[], valueRoot: unknown, ctx: Ctx): void {
-  for (const issue of issues) convertIssue(issue, [], valueRoot, ctx);
+function convertIssues(
+  issues: readonly Issue[],
+  valueRoot: unknown,
+  ctx: Ctx,
+  section?: ManifestSection,
+): void {
+  for (const issue of issues) convertIssue(issue, [], valueRoot, ctx, section);
 }
 
 function convertIssue(
@@ -186,6 +222,7 @@ function convertIssue(
   basePath: readonly (string | number)[],
   valueRoot: unknown,
   ctx: Ctx,
+  section?: ManifestSection,
 ): void {
   const rawPath = [...basePath, ...issue.path].filter(
     (segment): segment is string | number =>
@@ -194,6 +231,18 @@ function convertIssue(
   if (issue.code === 'unrecognized_keys') {
     for (const key of issue.keys) {
       const path = [...rawPath, key];
+      const retired = section === undefined ? undefined : RETIRED_FIELDS[section]?.[key];
+      if (retired !== undefined) {
+        ctx.push({
+          severity: 'error',
+          code: 'schema/retired-field',
+          message: `"${key}" is retired: ${retired}`,
+          file: ctx.file,
+          range: nodeRange(keyNodeAtPath(ctx.contents, rawPath, key), ctx.lineCounter),
+          path,
+        });
+        continue;
+      }
       ctx.push({
         severity: 'error',
         code: 'schema/unknown-key',
@@ -205,8 +254,28 @@ function convertIssue(
     }
     return;
   }
+  // A manifest pinned to the retired format v1 (docs/spec/validation.md,
+  // schema/retired-format): only the exact value 1 maps here; anything else
+  // stays schema/invalid-value (a wrong version) or schema/missing-field.
+  if (
+    ctx.file === 'scenario.yaml' &&
+    rawPath.length === 1 &&
+    rawPath[0] === 'schemaVersion' &&
+    valueAtPath(valueRoot, rawPath) === 1
+  ) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/retired-format',
+      message:
+        'this Scenario uses content format v1, which is retired; migrate it to format v2 (see docs/spec/content-migration-1.0.md)',
+      file: ctx.file,
+      range: nodeRange(nodeAtPath(ctx.contents, rawPath), ctx.lineCounter),
+      path: [...rawPath],
+    });
+    return;
+  }
   if (issue.code === 'invalid_union') {
-    convertUnionIssue(issue, rawPath, valueRoot, ctx);
+    convertUnionIssue(issue, rawPath, valueRoot, ctx, section);
     return;
   }
   const value = valueAtPath(valueRoot, rawPath);
@@ -277,10 +346,10 @@ function oneKeyMessage(keys: string[]): string {
   const effectKeys = keys.filter((key) => EFFECT_KEY_SET.has(key));
   const conditionKeys = keys.filter((key) => CONDITION_KEY_SET.has(key));
   if (effectKeys.length > 0 && conditionKeys.length === 0) {
-    return 'effect must have exactly one key (set-flag, clear-flag, reveal, heal, damage, give-item or take-item)';
+    return 'effect must have exactly one key (set-flag, clear-flag, reveal, heal, damage, give-item, take-item, companion-join or companion-leave)';
   }
   if (conditionKeys.length > 0 && effectKeys.length === 0) {
-    return 'condition must have exactly one key (flag, visited, fired, defeated, has, attribute, health, all, any or not)';
+    return 'condition must have exactly one key (flag, visited, fired, defeated, has, attribute, health, companion, companionLost, all, any or not)';
   }
   return 'mapping must have exactly one key (one Effect or one Condition fact)';
 }
@@ -296,6 +365,7 @@ function convertUnionIssue(
   path: readonly (string | number)[],
   valueRoot: unknown,
   ctx: Ctx,
+  section?: ManifestSection,
 ): void {
   const invalidValue = (message: string): void => {
     ctx.push({
@@ -368,7 +438,7 @@ function convertUnionIssue(
     ) {
       continue;
     }
-    convertIssue(nested, path, valueRoot, ctx);
+    convertIssue(nested, path, valueRoot, ctx, section);
   }
 }
 
@@ -593,70 +663,9 @@ function checkItem(value: unknown, path: readonly (string | number)[], ctx: Ctx)
   if (!isRecord(value)) return;
   checkText(value['name'], [...path, 'name'], ctx);
   if (value['description'] !== undefined) checkText(value['description'], [...path, 'description'], ctx);
-  if (value['kind'] !== 'equipment') {
-    // Consumables, keys and anything else that is not a weapon must not
-    // carry weapon fields (docs/spec/validation.md, schema/weapon-only-field).
-    // Zod's strict objects also report these keys as schema/unknown-key;
-    // both findings are correct.
-    for (const field of ['reach', 'damage'] as const) {
-      if (value[field] !== undefined) {
-        ctx.push({
-          severity: 'error',
-          code: 'schema/weapon-only-field',
-          message: `"${field}" is only allowed on weapons (slot "weapon")`,
-          file: ctx.file,
-          range: rangeOf(ctx, [...path, field]),
-          path: [...path, field],
-        });
-      }
-    }
-    return;
-  }
-  const slot = value['slot'];
-  const reach = value['reach'];
-  const damage = value['damage'];
-  if (slot !== 'weapon') {
-    // A non-weapon (or an item whose slot is itself invalid and left for
-    // schema/invalid-value) must not carry weapon fields.
-    if (slot !== undefined && (typeof slot !== 'string' || ['outfit', 'talisman'].includes(slot))) {
-      for (const field of ['reach', 'damage'] as const) {
-        if (value[field] !== undefined) {
-          ctx.push({
-            severity: 'error',
-            code: 'schema/weapon-only-field',
-            message: `"${field}" is only allowed on weapons (slot "weapon")`,
-            file: ctx.file,
-            range: rangeOf(ctx, [...path, field]),
-            path: [...path, field],
-          });
-        }
-      }
-    }
-    return;
-  }
-  if (damage === undefined) {
-    const id = typeof value['id'] === 'string' ? ` "${value['id']}"` : '';
-    ctx.push({
-      severity: 'error',
-      code: 'schema/weapon-only-field',
-      message: `weapon${id} must have "damage"`,
-      file: ctx.file,
-      range: rangeOf(ctx, path),
-      path: [...path],
-    });
-    return;
-  }
-  // Zod already rejects anything outside 2-4; only 4 needs narrowing here.
-  if (reach === 'ranged' && damage === 4) {
-    ctx.push({
-      severity: 'error',
-      code: 'schema/invalid-value',
-      message: `ranged weapon damage must be 2-3 (melee weapons allow 2-4)`,
-      file: ctx.file,
-      range: rangeOf(ctx, [...path, 'damage']),
-      path: [...path, 'damage'],
-    });
-  }
+  // Weapon `damage` and `reach` are retired in format v2: Zod's strict objects
+  // reject them as unknown keys and convertIssue maps them to
+  // schema/retired-field, so no loader-only refinement remains here.
 }
 
 function checkTemplate(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
@@ -688,7 +697,7 @@ function checkTemplate(value: unknown, path: readonly (string | number)[], ctx: 
   }
 }
 
-function checkEnemy(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
+function checkNamedEntry(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
   checkText(value['name'], [...path, 'name'], ctx);
   if (value['description'] !== undefined) checkText(value['description'], [...path, 'description'], ctx);
@@ -697,7 +706,7 @@ function checkEnemy(value: unknown, path: readonly (string | number)[], ctx: Ctx
 function checkEncounter(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
   // Exactly one of `enemy` and `participants` (docs/spec/validation.md,
-  // schema/encounter-enemies). The 1-2 length limit and each entry's `enemy`
+  // schema/encounter-enemies). The 1-5 length limit and each entry's fields
   // are Zod ranges (schema/invalid-value, schema/missing-field); only the
   // mutually exclusive spelling is a loader-only refinement here, since JSON
   // Schema cannot express it.
@@ -716,9 +725,34 @@ function checkEncounter(value: unknown, path: readonly (string | number)[], ctx:
       path: [...path],
     });
   }
+  // The `enemy:` shorthand carries the single participant's `startRange`
+  // beside it; beside `participants` an Encounter-level `startRange` is the
+  // retired v1 field (docs/spec/validation.md, schema/retired-field).
+  if (hasEnemy && !hasParticipants && value['startRange'] === undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/missing-field',
+      message: 'missing required key "startRange" (required beside the "enemy" shorthand)',
+      file: ctx.file,
+      range: rangeOf(ctx, path),
+      path: [...path, 'startRange'],
+    });
+  }
+  if (hasParticipants && value['startRange'] !== undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/retired-field',
+      message:
+        '"startRange" beside "participants" is retired: set "startRange" on each participant',
+      file: ctx.file,
+      range: rangeOf(ctx, [...path, 'startRange']),
+      path: [...path, 'startRange'],
+    });
+  }
   if (value['text'] !== undefined) checkNarration(value['text'], [...path, 'text'], ctx);
   if (value['victory'] !== undefined) checkOutcome(value['victory'], [...path, 'victory'], ctx);
-  if (value['escape'] !== undefined) checkOutcome(value['escape'], [...path, 'escape'], ctx);
+  if (value['surrender'] !== undefined) checkOutcome(value['surrender'], [...path, 'surrender'], ctx);
+  if (value['draw'] !== undefined) checkOutcome(value['draw'], [...path, 'draw'], ctx);
 }
 
 function checkEnding(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
@@ -825,7 +859,8 @@ function checkCatalog(
         checkItem(entry, path, ctx);
         break;
       case 'enemies':
-        checkEnemy(entry, path, ctx);
+      case 'companions':
+        checkNamedEntry(entry, path, ctx);
         break;
       case 'encounters':
         checkEncounter(entry, path, ctx);
@@ -882,7 +917,7 @@ export function runStructurePhase(
     };
     const result = schema.safeParse(file.value);
     if (!result.success) {
-      convertIssues(result.error.issues, file.value, ctx);
+      convertIssues(result.error.issues, file.value, ctx, file.section);
     }
     switch (file.section) {
       case 'locations':

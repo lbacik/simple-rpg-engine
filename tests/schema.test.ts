@@ -29,7 +29,7 @@ function writePackage(dir: string, files: Record<string, string | Buffer>): void
   }
 }
 
-const MANIFEST = `schemaVersion: 1
+const MANIFEST = `schemaVersion: 2
 id: __ID__
 title: Test Scenario
 description: A test scenario.
@@ -119,7 +119,6 @@ const ITEMS = `- id: sword
   kind: equipment
   name: Sword
   slot: weapon
-  damage: 3
 - id: cloak
   kind: equipment
   name: Cloak
@@ -129,8 +128,7 @@ const ITEMS = `- id: sword
   kind: equipment
   name: Bow
   slot: weapon
-  reach: ranged
-  damage: 3
+  bonus: agility
 - id: bread
   kind: consumable
   name: Bread
@@ -142,21 +140,25 @@ const ITEMS = `- id: sword
 
 const ENEMIES = `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 2, wits: 0, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `;
 
 const ENCOUNTERS = `- id: rats
   enemy: rat
+  startRange: melee
   text: |
     Rats pour from the walls.
   victory:
     text: |
       Silence returns.
-  escape:
+    move: home
+  surrender:
     text: |
-      You run.
+      You yield.
+    move: home
+  draw:
+    text: |
+      You break off.
     move: home
 `;
 
@@ -324,7 +326,7 @@ describe('structure phase', () => {
       'schema/unknown-key',
     );
     expect(diag.path).toEqual([4, 'bogus']);
-    expect(diag.range).toEqual({ line: 24, column: 3, endLine: 24, endColumn: 8 });
+    expect(diag.range).toEqual({ line: 22, column: 3, endLine: 22, endColumn: 8 });
   });
 
   it('schema/missing-field for a missing required key', () => {
@@ -338,15 +340,23 @@ describe('structure phase', () => {
     expect(diag.range).toBeDefined();
   });
 
-  it('schema/missing-field for a missing encounter escape', () => {
-    const diag = expectInvalid(
-      'missing-escape',
+  it('schema/missing-field for a missing encounter surrender or draw', () => {
+    const surrender = expectInvalid(
+      'missing-surrender',
       'encounters.yaml',
-      '  escape:\n    text: |\n      You run.\n    move: home\n',
+      '  surrender:\n    text: |\n      You yield.\n    move: home\n',
       '',
       'schema/missing-field',
     );
-    expect(diag.path).toEqual([0, 'escape']);
+    expect(surrender.path).toEqual([0, 'surrender']);
+    const draw = expectInvalid(
+      'missing-draw',
+      'encounters.yaml',
+      '  draw:\n    text: |\n      You break off.\n    move: home\n',
+      '',
+      'schema/missing-field',
+    );
+    expect(draw.path).toEqual([0, 'draw']);
   });
 
   it('schema/invalid-value for a mistyped text field', () => {
@@ -498,40 +508,37 @@ describe('structure phase', () => {
     expect(any.range).toEqual({ line: 10, column: 18, endLine: 10, endColumn: 20 });
   });
 
-  it('schema/weapon-only-field for reach/damage off-weapon and damage-less weapons', () => {
+  it('schema/retired-field for weapon damage and reach (format v2 keeps only bonus)', () => {
     const reach = expectInvalid(
-      'weapon-only-reach',
+      'retired-reach',
       'items.yaml',
       '  slot: outfit\n  bonus: agility\n',
       '  slot: outfit\n  bonus: agility\n  reach: ranged\n',
-      'schema/weapon-only-field',
+      'schema/retired-field',
     );
     expect(reach.path).toEqual([1, 'reach']);
 
-    const nodamage = expectInvalid(
-      'weapon-only-nodamage',
+    const damage = expectInvalid(
+      'retired-damage',
       'items.yaml',
-      '  slot: weapon\n  damage: 3\n- id: cloak',
       '  slot: weapon\n- id: cloak',
-      'schema/weapon-only-field',
+      '  slot: weapon\n  damage: 3\n- id: cloak',
+      'schema/retired-field',
     );
-    expect(nodamage.path).toEqual([0]);
+    expect(damage.path).toEqual([0, 'damage']);
   });
 
-  it('schema/weapon-only-field for reach/damage on non-equipment kinds', () => {
-    const dir = freshValidDir('weapon-only-consumable');
+  it('schema/retired-field for damage and reach on non-weapon items', () => {
+    const dir = freshValidDir('retired-consumable');
     mutate(dir, 'items.yaml', '  name: Bread\n  heal: 2\n', '  name: Bread\n  heal: 2\n  reach: melee\n');
     const diags = fail(dir);
-    // Zod's strict objects also flag the key as unknown; both findings are correct.
-    expect(diags.map((d) => d.code).sort()).toEqual([
-      'schema/unknown-key',
-      'schema/weapon-only-field',
-    ]);
-    const flagged = only(diags, 'schema/weapon-only-field');
+    // The retired key maps to schema/retired-field instead of schema/unknown-key.
+    expect(diags).toHaveLength(1);
+    const flagged = only(diags, 'schema/retired-field');
     expect(flagged.file).toBe('items.yaml');
     expect(flagged.path).toEqual([3, 'reach']);
 
-    const keyDir = freshValidDir('weapon-only-key');
+    const keyDir = freshValidDir('retired-key');
     mutate(
       keyDir,
       'items.yaml',
@@ -539,11 +546,8 @@ describe('structure phase', () => {
       '- id: seal\n  kind: key\n  name: Seal\n  damage: 2\n',
     );
     const keyDiags = fail(keyDir);
-    expect(keyDiags.map((d) => d.code).sort()).toEqual([
-      'schema/unknown-key',
-      'schema/weapon-only-field',
-    ]);
-    expect(only(keyDiags, 'schema/weapon-only-field').path).toEqual([4, 'damage']);
+    expect(keyDiags).toHaveLength(1);
+    expect(only(keyDiags, 'schema/retired-field').path).toEqual([4, 'damage']);
   });
 
   it('schema/invalid-language for a bad BCP 47 tag', () => {
@@ -667,17 +671,16 @@ describe('structure phase', () => {
     expectInvalid(
       'bad-slot',
       'items.yaml',
-      'slot: weapon\n  damage: 3\n- id: cloak',
-      'slot: hat\n  damage: 3\n- id: cloak',
+      'slot: weapon\n  bonus: agility\n- id: bread',
+      'slot: hat\n  bonus: agility\n- id: bread',
       'schema/invalid-value',
     );
     expectInvalid('bad-bonus', 'items.yaml', 'bonus: agility', 'bonus: strength', 'schema/invalid-value');
-    expectInvalid('bad-reach', 'items.yaml', 'reach: ranged', 'reach: far', 'schema/invalid-value');
     expectInvalid(
       'bad-start-range',
       'encounters.yaml',
-      '- id: rats\n  enemy: rat\n',
-      '- id: rats\n  enemy: rat\n  startRange: sideways\n',
+      '  startRange: melee\n',
+      '  startRange: sideways\n',
       'schema/invalid-value',
     );
     expectInvalid('bad-ending-kind', 'endings.yaml', 'kind: defeat', 'kind: bittersweet', 'schema/invalid-value');
@@ -780,9 +783,9 @@ describe('structure range boundaries', () => {
     expect(high.path).toEqual(['map', 'y']);
   });
 
-  it('effect heal and damage 1-12', () => {
+  it('effect heal and damage 1-40', () => {
     expectValid('heal-min', 'scenes/gate.yaml', '- heal: 2', '- heal: 1');
-    expectValid('heal-max', 'scenes/gate.yaml', '- heal: 2', '- heal: 12');
+    expectValid('heal-max', 'scenes/gate.yaml', '- heal: 2', '- heal: 40');
     const healLow = expectInvalid(
       'heal-low',
       'scenes/gate.yaml',
@@ -795,14 +798,14 @@ describe('structure range boundaries', () => {
       'heal-high',
       'scenes/gate.yaml',
       '- heal: 2',
-      '- heal: 13',
+      '- heal: 41',
       'schema/invalid-value',
     );
     expect(healHigh.path).toEqual(['choices', 0, 'outcome', 'effects', 1, 'heal']);
     expectValid('damage-min', 'scenes/gate.yaml', '- damage: 1', '- damage: 1');
-    expectValid('damage-max', 'scenes/gate.yaml', '- damage: 1', '- damage: 12');
+    expectValid('damage-max', 'scenes/gate.yaml', '- damage: 1', '- damage: 40');
     expectInvalid('damage-low', 'scenes/gate.yaml', '- damage: 1', '- damage: 0', 'schema/invalid-value');
-    expectInvalid('damage-high', 'scenes/gate.yaml', '- damage: 1', '- damage: 13', 'schema/invalid-value');
+    expectInvalid('damage-high', 'scenes/gate.yaml', '- damage: 1', '- damage: 41', 'schema/invalid-value');
   });
 
   it('give-item quantity of at least 1 with no upper bound', () => {
@@ -844,60 +847,48 @@ describe('structure range boundaries', () => {
     expectInvalid('attr-most-high', file, from, 'when: { attribute: { name: might, atMost: 5 } }', 'schema/invalid-value');
   });
 
-  it('health bounds atLeast 2-12 and atMost 1-11', () => {
+  it('health bounds atLeast 2-40 and atMost 1-39', () => {
     const file = 'locations/home.yaml';
     const from = 'when: { flag: met-elder }';
     expectValid('health-least-min', file, from, 'when: { health: { atLeast: 2 } }');
-    expectValid('health-least-max', file, from, 'when: { health: { atLeast: 12 } }');
+    expectValid('health-least-max', file, from, 'when: { health: { atLeast: 40 } }');
     expectInvalid('health-least-low', file, from, 'when: { health: { atLeast: 1 } }', 'schema/invalid-value');
-    expectInvalid('health-least-high', file, from, 'when: { health: { atLeast: 13 } }', 'schema/invalid-value');
+    expectInvalid('health-least-high', file, from, 'when: { health: { atLeast: 41 } }', 'schema/invalid-value');
     expectValid('health-most-min', file, from, 'when: { health: { atMost: 1 } }');
-    expectValid('health-most-max', file, from, 'when: { health: { atMost: 11 } }');
+    expectValid('health-most-max', file, from, 'when: { health: { atMost: 39 } }');
     expectInvalid('health-most-low', file, from, 'when: { health: { atMost: 0 } }', 'schema/invalid-value');
-    expectInvalid('health-most-high', file, from, 'when: { health: { atMost: 12 } }', 'schema/invalid-value');
+    expectInvalid('health-most-high', file, from, 'when: { health: { atMost: 40 } }', 'schema/invalid-value');
   });
 
-  it('melee weapon damage 2-4', () => {
-    expectValid('melee-min', 'items.yaml', 'slot: weapon\n  damage: 3', 'slot: weapon\n  damage: 2');
-    expectValid('melee-max', 'items.yaml', 'slot: weapon\n  damage: 3', 'slot: weapon\n  damage: 4');
-    expectInvalid('melee-low', 'items.yaml', 'slot: weapon\n  damage: 3', 'slot: weapon\n  damage: 1', 'schema/invalid-value');
-    expectInvalid('melee-high', 'items.yaml', 'slot: weapon\n  damage: 3', 'slot: weapon\n  damage: 5', 'schema/invalid-value');
+  it('consumable heal 1-40', () => {
+    expectValid('consumable-min', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 1');
+    expectValid('consumable-max', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 40');
+    expectInvalid('consumable-low', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 0', 'schema/invalid-value');
+    expectInvalid('consumable-high', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 41', 'schema/invalid-value');
   });
 
-  it('ranged weapon damage 2-3', () => {
-    expectValid('ranged-min', 'items.yaml', 'reach: ranged\n  damage: 3', 'reach: ranged\n  damage: 2');
-    const diag = expectInvalid(
-      'ranged-high',
-      'items.yaml',
-      'reach: ranged\n  damage: 3',
-      'reach: ranged\n  damage: 4',
+  it('enemy profile binds to a fixed MVP profile, never statistics', () => {
+    const file = 'enemies.yaml';
+    for (const profile of ['raider', 'brute', 'sentinel', 'archer']) {
+      expectValid(`enemy-profile-${profile}`, file, 'profile: raider', `profile: ${profile}`);
+    }
+    const unknown = expectInvalid(
+      'enemy-profile-unknown',
+      file,
+      'profile: raider',
+      'profile: wolf-lord',
       'schema/invalid-value',
     );
-    expect(diag.path).toEqual([2, 'damage']);
-    expectInvalid('ranged-low', 'items.yaml', 'reach: ranged\n  damage: 3', 'reach: ranged\n  damage: 1', 'schema/invalid-value');
-  });
-
-  it('consumable heal 1-12', () => {
-    expectValid('consumable-min', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 1');
-    expectValid('consumable-max', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 12');
-    expectInvalid('consumable-low', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 0', 'schema/invalid-value');
-    expectInvalid('consumable-high', 'items.yaml', 'name: Bread\n  heal: 2', 'name: Bread\n  heal: 13', 'schema/invalid-value');
-  });
-
-  it('enemy attributes 0-3, health 1-30, damage 1-6', () => {
-    const file = 'enemies.yaml';
-    expectValid('enemy-attr-min', file, 'might: 1', 'might: 0');
-    expectValid('enemy-attr-max', file, 'might: 1', 'might: 3');
-    expectInvalid('enemy-attr-low', file, 'might: 1', 'might: -1', 'schema/invalid-value');
-    expectInvalid('enemy-attr-high', file, 'might: 1', 'might: 4', 'schema/invalid-value');
-    expectValid('enemy-health-min', file, 'health: 3', 'health: 1');
-    expectValid('enemy-health-max', file, 'health: 3', 'health: 30');
-    expectInvalid('enemy-health-low', file, 'health: 3', 'health: 0', 'schema/invalid-value');
-    expectInvalid('enemy-health-high', file, 'health: 3', 'health: 31', 'schema/invalid-value');
-    expectValid('enemy-damage-min', file, 'damage: 1', 'damage: 1');
-    expectValid('enemy-damage-max', file, 'damage: 1', 'damage: 6');
-    expectInvalid('enemy-damage-low', file, 'damage: 1', 'damage: 0', 'schema/invalid-value');
-    expectInvalid('enemy-damage-high', file, 'damage: 1', 'damage: 7', 'schema/invalid-value');
+    expect(unknown.path).toEqual([0, 'profile']);
+    // A party profile on an Enemy is outside the Enemy vocabulary.
+    const party = expectInvalid(
+      'enemy-profile-party',
+      file,
+      'profile: raider',
+      'profile: party-sentinel',
+      'schema/invalid-value',
+    );
+    expect(party.path).toEqual([0, 'profile']);
   });
 
   it('template starting-item quantity of at least 1', () => {

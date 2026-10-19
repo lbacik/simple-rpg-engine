@@ -51,7 +51,7 @@ function paddedPng(bytes: number, width = 1, height = 1): Buffer {
   return Buffer.concat([base, Buffer.alloc(bytes - base.length)]);
 }
 
-const MANIFEST = `schemaVersion: 1
+const MANIFEST = `schemaVersion: 2
 id: __ID__
 title: Test Scenario
 description: A test scenario.
@@ -103,7 +103,6 @@ const ITEMS = `- id: sword
   kind: equipment
   name: Sword
   slot: weapon
-  damage: 3
 - id: bread
   kind: consumable
   name: Bread
@@ -112,22 +111,25 @@ const ITEMS = `- id: sword
 
 const ENEMIES = `- id: rat
   name: Rat
-  attributes: { might: 1, agility: 2, wits: 0, presence: 0 }
-  health: 3
-  damage: 1
+  profile: raider
 `;
 
 const ENCOUNTERS = `- id: rats
   enemy: rat
+  startRange: melee
   text: |
     Rats pour from the walls.
   victory:
     text: |
       Silence returns.
     move: home
-  escape:
+  surrender:
     text: |
-      You run.
+      You yield.
+    move: home
+  draw:
+    text: |
+      You break off.
     move: home
 `;
 

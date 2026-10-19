@@ -13,19 +13,20 @@ import { z } from 'zod';
 import type { IntegrityImage, IntegrityMotionLayer } from './integrity';
 import { normalizeListedPath } from './paths';
 import {
+  CompanionsCatalogSchema,
   ConditionSchema,
   EffectSchema,
   EncountersCatalogSchema,
   EnemiesCatalogSchema,
   EndingsCatalogSchema,
   EnemySchema,
-  EncounterSchema,
   EndingSchema,
   ImagesCatalogSchema,
   ItemSchema,
   ItemsCatalogSchema,
   LocationSchema,
   ManifestSchema,
+  OutcomeSchema,
   SceneSchema,
   TemplateSchema,
   TemplatesCatalogSchema,
@@ -103,20 +104,36 @@ export type CompiledScene = {
   location: CompiledLocation | undefined;
 };
 
+export type StartRange = 'melee' | 'near' | 'far';
+
 export type CompiledParticipant = {
   /** The participant's identity within its Encounter: explicit, or defaulted to its Enemy id. */
   id: string;
   enemy: CompiledEnemy;
+  /** The participant's authored starting Range (mechanical, no default). */
+  startRange: StartRange;
+  /** Visible scenario tuning: 0 below the profile's cycle length. */
+  phaseOffset: number;
+  /** Visible scenario tuning: integer 0-3. */
+  power: number;
 };
 
 export type CompiledEncounter = {
   id: string;
-  /** The Encounter's participants in participant order (1-2 entries). */
+  /** The Encounter's participants in authored order (1-5 entries). */
   participants: CompiledParticipant[];
-  startRange: 'near' | 'far';
   text: string;
   victory?: CompiledOutcome;
-  escape: CompiledOutcome;
+  surrender: CompiledOutcome;
+  draw: CompiledOutcome;
+};
+
+/** A Scenario-level Companion definition: id, translatable name, party profile. */
+export type CompiledCompanion = {
+  id: string;
+  name: string;
+  description?: string;
+  profile: 'party-sentinel' | 'party-archer';
 };
 
 // ---------------------------------------------------------------------------
@@ -170,7 +187,8 @@ export type TranslationEncounterText = {
   id: string;
   text: string;
   victory?: TranslationOutcomeText;
-  escape: TranslationOutcomeText;
+  surrender: TranslationOutcomeText;
+  draw: TranslationOutcomeText;
 };
 
 export type TranslationEndingText = {
@@ -198,6 +216,7 @@ export type CompiledTranslation = {
   items: Record<string, TranslationNamedText>;
   enemies: Record<string, TranslationNamedText>;
   encounters: Record<string, TranslationEncounterText>;
+  companions: Record<string, TranslationNamedText>;
   templates: Record<string, TranslationNamedText>;
   endings: Record<string, TranslationEndingText>;
   images: Record<string, TranslationImageText>;
@@ -221,6 +240,7 @@ export type Scenario = {
   items: CompiledItem[];
   enemies: CompiledEnemy[];
   encounters: CompiledEncounter[];
+  companions: CompiledCompanion[];
   templates: CompiledTemplate[];
   endings: CompiledEnding[];
   images: CompiledImageEntry[];
@@ -229,6 +249,7 @@ export type Scenario = {
   itemsById: Record<string, CompiledItem>;
   enemiesById: Record<string, CompiledEnemy>;
   encountersById: Record<string, CompiledEncounter>;
+  companionsById: Record<string, CompiledCompanion>;
   templatesById: Record<string, CompiledTemplate>;
   endingsById: Record<string, CompiledEnding>;
   imagesById: Record<string, CompiledImageEntry>;
@@ -259,7 +280,7 @@ type Lookups = {
 };
 
 function resolveOutcome(
-  parsed: z.infer<typeof EncounterSchema>['escape'],
+  parsed: z.infer<typeof OutcomeSchema>,
   lookups: Lookups,
 ): CompiledOutcome {
   return {
@@ -510,30 +531,59 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   }));
   const sceneById = new Map(scenes.map((scene) => [scene.id, scene]));
 
-  // `enemy: X` is shorthand for `participants: [{ enemy: X }]` (a single
-  // participant with id `X`): both spellings normalise to the same ordered
-  // participant model. Phase 3 proved exactly one spelling and every
-  // reference, so the lookups below are total.
+  // `enemy: X` with a `startRange` beside it is shorthand for a single
+  // participant (that Range, zero tuning, id `X`): both spellings normalise
+  // to the same ordered participant model. Phase 2 proved exactly one
+  // spelling (schema/encounter-enemies) and Phase 3 every reference, so the
+  // lookups below are total.
   const encounters: CompiledEncounter[] = parsedEncounters.map((parsed) => {
     const rawParticipants =
       parsed.participants !== undefined
-        ? parsed.participants
-        : parsed.enemy !== undefined
-          ? [{ id: undefined as string | undefined, enemy: parsed.enemy }]
+        ? parsed.participants.map((entry) => ({
+            id: entry.id,
+            enemy: entry.enemy,
+            startRange: entry.startRange,
+            phaseOffset: entry.phaseOffset,
+            power: entry.power,
+          }))
+        : parsed.enemy !== undefined && parsed.startRange !== undefined
+          ? [
+              {
+                id: undefined as string | undefined,
+                enemy: parsed.enemy,
+                startRange: parsed.startRange,
+                phaseOffset: 0,
+                power: 0,
+              },
+            ]
           : [];
     return {
       id: parsed.id,
       participants: rawParticipants.map((entry) => ({
         id: entry.id ?? entry.enemy,
         enemy: required(enemyById.get(entry.enemy), `enemy "${entry.enemy}"`),
+        startRange: entry.startRange,
+        phaseOffset: entry.phaseOffset,
+        power: entry.power,
       })),
-      startRange: parsed.startRange,
       text: parsed.text,
       victory: undefined,
-      escape: undefined as unknown as CompiledOutcome,
+      surrender: undefined as unknown as CompiledOutcome,
+      draw: undefined as unknown as CompiledOutcome,
     };
   });
   const encounterById = new Map(encounters.map((encounter) => [encounter.id, encounter]));
+
+  const parsedCompanions = inputs.files
+    .filter((file) => file.section === 'companions')
+    .flatMap((file) => CompanionsCatalogSchema.parse(file.value));
+  const companions: CompiledCompanion[] = parsedCompanions.map((parsed) => ({
+    id: parsed.id,
+    name: parsed.name,
+    description: parsed.description,
+    profile: parsed.profile,
+  }));
+  const companionById = new Map(companions.map((companion) => [companion.id, companion]));
 
   const lookups: Lookups = {
     scenes: sceneById,
@@ -570,7 +620,8 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     const encounter = required(encounters[encounterIndex], `encounter index ${encounterIndex}`);
     encounter.victory =
       parsed.victory === undefined ? undefined : resolveOutcome(parsed.victory, lookups);
-    encounter.escape = resolveOutcome(parsed.escape, lookups);
+    encounter.surrender = resolveOutcome(parsed.surrender, lookups);
+    encounter.draw = resolveOutcome(parsed.draw, lookups);
   });
 
   const templates: CompiledTemplate[] = parsedTemplates.map((parsed) => ({
@@ -611,6 +662,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     items,
     enemies,
     encounters,
+    companions,
     templates,
     endings,
     images,
@@ -620,6 +672,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     itemsById: Object.fromEntries(itemById),
     enemiesById: Object.fromEntries(enemies.map((enemy) => [enemy.id, enemy])),
     encountersById: Object.fromEntries(encounterById),
+    companionsById: Object.fromEntries(companionById),
     templatesById: Object.fromEntries(templates.map((template) => [template.id, template])),
     endingsById: Object.fromEntries(endingById),
     imagesById: Object.fromEntries(imageById),

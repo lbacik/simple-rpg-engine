@@ -157,10 +157,11 @@ function StatusCard({
 }
 
 /**
- * The facts the inventory modal shows for an item: the stat lines (bonus,
- * and Damage and Reach for weapons) double as the filled-slot stats and,
- * prefixed with the kind chip, as the detail-pane chips. Attribute, slot and
- * Reach names come from the catalogue, never as raw ids.
+ * The facts the inventory modal shows for an item: the stat lines (the
+ * attribute bonus; weapons carry no Damage or Reach in content format v2)
+ * double as the filled-slot stats and, prefixed with the kind chip, as the
+ * detail-pane chips. Attribute and slot names come from the catalogue, never
+ * as raw ids.
  */
 function itemFacts(
   itemId: string,
@@ -188,14 +189,10 @@ function itemFacts(
   if (item.bonus !== undefined) {
     stats.push(catalogue.inventory.bonusStat(catalogue.attributes[item.bonus]));
   }
-  if (item.slot === 'weapon') {
-    stats.push(
-      catalogue.inventory.weaponStats(
-        item.damage,
-        catalogue.reach[item.reach ?? 'melee'],
-      ),
-    );
-  }
+  // Content format v2 retired weapon `damage`/`reach`: equipment grants only
+  // an attribute bonus (P6/G5), so no weapon stat line is rendered. The
+  // catalogue `weaponStats`/`reach` keys stay until P2b removes the old
+  // Combat renderers (S4).
   return {
     name: item.name,
     magic: item.magic,

@@ -155,13 +155,14 @@ describe('use item', () => {
     const result = applyAction(scenario, state, { kind: 'use-item', itemId: 'herbs', expectedStep: 0 }, rng);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.state.character.health).toBe(11);
+    // Herbs heal 10 under the #184 Q6 rescale (3 → 10), so 8 + 10 caps at 12.
+    expect(result.state.character.health).toBe(12);
     expect(result.state.inventory['herbs']).toBe(1);
     expect(result.state.step).toBe(1);
     expect(result.state.currentLocationId).toBe(state.currentLocationId);
     expect(result.state.activeSceneId).toBe('path');
     expect(result.journal).toEqual([
-      { type: 'inventory', lang: 'en', action: 'used', itemId: 'herbs', name: 'Herbs', healed: 3 },
+      { type: 'inventory', lang: 'en', action: 'used', itemId: 'herbs', name: 'Herbs', healed: 4 },
     ]);
   });
 
@@ -190,7 +191,8 @@ describe('use item', () => {
     const result = applyAction(scenario, state, { kind: 'use-item', itemId: 'elixir', expectedStep: 0 }, rng);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.state.character.health).toBe(10);
+    // The elixir heals 17 under the #184 Q6 rescale (5 → 17), so 5 + 17 caps at 12.
+    expect(result.state.character.health).toBe(12);
     expect(result.state.inventory).not.toHaveProperty('elixir');
   });
 

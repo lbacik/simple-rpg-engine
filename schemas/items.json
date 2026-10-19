@@ -39,19 +39,6 @@
           "magic": {
             "default": false,
             "type": "boolean"
-          },
-          "reach": {
-            "default": "melee",
-            "type": "string",
-            "enum": [
-              "melee",
-              "ranged"
-            ]
-          },
-          "damage": {
-            "type": "integer",
-            "minimum": 2,
-            "maximum": 4
           }
         },
         "required": [
@@ -81,7 +68,7 @@
           "heal": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 12
+            "maximum": 40
           },
           "magic": {
             "default": false,

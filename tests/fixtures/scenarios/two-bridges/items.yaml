@@ -4,7 +4,6 @@
   name: Bridge Sword
   description: A short blade, pitted by river water.
   slot: weapon
-  damage: 3
 - id: ferryman-cloak
   kind: equipment
   name: Ferryman's Cloak
@@ -20,7 +19,7 @@
 - id: bread
   kind: consumable
   name: Bread
-  heal: 2
+  heal: 7
 - id: brass-key
   kind: key
   name: Brass Key
