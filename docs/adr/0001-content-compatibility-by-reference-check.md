@@ -17,6 +17,13 @@ The server only ever holds the current version of each Scenario, while Playthrou
 - Stored state must refer to content only by id. This invariant comes from the Playthrough state model and keeps the check mechanical.
 - Because stored state holds only ids, read-only views are best effort. Names, map coordinates and Ending titles come from the current content, and anything whose id is gone is left out. When the Scenario has left the collection, only the Journal remains, and the Ending is read from its Journal entry. Snapshotting display data into the state was rejected as too heavy for the prototype.
 
+## Combat MVP 1.0 amendment (accepted)
+
+Source: the Combat MVP 1.0 handoff ([Combat MVP 1.0 implementation handoff](../spec/combat-mvp-1.0-handoff.md)) and its P0 ADRs.
+
+- **Companion references are covered by the reference check.** A stored Companion id must still exist in the Scenario's Companion definitions with the right type; an unknown Companion reference, or a disappeared active Participant, makes the Playthrough read-only under the same mechanism. A changed profile, `startRange`, `phaseOffset` or `power` is not an incompatibility: it applies from the next Combat start.
+- **The reference check applies to v3 documents.** The mechanism is unchanged; only the document version it runs against moves on (Playthrough `schemaVersion: 3`; the key `stateVersion` is never written again).
+
 ## Tactical Combat clarification
 
 [Active Combat roster and compatibility after participant reordering or revival](https://github.com/lbacik/simple-rpg-engine/issues/116) narrows the previously accepted revival edge: it remains allowed outside active Combat, but cannot introduce a living participant without active Range/Intent state. The participant reference and addition rules are specified in [Content compatibility](../spec/architecture.md#content-compatibility).
