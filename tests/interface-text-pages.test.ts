@@ -109,12 +109,66 @@ describe('non-game interface text', () => {
       pl.scenarioLanguage.textBadge('en'),
       en.scenario.templateItemSuffix(1, null),
       pl.scenario.templateItemSuffix(2, 'Broń'),
-      // S4: the Arena stub renders title + description only; the setup,
-      // Bestiary, Equipment and summary strings return with the P6 adapter.
+      // P5: the Arena plays on the shared Combat core, so the Setup,
+      // presets, restart and fight-again strings ship with it.
       en.arena.title,
       pl.arena.title,
       en.arena.description,
       pl.arena.description,
+      en.arena.setupHeading,
+      pl.arena.setupHeading,
+      en.arena.opponentsHeading,
+      pl.arena.opponentsHeading,
+      en.arena.countLabel,
+      pl.arena.countLabel,
+      en.arena.opponentLegend(1),
+      pl.arena.opponentLegend(1),
+      en.arena.profileLabel,
+      pl.arena.profileLabel,
+      en.arena.groupLabel,
+      pl.arena.groupLabel,
+      en.arena.engagedLabel,
+      pl.arena.engagedLabel,
+      en.arena.phaseOffsetLabel,
+      pl.arena.phaseOffsetLabel,
+      en.arena.powerLabel,
+      pl.arena.powerLabel,
+      en.arena.companionHeading,
+      pl.arena.companionHeading,
+      en.arena.companionNone,
+      pl.arena.companionNone,
+      en.arena.startFight,
+      pl.arena.startFight,
+      en.arena.presetsHeading,
+      pl.arena.presetsHeading,
+      en.arena.presetsBlurb,
+      pl.arena.presetsBlurb,
+      en.arena.presetStart('T1'),
+      pl.arena.presetStart('T1'),
+      en.arena.fightAgain,
+      pl.arena.fightAgain,
+      en.arena.fightAgainBlurb,
+      pl.arena.fightAgainBlurb,
+      en.arena.restart,
+      pl.arena.restart,
+      en.arena.restartBlurb,
+      pl.arena.restartBlurb,
+      en.arena.replaceHeading,
+      pl.arena.replaceHeading,
+      en.arena.replaceBody,
+      pl.arena.replaceBody,
+      en.arena.restartConfirmHeading,
+      pl.arena.restartConfirmHeading,
+      en.arena.restartConfirmBody,
+      pl.arena.restartConfirmBody,
+      en.arena.keepFighting,
+      pl.arena.keepFighting,
+      en.arena.noRememberedSetup,
+      pl.arena.noRememberedSetup,
+      ...Object.values(en.arena.profiles),
+      ...Object.values(pl.arena.profiles),
+      ...Object.values(en.arena.setupErrors),
+      ...Object.values(pl.arena.setupErrors),
       en.nav.arena,
       pl.nav.arena,
     ];
@@ -156,9 +210,8 @@ describe('non-game interface text', () => {
     expect(pl.startForm.invalidName()).toBe('Podaj imię o długości 1–40 znaków.');
   });
 
-  // S4: the Arena setup/stats/result strings were removed with the tactical
-  // Arena. The stub page renders title + description only; the strings return
-  // with the P6 adapter.
+  // P5: the Arena Setup/presets/result strings ship with the Arena on the
+  // shared Combat core; victory/death/escape stay out of the Arena.
 
   it('keeps the error page strings equal to the catalogue', () => {
     expect(errorStrings.en).toEqual(en.error);

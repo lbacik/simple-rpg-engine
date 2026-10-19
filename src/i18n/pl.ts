@@ -146,13 +146,57 @@ export const pl: Catalogue = {
     statusEnded: 'Zakończona',
     statusIncompatible: 'Niezgodna',
   },
-  // S4 (Combat MVP 1.0): the tactical Arena was removed with the old Combat
-  // rules. The stub page renders title + description only; the Arena returns
-  // on the shared Combat core with the P5 adapter.
+  // Arena on the shared Combat core (Combat MVP 1.0, P5). Setup configures
+  // 1–5 opponents in explicit order with an optional Companion; the hero
+  // fights without equipment. Presets T1–T7 build the rules §15.2 states.
   arena: {
     title: 'Arena',
     description:
-      'Wybierz jednego lub dwóch przeciwników z Bestiariusza i wypróbuj zasady Walki. Bez Scenariusza i Rozgrywki — sama walka.',
+      'Zmierz się z 1–5 przeciwnikami na zasadach Walki, sam lub z Towarzyszem. Bez Scenariusza i Rozgrywki — sama walka.',
+    setupHeading: 'Nowa walka',
+    opponentsHeading: 'Przeciwnicy (1–5, w kolejności walki)',
+    countLabel: 'Ilu',
+    opponentLegend: (index: number) => `Przeciwnik ${index}`,
+    profileLabel: 'Profil',
+    groupLabel: 'Grupa początkowa',
+    engagedLabel: 'Związany walką z bohaterem',
+    phaseOffsetLabel: 'Przesunięcie fazy',
+    powerLabel: 'Siła',
+    companionHeading: 'Towarzysz',
+    companionNone: 'Brak',
+    startFight: 'Rozpocznij walkę',
+    presetsHeading: 'Scenariusze referencyjne',
+    presetsBlurb: 'T1–T7 z zasad: te same stany początkowe, które zawiera rozdział o balansie.',
+    presetStart: (id: string) => `Zacznij ${id}`,
+    fightAgain: 'Walcz ponownie',
+    fightAgainBlurb: 'Ten sam zestaw, świeża walka.',
+    restart: 'Zacznij od nowa',
+    restartBlurb: 'Rozpocznij tę walkę od nowa, od jej stanu początkowego.',
+    replaceHeading: 'Walka już trwa',
+    replaceBody: 'Rozpoczęcie nowej walki odrzuca bieżącą. Tego nie da się cofnąć.',
+    restartConfirmHeading: 'Zacząć tę walkę od nowa?',
+    restartConfirmBody: 'Bieżąca runda zostaje odrzucona, a walka zaczyna się od nowa od stanu początkowego.',
+    keepFighting: 'Kontynuuj walkę',
+    noRememberedSetup: 'Brak zapamiętanego zestawu — skonfiguruj walkę poniżej.',
+    profiles: {
+      hero: 'Bohater',
+      raider: 'Hultaj',
+      brute: 'Brutal',
+      sentinel: 'Wartownik',
+      archer: 'Łucznik',
+      'party-sentinel': 'Wartownik z drużyny',
+      'party-archer': 'Łucznik z drużyny',
+    },
+    setupErrors: {
+      bad_setup: 'Tego zestawu nie da się odczytać.',
+      bad_opponent_count: 'Wybierz 1–5 przeciwników.',
+      bad_opponent_profile: 'Nieznany profil przeciwnika.',
+      bad_starting_group: 'Grupy początkowe wyglądają jak g0, g1, ….',
+      bad_engaged_flag: 'Zaznacz, czy każdy przeciwnik zaczyna związany walką z bohaterem.',
+      bad_phase_offset: 'Przesunięcia fazy to liczby całkowite od 0.',
+      bad_power: 'Siła to liczba całkowita od 0 do 3.',
+      bad_companion: 'Nieznany towarzysz.',
+    },
   },
   notFound: {
     title: 'Nie znaleziono strony',

@@ -80,5 +80,26 @@ export type {
   ArenaRunV1,
   VerifyFrozenPlans,
 } from './arena-run';
+export {
+  ARENA_COMPANIONS,
+  ARENA_MAX_OPPONENTS,
+  ARENA_MAX_POWER,
+  ARENA_MIN_OPPONENTS,
+  ARENA_OPPONENT_PROFILES,
+  ARENA_PRESETS,
+  ARENA_PRESET_IDS,
+  buildArenaInitial,
+  parseArenaSetup,
+} from './arena-setup';
+export type {
+  ArenaCompanionProfile,
+  ArenaOpponent,
+  ArenaOpponentProfile,
+  ArenaPresetId,
+  ArenaSetup,
+  ArenaSetupIssue,
+  ArenaSetupIssueCode,
+  ArenaSetupResult,
+} from './arena-setup';
 export type { Accepted, CancelReason, Previewed, PreviewResult, Rejected, StartResult, SubmitResult, SurrenderResult } from './resolve';
 export { CANCEL_REASONS, COMBAT_EVENT_TYPES, COMBAT_RESULTS, previewRound, startCombat, submitRound, surrender } from './resolve';

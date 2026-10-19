@@ -141,13 +141,57 @@ export const en = {
     statusEnded: 'Ended',
     statusIncompatible: 'Incompatible',
   },
-  // S4 (Combat MVP 1.0): the tactical Arena was removed with the old Combat
-  // rules. The stub page renders title + description only; the Arena returns
-  // on the shared Combat core with the P5 adapter.
+  // Arena on the shared Combat core (Combat MVP 1.0, P5). Setup configures
+  // 1–5 opponents in explicit order with an optional Companion; the hero
+  // fights without equipment. Presets T1–T7 build the rules §15.2 states.
   arena: {
     title: 'Arena',
     description:
-      'Choose one or two opponents from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
+      'Face 1–5 opponents under the Combat rules, alone or with a Companion. No Scenario, no Playthrough — just the fight.',
+    setupHeading: 'New fight',
+    opponentsHeading: 'Opponents (1–5, in fighting order)',
+    countLabel: 'How many',
+    opponentLegend: (index: number) => `Opponent ${index}`,
+    profileLabel: 'Profile',
+    groupLabel: 'Starting group',
+    engagedLabel: 'Engaged with the hero',
+    phaseOffsetLabel: 'Phase offset',
+    powerLabel: 'Power',
+    companionHeading: 'Companion',
+    companionNone: 'None',
+    startFight: 'Start the fight',
+    presetsHeading: 'Reference scenarios',
+    presetsBlurb: 'T1–T7 from the rules: the same opening states the balance chapter ships.',
+    presetStart: (id: string) => `Start ${id}`,
+    fightAgain: 'Fight again',
+    fightAgainBlurb: 'Same setup, a fresh fight.',
+    restart: 'Restart',
+    restartBlurb: 'Start this fight over from its opening state.',
+    replaceHeading: 'A fight is already in progress',
+    replaceBody: 'Starting a new fight discards the current one. This cannot be undone.',
+    restartConfirmHeading: 'Restart this fight?',
+    restartConfirmBody: 'The current round is discarded and the fight starts over from its opening state.',
+    keepFighting: 'Keep fighting',
+    noRememberedSetup: 'No remembered setup yet — configure the fight below.',
+    profiles: {
+      hero: 'Hero',
+      raider: 'Raider',
+      brute: 'Brute',
+      sentinel: 'Sentinel',
+      archer: 'Archer',
+      'party-sentinel': 'Party sentinel',
+      'party-archer': 'Party archer',
+    },
+    setupErrors: {
+      bad_setup: 'That setup cannot be read.',
+      bad_opponent_count: 'Choose 1–5 opponents.',
+      bad_opponent_profile: 'Unknown opponent profile.',
+      bad_starting_group: 'Starting groups look like g0, g1, ….',
+      bad_engaged_flag: 'Mark whether each opponent starts engaged with the hero.',
+      bad_phase_offset: 'Phase offsets are whole numbers from 0.',
+      bad_power: 'Power is a whole number from 0 to 3.',
+      bad_companion: 'Unknown companion.',
+    },
   },
   notFound: {
     title: 'Page not found',
