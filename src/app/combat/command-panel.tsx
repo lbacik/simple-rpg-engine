@@ -56,6 +56,11 @@ export interface CommandPanelProps {
   /** Display names; defaults to the canonical actor id. Adapters name Arena
    *  fighters from their profile and Scenario fighters from content. */
   getActorName?: (actor: CombatActor) => string;
+  /** Pre-rendered display names by actor id for client-rendered panels:
+   *  functions cannot cross the server/client boundary, so the interactive
+   *  panel takes these serializable names while the server panel takes
+   *  getActorName. Both render the same `name · id` line. */
+  names?: Record<string, string>;
   notice?: CommandPanelNotice | null;
   /** Adapter actions under the finished result (Fight again, Continue, …). */
   footer?: ReactNode;
@@ -135,7 +140,7 @@ export function CommandPanel(props: CommandPanelProps) {
   const nameOf = (id: ActorId): string => {
     const actor = actorById(state, id);
     if (actor === undefined) return id;
-    const name = (props.getActorName ?? defaultName)(actor);
+    const name = props.names?.[id] ?? (props.getActorName ?? defaultName)(actor);
     return name === actor.id ? actor.id : `${name} · ${actor.id}`;
   };
   const hero = actorById(state, 'h01');

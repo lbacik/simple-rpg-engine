@@ -4,7 +4,13 @@
 
 import 'server-only';
 
-import { ArenaFightStore, SessionStore, getDatabase } from '@/persistence/index';
+import { redirect } from 'next/navigation';
+import {
+  ArenaFightStore,
+  SessionStore,
+  getDatabase,
+  type StoredArenaFight,
+} from '@/persistence/index';
 import { ensureSessionId, getSessionHash, hashSessionId } from '../lib/session';
 
 /** Read a string field from posted form data (files never carry commands). */
@@ -39,4 +45,33 @@ export function arenaFights(): ArenaFightStore {
 /** The Session hash for a read route, or null without a cookie. */
 export async function arenaSessionHash(): Promise<string | null> {
   return (await getSessionHash()) ?? null;
+}
+
+/**
+ * Read the Session's fight for a write route (handoff A2/A6): a missing row
+ * redirects with `?notice=stale`, an unreadable row redirects plain — the
+ * page then shows the "cannot be read" notice with the Setup form. Never
+ * returns a bad row.
+ */
+export async function readArenaFightForWrite(sessionHash: string): Promise<StoredArenaFight> {
+  const read = await arenaFights().read(sessionHash);
+  if (read.status === 'missing') redirect('/arena?notice=stale');
+  if (read.status === 'unreadable') redirect('/arena');
+  return read.fight;
+}
+
+/**
+ * Guard an `expectedStep`/`round` pair (handoff A6): stale unless the posted
+ * step still equals the stored one and the posted round equals the fight's
+ * round. Callers redirect before writing, so a stale command neither changes
+ * state nor `step`.
+ */
+export function arenaRoundGuard(formData: FormData, fight: StoredArenaFight): number {
+  const expectedStep = Number(formField(formData, 'expectedStep') ?? '');
+  if (!Number.isInteger(expectedStep) || expectedStep !== fight.step) {
+    redirect('/arena?notice=stale');
+  }
+  const round = Number(formField(formData, 'round') ?? '');
+  if (round !== fight.combat.round) redirect('/arena?notice=stale');
+  return round;
 }

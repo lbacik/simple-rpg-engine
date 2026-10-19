@@ -17,7 +17,10 @@ import {
   ARENA_PRESET_IDS,
   parseArenaSetup,
   type ArenaPresetId,
+  type ArenaRunIssueCode,
+  type ArenaSetupIssueCode,
   type CombatActor,
+  type ReasonCode,
 } from '@/engine/combat/index';
 import { getCombatCatalogue } from '@/i18n/combat';
 import type { Catalogue } from '@/i18n/en';
@@ -56,10 +59,11 @@ function initialQuery(params: SearchParams): Record<string, string> {
 }
 
 /**
- * Render a rejected reason with its catalogue line: listOptions reason
- * codes, Setup issue codes and import-envelope codes each have one, so a
- * `?notice=rejected&reason=` URL always explains itself. Unknown codes
- * fall back to the raw value, never to a crash.
+ * Render a rejected reason with its catalogue line: every lookup below is a
+ * typed catalogue key, so a missing or renamed message fails typecheck
+ * (ADR 0003). Only the `reason` input itself is untyped — it arrives on the
+ * URL — and codes outside all three families (a tampered URL) fall back to
+ * the raw value, never to a crash.
  */
 function rejectedText(
   catalogue: Catalogue,
@@ -67,23 +71,72 @@ function rejectedText(
   params: SearchParams,
 ): string {
   const combatText = getCombatCatalogue(catalogue.code);
-  const reasons = combatText.reasons as Record<string, string | ((...args: never[]) => string)>;
-  const setupErrors = catalogue.arena.setupErrors as Record<string, string>;
-  const importIssues = combatText.importIssues as Record<string, string>;
-  if (reason in reasons) {
-    const missing = Number(first(params, 'missing') ?? '');
-    const availableRound = Number(first(params, 'availableRound') ?? '');
-    switch (reason) {
-      case 'insufficient_stamina':
-        return combatText.reasons.insufficient_stamina(Number.isInteger(missing) ? missing : 0);
-      case 'on_cooldown':
-        return combatText.reasons.on_cooldown(Number.isInteger(availableRound) ? availableRound : 0);
-      default:
-        return String(reasons[reason]);
-    }
+  const code = reason as ReasonCode | ArenaSetupIssueCode | ArenaRunIssueCode;
+  const count = (key: string): number => {
+    const value = Number(first(params, key) ?? '');
+    return Number.isInteger(value) ? value : 0;
+  };
+  switch (code) {
+    case 'insufficient_stamina':
+      return combatText.reasons.insufficient_stamina(count('missing'));
+    case 'on_cooldown':
+      return combatText.reasons.on_cooldown(count('availableRound'));
+    case 'stance_disallows':
+      return combatText.reasons.stance_disallows;
+    case 'no_shot_ability':
+      return combatText.reasons.no_shot_ability;
+    case 'not_engaged':
+      return combatText.reasons.not_engaged;
+    case 'must_disengage':
+      return combatText.reasons.must_disengage;
+    case 'actor_engaged':
+      return combatText.reasons.actor_engaged;
+    case 'target_far':
+      return combatText.reasons.target_far;
+    case 'target_not_near':
+      return combatText.reasons.target_not_near;
+    case 'requires_near_ally':
+      return combatText.reasons.requires_near_ally;
+    case 'invalid_target':
+      return combatText.reasons.invalid_target;
+    case 'wrong_round':
+      return combatText.reasons.wrong_round;
+    case 'wrong_phase':
+      return combatText.reasons.wrong_phase;
+    case 'in-combat':
+      return combatText.reasons['in-combat'];
+    case 'bad_setup':
+      return catalogue.arena.setupErrors.bad_setup;
+    case 'bad_opponent_count':
+      return catalogue.arena.setupErrors.bad_opponent_count;
+    case 'bad_opponent_profile':
+      return catalogue.arena.setupErrors.bad_opponent_profile;
+    case 'bad_starting_group':
+      return catalogue.arena.setupErrors.bad_starting_group;
+    case 'bad_engaged_flag':
+      return catalogue.arena.setupErrors.bad_engaged_flag;
+    case 'bad_phase_offset':
+      return catalogue.arena.setupErrors.bad_phase_offset;
+    case 'bad_power':
+      return catalogue.arena.setupErrors.bad_power;
+    case 'bad_companion':
+      return catalogue.arena.setupErrors.bad_companion;
+    case 'malformed':
+      return combatText.importIssues.malformed;
+    case 'unknown_schema_version':
+      return combatText.importIssues.unknown_schema_version;
+    case 'unexpected_state_version':
+      return combatText.importIssues.unexpected_state_version;
+    case 'bad_origin':
+      return combatText.importIssues.bad_origin;
+    case 'bad_initial':
+      return combatText.importIssues.bad_initial;
   }
-  if (reason in setupErrors) return setupErrors[reason]!;
-  if (reason in importIssues) return importIssues[reason]!;
+  // Exhaustive over the three code families: a new code without a case
+  // above fails typecheck here (ADR 0003). At runtime a tampered URL falls
+  // through every case and reads back raw, never crashing.
+  const _exhaustive: never = code;
+  void _exhaustive;
   return reason;
 }
 
@@ -173,6 +226,11 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
   }
 
   const canRestart = fight.origin === 'setup' && fight.initial !== null;
+  // Pre-rendered display names by actor id: functions cannot cross the
+  // server/client boundary, so the interactive panel takes these serializable
+  // names (the server-rendered result panel below keeps getActorName).
+  const names: Record<string, string> = {};
+  for (const actor of state.actors) names[actor.id] = nameOf(actor);
   return (
     <main>
       <h1>{catalogue.arena.title}</h1>
@@ -185,7 +243,7 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
         confirmAction="/arena/confirm"
         surrenderAction="/arena/surrender"
         confirmFields={{ expectedStep: String(fight.step) }}
-        getActorName={nameOf}
+        names={names}
         notice={notice}
       />
       {canRestart ? (

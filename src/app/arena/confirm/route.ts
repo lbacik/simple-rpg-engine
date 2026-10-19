@@ -8,7 +8,14 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { submitRound } from '@/engine/combat/index';
 import type { ActionId, RoundCommand, Stance } from '@/engine/combat/index';
-import { arenaFights, arenaSessionHash, ensureArenaSession, formField } from '../server';
+import {
+  arenaFights,
+  arenaRoundGuard,
+  arenaSessionHash,
+  ensureArenaSession,
+  formField,
+  readArenaFightForWrite,
+} from '../server';
 
 function rejected(reason: string, params?: Record<string, string | number>): never {
   const query = new URLSearchParams({ notice: 'rejected', reason });
@@ -24,17 +31,9 @@ export async function POST(request: Request): Promise<never> {
   await ensureArenaSession();
   const fights = arenaFights();
 
-  const read = await fights.read(sessionHash);
-  if (read.status === 'missing') redirect('/arena?notice=stale');
-  if (read.status === 'unreadable') redirect('/arena');
-  const { fight } = read;
-
-  const expectedStep = Number(formField(formData, 'expectedStep') ?? '');
-  if (!Number.isInteger(expectedStep) || expectedStep !== fight.step) {
-    redirect('/arena?notice=stale');
-  }
-  const round = Number(formField(formData, 'round') ?? '');
-  if (round !== fight.combat.round) redirect('/arena?notice=stale');
+  const fight = await readArenaFightForWrite(sessionHash);
+  const round = arenaRoundGuard(formData, fight);
+  const expectedStep = fight.step;
 
   const targetRaw = formField(formData, 'target');
   const command: RoundCommand = {

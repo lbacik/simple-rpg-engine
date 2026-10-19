@@ -176,8 +176,6 @@ export const pl: Catalogue = {
     replaceBody: 'Rozpoczęcie nowej walki odrzuca bieżącą. Tego nie da się cofnąć.',
     restartConfirmHeading: 'Zacząć tę walkę od nowa?',
     restartConfirmBody: 'Bieżąca runda zostaje odrzucona, a walka zaczyna się od nowa od stanu początkowego.',
-    confirmStart: 'Tak, rozpocznij nową walkę',
-    confirmRestart: 'Tak, zacznij walkę od nowa',
     keepFighting: 'Kontynuuj walkę',
     noRememberedSetup: 'Brak zapamiętanego zestawu — skonfiguruj walkę poniżej.',
     profiles: {

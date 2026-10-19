@@ -2,13 +2,20 @@
 // Setup-started mid-fight from its opening state, behind the in-page
 // confirmation (`confirm=1`). The replacement allocates a fresh step above
 // every step the Session has used, so a tab from the replaced fight never
-// matches. Restart exists only for Setup-started runs; imports have no
-// opening state to return to.
+// matches. Setup-started runs only for now: `PLAN`-import restarts belong to
+// the import package (A3, #241), which stores the opening `initial` they
+// return to.
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { parseCombatState, startCombat } from '@/engine/combat/index';
-import { arenaFights, arenaSessionHash, ensureArenaSession, formField } from '../server';
+import {
+  arenaFights,
+  arenaSessionHash,
+  ensureArenaSession,
+  formField,
+  readArenaFightForWrite,
+} from '../server';
 
 export async function POST(request: Request): Promise<never> {
   const formData = await request.formData();
@@ -18,10 +25,7 @@ export async function POST(request: Request): Promise<never> {
   await ensureArenaSession();
   const fights = arenaFights();
 
-  const read = await fights.read(sessionHash);
-  if (read.status === 'missing') redirect('/arena?notice=stale');
-  if (read.status === 'unreadable') redirect('/arena');
-  const { fight } = read;
+  const fight = await readArenaFightForWrite(sessionHash);
   const initial = parseCombatState(fight.initial);
   if (fight.origin !== 'setup' || fight.combat.phase !== 'CHOOSE' || !initial.ok) {
     redirect('/arena');

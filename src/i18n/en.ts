@@ -171,8 +171,6 @@ export const en = {
     replaceBody: 'Starting a new fight discards the current one. This cannot be undone.',
     restartConfirmHeading: 'Restart this fight?',
     restartConfirmBody: 'The current round is discarded and the fight starts over from its opening state.',
-    confirmStart: 'Yes, start a new fight',
-    confirmRestart: 'Yes, restart the fight',
     keepFighting: 'Keep fighting',
     noRememberedSetup: 'No remembered setup yet — configure the fight below.',
     profiles: {
