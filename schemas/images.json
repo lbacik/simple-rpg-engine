@@ -179,6 +179,88 @@
               ],
               "additionalProperties": false
             }
+          },
+          "camera": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "default": {
+                  "zoom": 100,
+                  "x": 50,
+                  "y": 50
+                },
+                "type": "object",
+                "properties": {
+                  "zoom": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 400
+                  },
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "zoom",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "to": {
+                "type": "object",
+                "properties": {
+                  "zoom": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 400
+                  },
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "zoom",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "duration": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 600
+              },
+              "delay": {
+                "default": 0,
+                "type": "number",
+                "minimum": 0,
+                "maximum": 600
+              },
+              "loop": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "to",
+              "duration"
+            ],
+            "additionalProperties": false
           }
         },
         "additionalProperties": false

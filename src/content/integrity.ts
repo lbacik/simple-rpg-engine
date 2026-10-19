@@ -978,9 +978,26 @@ export type IntegrityMotionLayer = {
   file: IntegrityLayerFile;
 };
 
+/** One Camera framing: the magnification in percent and its fixed point. */
+export type IntegrityCameraFraming = {
+  zoom: number;
+  x: number;
+  y: number;
+};
+
+/** An image entry's Camera as the registry holds it: declaration with defaults applied. */
+export type IntegrityCamera = {
+  from: IntegrityCameraFraming;
+  to: IntegrityCameraFraming;
+  duration: number;
+  delay: number;
+  loop: boolean;
+};
+
 /** An image entry's Motion, in Layer list order. */
 export type IntegrityMotion = {
   layers: IntegrityMotionLayer[];
+  camera?: IntegrityCamera;
 };
 
 type ImageEntry = {

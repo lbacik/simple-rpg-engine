@@ -3224,12 +3224,25 @@ export type IllustrationLayerView = {
 };
 
 /**
+ * An Illustration's Camera as the UI renders it (docs/spec/ui.md, motion):
+ * the declaration with defaults applied. One transform moves the Still and
+ * every Layer together, so the Layers stay aligned with the painting.
+ */
+export type IllustrationCameraView = {
+  from: { zoom: number; x: number; y: number };
+  to: { zoom: number; x: number; y: number };
+  duration: number;
+  delay: number;
+  loop: boolean;
+};
+
+/**
  * A Scene or Location Illustration (docs/spec/ui.md, scene and location
  * illustration): the hashed asset route URL with the registry width, height
  * and catalog alt. When the image has Motion, every Layer with defaults
- * applied (its file's asset URL and pixel size) and the Showing key ride
- * along; an image without Motion carries neither, so existing views compare
- * unchanged.
+ * applied (its file's asset URL and pixel size), the Camera with defaults
+ * applied, and the Showing key ride along; an image without Motion carries
+ * none, so existing views compare unchanged.
  */
 export type IllustrationView = {
   src: string;
@@ -3238,11 +3251,13 @@ export type IllustrationView = {
   alt: string;
   /** Present only when the image has Motion. */
   layers?: IllustrationLayerView[];
+  /** Present only when the image has a Camera. */
+  camera?: IllustrationCameraView;
   /**
    * The Scene or Location the Illustration is shown with: `scene:<id>` while
-   * a Scene is active, otherwise `location:<id>`. Present only with `layers`;
-   * the UI keys the Illustration by it (docs/spec/ui.md, timeline). Derived
-   * from the current position only.
+   * a Scene is active, otherwise `location:<id>`. Present only with Motion
+   * (Layers or a Camera); the UI keys the Illustration by it
+   * (docs/spec/ui.md, timeline). Derived from the current position only.
    */
   showingKey?: string;
 };
@@ -3262,8 +3277,8 @@ export function sceneIllustrationUrl(scenarioId: string, image: { hash: string; 
  * URL with the registry width, height and catalog alt. Every surface that
  * shows an Illustration — the Location view, the Scene view, the Scenario
  * intro modal over the starting Location and the Location shown behind
- * Combat — builds it through this helper, so Motion Layers and the Showing
- * key (ADR 0007) land in one place.
+ * Combat — builds it through this helper, so Motion Layers, the Camera and
+ * the Showing key (ADR 0007) land in one place.
  */
 export function illustrationView(
   scenarioId: string,
@@ -3298,6 +3313,7 @@ export function illustrationView(
       pixelWidth: layer.file.width,
       pixelHeight: layer.file.height,
     })),
+    ...(image.motion.camera === undefined ? {} : { camera: image.motion.camera }),
     ...(showingKey === undefined ? {} : { showingKey }),
   };
 }

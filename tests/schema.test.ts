@@ -1037,15 +1037,25 @@ describe('structure phase: illustration motion', () => {
     expect(key.path).toEqual([0, 'motion', 'layers', 0, 'z']);
   });
 
-  it('rejects a camera until its ticket lands', () => {
-    const diag = expectInvalid(
-      'motion-camera-early',
+  it('accepts a camera-only motion, applying the from, delay and loop defaults', () => {
+    const dir = freshMotionDir('motion-camera-only');
+    mutate(
+      dir,
       'images.yaml',
-      '  alt: An old gate.\n',
-      '  alt: An old gate.\n  motion:\n    camera:\n      to: { zoom: 110, x: 30, y: 55 }\n      duration: 18\n',
-      'schema/unknown-key',
+      `${MOTION}`,
+      '  motion:\n    camera:\n      to: { zoom: 110, x: 30, y: 55 }\n      duration: 18\n',
     );
-    expect(diag.path).toEqual([0, 'motion', 'camera']);
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.scenario.imagesById['gate']?.motion?.camera).toEqual({
+      from: { zoom: 100, x: 50, y: 50 },
+      to: { zoom: 110, x: 30, y: 55 },
+      duration: 18,
+      delay: 0,
+      loop: false,
+    });
+    expect(result.scenario.imagesById['gate']?.motion?.layers).toEqual([]);
   });
 
   it('accepts the boundary placement values', () => {

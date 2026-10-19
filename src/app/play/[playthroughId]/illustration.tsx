@@ -4,17 +4,19 @@
 // alike. A browser load error removes the element — no frame, no alt-text box,
 // no retry — and play continues.
 //
-// An Illustration with `motion` adds its Layers as a JavaScript enhancement
-// (docs/spec/ui.md, motion): after hydration the client fetches every distinct
-// Layer file once, and once the Still and every Layer file have loaded it
-// composes the Layers over the Still in list order with a linear 1 s fade-in.
-// A Layer with `drift` moves its anchor from `from` to `to` on the
-// Web Animations API from the shared timeline t = 0, clipped to the box by
-// the composition's overflow. A flickering Layer varies its opacity along the
-// engine's fixed Flicker curve on the same API and timeline. Any Layer failure
-// leaves the Still for this Showing. Under `prefers-reduced-motion: reduce`
-// Motion stays off and no Layer file is fetched. Without JavaScript only the
-// Still shows.
+// An Illustration with `motion` adds its Layers and Camera as a JavaScript
+// enhancement (docs/spec/ui.md, motion): after hydration the client fetches
+// every distinct Layer file once, and once the Still and every Layer file have
+// loaded it composes the Layers over the Still in list order with a linear
+// 1 s fade-in. A Layer with `drift` moves its anchor from `from` to `to` on
+// the Web Animations API from the shared timeline t = 0, clipped to the box
+// by the composition's overflow. A flickering Layer varies its opacity along
+// the engine's fixed Flicker curve on the same API and timeline. A Camera
+// moves the Still and every Layer together with one transform of the same
+// stage, from the same t = 0, so the Layers stay aligned with the painting.
+// Any Layer failure leaves the Still for this Showing. Under
+// `prefers-reduced-motion: reduce` Motion stays off and no Layer file is
+// fetched. Without JavaScript only the Still shows.
 
 'use client';
 
@@ -46,6 +48,80 @@ export type IllustrationMotionDrift = {
   delay: number;
   loop: boolean;
 };
+
+/** One Camera framing: the magnification in percent and its fixed point. */
+export type IllustrationCameraFraming = {
+  zoom: number;
+  x: number;
+  y: number;
+};
+
+/** An Illustration's Camera as the Illustration view carries it, with defaults applied. */
+export type IllustrationMotionCamera = {
+  from: IllustrationCameraFraming;
+  to: IllustrationCameraFraming;
+  duration: number;
+  delay: number;
+  loop: boolean;
+};
+
+function formatCameraNumber(value: number): string {
+  const rounded = Math.round(value * 10000) / 10000;
+  return `${rounded === 0 ? 0 : rounded}`;
+}
+
+/**
+ * A Camera framing as a CSS transform (docs/spec/ui.md, camera): with scale
+ * `s = zoom / 100`, `translate((1 − s) · x%, (1 − s) · y%) scale(s)` of the
+ * box from its top-left corner, so the point (x, y) of the Still stays in
+ * place and the view never leaves the Still.
+ */
+export function cameraTransform(framing: IllustrationCameraFraming): string {
+  const scale = framing.zoom / 100;
+  const x = formatCameraNumber((1 - scale) * framing.x);
+  const y = formatCameraNumber((1 - scale) * framing.y);
+  return `translate(${x}%, ${y}%) scale(${formatCameraNumber(scale)})`;
+}
+
+function cameraEaseInOut(progress: number): number {
+  return progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+}
+
+function lerpFraming(
+  from: IllustrationCameraFraming,
+  to: IllustrationCameraFraming,
+  progress: number,
+): IllustrationCameraFraming {
+  return {
+    zoom: from.zoom + (to.zoom - from.zoom) * progress,
+    x: from.x + (to.x - from.x) * progress,
+    y: from.y + (to.y - from.y) * progress,
+  };
+}
+
+/**
+ * A Camera's framing `timeSec` seconds into the shared timeline
+ * (docs/spec/ui.md, camera and timeline; t = 0 is the start of the fade): it
+ * holds `from` until `delay` ends, then moves to `to` in `duration` seconds
+ * with a fixed ease-in-out. A one-shot Camera then holds at `to`; a looping
+ * Camera goes back and forth, `duration` seconds each way, its `delay`
+ * applying only before the first pass. Interpolating keeps every
+ * intermediate a valid framing, so the view never leaves the Still.
+ */
+export function cameraFramingAt(
+  camera: Pick<IllustrationMotionCamera, 'from' | 'to' | 'duration' | 'delay' | 'loop'>,
+  timeSec: number,
+): IllustrationCameraFraming {
+  const elapsed = timeSec - camera.delay;
+  if (elapsed <= 0) return { ...camera.from };
+  if (!camera.loop) {
+    if (elapsed >= camera.duration) return { ...camera.to };
+    return lerpFraming(camera.from, camera.to, cameraEaseInOut(elapsed / camera.duration));
+  }
+  const cycle = elapsed % (2 * camera.duration);
+  if (cycle <= camera.duration) return lerpFraming(camera.from, camera.to, cameraEaseInOut(cycle / camera.duration));
+  return lerpFraming(camera.from, camera.to, cameraEaseInOut(1 - (cycle - camera.duration) / camera.duration));
+}
 
 function geometryForPoint(
   point: { x: number; y: number },
@@ -263,6 +339,7 @@ export function Illustration({
   height,
   alt,
   layers,
+  camera,
   showingKey,
 }: {
   src: string;
@@ -271,14 +348,21 @@ export function Illustration({
   alt: string;
   /** Present only when the image has Motion. */
   layers?: IllustrationMotionLayer[];
-  /** `scene:<id>` or `location:<id>`; present only with `layers`. */
+  /** Present only when the image has a Camera. */
+  camera?: IllustrationMotionCamera;
+  /** `scene:<id>` or `location:<id>`; present only with Motion (Layers or a Camera). */
   showingKey?: string;
 }) {
   const [layersLoaded, setLayersLoaded] = useState(false);
   const [stillLoaded, setStillLoaded] = useState(false);
   const [stillFailed, setStillFailed] = useState(false);
+  // A Camera-only Illustration fetches no Layer file, so nothing sets
+  // `layersLoaded` for it: this Showing's Motion is live as soon as it is
+  // allowed (not under reduced motion).
+  const [cameraLive, setCameraLive] = useState(false);
   const stillRef = useRef<HTMLImageElement>(null);
   const layerRefs = useRef<(HTMLElement | null)[]>([]);
+  const cameraRef = useRef<HTMLElement>(null);
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
@@ -297,6 +381,9 @@ export function Illustration({
       width: layer.width,
     })),
   );
+  // The Camera animation input of this Showing, as a stable key: same
+  // rebuild-on-every-render story as the Drift key above.
+  const cameraAnimKey = JSON.stringify(camera ?? null);
 
   // A new Still restarts Motion's start conditions. A Still already in the
   // browser cache reports `complete`, since its `load` event fired before
@@ -311,15 +398,25 @@ export function Illustration({
   }, [src]);
 
   // A new Showing restarts Motion; the same key continues it: the fetch below
-  // runs only when the key (or the Layer set) changes, and the Layer
-  // composition is keyed by it so React remounts it on a new Showing.
+  // runs only when the key (or the Layer set, or the Camera) changes, and the
+  // Layer composition is keyed by it so React remounts it on a new Showing.
+  // A Camera-only Illustration sets no fetch in motion: its Motion goes live
+  // at once, with no Layer fetches.
   useEffect(() => {
     setLayersLoaded(false);
-    if (layers === undefined || layers.length === 0 || showingKey === undefined) {
+    setCameraLive(false);
+    if ((layers === undefined || layers.length === 0) && camera === undefined) {
+      return;
+    }
+    if (showingKey === undefined) {
       return;
     }
     // Motion stays off under reduced motion, and no Layer file is fetched.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    if (layers === undefined || layers.length === 0) {
+      setCameraLive(true);
       return;
     }
     let cancelled = false;
@@ -345,22 +442,24 @@ export function Illustration({
     return () => {
       cancelled = true;
     };
-    // `srcKey` stands in for the Layer set: the fetch restarts only when the
-    // Showing or the distinct Layer files change, never on a re-render with
-    // the same key (which continues the Showing).
-  }, [showingKey, srcKey]);
+    // `srcKey` stands in for the Layer set and `cameraAnimKey` for the
+    // Camera: the fetch restarts only when the Showing, the distinct Layer
+    // files or the Camera change, never on a re-render with the same key
+    // (which continues the Showing).
+  }, [showingKey, srcKey, cameraAnimKey]);
 
   // Motion starts only once the Still and every Layer file have loaded
   // (docs/spec/ui.md, start and fade-in). Fading the Layer composition over
   // the plain Still is that composition fading in: the Still over itself is
-  // the Still.
+  // the Still. A Camera-only Illustration has no Layer file to wait for, so
+  // its Motion starts once the Still has loaded.
+  const hasLayers = layers !== undefined && layers.length > 0;
   const motionReady =
-    layersLoaded &&
     stillLoaded &&
     !stillFailed &&
-    layers !== undefined &&
-    layers.length > 0 &&
-    showingKey !== undefined;
+    showingKey !== undefined &&
+    (camera !== undefined || hasLayers) &&
+    (hasLayers ? layersLoaded : cameraLive);
 
   // Drift and Flicker run on the Web Animations API from the shared timeline
   // t = 0: the composition mounts when Motion starts (keyed by the Showing
@@ -435,53 +534,117 @@ export function Illustration({
     };
   }, [motionReady, showingKey, animKey, width, height]);
 
+  // The Camera runs on the Web Animations API from the same shared timeline
+  // t = 0 as the fade: one transform on the Camera stage moves the Still and
+  // every Layer together, so the Layers stay aligned with the painting. The
+  // stage holds the `from` framing until `delay` ends, then eases in and out
+  // to `to` and holds there; a looping Camera alternates back and forth,
+  // `duration` seconds each way, since the delay applies only before the
+  // first pass. The effect keys on the Showing, never on the Layer array
+  // identity, so a re-render with the same key continues the Showing instead
+  // of restarting it.
+  useEffect(() => {
+    if (!motionReady || camera === undefined) {
+      return;
+    }
+    const stage = cameraRef.current;
+    if (!stage || typeof stage.animate !== 'function') return;
+    let animation: Animation | null = null;
+    try {
+      animation = stage.animate(
+        [{ transform: cameraTransform(camera.from) }, { transform: cameraTransform(camera.to) }],
+        {
+          duration: camera.duration * 1000,
+          delay: camera.delay * 1000,
+          easing: 'ease-in-out',
+          fill: 'forwards',
+          ...(camera.loop ? { direction: 'alternate', iterations: Infinity } : {}),
+        },
+      );
+    } catch {
+      // The browser refuses to animate: the Still stays at the from framing
+      // (docs/spec/ui.md, the browser refuses to animate).
+    }
+    return () => {
+      try {
+        animation?.cancel();
+      } catch {
+        // Already finished or never started; nothing to stop.
+      }
+    };
+  }, [motionReady, showingKey, cameraAnimKey]);
+
   return (
     <span
       className="illustration-box"
       style={{ display: 'block', position: 'relative', isolation: 'isolate' }}
     >
-      <img
-        ref={stillRef}
-        src={src}
-        width={width}
-        height={height}
-        alt={alt}
-        className="illustration"
-        style={{ maxWidth: '100%', height: 'auto' }}
-        onLoad={() => {
-          setStillLoaded(true);
+      {/* The Camera stage carries the Still and the Layer composition
+        together, so one transform keeps them aligned. The stage is clipped
+        to the Still's box; the Play/Pause control lives in this outer box,
+        outside the stage, so the Camera never moves it. */}
+      <span
+        ref={cameraRef}
+        className="illustration-camera-stage"
+        style={{
+          display: 'block',
+          position: 'relative',
+          overflow: 'hidden',
+          transformOrigin: '0 0',
+          ...(motionReady && camera !== undefined ? { transform: cameraTransform(camera.from) } : {}),
+          // A Camera-only Illustration fades its framed Still over the plain
+          // Still, like the Layer composition does (docs/spec/ui.md, start
+          // and fade-in): the Still over itself is the Still. With Layers the
+          // composition below carries the fade instead, so the stage itself
+          // never fades twice.
+          ...(motionReady && camera !== undefined && !hasLayers
+            ? { animation: 'illustration-motion-fade-in 1s linear' }
+            : {}),
         }}
-        onError={(event) => {
-          // A Still that fails to load fetches no Layers and shows nothing.
-          setStillFailed(true);
-          event.currentTarget.remove();
-        }}
-      />
-      {motionReady && layers !== undefined && layers.length > 0 && showingKey !== undefined ? (
-        <span
-          key={showingKey}
-          aria-hidden="true"
-          className="illustration-motion"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            overflow: 'hidden',
-            animation: 'illustration-motion-fade-in 1s linear',
+      >
+        <img
+          ref={stillRef}
+          src={src}
+          width={width}
+          height={height}
+          alt={alt}
+          className="illustration"
+          style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+          onLoad={() => {
+            setStillLoaded(true);
           }}
-        >
-          {layers.map((layer, index) => (
-            <MotionLayer
-              key={`${layer.src}#${index}`}
-              layer={layer}
-              still={{ width, height }}
-              index={index}
-              elementRef={(element) => {
-                layerRefs.current[index] = element;
-              }}
-            />
-          ))}
-        </span>
-      ) : null}
+          onError={(event) => {
+            // A Still that fails to load fetches no Layers and shows nothing.
+            setStillFailed(true);
+            event.currentTarget.remove();
+          }}
+        />
+        {motionReady && hasLayers && showingKey !== undefined ? (
+          <span
+            key={showingKey}
+            aria-hidden="true"
+            className="illustration-motion"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              overflow: 'hidden',
+              animation: 'illustration-motion-fade-in 1s linear',
+            }}
+          >
+            {(layers ?? []).map((layer, index) => (
+              <MotionLayer
+                key={`${layer.src}#${index}`}
+                layer={layer}
+                still={{ width, height }}
+                index={index}
+                elementRef={(element) => {
+                  layerRefs.current[index] = element;
+                }}
+              />
+            ))}
+          </span>
+        ) : null}
+      </span>
     </span>
   );
 }
