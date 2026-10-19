@@ -35,6 +35,7 @@ import type {
 import { getCombatCatalogue } from '../../i18n/combat';
 import type { CombatCatalogue } from '../../i18n/combat';
 import type { InterfaceLanguage } from '../../i18n/languages';
+import { CombatLog, joinPresent } from './combat-log';
 import { deriveForecast, type HaltCode } from './forecast';
 import { cardReasons, selectionCommand, selectionHref, targetCandidates } from './selection';
 import type { PanelSelection } from './selection';
@@ -222,6 +223,7 @@ export function CommandPanel(props: CommandPanelProps) {
           )}
         </div>
       </div>
+      <CombatLog state={state} language={language} getActorName={(id) => nameOf(id)} />
     </section>
   );
 }
@@ -317,6 +319,8 @@ function HeroCard({
             targetId={hero.id}
             legal={selfRow.legal}
             label={text.panel.selfWord}
+            text={text}
+            reasons={selfRow.reasons}
           />{' '}
           <LegalityLine legal={selfRow.legal} reasons={selfRow.reasons} text={text} />
         </p>
@@ -377,6 +381,8 @@ function CompanionCard({
                 targetId={companion.id}
                 legal={allyRow.legal}
                 label={nameOf(companion.id)}
+                text={text}
+                reasons={allyRow.reasons}
               />{' '}
               <LegalityLine legal={allyRow.legal} reasons={allyRow.reasons} text={text} />
             </p>
@@ -393,26 +399,31 @@ function TargetLink({
   targetId,
   legal,
   label,
+  text,
+  reasons,
 }: {
   selection: PanelSelection;
   basePath: string;
   targetId: ActorId;
   legal: boolean;
   label: string;
+  text: CombatCatalogue;
+  reasons: OptionReason[];
 }) {
   const selected = selection.targetId === targetId && selection.actionId !== null;
-  if (!legal && !selected) {
-    return (
-      <span aria-disabled="true" className="cp-target">
-        {label}
-      </span>
-    );
-  }
+  // Every target stays a focusable link — including an illegal one — so
+  // keyboard and screen-reader users can reach it and hear why it is
+  // disabled. Confirming still needs a legal command (handoff U7).
+  const description = legal
+    ? text.panel.legalTarget
+    : reasons.map((r) => reasonText(text, r)).join(' · ');
   return (
     <a
       className="cp-target"
       data-sel=""
       aria-current={selected ? 'true' : undefined}
+      aria-disabled={legal ? undefined : 'true'}
+      aria-label={`${label} · ${description}`}
       href={selectionHref(basePath, selection, { targetId })}
     >
       {label}
@@ -479,6 +490,14 @@ function Intent({
     selection.actionId === null ? [] : targetCandidates(state, selection.stance, selection.actionId);
   const row = candidates.find((option) => option.targetId === enemy.id);
   const selected = selection.actionId !== null && selection.targetId === enemy.id;
+  const slotText =
+    plan === undefined
+      ? null
+      : plan.attackSlot
+        ? text.panel.slotAttack
+        : plan.actionId === 'wait'
+          ? `${text.panel.slotWaiting(GUARD['wait'])} · ${text.panel.slotWould(text.actions['wait'])}`
+          : text.actions[plan.actionId];
   const slotBadge =
     plan === undefined ? null : plan.attackSlot ? (
       <b className="cp-badge cp-badge-slot">⚔ {text.panel.slotAttack}</b>
@@ -520,14 +539,37 @@ function Intent({
       {row === undefined ? null : <LegalityLine legal={row.legal} reasons={row.reasons} text={text} />}
     </>
   );
-  if (row === undefined || (!row.legal && !selected)) {
-    return <div className="cp-intent">{body}</div>;
+  // The screen-reader name carries the whole row: who, how hurt, in what
+  // stance, what they intend, and whether (and why not) they can be targeted.
+  const intentLabel = joinPresent([
+    nameOf(enemy.id),
+    text.panel.hpLine(enemy.hp, PROFILES[enemy.profileId].maxHp),
+    text.ranges[range],
+    text.stances[plan?.stance ?? enemy.stance],
+    slotText,
+    row === undefined
+      ? null
+      : row.legal
+        ? text.panel.legalTarget
+        : row.reasons.map((r) => reasonText(text, r)).join(' · '),
+  ]);
+  if (row === undefined) {
+    return (
+      <div className="cp-intent" role="group" aria-label={intentLabel}>
+        {body}
+      </div>
+    );
   }
+  // An illegal target stays a focusable link with aria-disabled, so keyboard
+  // users can move to it and hear the reason; confirming still needs a legal
+  // command (handoff U7).
   return (
     <a
       className={`cp-intent${selected ? ' cp-selected' : ''}`}
       data-sel=""
       aria-current={selected ? 'true' : undefined}
+      aria-disabled={row.legal ? undefined : 'true'}
+      aria-label={intentLabel}
       href={selectionHref(basePath, selection, { targetId: enemy.id })}
     >
       {body}
@@ -620,6 +662,13 @@ function Card({
   const selectable = targetCandidates(state, selection.stance, actionId).some((option) => option.legal);
   const cost = actionCost(actionId);
   const selected = selection.actionId === actionId;
+  // The screen-reader name announces the disabled reasons with the card, so
+  // they are heard without moving focus elsewhere (handoff U7).
+  const cardLabel = joinPresent([
+    text.actions[actionId],
+    cost > 0 ? text.panel.costLine(cost) : null,
+    reasons.length === 0 ? null : reasons.map((r) => reasonText(text, r)).join(' · '),
+  ]);
   const body = (
     <>
       <b>
@@ -631,19 +680,15 @@ function Card({
       )}
     </>
   );
-  if (!selectable && !selected) {
-    return (
-      <span className="cp-card" aria-disabled="true">
-        {body}
-      </span>
-    );
-  }
+  // Every card stays a focusable link — including one with no legal target —
+  // so keyboard users can always reach it and hear why it is disabled.
   return (
     <a
       className={`cp-card${selected ? ' cp-selected' : ''}`}
       data-sel=""
       aria-current={selected ? 'true' : undefined}
       aria-disabled={selectable ? undefined : 'true'}
+      aria-label={cardLabel}
       href={selectionHref(basePath, selection, { actionId, targetId: selection.targetId })}
     >
       {body}
@@ -744,7 +789,7 @@ function Forecast({
     <div className="cp-step">
       <h3>{text.panel.forecastHeading}</h3>
       <h4>{text.panel.movementHeading}</h4>
-      <ul>
+      <ul aria-label={text.panel.movementHeading}>
         {forecast.moves.map((move, index) => {
           const detail = move.success
             ? [
@@ -771,7 +816,7 @@ function Forecast({
         })}
       </ul>
       <h4>{text.panel.blowsHeading}</h4>
-      <ul>
+      <ul aria-label={text.panel.blowsHeading}>
         {forecast.blows.map((blow, index) => (
           <li key={index}>
             {blow.redirected ? <b className="cp-tag">{text.panel.coverTag(nameOf(blow.recipient), nameOf(blow.target))}</b> : null}{' '}
@@ -825,7 +870,7 @@ function Forecast({
         <p className="cp-cutoff">{text.panel.cutoffLine(forecast.unacted.map((u) => nameOf(u.actor)).join(', '))}</p>
       ) : null}
       <h4>{text.panel.afterHeading}</h4>
-      <ul>
+      <ul aria-label={text.panel.afterHeading}>
         {forecast.after.map((after) => (
           <li key={after.id}>
             {nameOf(after.id)} · {text.panel.hpLine(after.hp, after.maxHp)}
@@ -846,7 +891,7 @@ function Forecast({
       {terminalCut ? (
         <p className="cp-dim">{text.panel.noRegeneration}</p>
       ) : (
-        <ul>
+        <ul aria-label={text.panel.regenHeading}>
           {forecast.regens.map((regen) => (
             <li key={regen.actor}>
               {text.events.regenerated({ actor: nameOf(regen.actor), gain: regen.gain, stamina: regen.stamina })}
@@ -899,11 +944,19 @@ function SurrenderForm({
   text: CombatCatalogue;
   action: string;
 }) {
+  // In-page confirmation (handoff U7): a details/summary toggle works with
+  // keyboard and without JavaScript, and never opens a browser dialog. The P5
+  // adapters reuse this pattern for their restart and fight-replacement
+  // confirmations.
   return (
-    <form method="post" action={action}>
-      <input type="hidden" name="round" value={String(state.round)} />
-      <button type="submit">{text.panel.surrender}</button>
-    </form>
+    <details className="cp-confirm">
+      <summary>{text.panel.surrender}</summary>
+      <p>{text.panel.surrenderAsk}</p>
+      <form method="post" action={action}>
+        <input type="hidden" name="round" value={String(state.round)} />
+        <button type="submit">{text.panel.surrenderConfirm}</button>
+      </form>
+    </details>
   );
 }
 

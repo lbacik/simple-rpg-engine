@@ -236,7 +236,17 @@ export interface CombatPanelText {
   blowSummary: (params: { actor: string; target: string; hit: boolean; hpLoss: number }) => string;
   confirm: string;
   surrender: string;
+  surrenderAsk: string;
+  surrenderConfirm: string;
   resultHeading: string;
+  logHeading: string;
+  logEmpty: string;
+  logChoice: (params: { stance: string; action: string; target: string | null }) => string;
+  logReplay: (round: number) => string;
+  logNext: string;
+  logPause: string;
+  logSkip: string;
+  logStep: (shown: number, total: number) => string;
 }
 
 const reasons: CombatReasons = {
@@ -436,7 +446,19 @@ const panel: CombatPanelText = {
       : `${params.actor} → ${params.target} · miss`,
   confirm: 'Play round',
   surrender: 'Surrender',
+  surrenderAsk: 'Surrender this fight? The encounter stays undefeated.',
+  surrenderConfirm: 'Yes, surrender',
   resultHeading: 'Fight over',
+  logHeading: 'Combat log',
+  logEmpty: 'No rounds played yet.',
+  logChoice: (params) =>
+    `Your choice: ${params.stance} · ${params.action}` +
+    (params.target === null ? '' : ` → ${params.target}`),
+  logReplay: (round) => `Replay round ${whole(round)} step by step`,
+  logNext: 'Next step',
+  logPause: 'Pause',
+  logSkip: 'Show all',
+  logStep: (shown, total) => `Step ${whole(shown)} of ${whole(total)}`,
 };
 
 const actions: Record<ActionId, string> = {

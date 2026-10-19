@@ -224,7 +224,19 @@ export const combatPl: CombatCatalogue = {
         : `${params.actor} → ${params.target} · pudło`,
     confirm: 'Rozegraj rundę',
     surrender: 'Poddaj walkę',
+    surrenderAsk: 'Poddać tę walkę? Starcie pozostanie nierozstrzygnięte.',
+    surrenderConfirm: 'Tak, poddaj walkę',
     resultHeading: 'Koniec walki',
+    logHeading: 'Dziennik walki',
+    logEmpty: 'Nie rozegrano jeszcze żadnej rundy.',
+    logChoice: (params) =>
+      `Twój wybór: ${params.stance} · ${params.action}` +
+      (params.target === null ? '' : ` → ${params.target}`),
+    logReplay: (round) => `Odtwórz rundę ${whole(round)} krok po kroku`,
+    logNext: 'Następny krok',
+    logPause: 'Wstrzymaj',
+    logSkip: 'Pokaż wszystko',
+    logStep: (shown, total) => `Krok ${whole(shown)} z ${whole(total)}`,
   },
   actions: {
     heavy: 'Silny cios',
