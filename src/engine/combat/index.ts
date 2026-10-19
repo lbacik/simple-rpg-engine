@@ -79,3 +79,5 @@ export type {
   ArenaRunV1,
   VerifyFrozenPlans,
 } from './arena-run';
+export type { Accepted, Previewed, PreviewResult, Rejected, StartResult, SubmitResult, SurrenderResult } from './resolve';
+export { previewRound, startCombat, submitRound, surrender } from './resolve';
