@@ -90,8 +90,8 @@ describe('shouldShowOutcomeModal', () => {
 describe('outcome-modal entry types', () => {
   it('gates every Outcome presentation behind Continue: Test, Outcome and state changes', () => {
     // S4 deleted the tactical Combat end and Enemy-defeated entries with the
-    // old rules; the P6 adapter re-adds the v3 Combat entries.
-    for (const type of ['test', 'outcome', 'state-change']) {
+    // old rules; the P6 adapter re-adds the v3 Combat end frame (G3/G6).
+    for (const type of ['test', 'outcome', 'state-change', 'combat-end']) {
       expect(OUTCOME_MODAL_ENTRY_TYPES.has(type)).toBe(true);
     }
   });
@@ -106,7 +106,6 @@ describe('outcome-modal entry types', () => {
       'travel',
       'combat-start',
       'combat-round',
-      'combat-end',
       'enemy-defeated',
       'inventory',
       'ending',

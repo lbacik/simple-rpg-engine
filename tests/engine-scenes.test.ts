@@ -710,9 +710,9 @@ describe('conditions: every fact', () => {
 describe('outcome modal derivation and narration', () => {
   it('derives the modal entries from the latest step entries of the listed types only', () => {
     // S4: the Combat end and Enemy-defeated entries left with the tactical
-    // Combat; the P6 adapter re-adds the v3 Combat entries.
+    // Combat; the P6 adapter re-adds the v3 Combat end frame (G3/G6).
     expect([...OUTCOME_MODAL_ENTRY_TYPES].sort()).toEqual(
-      ['outcome', 'state-change', 'test'].sort(),
+      ['combat-end', 'outcome', 'state-change', 'test'].sort(),
     );
     const { scenario, state: started } = startWoods();
     const listened = choose(scenario, started, 'listen').state;

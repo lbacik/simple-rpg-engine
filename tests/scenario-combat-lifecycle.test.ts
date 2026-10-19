@@ -245,7 +245,9 @@ describe('Combat lifecycle through the real stores (G1)', () => {
       ).toEqual({ ok: true, step: 8 });
       state = await storedState(db, playthroughId);
       const combat = state.activeCombat?.combat;
-      expect(combat?.actors.map((a) => `${a.id}:${a.ref}`).sort()).toEqual(['e02:beta', 'h01:null']);
+      // Survivors only, in the authored arrangement: beta returns as e01
+      // (actor ids pack with no gaps, #181) with its ref intact.
+      expect(combat?.actors.map((a) => `${a.id}:${a.ref}`).sort()).toEqual(['e01:beta', 'h01:null']);
       expect(combat?.actors.find((a) => a.id === 'h01')?.hp).toBe(heroHealth);
     } finally {
       await db.destroy();
