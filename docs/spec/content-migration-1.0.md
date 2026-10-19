@@ -222,3 +222,26 @@ the full roster, with the hero at 40 HP and no Companion. Release gate:
 human playtests for attrition across a whole Scenario (see #186). An
 Encounter failing the CI gate is tuned by Q13; a needed rule change
 returns to the map as an explicit decision.
+
+### Winnability tuning record (C6, #236)
+
+No tuning was needed. All 31 converted Encounters reach `WIN` against
+their full roster with the hero at 40 HP and no Companion, using the
+#184 Q12/Q13 values as converted (no `phaseOffset`, `power` or
+`startRange` change):
+
+- whispering-woods (3): camp-bandit, hollow-wolf, wight-fight.
+- perun-stone (2): wolf-fight, utopiec-fight.
+- the-drowned-ledger (4): porter-fight, foundry-fight, tower-fight,
+  auditor-fight.
+- the-ember-pass (14): road-wolves, tower-assault, tower-roof,
+  tower-stairs, ford-troll, mine-crawler, depths-pair, gate-guards,
+  gate-lone-guard, shrine-brute, pen-brute, shaman-rite, warlord-duel,
+  warlord-and-guard.
+- the-frost-cairn (8): shore-wolves, ridge-sentry, gate-guards,
+  gate-sentry-lone, gallery-patrol, crevice-skulker, shrine-berserker,
+  harek-and-guard.
+
+Evidence: `tests/combat-winnability.test.ts` replays one recorded
+command sequence per Encounter to `WIN`/`FINISHED` and asserts the
+coverage matches every shipped Encounter.
