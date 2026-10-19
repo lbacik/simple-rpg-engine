@@ -33,6 +33,8 @@ scenarios/<id>/
   images.yaml
   images/
     village-gate.webp
+    layers/
+      chimney-smoke.webp
   translations/
     pl/
       translation.yaml
@@ -103,6 +105,12 @@ Moving or renaming a file means editing the manifest only. Renaming an ID means 
 | Key | Default when omitted |
 |---|---|
 | `repeatable`, `once`, `magic` | `false` |
+| Drift and Camera `loop` | `false` |
+| Drift and Camera `delay` | `0` |
+| Layer `anchor`, and `at` on a Layer without `drift` | `{ x: 50, y: 50 }` |
+| Layer `width` | `100` |
+| Layer `blend` | `normal` |
+| Camera `from` | `{ zoom: 100, x: 50, y: 50 }` |
 | `quantity` | `1` |
 | `has.atLeast` | `1` |
 | `reach` | `melee` |
@@ -328,27 +336,134 @@ At most one Equipment item per slot among a Template's items.
 
 ```yaml
 - id: <id>
-  path: <path>                 # relative to the Scenario directory, not to this file
+  path: <path>                 # the Still; relative to the Scenario directory, not to this file
   alt: <text>                  # required, in the Scenario's Base Language
+  motion?: <Motion>            # see Motion
 ```
+
+### Motion
+
+```yaml
+layers?: [<Layer>]             # draw order, first at the back; at least one entry when present
+camera?: <Camera>              # at least one of layers | camera
+```
+
+### Layer
+
+```yaml
+path: <path>                   # the Layer's picture: one image, or a strip of frames
+frames?: 2-64                  # integer; the picture is a horizontal strip of equal-width frames
+fps?: 1-30                     # fractions allowed; required exactly when frames is present
+at?: <Point 0-100>             # where the anchor sits on the Still; at most one of at | drift
+anchor?: <Point 0-100>         # in percent of one frame
+width?: 0-400                  # above 0; percent of the Still's width
+blend?: normal | multiply | screen
+drift?:                        # linear
+  from: <Point -100 to 200>    # positions of the anchor; may lie outside the Still
+  to: <Point -100 to 200>
+  duration: 0-600              # seconds, above 0
+  delay?: 0-600                # seconds
+  loop?: <bool>
+flicker?: { depth: 1-100 }     # opacity dip in percent
+```
+
+### Camera
+
+```yaml
+from?: <Framing>               # default: the whole Still
+to: <Framing>
+duration: 0-600                # seconds, above 0; ease-in-out
+delay?: 0-600                  # seconds
+loop?: <bool>                  # in, then back out
+```
+
+- A `<Point>` is `{ x, y }`, both keys, numbers in percent: of the Still for `at` and Drift points, of one frame for `anchor`. The origin is top-left and y points down, as in `map`.
+- A `<Framing>` is `{ zoom, x, y }`, all three keys: `zoom` 100-400 in percent, `x` and `y` 0-100 in percent of the Still.
 
 ## Images
 
 Both **Locations** and **Scenes** may have Illustrations, and an Illustration is always optional.
 
 - Images are **package-local files** declared in `images` catalogs and referenced by ID (`illustration: <image-id>`). Story content never contains image paths. Several Scenes or Locations may share one image.
-- A path may be declared only once and follows the manifest path rules.
-- **Formats**: PNG, JPEG and WebP, identified by a lowercase extension (`.png`, `.jpg`/`.jpeg`, `.webp`). The file signature must match the extension. SVG, GIF and AVIF are not supported. Animation is neither detected nor forbidden.
-- **Limits**: file size ≤ 2 MiB, each side ≤ 4096 px. No minimum size and no required aspect ratio.
-- `alt` is required and non-empty. There is no decorative option and no caption.
+- A catalog entry's `path` is the Illustration's **Still**. An entry may add **Motion** under `motion` ([Illustration Motion](#illustration-motion)); an entry without `motion` is a static Illustration. Motion belongs to the image, so a shared image animates identically wherever it is shown.
+- A catalog `path` may be declared only once and follows the manifest path rules. A Layer `path` follows the same path rules but is not a catalog entry: one file may serve several Layers, several Illustrations, and also be a Still.
+- **Formats**: PNG, JPEG and WebP, identified by a lowercase extension (`.png`, `.jpg`/`.jpeg`, `.webp`), for Stills and Layer files alike. The file signature must match the extension. SVG, GIF and AVIF are not supported, and neither are video, Lottie or Rive. Stills and Layer files are single-frame images: an animated PNG or WebP is not supported, though the validator does not detect one, and its animation would run outside Motion (under reduced motion, while paused, without the Play/Pause control). WebP with alpha is recommended for Layers.
+- **Limits** per file, for the Still and for every Layer file: file size ≤ 2 MiB, each side ≤ 4096 px. No minimum size and no required aspect ratio.
+- **Limit per Illustration**: the Still plus every **distinct** Layer file of its Motion total at most 4 MiB. A file used by several Layers of one Illustration counts once; a file shared with another Illustration counts in each.
+- `alt` is required and non-empty. One `alt` describes the Still and its Motion together. There is no decorative option and no caption.
 
-Loading, serving and failed-load behaviour are in [architecture.md](architecture.md#scenario-assets) and [ui.md](ui.md#scene-illustration).
+Loading, serving and failed-load behaviour are in [architecture.md](architecture.md#scenario-assets) and [ui.md](ui.md#scene-and-location-illustration). The decision to compose Motion from Layers over a Still, rather than ship animated files, is recorded in [ADR 0007](../adr/0007-motion-as-engine-composed-layers-over-a-still.md).
+
+### Illustration Motion
+
+Motion is the decorative animation of an Illustration: its Layers' frames, Drifts and Flickers, and its Camera. It is identical on every Showing and does not react to Playthrough state. How the engine composes and times it, and when it is on or off, is in [ui.md](ui.md#motion).
+
+- **Layers** are transparent pictures drawn over the Still in list order, the first at the back. There is no `z` key and no Layer `id`. `images/layers/` is the recommended place for Layer files, a convention, not a requirement.
+- **Units**: positions and sizes are numbers in percent (no `%` suffix, no positional arrays), times are numbers of seconds, and `fps` is frames per second. Fractions are allowed.
+- **Picture**: without `frames`, a Layer's picture is one image. With `frames: n`, it is a horizontal strip of `n` equal-width frames, so the file's pixel width must divide by `n`. Frames always loop while the Layer is shown.
+- **Size**: `width` is the Layer's width in percent of the Still's width; its height follows from the aspect ratio of one frame. With the defaults (`width: 100`, `at` and `anchor` at the centre), a Layer drawn in the Still's proportions covers the whole Still.
+- **Placement**: `anchor` names a point of the Layer, in percent of one frame, and that point sits on `at`. A grounded sprite uses `anchor: { x: 50, y: 100 }` with `at` on the ground. `at` must lie within the Still. `anchor` places the Layer only; it does not affect the Camera.
+- **Drift**: the Layer's anchor travels from `from` to `to` in `duration` seconds, linearly, after `delay`. Drift points may lie outside the Still, so a Layer can enter or leave the picture. `drift` and `at` exclude each other.
+- **Flicker**: an engine-driven variation of the Layer's opacity. The author sets only `depth`, the deepest dip in percent; the engine fixes the curve and its rate within safe limits. It is a mapping, not `flicker: true`, so later keys need no change of form.
+- **Blend**: `normal`, `multiply` or `screen`, against everything drawn beneath the Layer.
+- `frames`, `drift` and `flicker` combine freely on one Layer. Each Layer is declared on its own: there is no `count` for repeated sprites, and a file repeated across Layers is fetched once.
+- **Camera**: a zoom, a pan or both, from the `from` framing to the `to` framing in `duration` seconds, eased in and out, after `delay`. It applies to the Still and every Layer together. In a framing, `zoom` is the magnification in percent (100 shows the whole Still) and `x`/`y` is the **fixed point**: the point of the Still that stays in place while zooming, so `x: 0` keeps the view flush with the left edge and `x: 100` with the right. A push-in changes `zoom`, a pan changes the fixed point at `zoom` above 100. The view never leaves the Still, so the engine never clamps.
+- **One-shot or looping**: Drift and Camera are **one-shot** by default: they play once per Showing and hold their end state. `loop: true` repeats them. The per-Showing wording deliberately avoids `once` and `repeatable`, which count per Playthrough.
+- **Room for later Condition-driven Motion**: objects are strict, so a later `when` on a Layer, or variants under `motion`, is an additive change that leaves existing packages valid. `when` is not used anywhere in Motion now.
+
+```yaml
+- id: loc-hunters-camp
+  path: images/loc-hunters-camp.png              # the Still
+  alt: >-
+    An abandoned hunters' camp in a pine clearing, with a branch lean-to and a
+    ring of blackened hearth stones.
+  motion:
+    layers:
+      - path: images/layers/hunters-camp-sun.webp  # sun shafts over the whole Still
+        blend: multiply
+        flicker: { depth: 40 }
+      - path: images/layers/crow.webp              # a crow standing on a stump
+        frames: 8
+        fps: 4
+        anchor: { x: 50, y: 100 }
+        at: { x: 33.4, y: 66.1 }
+        width: 4
+      - path: images/layers/bird.webp              # one-shot, starts mid-picture
+        frames: 4
+        fps: 5
+        width: 4
+        drift: { from: { x: 38, y: 16 }, to: { x: 108, y: 9 }, duration: 14, delay: 1.5 }
+      - path: images/layers/bird.webp              # looping, same file
+        frames: 4
+        fps: 6
+        width: 3.2
+        drift: { from: { x: -5, y: 23 }, to: { x: 105, y: 19 }, duration: 24, delay: 8, loop: true }
+    camera:
+      to: { zoom: 110, x: 30, y: 55 }              # one-shot push-in towards the lean-to
+      duration: 18
+```
+
+This is the example of [Example layered Illustration in whispering-woods](https://github.com/lbacik/simple-rpg-engine/issues/209#issuecomment-6251921939) (its prototype branch is [`prototype/layered-illustration-example`](https://github.com/lbacik/simple-rpg-engine/tree/prototype/layered-illustration-example)), with the crow placed by `anchor`. It enters the example Scenario together with the implementation of Motion.
+
+### Authoring guidelines
+
+Not validated; they keep Motion readable and accessible.
+
+- Motion is identical on every Showing, so it must suit **every narrative state** of its Scene or Location. A burning fire does not belong at a camp that is abandoned in one state and occupied in another.
+- Paint content that never moves into the Still. A Layer with no `frames`, `drift` or `flicker` vanishes whenever Motion is off, which the validator warns about.
+- To keep a Layer unseen until it enters, start its Drift outside the Still: before its `delay` ends, a Layer waits at its `from` point.
+- Frames loop at one `fps`, so a pause (a crow idling, then turning its head) is spelled as repeated frames. Two Layers sharing a strip move in unison unless their `fps` differ; there is no phase offset.
+- `screen` is nearly invisible on a light, ink-on-paper Still. Paint light as a warm `multiply` tint.
+- A Layer covering the whole Still may be drawn at a lower resolution and stretched by the default `width: 100`.
+- A Camera magnifies the Still. `play/camera-low-resolution` counts pixels, so an upscaled Still passes without having real detail.
+- `alt` describes the scene. Mention motion only where it carries meaning; decorative Layer content (a crow, passing birds) need not be named.
+- No Layer content, sprite strips included, may flash more than three times in any one second (WCAG 2.3.1). Flicker complies by construction. The validator does no frame-luminance analysis; one could be added later as a warning, never an error.
 
 ## Translations
 
 A Scenario is written in its **Base Language**, the manifest's `language`. It may carry any number of **Translations**, each a complete rendering of all of its text into one other language. Recorded in [ADR 0002](../adr/0002-translation-as-text-only-overlay.md).
 
-- A Translation is a **text-only overlay** keyed by content IDs. It adds no content and changes no mechanics: IDs, references, Conditions, Effects, transitions, numbers, `map` coordinates, illustrations and every other non-text field exist only in the base files.
+- A Translation is a **text-only overlay** keyed by content IDs. It adds no content and changes no mechanics: IDs, references, Conditions, Effects, transitions, numbers, `map` coordinates, illustrations, `motion` and every other non-text field exist only in the base files.
 - A Translation is **complete**. It provides exactly the translatable fields the base provides: a field present in the base is present in the Translation, and an optional field omitted in the base is omitted in the Translation. The engine never mixes the text of two languages within one Scenario.
 - Translation text follows the same value types as the base: `<text>` fields are shown literally, and narration fields follow the [narration format](#narration-format) (the Markdown subset and `{name}` only).
 
@@ -468,7 +583,7 @@ choices:
 
 ### Illustrations in a Translation
 
-A Translation translates an image's `alt` only. It cannot replace the image file; every language shows the same Illustrations.
+A Translation translates an image's `alt` only. It cannot replace the image file or change its Motion; every language shows the same Illustrations.
 
 ## Versioning
 
@@ -478,7 +593,8 @@ A Translation translates an image's `alt` only. It cannot replace the image file
 ## Schemas and editor support
 
 - **Zod is the source of truth** for the structure of every file kind, including the per-entity limits above. JSON Schema is generated from it with `z.toJSONSchema` for editor completion and structural checks.
-- Refinements that JSON Schema cannot express (the Template point sum, the narration brace rule) and all cross-file checks run only in the loader and the CLI.
+- Refinements that JSON Schema cannot express (the Template point sum, the narration brace rule, an empty `motion`, `drift` with `at`, `frames` with `fps`) and all cross-file checks run only in the loader and the CLI.
+- Layer `at` has no schema default, because it is mutually exclusive with `drift`; the engine applies it.
 - No per-Scenario schema enumerating IDs is generated.
 - The repository ships an example VS Code configuration (`yaml.schemas`) associating each generated schema with the files of the recommended layout. A non-standard layout needs matching associations; the loader still takes file types from the manifest.
 
@@ -534,6 +650,10 @@ choices:
 ## Sources
 
 - [Translation package format](https://github.com/lbacik/simple-rpg-engine/issues/57) (Translations, Connection `to` uniqueness)
+- [Prototype: one Scene rendered with competing animation approaches](https://github.com/lbacik/simple-rpg-engine/issues/196#issuecomment-6250531255) (Layers over a Still, formats, the 4 MiB Illustration budget)
+- [Authoring syntax for Illustration layers and camera](https://github.com/lbacik/simple-rpg-engine/issues/201#issuecomment-6251636679) (`motion`)
+- [Example layered Illustration in whispering-woods](https://github.com/lbacik/simple-rpg-engine/issues/209#issuecomment-6251921939) (the example, authoring guidelines)
+- [Clarify the Motion spec gaps found by the example](https://github.com/lbacik/simple-rpg-engine/issues/212#issuecomment-6261254575) (`anchor`)
 
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (conventions, field reference, defaults, display text)
 - [Scenario package layout and reference convention](https://github.com/lbacik/simple-rpg-engine/issues/6#issuecomment-6099136128)

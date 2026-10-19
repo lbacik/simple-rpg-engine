@@ -43,7 +43,7 @@ type Diagnostic = {
 ```
 
 - Positions come from the `yaml` library's node ranges and `LineCounter`; lines and columns are 1-based.
-- Playability diagnostics point at the `id` node of the entity concerned.
+- Playability diagnostics point at the `id` node of the entity concerned, except the Motion warnings, which point at the Layer or the `camera` concerned.
 - Duplicate-ID diagnostics carry the first declaration in `related`.
 - Diagnostics are read by Scenario authors (CLI and startup logs), never by players. Their messages are in English and are not part of the Interface Text catalogue ([architecture.md](architecture.md#interface-text)). The same holds for the CLI's own output.
 - `translation` is set on every diagnostic about a Translation, including those whose `file` is a base file. It is the manifest's path because the path exists even when the Translation's `language` cannot be read.
@@ -100,6 +100,9 @@ Files present in the directory but not listed produce no diagnostic.
 | `schema/condition-bounds` | An `attribute` or `health` Condition has zero bounds or both. |
 | `schema/empty-combinator` | An `all` or `any` list is empty. |
 | `schema/encounter-enemies` | An Encounter has both `enemy` and `participants`, or neither. |
+| `schema/empty-motion` | An image's `motion` has neither `layers` nor `camera`, or `layers` is an empty list. |
+| `schema/drift-and-at` | A Layer has both `drift` and `at`. |
+| `schema/frames-fps` | A Layer has `frames` without `fps`, or `fps` without `frames`. |
 | `schema/weapon-only-field` | `reach` or `damage` on an item that is not a weapon, or a weapon without `damage`. |
 | `schema/invalid-language` | `language` is not a valid BCP 47 tag (checked with `Intl.getCanonicalLocales`). |
 | `schema/narration-brace` | A `{` in narration other than in `{name}`. |
@@ -119,6 +122,8 @@ Ranges and shapes checked under `schema/invalid-value` and `schema/missing-field
 - **Tests**: `difficulty` `easy` | `ordinary` | `hard` | `very-hard`.
 - **Location `map`**: both `x` and `y` present, numbers 0–100.
 - **Image**: `alt` present (and non-empty, under `schema/empty-text`).
+- **Motion** ([scenario-format.md](scenario-format.md#motion)): Layer `path` present; `at` `x` and `y` 0–100; `anchor` `x` and `y` 0–100; `width` above 0 and at most 400; `frames` an integer 2–64 (`frames: 1` is a plain picture); `fps` 1–30, fractions allowed; `blend` `normal` | `multiply` | `screen`; `drift` `from` and `to` present, their `x` and `y` −100–200 (outside the Still is allowed; the bound catches typos such as `1100`); `flicker.depth` present, 1–100; Camera `to` present; each framing with `zoom` 100–400 and `x`, `y` 0–100; Drift and Camera `duration` present, above 0 and at most 600; `delay` 0–600; `loop` a boolean. Every point has both `x` and `y`, and every framing all of `zoom`, `x` and `y`.
+- Out-of-range Motion values are **rejected, never clamped**, Flicker `depth` included: the engine fixes the Flicker rate below the WCAG 2.3.1 threshold, so any `depth` in range is safe, and the author gets exactly what they wrote.
 
 Optional text fields (Connection `label`, item, Enemy and Template `description`, Scenario `intro`, Outcome `text`) may be omitted but, when present, must not be empty. Required text: Scenario `title` and `description`; Location `name` and `description`; Scene `title` and `text`; Choice `text`; item, Enemy and Template `name`; Ending `title` and `text`; Encounter `text`; image `alt`. There are no length limits.
 
@@ -143,11 +148,15 @@ Optional text fields (Connection `label`, item, Enemy and Template `description`
 | `ref/scene-membership` | An `on-enter` or `on-demand` Scene is listed by no Location or by more than one; or a follow-on Scene is listed by a Location. |
 | `ref/next-to-triggered-scene` | `next` targets a Scene that has a `trigger`. |
 | `ref/template-slot-conflict` | A Template's starting items include two Equipment items for the same slot. |
-| `ref/duplicate-image-path` | Two image entries declare the same path. |
-| `ref/invalid-image-path` | An image path breaks the path rules, or its extension is not `.png`, `.jpg`, `.jpeg` or `.webp` (lowercase). |
-| `ref/missing-image-file` | A declared image file is missing or unreadable. |
-| `ref/image-format-mismatch` | The image file's signature does not match its extension. |
-| `ref/image-too-large` | An image file is over 2 MiB or has a side over 4096 px. |
+| `ref/duplicate-image-path` | Two image entries declare the same path. Layer paths are not checked: one file may serve several Layers and Illustrations. |
+| `ref/invalid-image-path` | An image or Layer `path` breaks the path rules, or its extension is not `.png`, `.jpg`, `.jpeg` or `.webp` (lowercase). |
+| `ref/missing-image-file` | A declared image or Layer file is missing or unreadable. |
+| `ref/image-format-mismatch` | An image or Layer file's signature does not match its extension. |
+| `ref/image-too-large` | An image or Layer file is over 2 MiB or has a side over 4096 px. |
+| `ref/illustration-too-large` | An image's Still plus every **distinct** Layer file of its `motion` total more than 4 MiB. A file used by several Layers of the image counts once; a file shared with another image counts in each. |
+| `ref/sprite-strip-width` | A Layer file's pixel width is not divisible by the Layer's `frames`, so its frames would fall on fractions of a pixel. |
+
+The image codes put their diagnostic range on the `path` concerned, the Still's or the Layer's.
 
 ### Phase 4: Playability
 
@@ -197,6 +206,9 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 | `play/key-item-unused` **(W)** | A Key Item is used in no Condition. |
 | `play/enemy-unused` **(W)** | An Enemy is a participant of no Encounter. |
 | `play/image-unused` **(W)** | A declared image is referenced by no Scene. |
+| `play/static-layer` **(W)** | A Layer has none of `frames`, `drift` or `flicker`. Layers are shown only while Motion is on, so a static Layer vanishes under reduced motion or Pause, and the composition at rest differs from the Still. |
+| `play/motionless` **(W)** | A Drift whose `from` equals its `to`, or a Camera whose `to` equals its `from` (given or defaulted). |
+| `play/camera-low-resolution` **(W)** | An image has a `camera`, and its Still's pixel width × 100 / the larger `zoom` of `from` and `to` is below 1000 px: the most zoomed-in view has fewer pixels than the ~990 px reading column. Images without a Camera are not checked, and no minimum resolution is required. |
 | `play/missing-map-coordinates` **(W)** | A Location has no `map`. |
 | `play/map-too-close` **(W)** | Two Locations' `map` points are less than 5 units apart (Euclidean). |
 
@@ -204,6 +216,13 @@ For `play/no-way-out`, take the graph of play positions, each paired with the cu
 
 - **State-dependent soft-locks** (for example, a key given away before the only locked exit) cannot be proven statically. A warning for "every way out is conditional" was rejected as too noisy, because locked doors with a puzzle are a normal pattern.
 - **Combat balance**: within the mechanics limits no fight is unwinnable by construction (see [mechanics.md](mechanics.md#tactical-notes-consequences-not-extra-rules)). Difficulty estimates are out of scope.
+- **Motion**:
+  - a Layer file that is also a Still is allowed;
+  - files in a Layer directory that no Layer references produce no diagnostic, as with unlisted files; there is no catalog for a Layer file to be unused from;
+  - flashing inside a sprite strip is an [authoring guideline](scenario-format.md#authoring-guidelines);
+  - a Layer whose aspect ratio differs from the Still's is allowed;
+  - an animated PNG or WebP is not detected, although it is not supported ([scenario-format.md](scenario-format.md#images));
+  - frame luminance is not analysed; such a check could later be added as a warning, never an error.
 
 ## Translations
 
@@ -225,7 +244,7 @@ What the earlier stages catch, with existing codes:
 
 - A Translation manifest listed under `translations` that is missing or unreadable is `package/missing-file`, and a `translations` entry that breaks the path rules is `package/invalid-path`. Each rejects only that Translation.
 - `package/duplicate-file` covers the whole package. A Translation that lists a base file is rejected. When two Translations list the same file, both are rejected.
-- A non-translatable field in a Translation file (`when`, `effects`, `map`, …) is `schema/unknown-key`.
+- A non-translatable field in a Translation file (`when`, `effects`, `map`, `motion`, …) is `schema/unknown-key`.
 - A missing `language` or `baseVersion` is `schema/missing-field`, and an invalid tag is `schema/invalid-language`.
 - Translation text follows the base text rules: `schema/empty-text`, `schema/narration-brace` and the `schema/markdown-outside-subset` warning.
 - `{name}` is not compared with the base. A Translation may drop it where the base has it, or use it where the base does not, as its grammar requires.
@@ -256,6 +275,8 @@ Structural drift is already an error: a Scene, Choice or optional field added to
 
 [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/) has been walked through every phase by hand and passes with **no errors and no warnings**. It is the reference fixture for the validator's tests; invalid fixtures are written alongside the validator.
 
+The layered `loc-hunters-camp` Illustration ([scenario-format.md](scenario-format.md#illustration-motion)) joins it with the implementation of Motion and must keep it free of diagnostics: its prototype (with the crow placed by its centre, before `anchor` existed) passes every Motion rule, `play/camera-low-resolution` (1600 × 100 / 110 = 1455 px) and the 4 MiB budget (about 1.6 MiB, the shared bird file counted once) included.
+
 Translations have two reference fixtures of their own, `two-bridges` and `stara-studnia` in `tests/fixtures/scenarios/`, which must also pass with no diagnostics. Invalid and stale Translations are derived from them in the tests ([architecture.md](architecture.md#testing-strategy)).
 
 ## Sources
@@ -265,5 +286,7 @@ Translations have two reference fixtures of their own, `two-bridges` and `stara-
 - [Scenario validation rules and playability checks](https://github.com/lbacik/simple-rpg-engine/issues/7#issuecomment-6099876109)
 - [Normative Scenario YAML syntax and walk-through gaps](https://github.com/lbacik/simple-rpg-engine/issues/16#issuecomment-6100076156) (rule catalog changes, death Ending, the "not defeated" and `next` warning definitions)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478) (image rules)
+- [Validator rules for layered Illustrations](https://github.com/lbacik/simple-rpg-engine/issues/202#issuecomment-6251681742) (Motion rules)
+- [Clarify the Motion spec gaps found by the example](https://github.com/lbacik/simple-rpg-engine/issues/212#issuecomment-6261254575) (`anchor` range)
 - [Write the example Scenario and check it against the validation rules](https://github.com/lbacik/simple-rpg-engine/issues/12#issuecomment-6099995494) (walk-through)
 - [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (participant diagnostics)
