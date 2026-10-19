@@ -7,8 +7,8 @@
 //
 // Order per turn: read the row (another Session, or none, is `not-found`),
 // resolve the Scenario (gone means the Playthrough is read-only,
-// `incompatible`), migrate a stored v1 Playthrough against it (a failure
-// means `incompatible`), run the reference check when the pinned hash differs
+// `incompatible`), validate the stored document against the current schema
+// (anything but v2 means `incompatible`), run the reference check when the pinned hash differs
 // (a pass updates the pin, a fail means `incompatible`), run `applyAction`
 // (`step`, then legality), then the atomic commit
 // (`UPDATE … WHERE step = <expected>` plus the Journal inserts in one
@@ -30,8 +30,8 @@ import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
 import { localizeScenario } from '../../content/localize';
 import { applyAction, type Action, type Rng } from '../../engine/index';
-import { migratePlaythroughState, parseVersionedState } from '../../engine/migrate';
-import type { PlaythroughState } from '../../engine/state';
+import { PlaythroughStateSchema, type PlaythroughState } from '../../engine/state';
+import { readPlaythroughV3Document } from '../../engine/state-v3';
 import { PlaythroughStore } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
 
@@ -61,32 +61,27 @@ export async function executeTurn(
     return { ok: false, reason: 'incompatible' };
   }
   // The store returns raw state: validate here, where the Scenario is known.
-  // A stored v1 Playthrough migrates against the current Scenario before
-  // engine legality. Invalid documents fail without any write and without
-  // blocking the Journal (which reads through the store directly, never
-  // through this path); a failed migration is incompatible without any write.
-  const versioned = parseVersionedState(row.state);
-  if (versioned.kind === 'invalid') {
-    return { ok: false, reason: 'incompatible' };
-  }
-  if (versioned.kind === 'v3') {
-    // Combat MVP 1.0 turns arrive with the P6 Scenario adapter; until then v3
-    // rows are read-only and no turn commits against them.
-    return { ok: false, reason: 'incompatible' };
-  }
+  // Only current v2 documents play: invalid documents (including retired v1
+  // documents, whose migration left with the tactical Combat in S4) fail
+  // without any write and without blocking the Journal (which reads through
+  // the store directly, never through this path). Combat MVP 1.0 v3 turns
+  // arrive with the P6 Scenario adapter; until then v3 rows are read-only
+  // and no turn commits against them.
   let state: PlaythroughState;
-  let migrated = false;
-  if (versioned.kind === 'v1') {
-    const result = migratePlaythroughState(versioned.state, scenario);
-    if (!result.ok) {
-      return { ok: false, reason: 'incompatible' };
-    }
-    state = result.state;
-    migrated = true;
-  } else {
-    state = versioned.state;
+  if (
+    typeof row.state === 'object' &&
+    row.state !== null &&
+    'schemaVersion' in row.state &&
+    readPlaythroughV3Document(row.state).ok
+  ) {
+    return { ok: false, reason: 'incompatible' };
   }
-  let pinMoved = migrated;
+  const parsed = PlaythroughStateSchema.safeParse(row.state);
+  if (!parsed.success) {
+    return { ok: false, reason: 'incompatible' };
+  }
+  state = parsed.data;
+  let pinMoved = false;
   if (row.contentHash !== scenario.contentHash) {
     const check = checkPlaythroughCompatibility(scenario, state);
     if (!check.ok) {

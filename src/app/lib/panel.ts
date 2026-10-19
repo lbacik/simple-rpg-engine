@@ -86,11 +86,6 @@ export type PlayQuery = {
   showUnknownExits?: boolean;
   /** The selected inventory tile; only meaningful with `panel=inventory`. */
   item?: string | null;
-  /**
-   * The Combat target picker selection (`?target=`). It is not game state:
-   * it names a surviving participant for targeted actions to post.
-   */
-  target?: string | null;
 };
 
 function playQueryString(query: PlayQuery): string {
@@ -109,8 +104,6 @@ function playQueryString(query: PlayQuery): string {
     const trimmed = cleanParam(query.item);
     if (trimmed !== undefined) params.set('item', trimmed);
   }
-  const target = cleanParam(query.target);
-  if (target !== undefined) params.set('target', target);
   return params.toString();
 }
 
@@ -122,17 +115,16 @@ export function playHref(
   seen?: number,
   showUnknownExits?: boolean,
   item?: string | null,
-  target?: string | null,
 ): string {
-  const query = playQueryString({ panel, notice, seen, showUnknownExits, item, target });
+  const query = playQueryString({ panel, notice, seen, showUnknownExits, item });
   return query === '' ? `/play/${playthroughId}` : `/play/${playthroughId}?${query}`;
 }
 
 /**
  * The "Show/Hide unseen exits" toggle: the same game page carrying the
  * opposite of the current "?" map setting, preserving the open panel modal,
- * the transient notice, the Continue acknowledgement, the selected inventory
- * tile and the Combat target selection. Following it changes no game state,
+ * the transient notice, the Continue acknowledgement and the selected
+ * inventory tile. Following it changes no game state,
  * does not advance `step` and appends no Journal entries.
  */
 export function mapToggleHref(
@@ -147,7 +139,6 @@ export function mapToggleHref(
     // The toggle flips the setting, so it carries the opposite value.
     !query.showUnknownExits,
     query.item,
-    query.target,
   );
 }
 
@@ -164,44 +155,6 @@ export function continueHref(
   notice?: string,
   showUnknownExits?: boolean,
   item?: string | null,
-  target?: string | null,
 ): string {
-  return playHref(playthroughId, panel, notice, step, showUnknownExits, item, target);
-}
-
-/**
- * Parse `?target=`: the Combat target picker's selection. Whitespace-only is
- * absent; the caller resolves it against the arena's survivors (docs/spec/ui.md,
- * target picker).
- */
-export function parseCombatTarget(value: string | undefined): string | undefined {
-  return cleanParam(value);
-}
-
-/**
- * Resolve the picker selection against the arena's surviving participants, in
- * participant order. A requested id that names no survivor falls back to the
- * first survivor; with no survivors there is no selection. Pure: no state
- * writes, no `step` change, no RNG.
- */
-export function selectCombatTarget(
-  legalTargets: readonly string[],
-  requested: string | undefined,
-): string | undefined {
-  if (requested !== undefined && legalTargets.includes(requested)) return requested;
-  return legalTargets[0];
-}
-
-/**
- * A target-picker link: the same game page carrying `?target=` while
- * preserving the open panel modal, the transient notice, the Continue
- * acknowledgement, the "?" map setting and the selected inventory tile.
- */
-export function combatTargetHref(
-  playthroughId: string,
-  query: Omit<PlayQuery, 'target'>,
-  targetId: string,
-): string {
-  const params = playQueryString({ ...query, target: targetId });
-  return `/play/${playthroughId}?${params}`;
+  return playHref(playthroughId, panel, notice, step, showUnknownExits, item);
 }

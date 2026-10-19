@@ -1,5 +1,5 @@
 // Outcome narration in a modal over the current Location: engine transitions
-// for Outcomes that stay, move, lead to a Scene, Combat or Ending, and omit
+// for Outcomes that stay, move, lead to a Scene or Ending, and omit
 // narration, plus the modal presentation (accessible name, order, Continue
 // acknowledgement, reload semantics) and the background Location derivation.
 
@@ -71,10 +71,7 @@ function choose(scenario: Scenario, state: PlaythroughState, choiceId: string, r
 /** Outcome-modal entry types among engine journal entries (all belong to the latest step). */
 function panelTypes(journal: { type: string }[]): string[] {
   return journal
-    .filter(
-      (entry) =>
-        OUTCOME_MODAL_ENTRY_TYPES.has(entry.type) || entry.type === 'combat-round',
-    )
+    .filter((entry) => OUTCOME_MODAL_ENTRY_TYPES.has(entry.type))
     .map((entry) => entry.type);
 }
 
@@ -140,7 +137,10 @@ describe('Outcome transitions preserve the engine sequence', () => {
     expect(next.journal.filter((entry) => OUTCOME_MODAL_ENTRY_TYPES.has(entry.type))).toEqual([]);
   });
 
-  it('leads to Combat through the existing start-combat transition', () => {
+  it('leaves the retired start-combat transition without Combat or modal entries', () => {
+    // S4 (Combat MVP 1.0): `start-combat` no longer enters Combat. The fight
+    // journals its Choice only, shows no outcome modal, and leaves the
+    // camp-bandit Encounter undefeated until the P6 adapter lands.
     const scenario = loadWoods();
     const started = startPlaythrough(scenario, 'hunter', 'Ash', silentRng);
     if (!started.ok) throw new Error(`start failed: ${started.reason}`);
@@ -152,11 +152,11 @@ describe('Outcome transitions preserve the engine sequence', () => {
       firedScenes: [...started.state.firedScenes, 'camp-standoff'],
     };
     const fought = choose(scenario, state, 'fight');
-    expect(fought.state.activeCombat?.encounterId).toBe('camp-bandit');
+    expect(fought.state.activeSceneId).toBeNull();
+    expect(fought.state.encounters['camp-bandit']).toBeUndefined();
     const gameView = view(scenario, fought.state);
-    expect(gameView.kind).toBe('combat');
-    // Combat start is shown by the new position itself, not the modal.
-    expect(fought.journal.map((entry) => entry.type)).toEqual(['choice', 'combat-start']);
+    expect(gameView.kind).toBe('location');
+    expect(fought.journal.map((entry) => entry.type)).toEqual(['choice']);
     expect(
       fought.journal.filter((entry) => OUTCOME_MODAL_ENTRY_TYPES.has(entry.type)),
     ).toEqual([]);

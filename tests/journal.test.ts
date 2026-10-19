@@ -43,7 +43,6 @@ function makeState(): PlaythroughState {
     equipment: {},
     currentLocationId: 'glade',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['glade'],
     revealed: [],
     firedScenes: [],

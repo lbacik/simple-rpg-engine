@@ -446,7 +446,7 @@ export function SidePanel({
   const locationName =
     gameView.kind === 'location'
       ? gameView.name
-      : gameView.kind === 'scene' || gameView.kind === 'combat'
+      : gameView.kind === 'scene'
         ? gameView.locationName
         : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
   const healthShort = catalogue.character.short(state.character.health, MAX_HEALTH);

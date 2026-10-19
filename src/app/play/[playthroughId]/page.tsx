@@ -2,13 +2,11 @@ import { notFound } from 'next/navigation';
 import { getScenario } from '@/content/registry';
 import { localizeScenario } from '@/content/index';
 import {
-  combatRounds,
   onDemandScenes,
   renderNarration,
   renderStoredText,
   OUTCOME_MODAL_ENTRY_TYPES,
   illustrationView,
-  tacticalCombatRounds,
   view,
   visibleExits,
 } from '@/engine/index';
@@ -27,24 +25,19 @@ import {
 import { JournalEntries } from './journal/journal-entries';
 import { JournalModalLink } from './journal/journal-modal';
 import {
-  combatTargetHref,
   continueHref,
   mapToggleHref,
-  parseCombatTarget,
   parsePanel,
   parseSeenStep,
   parseSelectedItem,
-  selectCombatTarget,
   shouldShowIntroModal,
   shouldShowOutcomeModal,
 } from '@/app/lib/panel';
 import { resolvePlaythrough, safeCharacterName } from '@/app/lib/playthrough';
-import { CombatPanel } from './combat-panel';
 import { Illustration } from './illustration';
 import { EndingBlock, ReadOnlyPosition } from './read-only-position';
 import { getSessionHash } from '@/app/lib/session';
 import { chooseAction, continueAction, openSceneAction } from '@/app/lib/scenes';
-import { combatAction } from '@/app/lib/combat';
 import { travelAction } from '@/app/lib/travel';
 import { IntroModal } from './intro-modal';
 import { OutcomeModal } from './outcome-modal';
@@ -78,7 +71,6 @@ export default async function PlayPage({
     unknown?: string;
     seen?: string;
     item?: string;
-    target?: string;
   }>;
 }) {
   const { playthroughId } = await params;
@@ -89,7 +81,6 @@ export default async function PlayPage({
     unknown,
     seen: seenParam,
     item: itemParam,
-    target: targetParam,
   } = await searchParams;
   // The open side-panel modal. `?tab=` is the previous name of this parameter
   // and is still honoured so older links land on the same panel.
@@ -208,7 +199,7 @@ export default async function PlayPage({
     const incompatibleLocation =
       incompatibleView.kind === 'location'
         ? incompatibleView.name
-        : incompatibleView.kind === 'scene' || incompatibleView.kind === 'combat'
+        : incompatibleView.kind === 'scene'
           ? incompatibleView.locationName
           : (incompatibleScenario.locationsById[incompatibleState.currentLocationId]?.name ??
             incompatibleState.currentLocationId);
@@ -301,49 +292,19 @@ export default async function PlayPage({
   // of navigating away. The modal reuses the Journal already read here: the
   // newest batch, newest first, with the sequence cursor for older batches.
   const modalJournal = modalJournalBatch(journal, catalogue, characterName);
-  // The Outcome presentation after a Choice, Test or Combat end (the result
-  // panel entry types): the Test, the Outcome narration and the state changes
-  // of the latest step, rendered with the same entry renderer as the Journal.
-  // The Combat round that ended a Combat (victory, escape or death) joins them,
-  // so the decisive round reads without opening the Journal. Mid-Combat rounds
-  // belong to the Combat panel's log instead: while a Combat runs, its latest
-  // round never joins the presentation. A step that ended the Playthrough keeps
-  // its entries: the modal shows them over the Location, and acknowledgement
-  // reveals the Ending screen through the existing engine sequence.
+  // The Outcome presentation after a Choice or Test (the result panel entry
+  // types): the Test, the Outcome narration and the state changes of the
+  // latest step, rendered with the same entry renderer as the Journal.
+  // A step that ended the Playthrough keeps its entries: the modal shows them
+  // over the Location, and acknowledgement reveals the Ending screen through
+  // the existing engine sequence.
   const outcomeEntries = journal
-    .filter(
-      (entry) =>
-        entry.step === playthrough.step &&
-        (OUTCOME_MODAL_ENTRY_TYPES.has(entry.type) ||
-          (entry.type === 'combat-round' && gameView.kind !== 'combat')),
-    )
+    .filter((entry) => entry.step === playthrough.step && OUTCOME_MODAL_ENTRY_TYPES.has(entry.type))
     .map((entry) => renderJournalEntry(entry, catalogue, characterName).html);
-  // The Combat panel reads the roll log from the Journal, never from stored
-  // state, so the log survives a reload. The arena (lanes, Intents, targets,
-  // order) comes from the engine's projection over state and current content.
-  const combatRows = journal.map((entry) => ({
-    type: entry.type,
-    payload: entry.payload as { encounterId?: unknown; guard?: unknown },
-  }));
-  const combatLog =
-    gameView.kind === 'combat' ? combatRounds(combatRows, gameView.encounterId) : [];
-  const tacticalLog =
-    gameView.kind === 'combat' ? tacticalCombatRounds(combatRows, gameView.encounterId) : [];
-  // The target picker's selection (`?target=`): the survivor the targeted
-  // forms post, defaulting to the first survivor. Resolving it here writes
-  // nothing: no state change, no `step` change, no RNG.
-  const requestedTarget = parseCombatTarget(targetParam);
-  const selectedTarget =
-    gameView.kind === 'combat'
-      ? selectCombatTarget(gameView.arena.legalTargets, requestedTarget)
-      : undefined;
   // Map travel is available only in the Location view of an active Playthrough
-  // with no Scene or Combat running: the same legality as the Travel action.
+  // with no Scene running: the same legality as the Travel action.
   const canTravel =
-    gameView.kind === 'location' &&
-    state.status === 'active' &&
-    state.activeSceneId == null &&
-    state.activeCombat == null;
+    gameView.kind === 'location' && state.status === 'active' && state.activeSceneId == null;
   // The Continue acknowledgement: `?seen=` equal to the current `step` skips
   // the outcome modal and renders the position. Any other value is ignored, so
   // the outcome modal of the actual latest step is shown again. Following
@@ -396,7 +357,6 @@ export default async function PlayPage({
     seen: preservedSeen,
     showUnknownExits,
     item: selectedItem,
-    target: selectedTarget,
   });
 
   // The chronicle header names the Scenario (Interface Text eyebrow) and the
@@ -405,7 +365,7 @@ export default async function PlayPage({
   const chronicleLocation =
     gameView.kind === 'location'
       ? gameView.name
-      : gameView.kind === 'scene' || gameView.kind === 'combat'
+      : gameView.kind === 'scene'
         ? gameView.locationName
         : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
   const chronicleHead = (
@@ -600,7 +560,7 @@ export default async function PlayPage({
   // destination Location (after a `move`, the new Location; otherwise the
   // current one) with its actions inert, and Continue reveals the next
   // playable state through the existing engine sequence (the Location view,
-  // the following Scene, Combat panel or Ending screen). The side panel stays
+  // the following Scene or Ending screen). The side panel stays
   // visible throughout, with map travel disabled so no Location action can be
   // invoked through the background.
   if (showOutcome) {
@@ -901,34 +861,6 @@ export default async function PlayPage({
                 )}
               </div>
             </>
-          ) : gameView.kind === 'combat' ? (
-            <div className="reading-body">
-              <CombatPanel
-              combat={gameView}
-              playthroughId={playthrough.id}
-              step={playthrough.step}
-              rounds={combatLog}
-              tacticalRounds={tacticalLog}
-              formAction={combatAction}
-              catalogue={catalogue}
-              lang={shown}
-              badge={badge}
-              selectedTargetId={selectedTarget}
-              targetHrefFor={(participantId) =>
-                combatTargetHref(
-                  playthrough.id,
-                  {
-                    panel: rawPanel,
-                    notice,
-                    seen: preservedSeen,
-                    showUnknownExits,
-                    item: selectedItem,
-                  },
-                  participantId,
-                )
-              }
-              />
-            </div>
           ) : (
             <>
               <div className="reading-title">

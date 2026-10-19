@@ -43,7 +43,6 @@ function baseState(): PlaythroughState {
     equipment: {},
     currentLocationId: 'start',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['start'],
     revealed: [],
     firedScenes: [],
