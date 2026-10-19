@@ -72,6 +72,31 @@ export const COMBAT_EVENT_TYPES = [
 
 export const COMBAT_RESULTS = ['WIN', 'LOSS', 'LOSS_SURRENDER', 'DRAW_LIMIT'] as const;
 
+/**
+ * Halt codes for planned blows and moves that resolution reports instead of
+ * executing. `cancelled` events carry one as `reason`; failed `moved` events
+ * carry `target_dead`, or one of the shared legality codes (`must_disengage`,
+ * `target_far`, `invalid_target`) already covered by the catalogue's reasons.
+ * Codes only, never text: the client catalogue slice renders them.
+ */
+export const CANCEL_REASONS = [
+  'actor_or_target_dead',
+  'range_lost',
+  'charge_failed',
+  'shooter_engaged',
+  'target_dead',
+] as const;
+
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
+type CancelReasonsComplete = Exclude<CancelReason, (typeof CANCEL_REASONS)[number]> extends never
+  ? Exclude<(typeof CANCEL_REASONS)[number], CancelReason> extends never
+    ? true
+    : false
+  : false;
+const cancelReasonsComplete: CancelReasonsComplete = true;
+void cancelReasonsComplete;
+
 type CombatEventsComplete = Exclude<CombatEventType, (typeof COMBAT_EVENT_TYPES)[number]> extends never
   ? Exclude<(typeof COMBAT_EVENT_TYPES)[number], CombatEventType> extends never
     ? true

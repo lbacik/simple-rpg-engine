@@ -22,6 +22,7 @@ import type {
   ActionId,
   ActorId,
   ArenaRunIssueCode,
+  CancelReason,
   CombatEventType,
   CombatResult,
   ParseIssueCode,
@@ -175,6 +176,69 @@ export interface CombatParseIssues {
 /** One line per Arena import-envelope issue code (combat-contract.md). */
 export type CombatImportIssues = Record<ArenaRunIssueCode, string>;
 
+/** One line per halt code for a planned blow or move that never resolved. */
+export type CombatCancelReasons = Record<CancelReason, string>;
+
+/**
+ * Command-panel chrome (rules §14.1, handoff U2–U4/U8): headings, slot badges,
+ * forecast section labels, the terminal-cutoff and no-regeneration lines, and
+ * the Confirm/Surrender buttons. Blow-by-blow arithmetic keeps the
+ * `events.attack`/`events.riposte` formatters above; this section only frames
+ * the panel around them.
+ */
+export interface CombatPanelText {
+  heroHeading: string;
+  companionHeading: string;
+  intentsHeading: string;
+  slotsLine: (used: number, budget: number) => string;
+  slotAttack: string;
+  slotWaiting: (guard: number) => string;
+  slotWould: (action: string) => string;
+  roundLine: (round: number) => string;
+  stanceHeading: string;
+  cardsHeading: string;
+  basicHeading: string;
+  movementHeading: string;
+  targetHeading: string;
+  perspectiveHeading: string;
+  legalTarget: string;
+  chooseTargetHint: string;
+  noTargets: string;
+  engagedWith: (names: string) => string;
+  free: string;
+  prepared: (round: number) => string;
+  notPrepared: string;
+  cooldowns: string;
+  availableFrom: (action: string, round: number) => string;
+  allReady: string;
+  armorLine: (value: number) => string;
+  priorityLine: (priority: number) => string;
+  costLine: (cost: number) => string;
+  selfWord: string;
+  eliminated: string;
+  hpLine: (value: number, max: number) => string;
+  staminaLine: (value: number, max: number) => string;
+  forecastHeading: string;
+  forecastNone: string;
+  forecastBlocked: string;
+  blowsHeading: string;
+  afterHeading: string;
+  regenHeading: string;
+  coverTag: (protector: string, ward: string) => string;
+  counterTag: string;
+  riposteTag: string;
+  cutoffLine: (blows: string) => string;
+  noRegeneration: string;
+  engagementsAfter: (pairs: string) => string;
+  engagementsNone: string;
+  moveVariant: Record<'JOIN' | 'ENGAGE', string>;
+  moveGroup: (group: string) => string;
+  blowSummary: (params: { actor: string; target: string; hit: boolean; hpLoss: number }) => string;
+  confirm: string;
+  surrender: string;
+  resultHeading: string;
+}
+
 const reasons: CombatReasons = {
   insufficient_stamina: (missing) => `Missing ${whole(missing)} stamina`,
   on_cooldown: (availableRound) => `Available from round ${whole(availableRound)}`,
@@ -311,6 +375,70 @@ const importIssues: CombatImportIssues = {
   bad_initial: 'Bad initial fight.',
 };
 
+const cancelReasons: CombatCancelReasons = {
+  actor_or_target_dead: 'Attacker or target is out of the fight.',
+  range_lost: 'No longer in Melee with the target.',
+  charge_failed: 'The Charge never engaged.',
+  shooter_engaged: 'The shooter is engaged.',
+  target_dead: 'The target is out of the fight.',
+};
+
+const panel: CombatPanelText = {
+  heroHeading: 'Your character',
+  companionHeading: 'Companion',
+  intentsHeading: 'Open intents',
+  slotsLine: (used, budget) => `${whole(used)}/${whole(budget)} attack slots`,
+  slotAttack: 'Attack slot',
+  slotWaiting: (guard) => `Waiting · guard ${whole(guard)}`,
+  slotWould: (action) => `would ${action}`,
+  roundLine: (round) => `Round ${whole(round)}`,
+  stanceHeading: 'Stance',
+  cardsHeading: 'Card or action',
+  basicHeading: 'Basic actions',
+  movementHeading: 'Movement',
+  targetHeading: 'Target',
+  perspectiveHeading: 'Ranges from the view of',
+  legalTarget: 'Legal target',
+  chooseTargetHint: 'Choose the target in the intents list.',
+  noTargets: 'No legal target.',
+  engagedWith: (names) => `Engaged with: ${names}`,
+  free: 'Free',
+  prepared: (round) => `Prepared: bonus in round ${whole(round)}`,
+  notPrepared: 'Prepare: inactive',
+  cooldowns: 'Cooldowns',
+  availableFrom: (action, round) => `${action}: from round ${whole(round)}`,
+  allReady: 'All cards ready',
+  armorLine: (value) => `Armor ${whole(value)}`,
+  priorityLine: (priority) => `priority ${whole(priority)}`,
+  costLine: (cost) => `${whole(cost)} st.`,
+  selfWord: 'self',
+  eliminated: 'Out of the fight',
+  hpLine: (value, max) => `HP ${whole(value)} / ${whole(max)}`,
+  staminaLine: (value, max) => `${whole(value)} / ${whole(max)} stamina`,
+  forecastHeading: 'Round forecast',
+  forecastNone: 'Choose a card to see the forecast.',
+  forecastBlocked: 'This choice cannot be confirmed.',
+  blowsHeading: 'Blow order',
+  afterHeading: 'After the round',
+  regenHeading: 'Regeneration',
+  coverTag: (protector, ward) => `Cover: ${protector} takes the attack meant for ${ward}`,
+  counterTag: 'Counter: parry 6',
+  riposteTag: 'Riposte',
+  cutoffLine: (blows) => `The fight ends here — these blows do not happen: ${blows}.`,
+  noRegeneration: 'No regeneration in a terminal round.',
+  engagementsAfter: (pairs) => `Engagements after: ${pairs}`,
+  engagementsNone: 'none',
+  moveVariant: { JOIN: 'join', ENGAGE: 'engage' },
+  moveGroup: (group) => `group ${group}`,
+  blowSummary: (params) =>
+    params.hit
+      ? `${params.actor} → ${params.target} · hit · −${whole(params.hpLoss)} HP`
+      : `${params.actor} → ${params.target} · miss`,
+  confirm: 'Play round',
+  surrender: 'Surrender',
+  resultHeading: 'Fight over',
+};
+
 const actions: Record<ActionId, string> = {
   heavy: 'Heavy blow',
   counter: 'Counter',
@@ -348,6 +476,8 @@ export const combatEn = {
   notices,
   parseIssues,
   importIssues,
+  cancelReasons,
+  panel,
   actions,
   stances,
   ranges,
@@ -369,6 +499,7 @@ const eventsKeys: KeysEqual<CombatEventType, keyof CombatEvents> = true;
 const resultsKeys: KeysEqual<CombatResult, keyof CombatResults> = true;
 const parseIssuesKeys: KeysEqual<ParseIssueCode, keyof CombatParseIssues> = true;
 const importIssuesKeys: KeysEqual<ArenaRunIssueCode, keyof CombatImportIssues> = true;
+const cancelReasonsKeys: KeysEqual<CancelReason, keyof CombatCancelReasons> = true;
 const actionsKeys: KeysEqual<ActionId, keyof typeof actions> = true;
 const stancesKeys: KeysEqual<Stance, keyof typeof stances> = true;
 const rangesKeys: KeysEqual<Range, keyof typeof ranges> = true;
@@ -378,6 +509,7 @@ void eventsKeys;
 void resultsKeys;
 void parseIssuesKeys;
 void importIssuesKeys;
+void cancelReasonsKeys;
 void actionsKeys;
 void stancesKeys;
 void rangesKeys;
