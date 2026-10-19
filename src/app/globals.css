@@ -433,6 +433,40 @@ main:has(.game) {
   }
 }
 
+/* Illustration Motion Play/Pause control (docs/spec/ui.md, play/pause
+   control and reduced motion): one engine-provided button per Illustration
+   with Motion, overlaid in the bottom-right corner of the Illustration's box
+   — outside the composition, so the Camera never moves it — always visible,
+   with a touch target of at least 44×44 px. Rendered only with JavaScript. */
+.illustration-box .illustration-motion-toggle {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.625rem;
+  border: 1px solid rgb(255 255 255 / 0.65);
+  border-radius: 0.625rem;
+  background: rgb(20 28 22 / 0.72);
+  color: #fff;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.illustration-box .illustration-motion-toggle:hover {
+  background: rgb(20 28 22 / 0.88);
+}
+
+.illustration-box .illustration-motion-toggle:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 .reading-body {
   padding: 1.75rem 2.25rem 2rem;
 }

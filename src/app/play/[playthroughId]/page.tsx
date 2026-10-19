@@ -521,6 +521,8 @@ export default async function PlayPage({
                   layers={baseIllustration.layers}
                   camera={baseIllustration.camera}
                   showingKey={baseIllustration.showingKey}
+                  pauseAnimationLabel={catalogue.illustration.pauseAnimation}
+                  playAnimationLabel={catalogue.illustration.playAnimation}
                 />
               </figure>
             ) : null}
@@ -638,6 +640,8 @@ export default async function PlayPage({
                   layers={backgroundIllustration.layers}
                   camera={backgroundIllustration.camera}
                   showingKey={backgroundIllustration.showingKey}
+                  pauseAnimationLabel={catalogue.illustration.pauseAnimation}
+                  playAnimationLabel={catalogue.illustration.playAnimation}
                 />
               </figure>
             ) : null}
@@ -756,6 +760,8 @@ export default async function PlayPage({
                     layers={gameView.illustration.layers}
                     camera={gameView.illustration.camera}
                     showingKey={gameView.illustration.showingKey}
+                    pauseAnimationLabel={catalogue.illustration.pauseAnimation}
+                    playAnimationLabel={catalogue.illustration.playAnimation}
                   />
                 </figure>
               ) : null}
@@ -833,6 +839,8 @@ export default async function PlayPage({
                     layers={gameView.illustration.layers}
                     camera={gameView.illustration.camera}
                     showingKey={gameView.illustration.showingKey}
+                    pauseAnimationLabel={catalogue.illustration.pauseAnimation}
+                    playAnimationLabel={catalogue.illustration.playAnimation}
                   />
                 </figure>
               ) : null}

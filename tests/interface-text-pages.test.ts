@@ -272,6 +272,7 @@ describe('catalogue parity', () => {
       expect(Object.keys(catalogue), name).toContain('error');
       expect(Object.keys(catalogue), name).toContain('scenarioLanguage');
       expect(Object.keys(catalogue), name).toContain('arena');
+      expect(Object.keys(catalogue), name).toContain('illustration');
     }
   });
 });
