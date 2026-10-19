@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 import {
-  CAMP_BANDIT_LOSE_LINE,
   CAMP_BANDIT_WIN_LINE,
-  logRounds,
+  logGroups,
   playRound,
   reachCampBandit,
+  roundInput,
   startWhisperingPlaythrough,
   submitSelection,
 } from './combat-helpers';
@@ -58,18 +58,35 @@ test('scenario: surrender keeps the encounter undefeated and moves away', async 
   await expect(page.getByLabel('Round forecast')).toHaveCount(0);
 });
 
-test('scenario: four unguarded rounds end in death', async ({ page }) => {
+test('scenario: unguarded rounds end in death', async ({ page }) => {
   await startWhisperingPlaythrough(page, 'Doomed');
   await reachCampBandit(page);
 
-  for (const selection of CAMP_BANDIT_LOSE_LINE.slice(0, 3)) {
-    await playRound(page, selection);
+  // Aggressive stance with Prepare guards nothing, so the archer's shots
+  // accumulate until the hero falls. The exact round depends on engine
+  // tuning, so play until the death ending lands (bounded well past any
+  // tuned time-to-kill). The terminal submit clears the fight instead of
+  // opening another Round, so it cannot assert the next Round like
+  // playRound does: wait for either landing state, then branch.
+  const doomSelection = { stance: /Aggressive/, card: /^Prepare/, target: /^self/ };
+  const deathHeading = page.getByRole('heading', { name: 'Lost to the Woods' });
+  let dead = false;
+  for (let played = 0; played < 25 && !dead; played += 1) {
+    const marker = roundInput(page);
+    const next = String(Number(await marker.inputValue()) + 1);
+    await submitSelection(page, doomSelection);
+    await expect(page).not.toHaveURL(/notice=/);
+    await expect
+      .poll(async () => {
+        if ((await deathHeading.count()) > 0) return 'dead';
+        if ((await marker.count()) > 0 && (await marker.inputValue()) === next) return 'round';
+        return 'waiting';
+      })
+      .not.toBe('waiting');
+    dead = (await deathHeading.count()) > 0;
   }
-  // The fourth Round ends the fight instead of opening a new one.
-  await submitSelection(page, CAMP_BANDIT_LOSE_LINE[3]);
-  await expect(page).not.toHaveURL(/notice=/);
 
-  await expect(page.getByRole('heading', { name: 'Lost to the Woods' })).toBeVisible();
+  await expect(deathHeading).toBeVisible();
   await expect(page.getByText('Defeat', { exact: true })).toBeVisible();
-  await expect(logRounds(page)).toHaveCount(0);
+  await expect(logGroups(page)).toHaveCount(0);
 });

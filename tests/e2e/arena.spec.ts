@@ -4,9 +4,11 @@ import { expect, test, type Page } from '@playwright/test';
 
 import {
   startArenaPreset,
+  submitArenaImport,
   submitSelection,
   T1_WIN_LINE,
-  logRounds,
+  logGroups,
+  logRound,
   playRound,
   roundInput,
 } from './combat-helpers';
@@ -44,6 +46,18 @@ test('arena: a T1 preset fight starts and survives a reload', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Restart' })).toBeVisible();
 });
 
+test('arena: a custom setup starts a fight and plays a round', async ({ page }) => {
+  await page.goto('/arena');
+  // The custom form with its defaults (one engaged Brute, no Companion):
+  // this proves the Setup path itself opens a real fight, not just presets.
+  await page.getByRole('button', { name: 'Start the fight', exact: true }).click();
+  await expect(page.getByLabel('Round forecast')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Restart' })).toBeVisible();
+
+  // Defensive Counter on self is legal against any opening; round 2 opens.
+  await playRound(page, T1_WIN_LINE[0]);
+});
+
 test('arena: a whole T1 fight plays to Victory, then Fight again starts fresh', async ({
   page,
 }) => {
@@ -60,8 +74,9 @@ test('arena: a whole T1 fight plays to Victory, then Fight again starts fresh', 
 
   await expect(page.getByRole('heading', { name: 'Fight over' })).toBeVisible();
   await expect(page.getByText('Victory', { exact: true })).toBeVisible();
-  await expect(page.getByText('Round 3')).toBeVisible();
-  await expect(logRounds(page)).toHaveCount(3);
+  await expect(logRound(page, 3)).toBeVisible();
+  // A finished fight logs exactly its resolved Rounds (no next-Round plans).
+  await expect(logGroups(page)).toHaveCount(3);
   // No Restart on a finished fight: only Fight again remains.
   await expect(page.getByRole('heading', { name: 'Restart' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Fight again' })).toBeVisible();
@@ -70,7 +85,9 @@ test('arena: a whole T1 fight plays to Victory, then Fight again starts fresh', 
   await expect(page.getByLabel('Round forecast')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Fight over' })).toHaveCount(0);
   await expect(roundInput(page)).toHaveValue('1');
-  await expect(logRounds(page)).toHaveCount(0);
+  // A fresh fight already logs its Round 1 declarations.
+  await expect(logRound(page, 1)).toBeVisible();
+  await expect(logGroups(page)).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Restart' })).toBeVisible();
 });
 
@@ -100,8 +117,7 @@ test('arena: export downloads the fight, import takes paste and file', async ({
   await startArenaPreset(page, 'T7');
   await expect(roundInput(page)).toHaveValue('1');
   await page.locator('#arena-import-pasted').fill(JSON.stringify(exported));
-  await page.locator('form[action="/arena/import"] input[name="confirm"]').check();
-  await page.getByRole('button', { name: 'Import the fight' }).click();
+  await submitArenaImport(page);
   await expect(page).not.toHaveURL(/notice=/);
   await expect(roundInput(page)).toHaveValue('2');
   await expect(page.getByText('Imported history is not verified.')).toBeVisible();
@@ -114,15 +130,13 @@ test('arena: export downloads the fight, import takes paste and file', async ({
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(exported)),
   });
-  await page.locator('form[action="/arena/import"] input[name="confirm"]').check();
-  await page.getByRole('button', { name: 'Import the fight' }).click();
+  await submitArenaImport(page);
   await expect(page).not.toHaveURL(/notice=/);
   await expect(roundInput(page)).toHaveValue('2');
 
   // Garbage pastes explain themselves and change nothing.
   await page.locator('#arena-import-pasted').fill('this is not a fight');
-  await page.locator('form[action="/arena/import"] input[name="confirm"]').check();
-  await page.getByRole('button', { name: 'Import the fight' }).click();
+  await submitArenaImport(page);
   await expect(page).toHaveURL(/notice=rejected/);
   await expect(page.getByRole('status').filter({ hasText: 'Command rejected' })).toBeVisible();
   await expect(roundInput(page)).toHaveValue('2');
@@ -163,5 +177,7 @@ test('arena: one Round plays keyboard-only, with no pointer input', async ({ pag
 
   await expect(roundInput(page)).toHaveValue('2');
   await expect(page).not.toHaveURL(/notice=/);
-  await expect(logRounds(page)).toHaveCount(1);
+  // Round 1 resolved, with the frozen Round 2 declarations already logged.
+  await expect(logRound(page, 1)).toBeVisible();
+  await expect(logGroups(page)).toHaveCount(2);
 });

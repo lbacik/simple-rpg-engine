@@ -6,6 +6,12 @@ import { expect, type Page } from '@playwright/test';
 // every visible string is written out, so a wording change fails loudly here
 // instead of silently following the catalogue.
 
+/** The Confirm POST button. Exact: the per-round replay buttons ("Replay
+ * round N step by step") contain "Play round" as a substring. */
+export function playRoundButton(page: Page) {
+  return page.getByRole('button', { name: 'Play round', exact: true });
+}
+
 /** The hidden round marker inside the Confirm POST form. */
 export function roundInput(page: Page) {
   return page.locator('form[action$="confirm"] input[name="round"]');
@@ -16,14 +22,19 @@ export async function roundNumber(page: Page): Promise<number> {
   return Number(await roundInput(page).inputValue());
 }
 
-/** The per-round Combat log groups ("Round N"). */
-export function logRounds(page: Page) {
+/** The per-round Combat log groups ("Round N"). The engine freezes the next
+ * Round's enemy plans on every commit (submitRound → planRound, including
+ * fight setup), so a fresh fight already holds its Round 1 declarations and a
+ * mid-fight log holds one group per resolved Round plus the declarations for
+ * the Round being planned; a finished fight holds exactly the resolved
+ * Rounds. */
+export function logGroups(page: Page) {
   return page.locator('section[aria-label="Combat log"] section[aria-label^="Round "]');
 }
 
-/** The "After the round" forecast list, for cross-tab state comparison. */
-export function afterRoundList(page: Page) {
-  return page.locator('ul[aria-label="After the round"]');
+/** The log group for one resolved Round, by number. */
+export function logRound(page: Page, round: number) {
+  return page.locator('section[aria-label="Combat log"] section[aria-label="Round ' + round + '"]');
 }
 
 export interface RoundSelection {
@@ -41,8 +52,8 @@ export async function submitSelection(page: Page, selection: RoundSelection): Pr
   await page.getByRole('link', { name: selection.stance }).first().click();
   await page.getByRole('link', { name: selection.card }).first().click();
   await page.getByRole('link', { name: selection.target }).first().click();
-  await expect(page.getByRole('button', { name: 'Play round' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Play round' }).click();
+  await expect(playRoundButton(page)).toBeEnabled();
+  await playRoundButton(page).click();
 }
 
 /**
@@ -55,6 +66,23 @@ export async function playRound(page: Page, selection: RoundSelection): Promise<
   await submitSelection(page, selection);
   await expect(roundInput(page)).toHaveValue(String(next));
   await expect(page).not.toHaveURL(/notice=/);
+}
+
+/** Tick the replace confirmation and submit the Arena import form. */
+export async function submitArenaImport(page: Page): Promise<void> {
+  await page.locator('form[action="/arena/import"] input[name="confirm"]').check();
+  await page.getByRole('button', { name: 'Import the fight', exact: true }).click();
+}
+
+/** The losing tab of a two-tab race: the current state with stale notice(s). */
+export async function expectStaleLoser(tab: Page, notices: 1 | 2, round1Text: string | null): Promise<void> {
+  await expect(tab).toHaveURL(/notice=stale/);
+  await expect(
+    tab.getByRole('status').filter({ hasText: 'advanced in another tab' }),
+  ).toHaveCount(notices);
+  expect(await roundNumber(tab)).toBe(2);
+  // The loser reads the same resolved Round 1 as the winner's tab.
+  expect(await logRound(tab, 1).textContent()).toBe(round1Text);
 }
 
 /** Start a T1–T7 preset fight, ticking the replace confirmation when mid-fight. */
@@ -128,14 +156,6 @@ export const CAMP_BANDIT_WIN_LINE: RoundSelection[] = [
   { stance: /Aggressive/, card: /^Approach/, target: /e01/ },
   { stance: /Aggressive/, card: /^Charge/, target: /e01/ },
   { stance: /Aggressive/, card: /^Heavy blow/, target: /e01/ },
-];
-
-/** Four unguarded Rounds against the Bandit Archer: LOSS in round 4. */
-export const CAMP_BANDIT_LOSE_LINE: RoundSelection[] = [
-  { stance: /Aggressive/, card: /^Prepare/, target: /^self/ },
-  { stance: /Aggressive/, card: /^Prepare/, target: /^self/ },
-  { stance: /Aggressive/, card: /^Prepare/, target: /^self/ },
-  { stance: /Aggressive/, card: /^Prepare/, target: /^self/ },
 ];
 
 /** The T1 duel winning line from rules §11.1: WIN in round 3. */

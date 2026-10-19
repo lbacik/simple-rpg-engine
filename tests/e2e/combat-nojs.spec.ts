@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  playRoundButton,
   reachCampBandit,
   roundInput,
   startArenaPreset,
@@ -22,7 +23,7 @@ test('no-js arena: links preview without advancing, Play round commits', async (
 
   // No selection yet: no forecast and no enabled Confirm.
   await expect(page.getByText('Choose a card to see the forecast.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Play round' })).toBeDisabled();
+  await expect(playRoundButton(page)).toBeDisabled();
 
   // Each selection is a plain navigation that changes no state.
   await page.getByRole('link', { name: /Defensive/ }).click();
@@ -37,8 +38,8 @@ test('no-js arena: links preview without advancing, Play round commits', async (
 
   // The server renders the same forecast: blow order with arithmetic.
   await expect(page.getByRole('heading', { name: 'Blow order' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Play round' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Play round' }).click();
+  await expect(playRoundButton(page)).toBeEnabled();
+  await playRoundButton(page).click();
   await expect(page).not.toHaveURL(/notice=/);
   await expect(roundInput(page)).toHaveValue('2');
 
@@ -63,7 +64,7 @@ test('no-js scenario: one Round plays through links and a POST', async ({ page }
   await expect(page).toHaveURL(/target=h01/);
 
   await expect(page.getByRole('heading', { name: 'Blow order' })).toBeVisible();
-  await page.getByRole('button', { name: 'Play round' }).click();
+  await playRoundButton(page).click();
   await expect(page).not.toHaveURL(/notice=/);
   await expect(roundInput(page)).toHaveValue('2');
   await expect(page.getByLabel('Round forecast')).toBeVisible();
