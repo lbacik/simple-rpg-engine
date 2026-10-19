@@ -116,6 +116,30 @@ export function checkPlaythroughCompatibility(
   // stranding the fight), and the travelling Companion must still be authored.
   if ('activeCombat' in state && state.activeCombat !== null) {
     missing(scenario.encountersById, state.activeCombat.encounterId, 'encounter');
+    // Q18: a Participant of an active Combat that disappears from the content
+    // makes the Playthrough incompatible. The Combat state is self-contained
+    // (each actor's profile is a snapshot taken at the start), so changed
+    // profiles, `startRange`, `phaseOffset` or `power` never fail this check:
+    // they apply from the next Combat start. The wounds record above already
+    // fails a removed id it still lists; this fails the running fight's own
+    // actor references even when the record was aligned with the new content.
+    const encounter = scenario.encountersById[state.activeCombat.encounterId];
+    // The stored Combat passed the core's strict parser on read, so its
+    // actors are typed: no defensive walk is needed here.
+    if (encounter !== undefined) {
+      const participantIds = new Set(encounter.participants.map((participant) => participant.id));
+      for (const actor of state.activeCombat.combat.actors) {
+        if (actor.role === 'enemy' && actor.ref !== null) {
+          if (!participantIds.has(actor.ref)) {
+            fail(`unknown participant "${actor.ref}" in encounter "${state.activeCombat.encounterId}"`);
+          }
+        } else if (actor.role === 'companion' && actor.ref !== null) {
+          if (scenario.companionsById[actor.ref] === undefined) {
+            fail(`unknown companion "${actor.ref}"`);
+          }
+        }
+      }
+    }
   }
   if ('companion' in state) {
     if (state.companion !== null) {

@@ -255,6 +255,7 @@ export const en = {
     latestEvents: 'Latest events',
     afterEnding: 'After the ending',
     viewJournal: 'View journal',
+    exportCombat: 'Export the current fight',
     adventure: 'Your adventure',
     currentScene: 'Current scene',
     currentLocation: 'Current location',

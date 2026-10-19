@@ -260,6 +260,7 @@ export const pl: Catalogue = {
     latestEvents: 'Ostatnie wydarzenia',
     afterEnding: 'Po zakończeniu',
     viewJournal: 'Zobacz dziennik',
+    exportCombat: 'Eksportuj bieżącą walkę',
     adventure: 'Twoja przygoda',
     currentScene: 'Bieżąca scena',
     currentLocation: 'Bieżąca lokacja',
