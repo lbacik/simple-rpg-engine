@@ -178,6 +178,13 @@ export const pl: Catalogue = {
     restartConfirmBody: 'Bieżąca runda zostaje odrzucona, a walka zaczyna się od nowa od stanu początkowego.',
     keepFighting: 'Kontynuuj walkę',
     noRememberedSetup: 'Brak zapamiętanego zestawu — skonfiguruj walkę poniżej.',
+    importHeading: 'Importuj walkę',
+    importBlurb:
+      'Wczytaj plik walki (dokument JSON CombatState, maks. 1 MB) albo wklej jego treść. Błędny import sam się wyjaśni.',
+    fileLabel: 'Plik walki',
+    pasteLabel: 'Albo wklej JSON walki',
+    importSubmit: 'Importuj walkę',
+    exportFight: 'Eksportuj bieżącą walkę',
     profiles: {
       hero: 'Bohater',
       raider: 'Hultaj',

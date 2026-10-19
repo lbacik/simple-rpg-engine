@@ -69,6 +69,13 @@ export { findOption, listOptions, REASON_ORDER } from './options';
 export { isPrimaryAttack, planRound, verifyFrozenPlans } from './plan';
 export { PARSE_ISSUE_CODES, parseCombatState } from './parse';
 export {
+  ARENA_IMPORT_MAX_BYTES,
+  arenaExportFilename,
+  parseArenaImport,
+  prepareArenaImport,
+} from './arena-import';
+export type { ArenaImportResult } from './arena-import';
+export {
   ARENA_RUN_SCHEMA_VERSION,
   parseArenaRunDocument,
 } from './arena-run';
