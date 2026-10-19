@@ -92,6 +92,72 @@
                     "multiply",
                     "screen"
                   ]
+                },
+                "drift": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number",
+                          "minimum": -100,
+                          "maximum": 200
+                        },
+                        "y": {
+                          "type": "number",
+                          "minimum": -100,
+                          "maximum": 200
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "to": {
+                      "type": "object",
+                      "properties": {
+                        "x": {
+                          "type": "number",
+                          "minimum": -100,
+                          "maximum": 200
+                        },
+                        "y": {
+                          "type": "number",
+                          "minimum": -100,
+                          "maximum": 200
+                        }
+                      },
+                      "required": [
+                        "x",
+                        "y"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "duration": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 600
+                    },
+                    "delay": {
+                      "default": 0,
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 600
+                    },
+                    "loop": {
+                      "default": false,
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "duration"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [

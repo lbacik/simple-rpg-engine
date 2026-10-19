@@ -547,6 +547,7 @@ export function runPlayabilityPhase(
   checkEnemyUnused(ctx);
   checkImageUnused(ctx);
   checkStaticLayers(ctx, files);
+  checkMotionlessDrifts(ctx, files);
   checkMaps(ctx);
 }
 
@@ -981,15 +982,21 @@ function checkImageUnused(ctx: Ctx): void {
 }
 
 /**
- * Warn about static Motion Layers (docs/spec/validation.md, play/static-layer):
- * one warning per Layer with none of `frames`, `drift` or `flicker`. Such a
- * Layer vanishes whenever Motion is off, so the composition at rest differs
- * from the Still. The raw file contents are read (not the compiled model, and
- * not the Zod defaults), so later tickets that accept those keys silence this
- * warning layer by layer. Until then it fires on every Layer this ticket can
- * express; that is correct. Diagnostics point at the Layer node.
+ * Walk every Motion Layer of every image entry in the raw file contents (not
+ * the compiled model, and not the Zod defaults): `callback` gets the Layer
+ * record, the image id (or `#index` when missing), the Layer node's path, and
+ * the file and range that locate the Layer node.
  */
-function checkStaticLayers(ctx: Ctx, files: ParsedFile[]): void {
+function forEachMotionLayer(
+  files: ParsedFile[],
+  callback: (args: {
+    layer: Record<string, unknown>;
+    id: string;
+    layerPath: (string | number)[];
+    file: string;
+    range: DiagnosticRange | undefined;
+  }) => void,
+): void {
   for (const file of files) {
     if (file.section !== 'images' || !Array.isArray(file.value)) continue;
     file.value.forEach((entry: unknown, entryIndex: number) => {
@@ -999,23 +1006,72 @@ function checkStaticLayers(ctx: Ctx, files: ParsedFile[]): void {
       if (!isRecord(motion) || !Array.isArray(motion['layers'])) return;
       motion['layers'].forEach((layer: unknown, layerIndex: number) => {
         if (!isRecord(layer)) return;
-        if (layer['frames'] !== undefined || layer['drift'] !== undefined || layer['flicker'] !== undefined) {
-          return;
-        }
         const layerPath: (string | number)[] = [entryIndex, 'motion', 'layers', layerIndex];
-        ctx.push({
-          severity: 'warning',
-          code: 'play/static-layer',
-          message:
-            `layer ${layerIndex} of image "${id}" has none of "frames", "drift" or "flicker"; ` +
-            `it vanishes whenever Motion is off, so the composition at rest differs from the Still`,
+        callback({
+          layer,
+          id,
+          layerPath,
           file: file.file,
           range: nodeRange(nodeAtPath(file.contents, layerPath), file.lineCounter),
-          path: layerPath,
         });
       });
     });
   }
+}
+
+/**
+ * Warn about static Motion Layers (docs/spec/validation.md, play/static-layer):
+ * one warning per Layer with none of `frames`, `drift` or `flicker`. Such a
+ * Layer vanishes whenever Motion is off, so the composition at rest differs
+ * from the Still. The raw file contents are read (not the compiled model, and
+ * not the Zod defaults), so later tickets that accept those keys silence this
+ * warning layer by layer. Until then it fires on every Layer this ticket can
+ * express; that is correct. Diagnostics point at the Layer node.
+ */
+function checkStaticLayers(ctx: Ctx, files: ParsedFile[]): void {
+  forEachMotionLayer(files, ({ layer, id, layerPath, file, range }) => {
+    if (layer['frames'] !== undefined || layer['drift'] !== undefined || layer['flicker'] !== undefined) {
+      return;
+    }
+    const layerIndex = layerPath[layerPath.length - 1] as number;
+    ctx.push({
+      severity: 'warning',
+      code: 'play/static-layer',
+      message:
+        `layer ${layerIndex} of image "${id}" has none of "frames", "drift" or "flicker"; ` +
+        `it vanishes whenever Motion is off, so the composition at rest differs from the Still`,
+      file,
+      range,
+      path: layerPath,
+    });
+  });
+}
+
+/**
+ * Warn about motionless Drifts (docs/spec/validation.md, play/motionless):
+ * one warning per Layer whose Drift `from` equals its `to`. The raw file
+ * contents are read (not the compiled model), and diagnostics point at the
+ * Layer node. The Camera half of the rule arrives with the Camera ticket.
+ */
+function checkMotionlessDrifts(ctx: Ctx, files: ParsedFile[]): void {
+  forEachMotionLayer(files, ({ layer, id, layerPath, file, range }) => {
+    if (!isRecord(layer['drift'])) return;
+    const from = layer['drift']['from'];
+    const to = layer['drift']['to'];
+    if (!isRecord(from) || !isRecord(to)) return;
+    if (from['x'] !== to['x'] || from['y'] !== to['y']) return;
+    const layerIndex = layerPath[layerPath.length - 1] as number;
+    ctx.push({
+      severity: 'warning',
+      code: 'play/motionless',
+      message:
+        `layer ${layerIndex} of image "${id}" drifts from the point it drifts to; ` +
+        `the Drift never moves`,
+      file,
+      range,
+      path: layerPath,
+    });
+  });
 }
 
 function checkMaps(ctx: Ctx): void {

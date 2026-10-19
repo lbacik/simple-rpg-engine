@@ -3205,6 +3205,14 @@ export type IllustrationLayerView = {
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
+  /** Present only when the Layer drifts (docs/spec/ui.md, drift). */
+  drift?: {
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    duration: number;
+    delay: number;
+    loop: boolean;
+  };
   /** The Layer file's asset URL, under the file's own hash. */
   src: string;
   pixelWidth: number;
@@ -3280,6 +3288,7 @@ export function illustrationView(
       ...(layer.frames === undefined ? {} : { frames: layer.frames }),
       ...(layer.fps === undefined ? {} : { fps: layer.fps }),
       blend: layer.blend,
+      ...(layer.drift === undefined ? {} : { drift: layer.drift }),
       src: sceneIllustrationUrl(scenarioId, layer.file),
       pixelWidth: layer.file.width,
       pixelHeight: layer.file.height,

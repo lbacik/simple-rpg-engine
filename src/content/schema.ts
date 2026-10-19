@@ -340,19 +340,35 @@ export const EndingSchema = z.strictObject({
 
 // ---------------------------------------------------------------------------
 // Illustration Motion (docs/spec/scenario-format.md, Motion): a Layer's
-// placement over the Still. `at` has no .default(): it is mutually exclusive
-// with the future `drift` (schema/drift-and-at), so the engine applies the
-// { x: 50, y: 50 } default when a Layer declares neither. `anchor` places the
-// Layer only and never conflicts, so it defaults here. `frames` and `fps`
-// describe a horizontal sprite strip (frames 2-64, fps 1-30); the exactly-one
-// rule is a custom check (schema/frames-fps), so both stay optional here.
-// `flicker` and `camera` arrive with their own tickets; the strict objects
-// below reject them as schema/unknown-key until then.
+// placement over the Still, with an optional Drift of its anchor. `at` has no
+// .default(): it is mutually exclusive with `drift` (schema/drift-and-at, a
+// loader-only refinement in structure.ts), so a Layer declaring `at` keeps
+// what it wrote and one declaring neither is centred to { x: 50, y: 50 } by
+// the model. `anchor` places the Layer only and never conflicts, so it
+// defaults here. `frames` and `fps` describe a horizontal sprite strip
+// (frames 2-64, fps 1-30); the exactly-one rule is a custom check
+// (schema/frames-fps), so both stay optional here. `flicker` and `camera`
+// arrive with their own tickets; the strict objects below reject them as
+// schema/unknown-key until then.
 // ---------------------------------------------------------------------------
 
-const motionPointSchema = z.strictObject({
-  x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100),
+function pointSchema(min: number, max: number) {
+  return z.strictObject({
+    x: z.number().min(min).max(max),
+    y: z.number().min(min).max(max),
+  });
+}
+
+const motionPointSchema = pointSchema(0, 100);
+
+const driftPointSchema = pointSchema(-100, 200);
+
+const driftSchema = z.strictObject({
+  from: driftPointSchema,
+  to: driftPointSchema,
+  duration: z.number().gt(0).max(600),
+  delay: z.number().min(0).max(600).default(0),
+  loop: z.boolean().default(false),
 });
 
 export const LayerSchema = z.strictObject({
@@ -363,6 +379,7 @@ export const LayerSchema = z.strictObject({
   frames: z.number().int().min(2).max(64).optional(),
   fps: z.number().min(1).max(30).optional(),
   blend: z.enum(['normal', 'multiply', 'screen']).default('normal'),
+  drift: driftSchema.optional(),
 });
 
 /** This ticket covers Layers only; `camera` arrives with the Camera ticket. */
