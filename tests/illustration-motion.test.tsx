@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { loadAllScenarios, loadScenario } from '../src/content/index';
 import type { Diagnostic } from '../src/content/index';
 import { GET } from '../src/app/scenarios/[scenarioId]/assets/[hash]/[...path]/route';
-import { Illustration, layerGeometry } from '../src/app/play/[playthroughId]/illustration';
+import { Illustration, MotionLayer, layerGeometry, spriteDuration, spriteFrame } from '../src/app/play/[playthroughId]/illustration';
 import { startPlaythrough, view, type Rng } from '../src/engine/index';
 import { makePng } from './pngFixture';
 
@@ -623,5 +623,243 @@ describe('translation images with motion', () => {
     expect(diagnostics.map((diag) => diag.code)).toContain('schema/unknown-key');
     const unknown = diagnostics.find((diag) => diag.code === 'schema/unknown-key');
     expect(unknown).toMatchObject({ file, path: [0, 'motion'] });
+  });
+});
+
+// Sprite strips (frames/fps): a Layer's picture may be a horizontal strip of
+// `frames` equal-width frames stepped through at `fps`, looping while the
+// Layer is shown. See docs/spec/scenario-format.md (Illustration Motion),
+// docs/spec/validation.md (schema/frames-fps, ref/sprite-strip-width,
+// play/static-layer) and docs/spec/ui.md (Motion, Frames).
+
+describe('structure phase: frames and fps', () => {
+  it('schema/frames-fps for frames without fps', () => {
+    const dir = freshMotionDir('frames-without-fps');
+    mutate(dir, 'images.yaml', '- path: images/layers/gleam.png', '- path: images/layers/gleam.png\n        frames: 8');
+    const diag = only(fail(dir), 'schema/frames-fps');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0]);
+  });
+
+  it('schema/frames-fps for fps without frames', () => {
+    const dir = freshMotionDir('fps-without-frames');
+    mutate(dir, 'images.yaml', '- path: images/layers/gleam.png', '- path: images/layers/gleam.png\n        fps: 4');
+    const diag = only(fail(dir), 'schema/frames-fps');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0]);
+  });
+
+  it('rejects out-of-range frames, never clamping', () => {
+    for (const [name, frames] of [['frames-one', 1], ['frames-wide', 65]] as const) {
+      const dir = freshMotionDir(`frames-range-${name}`);
+      mutate(
+        dir,
+        'images.yaml',
+        '- path: images/layers/gleam.png',
+        `- path: images/layers/gleam.png\n        frames: ${frames}\n        fps: 4`,
+      );
+      const diag = only(fail(dir), 'schema/invalid-value');
+      expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'frames']);
+    }
+  });
+
+  it('rejects non-integer frames', () => {
+    const dir = freshMotionDir('frames-fraction');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        frames: 2.5\n        fps: 4',
+    );
+    const diag = only(fail(dir), 'schema/invalid-value');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'frames']);
+  });
+
+  it('rejects out-of-range fps, never clamping', () => {
+    for (const fps of [0, 31]) {
+      const dir = freshMotionDir(`fps-range-${fps}`);
+      mutate(
+        dir,
+        'images.yaml',
+        '- path: images/layers/gleam.png',
+        `- path: images/layers/gleam.png\n        frames: 4\n        fps: ${fps}`,
+      );
+      const diag = only(fail(dir), 'schema/invalid-value');
+      expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'fps']);
+    }
+  });
+
+  it('accepts the frames boundaries and a fractional fps', () => {
+    const dir = makeScenarioDir('rpg-motion-', 'frames-boundaries');
+    writeMotionPackage(
+      dir,
+      `${STILL}  motion:\n    layers:\n      - path: images/layers/narrow.png\n        frames: 2\n        fps: 1\n      - path: images/layers/wide.png\n        frames: 64\n        fps: 2.5\n`,
+      {
+        'images/layers/narrow.png': makePng(2, 1),
+        'images/layers/wide.png': makePng(64, 1),
+      },
+    );
+    expect(loadScenario(dir).ok).toBe(true);
+  });
+});
+
+describe('integrity phase: sprite strip width', () => {
+  it('ref/sprite-strip-width on the Layer path when the width does not divide by frames', () => {
+    const dir = freshMotionDir('strip-width');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/mote.png',
+      '- path: images/layers/mote.png\n        frames: 3\n        fps: 4',
+    );
+    const diag = only(fail(dir), 'ref/sprite-strip-width');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 1, 'path']);
+    expect(diag.message).toContain('images/layers/mote.png');
+  });
+
+  it('accepts a strip whose width divides by frames', () => {
+    const dir = freshMotionDir('strip-width-ok');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        frames: 8\n        fps: 4',
+    );
+    // The 8 px wide strip divides by 8; the second Layer stays static, so one
+    // static-layer warning remains.
+    const warnings = succeed(dir);
+    expect(warnings.filter((warning) => warning.code === 'play/static-layer')).toHaveLength(1);
+  });
+
+  it('checks each Layer sharing one strip file against its own frames', () => {
+    const dir = makeScenarioDir('rpg-motion-', 'strip-width-shared');
+    writeMotionPackage(
+      dir,
+      `${STILL}  motion:\n    layers:\n      - path: images/layers/gleam.png\n        frames: 4\n        fps: 4\n      - path: images/layers/gleam.png\n        frames: 3\n        fps: 4\n`,
+      { 'images/layers/gleam.png': makePng(8, 4) },
+    );
+    const diag = only(fail(dir), 'ref/sprite-strip-width');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 1, 'path']);
+  });
+});
+
+describe('playability phase: animated layers', () => {
+  it('a Layer with frames no longer warns as static', () => {
+    const dir = freshMotionDir('frames-not-static');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        frames: 8\n        fps: 4',
+    );
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/mote.png',
+      '- path: images/layers/mote.png\n        frames: 4\n        fps: 4',
+    );
+    const warnings = succeed(dir);
+    expect(warnings.filter((warning) => warning.code === 'play/static-layer')).toHaveLength(0);
+  });
+});
+
+describe('engine view with frames', () => {
+  function loadFramedScenario() {
+    const dir = freshMotionDir('engine-frames');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        frames: 8\n        fps: 4',
+    );
+    const result = loadScenario(dir);
+    if (!result.ok) {
+      throw new Error(`framed fixture failed to load: ${JSON.stringify(result.diagnostics)}`);
+    }
+    return result.scenario;
+  }
+
+  it('carries frames and fps on the Layer view', () => {
+    const scenario = loadFramedScenario();
+    const started = startPlaythrough(scenario, 'drifter', 'Robin', rng);
+    if (!started.ok) throw new Error(`start failed: ${started.reason}`);
+    const locationView = view(scenario, { ...started.state, activeSceneId: null });
+    expect(locationView.kind).toBe('location');
+    if (locationView.kind !== 'location') throw new Error('expected a Location view');
+    expect(locationView.illustration?.layers?.[0]).toMatchObject({ frames: 8, fps: 4 });
+    expect(locationView.illustration?.layers?.[1]).not.toHaveProperty('frames');
+    expect(locationView.illustration?.layers?.[1]).not.toHaveProperty('fps');
+  });
+});
+
+describe('sprite strip rendering', () => {
+  const still = { width: 640, height: 360 };
+  const strip = {
+    src: '/scenarios/demo/assets/abc/images/layers/crow.png',
+    at: { x: 50, y: 50 },
+    anchor: { x: 50, y: 50 },
+    width: 50,
+    frames: 8,
+    fps: 4,
+    blend: 'normal' as const,
+    pixelWidth: 8,
+    pixelHeight: 4,
+  };
+
+  it('sizes and anchors the Layer by one frame, not the whole strip', () => {
+    // One frame is 1x4 px; the whole strip is 8x4 px. By one frame the Layer
+    // is 50% of 640 wide and four times as tall: 355.56% of the box height,
+    // so its centre-anchored top sits at 50 - 177.78. By the whole strip it
+    // would be four times shorter, which is what this guards against.
+    expect(layerGeometry(strip, strip, still)).toEqual({
+      widthPct: 50,
+      leftPct: 25,
+      topPct: expect.closeTo(50 - 177.77777777777777, 10),
+    });
+    expect(spriteFrame(strip)).toEqual({ frameWidth: 1, frameHeight: 4 });
+  });
+
+  it('loops the strip at fps: frames steps over frames/fps seconds', () => {
+    expect(spriteDuration(strip)).toBe(2);
+    expect(spriteDuration({ frames: 4, fps: 2.5 })).toBeCloseTo(1.6, 10);
+  });
+
+  it('renders one frame window with the strip stepping inside it', () => {
+    const html = renderToStaticMarkup(<MotionLayer layer={strip} still={still} index={0} />);
+    // The window carries the one-frame aspect and clips the strip.
+    expect(html).toContain('aspect-ratio:1 / 4');
+    expect(html).toContain('overflow:hidden');
+    // The strip is 8 frames wide and steps through them, looping.
+    expect(html).toContain('width:800%');
+    expect(html).toContain('animation:illustration-sprite-step 2s steps(8) infinite');
+    expect(html).toContain(`src="${strip.src}"`);
+  });
+
+  it('two Layers sharing one strip run in unison when their fps match', () => {
+    const first = renderToStaticMarkup(<MotionLayer layer={strip} still={still} index={0} />);
+    const second = renderToStaticMarkup(
+      <MotionLayer layer={{ ...strip, at: { x: 10, y: 10 } }} still={still} index={1} />,
+    );
+    // The same file renders twice (the browser fetches it once) with the
+    // same stepping animation, so both show frame 0 at t = 0 and step together.
+    expect(second).toContain('animation:illustration-sprite-step 2s steps(8) infinite');
+    expect(first).toContain(`src="${strip.src}"`);
+    expect(second).toContain(`src="${strip.src}"`);
+  });
+
+  it('renders a plain Layer as one positioned image', () => {
+    const plain = {
+      src: '/s.png',
+      at: { x: 50, y: 50 },
+      anchor: { x: 50, y: 50 },
+      width: 100,
+      blend: 'normal' as const,
+      pixelWidth: 16,
+      pixelHeight: 9,
+    };
+    const html = renderToStaticMarkup(<MotionLayer layer={plain} still={still} index={0} />);
+    expect(html).toContain('aspect-ratio:16 / 9');
+    expect(html).not.toContain('illustration-sprite-step');
   });
 });

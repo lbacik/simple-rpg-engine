@@ -16,12 +16,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. */
+/** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. A sprite-strip Layer also carries `frames` and `fps`. */
 export type IllustrationMotionLayer = {
   src: string;
   at: { x: number; y: number };
   anchor: { x: number; y: number };
   width: number;
+  /** The sprite strip frame count; present exactly when `fps` is. */
+  frames?: number;
+  /** Frames per second; present exactly when `frames` is. */
+  fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
   pixelWidth: number;
   pixelHeight: number;
@@ -30,21 +34,43 @@ export type IllustrationMotionLayer = {
 /**
  * A Layer's geometry over the Still's box, in percent
  * (docs/spec/ui.md, a Layer's size and place): the Layer's width is `width`
- * percent of the Still's width with its height following from the file's
- * aspect ratio, and the Layer's `anchor` point sits on `at`. `leftPct` is a
+ * percent of the Still's width with its height following from the aspect ratio
+ * of one frame (the file's pixel width divided by `frames` for a sprite
+ * strip), and the Layer's `anchor` point sits on `at`. `leftPct` is a
  * percent of the box width, `topPct` a percent of the box height.
  */
 export function layerGeometry(
-  layer: Pick<IllustrationMotionLayer, 'at' | 'anchor' | 'width'>,
+  layer: Pick<IllustrationMotionLayer, 'at' | 'anchor' | 'width'> & { frames?: number },
   file: Pick<IllustrationMotionLayer, 'pixelWidth' | 'pixelHeight'>,
   still: { width: number; height: number },
 ): { widthPct: number; leftPct: number; topPct: number } {
+  const frameWidth = layer.frames === undefined ? file.pixelWidth : file.pixelWidth / layer.frames;
   const widthPct = layer.width;
   const leftPct = layer.at.x - (layer.anchor.x * layer.width) / 100;
   const heightPctOfBoxHeight =
-    layer.width * (file.pixelHeight / file.pixelWidth) * (still.width / still.height);
+    layer.width * (file.pixelHeight / frameWidth) * (still.width / still.height);
   const topPct = layer.at.y - (layer.anchor.y * heightPctOfBoxHeight) / 100;
   return { widthPct, leftPct, topPct };
+}
+
+/**
+ * One frame of a sprite strip, in pixels: the strip is a horizontal row of
+ * `frames` equal-width frames, so one frame is the file's width divided by
+ * `frames` with the file's height.
+ */
+export function spriteFrame(
+  layer: Pick<IllustrationMotionLayer, 'frames' | 'pixelWidth' | 'pixelHeight'>,
+): { frameWidth: number; frameHeight: number } {
+  const frames = layer.frames ?? 1;
+  return { frameWidth: layer.pixelWidth / frames, frameHeight: layer.pixelHeight };
+}
+
+/**
+ * How long one loop of a sprite strip lasts, in seconds: `frames` frames at
+ * `fps` frames per second (docs/spec/ui.md, frames).
+ */
+export function spriteDuration(layer: Pick<IllustrationMotionLayer, 'frames' | 'fps'>): number {
+  return (layer.frames ?? 1) / (layer.fps ?? 1);
 }
 
 export function Illustration({
@@ -170,29 +196,93 @@ export function Illustration({
             animation: 'illustration-motion-fade-in 1s linear',
           }}
         >
-          {layers.map((layer, index) => {
-            const geometry = layerGeometry(layer, layer, { width, height });
-            return (
-              <img
-                // Layers have no id; the list order is the draw order.
-                key={`${layer.src}#${index}`}
-                src={layer.src}
-                alt=""
-                draggable={false}
-                style={{
-                  position: 'absolute',
-                  width: `${geometry.widthPct}%`,
-                  left: `${geometry.leftPct}%`,
-                  top: `${geometry.topPct}%`,
-                  aspectRatio: `${layer.pixelWidth} / ${layer.pixelHeight}`,
-                  height: 'auto',
-                  ...(layer.blend === 'normal' ? {} : { mixBlendMode: layer.blend }),
-                }}
-              />
-            );
-          })}
+          {layers.map((layer, index) => (
+            <MotionLayer
+              key={`${layer.src}#${index}`}
+              layer={layer}
+              still={{ width, height }}
+              index={index}
+            />
+          ))}
         </span>
       ) : null}
     </span>
+  );
+}
+
+/**
+ * One Layer of the Motion composition (docs/spec/ui.md, motion): a plain
+ * picture renders as one positioned image; a sprite strip renders as a
+ * one-frame window with the full strip inside it, stepping through the frames.
+ * Pure, so the frame markup is testable without hydration.
+ */
+export function MotionLayer({
+  layer,
+  still,
+  index,
+}: {
+  layer: IllustrationMotionLayer;
+  still: { width: number; height: number };
+  /** The Layer's position in list order (Layers have no id); disambiguates shared files. */
+  index: number;
+}) {
+  const geometry = layerGeometry(layer, layer, still);
+  const blend = layer.blend === 'normal' ? {} : { mixBlendMode: layer.blend };
+  // Layers have no id; the list order is the draw order.
+  const key = `${layer.src}#${index}`;
+  // A sprite strip shows one frame at a time: the window is sized and
+  // anchored by one frame, and the full strip inside it steps from frame 0
+  // through every frame, looping for as long as the Layer is shown
+  // (docs/spec/ui.md, frames). The strip is `frames` times wider than the
+  // window, so translating it by its own -100% in `frames` steps lands exactly
+  // on each frame, one step every 1/`fps` seconds. Strips mounted together
+  // start together, so two Layers sharing one file run in unison when their
+  // `fps` match; the shared file is fetched once (see above).
+  if (layer.frames !== undefined && layer.fps !== undefined) {
+    const frame = spriteFrame(layer);
+    return (
+      <span
+        key={key}
+        style={{
+          position: 'absolute',
+          width: `${geometry.widthPct}%`,
+          left: `${geometry.leftPct}%`,
+          top: `${geometry.topPct}%`,
+          aspectRatio: `${frame.frameWidth} / ${frame.frameHeight}`,
+          overflow: 'hidden',
+          ...blend,
+        }}
+      >
+        <img
+          src={layer.src}
+          alt=""
+          draggable={false}
+          style={{
+            display: 'block',
+            width: `${layer.frames * 100}%`,
+            maxWidth: 'none',
+            height: 'auto',
+            animation: `illustration-sprite-step ${spriteDuration(layer)}s steps(${layer.frames}) infinite`,
+          }}
+        />
+      </span>
+    );
+  }
+  return (
+    <img
+      key={key}
+      src={layer.src}
+      alt=""
+      draggable={false}
+      style={{
+        position: 'absolute',
+        width: `${geometry.widthPct}%`,
+        left: `${geometry.leftPct}%`,
+        top: `${geometry.topPct}%`,
+        aspectRatio: `${layer.pixelWidth} / ${layer.pixelHeight}`,
+        height: 'auto',
+        ...blend,
+      }}
+    />
   );
 }

@@ -738,8 +738,10 @@ function checkImage(value: unknown, path: readonly (string | number)[], ctx: Ctx
  * `motion` with neither `layers` nor `camera`, or with an empty `layers`
  * list. `camera` arrives with its own ticket; until then a motion without
  * layers is empty. Ranges and defaults live in the Zod definitions
- * (schema/invalid-value, schema/missing-field); the drift/frames refinements
- * arrive with their tickets too.
+ * (schema/invalid-value, schema/missing-field); the drift/flicker refinements
+ * arrive with their tickets too. The frames/fps pairing
+ * (schema/frames-fps) is checked per Layer here: exactly one of them is an
+ * error, since JSON Schema cannot express it.
  */
 function checkMotion(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
@@ -757,6 +759,26 @@ function checkMotion(value: unknown, path: readonly (string | number)[], ctx: Ct
       path: [...path],
     });
   }
+  if (!Array.isArray(layers)) return;
+  layers.forEach((layer, layerIndex) => {
+    if (!isRecord(layer)) return;
+    const hasFrames = layer['frames'] !== undefined;
+    const hasFps = layer['fps'] !== undefined;
+    // `fps` is required exactly when `frames` is present: both present or
+    // neither is valid; exactly one of them is schema/frames-fps.
+    if (hasFrames === hasFps) return;
+    const missing = hasFrames ? 'fps' : 'frames';
+    ctx.push({
+      severity: 'error',
+      code: 'schema/frames-fps',
+      message:
+        `layer ${layerIndex} has "${hasFrames ? 'frames' : 'fps'}" without "${missing}"; ` +
+        `"fps" is required exactly when "frames" is present`,
+      file: ctx.file,
+      range: rangeOf(ctx, [...path, 'layers', layerIndex]),
+      path: [...path, 'layers', layerIndex],
+    });
+  });
 }
 
 function checkCatalog(

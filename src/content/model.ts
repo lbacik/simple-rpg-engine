@@ -459,6 +459,8 @@ export function buildScenario(inputs: ModelInputs): Scenario {
         at: layer.at ?? { x: 50, y: 50 },
         anchor: layer.anchor,
         width: layer.width,
+        ...(layer.frames === undefined ? {} : { frames: layer.frames }),
+        ...(layer.fps === undefined ? {} : { fps: layer.fps }),
         blend: layer.blend,
         file: required(fileByPath.get(layerPath), `Layer file "${layer.path}"`),
       };

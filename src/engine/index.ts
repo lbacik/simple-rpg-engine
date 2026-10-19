@@ -3192,13 +3192,18 @@ export type ChoiceView = {
 /**
  * One Motion Layer as the UI renders it (docs/spec/ui.md, motion): the
  * declaration with defaults applied, the Layer file's asset URL under its own
- * hash and the file's pixel size.
+ * hash and the file's pixel size. A sprite-strip Layer also carries `frames`
+ * and `fps`, so the browser steps through one frame at a time.
  */
 export type IllustrationLayerView = {
   path: string;
   at: { x: number; y: number };
   anchor: { x: number; y: number };
   width: number;
+  /** The sprite strip frame count; present exactly when `fps` is. */
+  frames?: number;
+  /** Frames per second; present exactly when `frames` is. */
+  fps?: number;
   blend: 'normal' | 'multiply' | 'screen';
   /** The Layer file's asset URL, under the file's own hash. */
   src: string;
@@ -3272,6 +3277,8 @@ export function illustrationView(
       at: layer.at,
       anchor: layer.anchor,
       width: layer.width,
+      ...(layer.frames === undefined ? {} : { frames: layer.frames }),
+      ...(layer.fps === undefined ? {} : { fps: layer.fps }),
       blend: layer.blend,
       src: sceneIllustrationUrl(scenarioId, layer.file),
       pixelWidth: layer.file.width,

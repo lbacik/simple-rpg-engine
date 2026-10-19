@@ -423,6 +423,16 @@ main:has(.game) {
   }
 }
 
+/* Illustration Motion (docs/spec/ui.md, frames): one step of a sprite strip.
+   The strip inside its one-frame window is `frames` times wider than the
+   window, so translating it by its own width in `frames` steps lands exactly
+   on each frame; the step count and the loop duration ride inline per Layer. */
+@keyframes illustration-sprite-step {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 .reading-body {
   padding: 1.75rem 2.25rem 2rem;
 }
