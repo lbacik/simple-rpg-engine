@@ -548,6 +548,8 @@ export function runPlayabilityPhase(
   checkImageUnused(ctx);
   checkStaticLayers(ctx, files);
   checkMotionlessDrifts(ctx, files);
+  checkMotionlessCameras(ctx, files);
+  checkCameraLowResolution(ctx, files);
   checkMaps(ctx);
 }
 
@@ -1048,10 +1050,116 @@ function checkStaticLayers(ctx: Ctx, files: ParsedFile[]): void {
 }
 
 /**
+ * Walk every Motion Camera of every image entry in the raw file contents (not
+ * the compiled model, and not the Zod defaults): `callback` gets the Camera
+ * record, the image id (or `#index` when missing), the Camera node's path,
+ * and the file and range that locate the Camera node.
+ */
+function forEachMotionCamera(
+  files: ParsedFile[],
+  callback: (args: {
+    camera: Record<string, unknown>;
+    id: string;
+    cameraPath: (string | number)[];
+    file: string;
+    range: DiagnosticRange | undefined;
+  }) => void,
+): void {
+  for (const file of files) {
+    if (file.section !== 'images' || !Array.isArray(file.value)) continue;
+    file.value.forEach((entry: unknown, entryIndex: number) => {
+      if (!isRecord(entry)) return;
+      const id = typeof entry['id'] === 'string' ? entry['id'] : `#${entryIndex}`;
+      const motion = entry['motion'];
+      if (!isRecord(motion) || !isRecord(motion['camera'])) return;
+      const cameraPath: (string | number)[] = [entryIndex, 'motion', 'camera'];
+      callback({
+        camera: motion['camera'],
+        id,
+        cameraPath,
+        file: file.file,
+        range: nodeRange(nodeAtPath(file.contents, cameraPath), file.lineCounter),
+      });
+    });
+  }
+}
+
+/** The Camera `from` framing with its default applied (the whole Still). */
+const DEFAULT_CAMERA_FROM = { zoom: 100, x: 50, y: 50 };
+
+function cameraFraming(value: unknown): { zoom: number; x: number; y: number } | undefined {
+  if (!isRecord(value)) return undefined;
+  if (
+    typeof value['zoom'] !== 'number' ||
+    typeof value['x'] !== 'number' ||
+    typeof value['y'] !== 'number'
+  ) {
+    return undefined;
+  }
+  return { zoom: value['zoom'], x: value['x'], y: value['y'] };
+}
+
+/**
+ * Warn about motionless Cameras (docs/spec/validation.md, play/motionless):
+ * one warning per image whose Camera `to` equals its `from` (given or
+ * defaulted). The raw file contents are read (not the compiled model), and
+ * diagnostics point at the Camera node.
+ */
+function checkMotionlessCameras(ctx: Ctx, files: ParsedFile[]): void {
+  forEachMotionCamera(files, ({ camera, id, cameraPath, file, range }) => {
+    const from = cameraFraming(camera['from']) ?? DEFAULT_CAMERA_FROM;
+    const to = cameraFraming(camera['to']);
+    if (to === undefined) return;
+    if (from.zoom !== to.zoom || from.x !== to.x || from.y !== to.y) return;
+    ctx.push({
+      severity: 'warning',
+      code: 'play/motionless',
+      message:
+        `image "${id}" has a Camera whose "to" equals its "from"; ` +
+        `the Camera never moves`,
+      file,
+      range,
+      path: cameraPath,
+    });
+  });
+}
+
+/**
+ * Warn about low-resolution Camera views (docs/spec/validation.md,
+ * play/camera-low-resolution): one warning per image with a Camera whose
+ * Still's pixel width × 100 / the larger `zoom` of `from` and `to` is below
+ * 1000 px. Images without a Camera are not checked. Diagnostics point at the
+ * Camera node.
+ */
+function checkCameraLowResolution(ctx: Ctx, files: ParsedFile[]): void {
+  forEachMotionCamera(files, ({ camera, id, cameraPath, file, range }) => {
+    const stillWidth = ctx.scenario.imagesById[id]?.width;
+    if (stillWidth === undefined) return;
+    const from = cameraFraming(camera['from']) ?? DEFAULT_CAMERA_FROM;
+    const to = cameraFraming(camera['to']);
+    if (to === undefined) return;
+    const zoom = Math.max(from.zoom, to.zoom);
+    if (zoom <= 0) return;
+    const pixels = (stillWidth * 100) / zoom;
+    if (pixels >= 1000) return;
+    ctx.push({
+      severity: 'warning',
+      code: 'play/camera-low-resolution',
+      message:
+        `image "${id}" has a Camera whose most zoomed-in framing is ${pixels.toFixed(0)} px wide ` +
+        `(${stillWidth} px × 100 / ${zoom}); below 1000 px it looks soft in the reading column`,
+      file,
+      range,
+      path: cameraPath,
+    });
+  });
+}
+
+/**
  * Warn about motionless Drifts (docs/spec/validation.md, play/motionless):
  * one warning per Layer whose Drift `from` equals its `to`. The raw file
  * contents are read (not the compiled model), and diagnostics point at the
- * Layer node. The Camera half of the rule arrives with the Camera ticket.
+ * Layer node.
  */
 function checkMotionlessDrifts(ctx: Ctx, files: ParsedFile[]): void {
   forEachMotionLayer(files, ({ layer, id, layerPath, file, range }) => {

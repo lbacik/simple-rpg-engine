@@ -519,6 +519,7 @@ export default async function PlayPage({
                   height={baseIllustration.height}
                   alt={baseIllustration.alt}
                   layers={baseIllustration.layers}
+                  camera={baseIllustration.camera}
                   showingKey={baseIllustration.showingKey}
                 />
               </figure>
@@ -635,6 +636,7 @@ export default async function PlayPage({
                   height={backgroundIllustration.height}
                   alt={backgroundIllustration.alt}
                   layers={backgroundIllustration.layers}
+                  camera={backgroundIllustration.camera}
                   showingKey={backgroundIllustration.showingKey}
                 />
               </figure>
@@ -752,6 +754,7 @@ export default async function PlayPage({
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
                     layers={gameView.illustration.layers}
+                    camera={gameView.illustration.camera}
                     showingKey={gameView.illustration.showingKey}
                   />
                 </figure>
@@ -828,6 +831,7 @@ export default async function PlayPage({
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
                     layers={gameView.illustration.layers}
+                    camera={gameView.illustration.camera}
                     showingKey={gameView.illustration.showingKey}
                   />
                 </figure>

@@ -452,6 +452,9 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     const fileByPath = new Map(image.layers.map((file) => [file.path, file]));
     // The registry path is the normalized package path (integrity phase), so
     // an author spelling like `./glow.png` resolves to the same file entry.
+    // A `motion` with only a `camera` is valid: it compiles to no Layers and
+    // the Camera with its defaults applied (Zod defaults `from`, `delay` and
+    // `loop`).
     const layers: IntegrityMotionLayer[] = (parsed.motion.layers ?? []).map((layer) => {
       const layerPath = normalizeListedPath(layer.path);
       return {
@@ -467,7 +470,13 @@ export function buildScenario(inputs: ModelInputs): Scenario {
         file: required(fileByPath.get(layerPath), `Layer file "${layer.path}"`),
       };
     });
-    return { ...image, motion: { layers } };
+    return {
+      ...image,
+      motion: {
+        layers,
+        ...(parsed.motion.camera === undefined ? {} : { camera: parsed.motion.camera }),
+      },
+    };
   });
   const imageById = new Map(images.map((image) => [image.id, image]));
 
