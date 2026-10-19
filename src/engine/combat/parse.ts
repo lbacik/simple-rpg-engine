@@ -21,9 +21,61 @@ import type {
   CombatState,
   FrozenPlan,
   ParseIssue,
+  ParseIssueCode,
   ParseResult,
   ProfileId,
 } from './types';
+
+/**
+ * Every ParseIssueCode the strict parser can emit. The client catalogue slice
+ * checks completeness against this list; the const below fails typecheck when
+ * a code is added to the union but not here.
+ */
+export const PARSE_ISSUE_CODES = [
+  'bad_rules_version',
+  'unexpected_state_version',
+  'bad_round',
+  'bad_phase',
+  'bad_result',
+  'finished_without_result',
+  'result_before_finish',
+  'bad_next_group_serial',
+  'bad_actors',
+  'duplicate_actor_id',
+  'bad_actor_id',
+  'unknown_profile',
+  'bad_team_role',
+  'bad_stance',
+  'bad_group_id',
+  'hp_out_of_range',
+  'bad_stamina',
+  'bad_ready_round',
+  'bad_available_round',
+  'bad_power',
+  'bad_phase_offset',
+  'bad_wait_age',
+  'missing_hero',
+  'too_many_companions',
+  'bad_enemy_count',
+  'bad_state',
+  'bad_ref',
+  'bad_profile_role',
+  'no_living_hero',
+  'no_living_enemies',
+  'bad_engagements',
+  'bad_engagement',
+  'bad_frozen_plans',
+  'bad_frozen_plan',
+  'bad_log',
+] as const;
+
+type ParseIssueCodesComplete = Exclude<ParseIssueCode, (typeof PARSE_ISSUE_CODES)[number]> extends never
+  ? Exclude<(typeof PARSE_ISSUE_CODES)[number], ParseIssueCode> extends never
+    ? true
+    : false
+  : false;
+const parseIssueCodesComplete: ParseIssueCodesComplete = true;
+void parseIssueCodesComplete;
 
 const ACTOR_ID_PATTERN = /^(h01|c01|e0[1-5])$/;
 const GROUP_ID_PATTERN = /^g\d+$/;

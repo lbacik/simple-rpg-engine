@@ -25,8 +25,9 @@ import type {
   Stance,
 } from './types';
 
-/** Canonical reason order, so rows compare equal across runs. */
-const REASON_ORDER: readonly ReasonCode[] = [
+/** Canonical reason order, so rows compare equal across runs. It lists every
+ *  ReasonCode, so the client catalogue slice can check completeness against it. */
+export const REASON_ORDER: readonly ReasonCode[] = [
   'insufficient_stamina',
   'on_cooldown',
   'stance_disallows',
