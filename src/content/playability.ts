@@ -1146,7 +1146,7 @@ function checkCameraLowResolution(ctx: Ctx, files: ParsedFile[]): void {
       severity: 'warning',
       code: 'play/camera-low-resolution',
       message:
-        `image "${id}" has a Camera whose most zoomed-in view is ${pixels.toFixed(0)} px wide ` +
+        `image "${id}" has a Camera whose most zoomed-in framing is ${pixels.toFixed(0)} px wide ` +
         `(${stillWidth} px × 100 / ${zoom}); below 1000 px it looks soft in the reading column`,
       file,
       range,

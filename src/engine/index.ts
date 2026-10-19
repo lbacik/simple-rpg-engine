@@ -3226,7 +3226,7 @@ export type IllustrationLayerView = {
 /**
  * An Illustration's Camera as the UI renders it (docs/spec/ui.md, motion):
  * the declaration with defaults applied. One transform moves the Still and
- * every Layer together, so the Layers stay aligned with the painting.
+ * every Layer together, so the Layers stay aligned with the Still.
  */
 export type IllustrationCameraView = {
   from: { zoom: number; x: number; y: number };

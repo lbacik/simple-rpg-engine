@@ -13,7 +13,7 @@
 // by the composition's overflow. A flickering Layer varies its opacity along
 // the engine's fixed Flicker curve on the same API and timeline. A Camera
 // moves the Still and every Layer together with one transform of the same
-// stage, from the same t = 0, so the Layers stay aligned with the painting.
+// stage, from the same t = 0, so the Layers stay aligned with the Still.
 // Any Layer failure leaves the Still for this Showing. Under
 // `prefers-reduced-motion: reduce` Motion stays off and no Layer file is
 // fetched. Without JavaScript only the Still shows.
@@ -74,7 +74,7 @@ function formatCameraNumber(value: number): string {
  * A Camera framing as a CSS transform (docs/spec/ui.md, camera): with scale
  * `s = zoom / 100`, `translate((1 − s) · x%, (1 − s) · y%) scale(s)` of the
  * box from its top-left corner, so the point (x, y) of the Still stays in
- * place and the view never leaves the Still.
+ * place and the framing never leaves the Still.
  */
 export function cameraTransform(framing: IllustrationCameraFraming): string {
   const scale = framing.zoom / 100;
@@ -106,7 +106,7 @@ function lerpFraming(
  * with a fixed ease-in-out. A one-shot Camera then holds at `to`; a looping
  * Camera goes back and forth, `duration` seconds each way, its `delay`
  * applying only before the first pass. Interpolating keeps every
- * intermediate a valid framing, so the view never leaves the Still.
+ * intermediate a valid framing, so the framing never leaves the Still.
  */
 export function cameraFramingAt(
   camera: Pick<IllustrationMotionCamera, 'from' | 'to' | 'duration' | 'delay' | 'loop'>,
@@ -536,7 +536,7 @@ export function Illustration({
 
   // The Camera runs on the Web Animations API from the same shared timeline
   // t = 0 as the fade: one transform on the Camera stage moves the Still and
-  // every Layer together, so the Layers stay aligned with the painting. The
+  // every Layer together, so the Layers stay aligned with the Still. The
   // stage holds the `from` framing until `delay` ends, then eases in and out
   // to `to` and holds there; a looping Camera alternates back and forth,
   // `duration` seconds each way, since the delay applies only before the
