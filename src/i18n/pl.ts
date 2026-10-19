@@ -363,6 +363,9 @@ export const pl: Catalogue = {
       travel: 'Podróż',
       inventory: 'Inwentarz',
       ending: 'Zakończenie',
+      combatStart: 'Początek walki',
+      combatRound: 'Runda walki',
+      combatEnd: 'Koniec walki',
     },
     travel: (name: string): string => `Podróż: ${name}`,
     victory: 'Zwycięstwo',
@@ -407,6 +410,9 @@ export const pl: Catalogue = {
     unequipped: (name: string): string => `Zdjęto: ${name}`,
     used: (name: string, restored: number): string =>
       `Użyto: ${name} (+${whole(restored)} Zdrowia)`,
+    combatStart: 'Walka się zaczyna. Przeciwnicy:',
+    combatEnd: (howEnded: 'win' | 'surrender' | 'draw'): string =>
+      howEnded === 'win' ? 'Walka wygrana.' : howEnded === 'surrender' ? 'Walka poddana.' : 'Walka nierozstrzygnięta.',
   },
   // S4: the readOnly Combat/Range/Health lines belonged to the tactical rules.
   // S4: the Combat catalogue (actions, intents, roll lines, escape,

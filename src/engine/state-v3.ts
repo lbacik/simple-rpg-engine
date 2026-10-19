@@ -101,7 +101,8 @@ export type PlaythroughV3IssueCode =
   | 'unknown_schema_version'
   | 'unexpected_state_version'
   | 'bad_envelope'
-  | 'bad_combat';
+  | 'bad_combat'
+  | 'bad_frozen_plans';
 
 export interface PlaythroughV3Issue {
   code: PlaythroughV3IssueCode;
@@ -125,10 +126,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * `schemaVersion`, a lingering `stateVersion` key or a Combat the strict
  * parser rejects (including a wrong `rulesVersion`) reads as a failure the
  * caller renders read-only with the Journal: the row is never rewritten here.
- * Frozen-plan recomputation (P1b) plugs into the Combat parse once it lands;
- * until then structural plan checks apply.
+ * Frozen plans are never repaired or replaced; when `verifyFrozenPlans` is
+ * given, a `CHOOSE` Combat whose plans do not equal their recomputation is
+ * rejected with `bad_frozen_plans` (S2: the Playthrough stays read-only with
+ * its Journal).
  */
-export function readPlaythroughV3Document(value: unknown): PlaythroughV3Read {
+export function readPlaythroughV3Document(
+  value: unknown,
+  options?: { verifyFrozenPlans?: (state: CombatState) => boolean },
+): PlaythroughV3Read {
   if (!isRecord(value)) {
     return { ok: false, issues: [{ code: 'malformed' }] };
   }
@@ -162,6 +168,13 @@ export function readPlaythroughV3Document(value: unknown): PlaythroughV3Read {
   const combat = parseCombatState(envelope.data.activeCombat.combat);
   if (!combat.ok) {
     return { ok: false, issues: [{ code: 'bad_combat', combatIssues: combat.issues }] };
+  }
+  if (
+    combat.state.phase === 'CHOOSE' &&
+    options?.verifyFrozenPlans !== undefined &&
+    !options.verifyFrozenPlans(combat.state)
+  ) {
+    return { ok: false, issues: [{ code: 'bad_frozen_plans' }] };
   }
   return {
     ok: true,

@@ -7,9 +7,9 @@
 //
 // Order per turn: read the row (another Session, or none, is `not-found`),
 // resolve the Scenario (gone means the Playthrough is read-only,
-// `incompatible`), validate the stored document against the current schema
-// (anything but v2 means `incompatible`), run the reference check when the pinned hash differs
-// (a pass updates the pin, a fail means `incompatible`), run `applyAction`
+// `incompatible`), validate the stored document against the current schemas
+// (anything but v2 or Combat MVP 1.0 v3 means `incompatible`), run the reference check when the pinned hash differs
+// (a pass updates the pin, a fail means `incompatible`), run the journey applier
 // (`step`, then legality), then the atomic commit
 // (`UPDATE … WHERE step = <expected>` plus the Journal inserts in one
 // transaction): no row changed means a concurrent turn won, so report `stale`.
@@ -30,6 +30,8 @@ import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
 import { localizeScenario } from '../../content/localize';
 import { applyAction, type Action, type Rng } from '../../engine/index';
+import { verifyFrozenPlans } from '../../engine/combat/plan';
+import { applyScenarioActionV3 } from '../../engine/scenario-play';
 import { PlaythroughStateSchema, type PlaythroughState } from '../../engine/state';
 import { readPlaythroughV3Document } from '../../engine/state-v3';
 import { PlaythroughStore } from '../../persistence/index';
@@ -37,7 +39,13 @@ import type { Database } from '../../persistence/schema';
 
 export type TurnResult =
   | { ok: true; step: number }
-  | { ok: false; reason: 'not-found' | 'stale' | 'illegal' | 'ended' | 'incompatible' };
+  | { ok: false; reason: 'not-found' | 'stale' | 'ended' | 'incompatible' }
+  // Illegal carries the engine's reason code (`illegal-action` on the v2
+  // path; `illegal-action` or `stale-round` mapped siblings on v3), so the
+  // Combat adapters can redirect with `?notice=rejected&reason=` as in the
+  // Arena (the contract's "rejection returns a reason code"). Callers that
+  // only need the notice kind read `reason`.
+  | { ok: false; reason: 'illegal'; detail?: string };
 
 export async function executeTurn(
   db: Kysely<Database>,
@@ -61,21 +69,72 @@ export async function executeTurn(
     return { ok: false, reason: 'incompatible' };
   }
   // The store returns raw state: validate here, where the Scenario is known.
-  // Only current v2 documents play: invalid documents (including retired v1
-  // documents, whose migration left with the tactical Combat in S4) fail
-  // without any write and without blocking the Journal (which reads through
-  // the store directly, never through this path). Combat MVP 1.0 v3 turns
-  // arrive with the P6 Scenario adapter; until then v3 rows are read-only
-  // and no turn commits against them.
-  let state: PlaythroughState;
-  if (
+  // Only current v2 and v3 (Combat MVP 1.0) documents play: invalid documents
+  // (including retired v1 documents, whose migration left with the tactical
+  // Combat in S4) fail without any write and without blocking the Journal
+  // (which reads through the store directly, never through this path). A v3
+  // document whose stored Combat fails the frozen-plan check reads as
+  // incompatible (S2): the Playthrough stays read-only with its Journal.
+  const v3read =
     typeof row.state === 'object' &&
     row.state !== null &&
-    'schemaVersion' in row.state &&
-    readPlaythroughV3Document(row.state).ok
-  ) {
-    return { ok: false, reason: 'incompatible' };
+    'schemaVersion' in row.state
+      ? readPlaythroughV3Document(row.state, {
+          verifyFrozenPlans: (combat) => verifyFrozenPlans(combat).length === 0,
+        })
+      : null;
+  if (v3read !== null) {
+    if (!v3read.ok) {
+      return { ok: false, reason: 'incompatible' };
+    }
+    let v3state = v3read.state;
+    let v3pinMoved = false;
+    if (row.contentHash !== scenario.contentHash) {
+      const v3check = checkPlaythroughCompatibility(scenario, v3state);
+      if (!v3check.ok) {
+        return { ok: false, reason: 'incompatible' };
+      }
+      // Fold the pin into the step-guarded swap below instead of a separate
+      // update, as on the v2 path.
+      v3state = {
+        ...v3state,
+        scenarioVersion: scenario.version,
+        contentHash: scenario.contentHash,
+      };
+      v3pinMoved = true;
+    }
+    const v3localized = localizeScenario(scenario, interfaceLanguage).scenario;
+    const v3applied = applyScenarioActionV3(v3localized, v3state, action, rng);
+    if (!v3applied.ok) {
+      if (v3pinMoved) {
+        await store.updatePin(playthroughId, v3state, row.step);
+      }
+      if (v3applied.reason === 'stale-step' || v3applied.reason === 'stale-round') {
+        return { ok: false, reason: 'stale' };
+      }
+      if (v3applied.reason === 'ended') return { ok: false, reason: 'ended' };
+      return { ok: false, reason: 'illegal', detail: v3applied.reason };
+    }
+    const v3committed = await store.commitTurn(
+      playthroughId,
+      action.expectedStep,
+      {
+        state: v3applied.state,
+        step: v3applied.state.step,
+        status: v3applied.state.status,
+        endingId: v3applied.state.endingId ?? null,
+      },
+      v3applied.journal.map((entry) => {
+        const { type, lang, ...payload } = entry;
+        return { step: v3applied.state.step, type, lang, payload };
+      }),
+    );
+    if (!v3committed) {
+      return { ok: false, reason: 'stale' };
+    }
+    return { ok: true, step: v3applied.state.step };
   }
+  let state: PlaythroughState;
   const parsed = PlaythroughStateSchema.safeParse(row.state);
   if (!parsed.success) {
     return { ok: false, reason: 'incompatible' };
@@ -103,7 +162,7 @@ export async function executeTurn(
     }
     if (applied.reason === 'stale-step') return { ok: false, reason: 'stale' };
     if (applied.reason === 'ended') return { ok: false, reason: 'ended' };
-    return { ok: false, reason: 'illegal' };
+    return { ok: false, reason: 'illegal', detail: applied.reason };
   }
   const committed = await store.commitTurn(
     playthroughId,

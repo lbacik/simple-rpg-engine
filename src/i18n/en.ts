@@ -358,6 +358,9 @@ export const en = {
       travel: 'Travel',
       inventory: 'Inventory',
       ending: 'Ending',
+      combatStart: 'Combat start',
+      combatRound: 'Combat round',
+      combatEnd: 'Combat end',
     },
     travel: (name: string): string => `Travelled to ${name}.`,
     victory: 'Victory',
@@ -390,6 +393,13 @@ export const en = {
     unequipped: (name: string): string => `Unequipped: ${name}`,
     used: (name: string, restored: number): string =>
       `Used: ${name} (+${whole(restored)} Health)`,
+    combatStart: 'The combat begins. Opponents:',
+    combatEnd: (howEnded: 'win' | 'surrender' | 'draw'): string =>
+      howEnded === 'win'
+        ? 'The combat is won.'
+        : howEnded === 'surrender'
+          ? 'The combat is surrendered.'
+          : 'The combat is drawn.',
   },
   // S4: the readOnly Combat/Range/Health lines belonged to the tactical rules.
   // S4: the Combat catalogue (actions, intents, roll lines, escape,

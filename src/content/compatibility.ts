@@ -10,18 +10,18 @@
 // participant in an Encounter record still exists in that Encounter; a
 // participant the record does not list (added to the content later) is allowed
 // only while the Encounter is not defeated by its record. S4 (Combat MVP 1.0)
-// deletes the tactical Combat state, so there are no active-Combat membership
-// invariants; the Scenario Combat adapter (P6) re-adds its own. Subject to
-// those invariants, participant order, `startRange`, an Enemy's profile
-// (statistics come from the profile table), and a participant's Enemy kind
-// may change without failing the check.
+// deletes the tactical Combat state; the Scenario Combat adapter (P6) checks
+// the running Combat's Encounter instead, plus the travelling Companion.
+// Subject to those invariants, participant order, `startRange`, an Enemy's
+// profile (statistics come from the profile table), and a participant's Enemy
+// kind may change without failing the check.
 //
 // Pure and synchronous: the caller compares the hashes, derives
 // incompatibility on read (never stored), and updates the pin on a pass.
 
 import { isEquipmentSlot } from '../engine/inventory';
 import { PROFILES } from '../engine/combat/rules';
-import type { PlaythroughState } from '../engine/state';
+import type { JourneyState } from '../engine/conditions';
 import type { Scenario } from './model';
 
 export type CompatibilityResult = { ok: true } | { ok: false; reasons: string[] };
@@ -33,7 +33,7 @@ export type CompatibilityResult = { ok: true } | { ok: false; reasons: string[] 
  */
 export function checkPlaythroughCompatibility(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: JourneyState,
 ): CompatibilityResult {
   const reasons: string[] = [];
   const fail = (reason: string): void => {
@@ -108,6 +108,21 @@ export function checkPlaythroughCompatibility(
       if (defeatedByRecord) {
         fail(`encounter "${encounterId}" is defeated by its record and gains participant "${names}"`);
       }
+    }
+  }
+
+  // Combat MVP 1.0 documents (P6): the running Combat's Encounter must still
+  // exist (a disappeared Encounter makes the Playthrough read-only instead of
+  // stranding the fight), and the travelling Companion must still be authored.
+  if ('activeCombat' in state && state.activeCombat !== null) {
+    missing(scenario.encountersById, state.activeCombat.encounterId, 'encounter');
+  }
+  if ('companion' in state) {
+    if (state.companion !== null) {
+      missing(scenario.companionsById, state.companion.id, 'companion');
+    }
+    for (const id of state.lostCompanions) {
+      missing(scenario.companionsById, id, 'companion');
     }
   }
 

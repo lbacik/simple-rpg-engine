@@ -7,8 +7,7 @@
 // the normal Travel action, so a map click and an exit button are equivalent.
 
 import type { Scenario } from '../content/index';
-import { evaluateCondition } from './conditions';
-import type { PlaythroughState } from './state';
+import { evaluateCondition, type JourneyState } from './conditions';
 
 /**
  * Fixed aspect ratio of the map area, as a CSS `aspect-ratio` value. The map
@@ -74,7 +73,7 @@ export type MapOptions = {
 /** Visible Connections from a Location, in authored order. */
 function visibleConnectionsFrom(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: JourneyState,
   locationId: string,
 ): import('../content/model').CompiledConnection[] {
   const location = scenario.locationsById[locationId];
@@ -156,7 +155,7 @@ export function resolveMapPositions(
  */
 export function deriveMap(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: JourneyState,
   options: MapOptions = {},
 ): MapView {
   const visited = new Set(

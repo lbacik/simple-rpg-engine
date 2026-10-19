@@ -267,15 +267,16 @@ describe('renderJournalEntry', () => {
     ).toBe('Podróż');
   });
 
-  // S4: the tactical Combat renderers are gone; legacy combat rows render
-  // verbatim (raw type as label, escaped text, no Markdown, no flag).
+  // P6 G6: the Combat catalogue is back for structured entries; legacy
+  // combat rows (text only, no structured payload) still render verbatim,
+  // with only the type label from the catalogue.
   it('renders a legacy Combat start row verbatim', () => {
     const rendered = renderJournalEntry(
       { type: 'combat-start', lang: 'en', payload: { text: 'A **wolf** lunges from the *mist*!' } },
       en,
       name,
     );
-    expect(rendered.label).toBe('combat-start');
+    expect(rendered.label).toBe(en.journal.types.combatStart);
     expect(rendered.html).toContain('A **wolf** lunges from the *mist*!');
     expect(rendered.html).not.toContain('<strong>');
     expect(rendered.html).not.toContain('<em>');
@@ -291,7 +292,7 @@ describe('renderJournalEntry', () => {
       en,
       name,
     );
-    expect(rendered.label).toBe('combat-round');
+    expect(rendered.label).toBe(en.journal.types.combatRound);
     expect(rendered.html).toContain('Round 1');
   });
 
@@ -301,7 +302,7 @@ describe('renderJournalEntry', () => {
       en,
       name,
     );
-    expect(rendered.label).toBe('combat-end');
+    expect(rendered.label).toBe(en.journal.types.combatEnd);
     expect(rendered.html).toContain('Victory! The wolf falls.');
   });
 

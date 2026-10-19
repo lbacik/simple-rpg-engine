@@ -13,8 +13,11 @@
 // with only their type label from the catalogue.
 
 import { escapeHtml, renderStoredText } from '../../engine/narration';
+import type { CombatEvent } from '../../engine/combat/index';
+import { getCombatCatalogue } from '../../i18n/combat';
 import type { Catalogue } from '../../i18n/index';
 import { primaryLanguageSubtag } from '../../i18n/languages';
+import { logLine } from '../combat/combat-log';
 
 /** Entries per journal batch. */
 export const JOURNAL_BATCH_SIZE = 20 as const;
@@ -37,6 +40,7 @@ const SCENARIO_TEXT_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'choice',
   'outcome',
   'ending',
+  'combat-start',
 ]);
 
 /** A Journal entry as the renderer reads it: stored rows and new engine entries alike. */
@@ -106,6 +110,12 @@ export function journalEntryLabel(type: string, catalogue: Catalogue): string {
       return catalogue.journal.types.inventory;
     case 'ending':
       return catalogue.journal.types.ending;
+    case 'combat-start':
+      return catalogue.journal.types.combatStart;
+    case 'combat-round':
+      return catalogue.journal.types.combatRound;
+    case 'combat-end':
+      return catalogue.journal.types.combatEnd;
     default:
       return type;
   }
@@ -295,6 +305,19 @@ export function renderJournalEntry(
   }
   if (entry.type === 'inventory') {
     return { label, html: renderInventoryEntry(record, catalogue, lang, text), ...flagged };
+  }
+  if (entry.type === 'combat-start') {
+    return {
+      label,
+      html: renderCombatStartEntry(record, catalogue, lang, characterName),
+      ...flagged,
+    };
+  }
+  if (entry.type === 'combat-round') {
+    return { label, html: renderCombatRoundEntry(record, catalogue, lang), ...flagged };
+  }
+  if (entry.type === 'combat-end') {
+    return { label, html: renderCombatEndEntry(record, catalogue, lang), ...flagged };
   }
   return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`, ...flagged };
 }
@@ -552,4 +575,98 @@ function renderInventoryEntry(
     return messageWithName(catalogue.journal.used(name, healed), name, lang);
   }
   return `<p>${escapeHtml(catalogue.journal.types.inventory)}</p>`;
+}
+
+/**
+ * A combat-start entry (P6 G6): the Encounter's opening narration as
+ * presented, plus the participant names as presented. The narration and every
+ * name carry the entry's `lang`; the frame around them is catalogue text, so
+ * the entry renders in both Interface Languages. Scenario text makes this a
+ * flagged type on a language switch.
+ */
+function renderCombatStartEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+  characterName: string,
+): string {
+  // Legacy rows carry only the English sentence and are shown verbatim; new
+  // rows carry the structured participants and render through the catalogue.
+  if (!Array.isArray(record.participants)) {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
+  }
+  const text = String(record.text ?? '');
+  const narration = `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`;
+  const participants = Array.isArray(record.participants) ? record.participants : [];
+  const names = participants
+    .map((participant) =>
+      typeof participant === 'object' && participant !== null
+        ? (participant as { name?: unknown }).name
+        : undefined,
+    )
+    .filter((name): name is string => typeof name === 'string' && name !== '');
+  if (names.length === 0) return narration;
+  const items = names
+    .map((name) => `<li lang="${escapeHtml(lang)}">${escapeHtml(name)}</li>`)
+    .join('');
+  return `${narration}<p>${escapeHtml(catalogue.journal.combatStart)}</p><ul>${items}</ul>`;
+}
+
+/**
+ * A combat-round entry (P6 G6, `version: 3`): the core's typed events for that
+ * Round rendered through the Combat catalogue slice, with actor ids resolved
+ * through the entry's actor-to-`ref` mapping and write-time names. Engine
+ * text, so it never carries a language flag.
+ */
+function renderCombatRoundEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  // Legacy rows carry the English sentence and are shown verbatim; new rows
+  // carry the structured events (`version: 3`) and render through the Combat
+  // catalogue of the current Interface Language.
+  const text = record.text;
+  if (typeof text === 'string' && text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
+  const combatText = getCombatCatalogue(catalogue.code);
+  const round = typeof record.round === 'number' && Number.isFinite(record.round) ? record.round : 0;
+  const names =
+    typeof record.names === 'object' && record.names !== null
+      ? (record.names as Record<string, unknown>)
+      : {};
+  const nameOf = (id: string): string => {
+    const name = names[id];
+    return typeof name === 'string' && name !== '' ? name : id;
+  };
+  const events = Array.isArray(record.events) ? (record.events as CombatEvent[]) : [];
+  const lines = events
+    .map((event) => `<li>${escapeHtml(logLine(combatText, event, nameOf))}</li>`)
+    .join('');
+  return `<p>${escapeHtml(combatText.panel.roundLine(round))}</p><ul>${lines}</ul>`;
+}
+
+/**
+ * A combat-end entry (P6 G6): `win`, `surrender` or `draw` through the
+ * catalogue. (`LOSS` ends on an `ending` entry instead, so it never appears
+ * here; an unknown value falls back to the type label.) Engine text, so it
+ * never carries a language flag.
+ */
+function renderCombatEndEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  // Legacy rows carry the English sentence and are shown verbatim; new rows
+  // carry the structured `howEnded` and render through the catalogue.
+  const text = record.text;
+  if (typeof text === 'string' && text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
+  const howEnded = record.howEnded;
+  if (howEnded === 'win' || howEnded === 'surrender' || howEnded === 'draw') {
+    return `<p>${escapeHtml(catalogue.journal.combatEnd(howEnded))}</p>`;
+  }
+  return `<p>${escapeHtml(catalogue.journal.types.combatEnd)}</p>`;
 }

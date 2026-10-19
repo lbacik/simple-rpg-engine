@@ -7,8 +7,12 @@
 // module directly with react-dom/server.
 
 import type { Scenario } from '../../../content/model';
-import { renderNarration, renderStoredText, type GameView } from '../../../engine/index';
-import type { PlaythroughState } from '../../../engine/state';
+import {
+  renderNarration,
+  renderStoredText,
+  type GameView,
+  type JourneyState,
+} from '../../../engine/index';
 import { en, type Catalogue } from '../../../i18n/en';
 import type { JournalEnding } from '../../lib/journal';
 import { readOnlyGap } from '../../lib/playthrough';
@@ -63,7 +67,7 @@ export function ReadOnlyPosition({
   badge,
 }: {
   scenario: Scenario;
-  state: PlaythroughState;
+  state: JourneyState;
   gameView: GameView;
   characterName: string;
   recordedEnding: JournalEnding | undefined;
