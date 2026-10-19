@@ -546,6 +546,7 @@ export function runPlayabilityPhase(
   checkItems(ctx);
   checkEnemyUnused(ctx);
   checkImageUnused(ctx);
+  checkStaticLayers(ctx, files);
   checkMaps(ctx);
 }
 
@@ -975,6 +976,44 @@ function checkImageUnused(ctx: Ctx): void {
       file: ctx.fileOf('images', image.id),
       range: ctx.idRange('images', image.id),
       path: ['id'],
+    });
+  }
+}
+
+/**
+ * Warn about static Motion Layers (docs/spec/validation.md, play/static-layer):
+ * one warning per Layer with none of `frames`, `drift` or `flicker`. Such a
+ * Layer vanishes whenever Motion is off, so the composition at rest differs
+ * from the Still. The raw file contents are read (not the compiled model, and
+ * not the Zod defaults), so later tickets that accept those keys silence this
+ * warning layer by layer. Until then it fires on every Layer this ticket can
+ * express; that is correct. Diagnostics point at the Layer node.
+ */
+function checkStaticLayers(ctx: Ctx, files: ParsedFile[]): void {
+  for (const file of files) {
+    if (file.section !== 'images' || !Array.isArray(file.value)) continue;
+    file.value.forEach((entry: unknown, entryIndex: number) => {
+      if (!isRecord(entry)) return;
+      const id = typeof entry['id'] === 'string' ? entry['id'] : `#${entryIndex}`;
+      const motion = entry['motion'];
+      if (!isRecord(motion) || !Array.isArray(motion['layers'])) return;
+      motion['layers'].forEach((layer: unknown, layerIndex: number) => {
+        if (!isRecord(layer)) return;
+        if (layer['frames'] !== undefined || layer['drift'] !== undefined || layer['flicker'] !== undefined) {
+          return;
+        }
+        const layerPath: (string | number)[] = [entryIndex, 'motion', 'layers', layerIndex];
+        ctx.push({
+          severity: 'warning',
+          code: 'play/static-layer',
+          message:
+            `layer ${layerIndex} of image "${id}" has none of "frames", "drift" or "flicker"; ` +
+            `it vanishes whenever Motion is off, so the composition at rest differs from the Still`,
+          file: file.file,
+          range: nodeRange(nodeAtPath(file.contents, layerPath), file.lineCounter),
+          path: layerPath,
+        });
+      });
     });
   }
 }

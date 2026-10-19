@@ -449,7 +449,11 @@ export default async function PlayPage({
   if (showIntro) {
     const baseLocation =
       scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
-    const baseIllustration = illustrationView(scenario.id, baseLocation.illustration);
+    const baseIllustration = illustrationView(
+      scenario.id,
+      baseLocation.illustration,
+      `location:${baseLocation.id}`,
+    );
     const baseExits = visibleExits(scenario, state);
     const baseOnDemand = onDemandScenes(scenario, state);
     const introBaseView = {
@@ -514,6 +518,8 @@ export default async function PlayPage({
                   width={baseIllustration.width}
                   height={baseIllustration.height}
                   alt={baseIllustration.alt}
+                  layers={baseIllustration.layers}
+                  showingKey={baseIllustration.showingKey}
                 />
               </figure>
             ) : null}
@@ -600,6 +606,7 @@ export default async function PlayPage({
     const backgroundIllustration = illustrationView(
       scenario.id,
       backgroundLocation.illustration,
+      `location:${backgroundLocation.id}`,
     );
     const backgroundExits = visibleExits(scenario, state);
     const backgroundOnDemand = onDemandScenes(scenario, state);
@@ -627,6 +634,8 @@ export default async function PlayPage({
                   width={backgroundIllustration.width}
                   height={backgroundIllustration.height}
                   alt={backgroundIllustration.alt}
+                  layers={backgroundIllustration.layers}
+                  showingKey={backgroundIllustration.showingKey}
                 />
               </figure>
             ) : null}
@@ -742,6 +751,8 @@ export default async function PlayPage({
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
+                    layers={gameView.illustration.layers}
+                    showingKey={gameView.illustration.showingKey}
                   />
                 </figure>
               ) : null}
@@ -816,6 +827,8 @@ export default async function PlayPage({
                     width={gameView.illustration.width}
                     height={gameView.illustration.height}
                     alt={gameView.illustration.alt}
+                    layers={gameView.illustration.layers}
+                    showingKey={gameView.illustration.showingKey}
                   />
                 </figure>
               ) : null}

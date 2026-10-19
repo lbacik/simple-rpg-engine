@@ -338,10 +338,39 @@ export const EndingSchema = z.strictObject({
   text: narrationSchema,
 });
 
+// ---------------------------------------------------------------------------
+// Illustration Motion (docs/spec/scenario-format.md, Motion): a Layer's
+// placement over the Still. `at` has no .default(): it is mutually exclusive
+// with the future `drift` (schema/drift-and-at), so the engine applies the
+// { x: 50, y: 50 } default when a Layer declares neither. `anchor` places the
+// Layer only and never conflicts, so it defaults here. `frames`, `drift`,
+// `flicker` and `camera` arrive with their own tickets; the strict objects
+// below reject them as schema/unknown-key until then.
+// ---------------------------------------------------------------------------
+
+const motionPointSchema = z.strictObject({
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+});
+
+export const LayerSchema = z.strictObject({
+  path: z.string(),
+  at: motionPointSchema.optional(),
+  anchor: motionPointSchema.default({ x: 50, y: 50 }),
+  width: z.number().gt(0).max(400).default(100),
+  blend: z.enum(['normal', 'multiply', 'screen']).default('normal'),
+});
+
+/** This ticket covers Layers only; `camera` arrives with the Camera ticket. */
+export const MotionSchema = z.strictObject({
+  layers: z.array(LayerSchema).optional(),
+});
+
 export const ImageSchema = z.strictObject({
   id: idSchema,
   path: z.string(),
   alt: textSchema,
+  motion: MotionSchema.optional(),
 });
 
 // Catalog roots are bare sequences: no extra wrapper.
