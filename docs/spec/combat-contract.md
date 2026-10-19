@@ -183,6 +183,18 @@ character: { ...; health: number /* 0..40 */ }
 
 The first versioned Arena document. The run persists `origin` (`'setup'` or `'import'`), the remembered `setup` and `initial: InitialCombatState | null`; the Arena log is projected from `CombatState.log`, so there is no separate journal column. Import accepts a file and pasted JSON through one strict parse (1 MB cap); failures render `ParseIssue` Interface Text. `PLAN` goes through `startCombat`; `CHOOSE` is verified by recomputation; `FINISHED` is view-only; imported history is marked not verified. Export writes the bare `CombatState`. The Arena `step` is monotonic per Session across start, rematch, restart and import. Stale `expectedStep` or wrong `round` redirects with `?notice=stale`; an illegal command gets `?notice=rejected` with its reason; neither changes state or `step`.
 
+### Arena Setup
+
+```ts
+interface ArenaOpponent { profileId: 'raider' | 'brute' | 'sentinel' | 'archer'
+  startingGroup: GroupId; engagedWithHero: boolean
+  phaseOffset?: number; power?: number }   // power 0..3, default 0 (rules §8.1)
+interface ArenaSetup { opponents: ArenaOpponent[]  // 1..5, in explicit order
+  companion?: 'party-sentinel' | 'party-archer' }  // hero needs no setup: no equipment
+```
+
+The opponents' explicit order is the authored order the adapter assigns `e01`–`e05` in, so it breaks ties. `startingGroup` places each opponent in its proximity group; `engagedWithHero` starts the pair engaged in that group.
+
 ### Journal projection
 
 - `combat-start`: the Participants, the Companion if present, and the opening narration.
