@@ -217,7 +217,7 @@ describe('Playthrough v3 documents', () => {
     if (!read.ok) expect(read.issues[0]?.code).toBe('bad_combat');
   });
 
-  it('a valid v3 document stays read-only until P6 wires the Scenario adapter', async () => {
+  it('a valid v3 document resolves compatible and plays through the turn pipeline', async () => {
     const scenario = loadFixture();
     const load = (id: string): Scenario | undefined => (id === scenario.id ? scenario : undefined);
     const db = openDatabase(':memory:');
@@ -225,7 +225,10 @@ describe('Playthrough v3 documents', () => {
       await migrateDatabase(db);
       await insertRaw(db, scenario, 'pt-valid', makeV3());
       const resolved = await resolvePlaythrough(db, load, 'pt-valid', SESSION);
-      expect(resolved?.compatible).toBe(false);
+      expect(resolved?.compatible).toBe(true);
+      if (resolved?.compatible) {
+        expect(resolved.playthrough.state.step).toBe(0);
+      }
       expect((await new PlaythroughStore(db).listJournal('pt-valid')).map((e) => e.type)).toEqual([
         'intro',
       ]);
@@ -237,7 +240,7 @@ describe('Playthrough v3 documents', () => {
         { kind: 'travel', targetLocationId: 'grove', expectedStep: 0 },
         () => 1,
       );
-      expect(turn).toEqual({ ok: false, reason: 'incompatible' });
+      expect(turn).toEqual({ ok: true, step: 1 });
     } finally {
       await db.destroy();
     }

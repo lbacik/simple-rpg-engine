@@ -49,9 +49,11 @@ describe('journalEntryFlag', () => {
     }
   });
 
-  // S4: legacy Combat rows render verbatim and carry no language flag, even
-  // when their stored text is Scenario narration in another language.
-  it('carries no flag on a legacy Combat opening row', () => {
+  // P6 G6: combat-start holds Scenario text (the Encounter's opening
+  // narration), so it carries a language flag like the other narration
+  // entries. Combat-round and combat-end stay engine text and never flag
+  // (covered in the engine-generated cases below).
+  it('flags a Combat opening row as Scenario text', () => {
     const flagged = journalEntryFlag(
       {
         type: 'combat-start',
@@ -60,7 +62,7 @@ describe('journalEntryFlag', () => {
       },
       en,
     );
-    expect(flagged).toBeUndefined();
+    expect(flagged).toEqual({ lang: 'pl', label: 'Polish' });
   });
 
   it('names the flag in the Interface Language', () => {

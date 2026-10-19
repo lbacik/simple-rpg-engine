@@ -13,6 +13,7 @@ import type {
   CompiledScene,
 } from '../content/model';
 import { effectiveAttributes, evaluateCondition, isV3State } from './conditions';
+import type { RoundCommand } from './combat/index';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
@@ -327,6 +328,16 @@ export type Action =
   | {
       kind: 'open-scene';
       sceneId: string;
+      expectedStep: number;
+    }
+  | {
+      kind: 'combat-confirm';
+      command: RoundCommand;
+      expectedStep: number;
+    }
+  | {
+      kind: 'combat-surrender';
+      round: number;
       expectedStep: number;
     }
 

@@ -20,10 +20,12 @@ import {
   effectiveAttributes,
   inventoryEquipReason,
   inventoryUseReason,
+  maxHealthFor,
   type GameView,
+  type JourneyState,
 } from '@/engine/index';
 import { EQUIPMENT_SLOTS } from '@/engine/inventory';
-import { MAX_HEALTH, type PlaythroughState } from '@/engine/state';
+import type { PlaythroughState } from '@/engine/state';
 import { formatNumber, type Catalogue, type InterfaceLanguage } from '@/i18n/index';
 import { playHref, type PanelId } from '@/app/lib/panel';
 import { journalEntriesText, type RenderedJournalEntry } from '@/app/lib/journal';
@@ -90,13 +92,14 @@ function StatusCard({
   language,
 }: {
   scenario: Scenario;
-  state: PlaythroughState;
+  state: JourneyState;
   catalogue: Catalogue;
   language: InterfaceLanguage;
 }) {
   const template = scenario.templatesById[state.character.templateId];
-  const percent = healthPercent(state.character.health, MAX_HEALTH);
-  const low = isLowHealth(state.character.health, MAX_HEALTH);
+  const maxHealth = maxHealthFor(state);
+  const percent = healthPercent(state.character.health, maxHealth);
+  const low = isLowHealth(state.character.health, maxHealth);
   const effective = effectiveAttributes(scenario, state);
   const attributes = (
     [
@@ -112,7 +115,7 @@ function StatusCard({
         <span
           className={low ? 'status-medal low' : 'status-medal'}
           style={{ '--status-health': `${percent}%` } as React.CSSProperties}
-          title={catalogue.character.short(state.character.health, MAX_HEALTH)}
+          title={catalogue.character.short(state.character.health, maxHealth)}
           aria-hidden="true"
         >
           <span className="status-face">{initial(state.character.name)}</span>
@@ -132,15 +135,15 @@ function StatusCard({
         <span>{catalogue.character.health}</span>
         <strong>
           {formatNumber(language, state.character.health)}
-          <span className="meta"> / {formatNumber(language, MAX_HEALTH)}</span>
+          <span className="meta"> / {formatNumber(language, maxHealth)}</span>
         </strong>
       </p>
       <span
         className={low ? 'health-segments low' : 'health-segments'}
         role="img"
-        aria-label={catalogue.character.label(state.character.health, MAX_HEALTH)}
+        aria-label={catalogue.character.label(state.character.health, maxHealth)}
       >
-        {Array.from({ length: MAX_HEALTH }, (_, index) => (
+        {Array.from({ length: maxHealth }, (_, index) => (
           <span key={index} className={index < state.character.health ? 'on' : ''} />
         ))}
       </span>
@@ -240,7 +243,7 @@ export function InventorySheet({
   language,
 }: {
   scenario: Scenario;
-  state: PlaythroughState;
+  state: JourneyState;
   playthroughId: string;
   step: number;
   /** Set for incompatible Playthroughs: no actions, whatever the status. */
@@ -394,7 +397,7 @@ export function SidePanel({
   language,
 }: {
   scenario: Scenario;
-  state: PlaythroughState;
+  state: JourneyState;
   playthroughId: string;
   step: number;
   /** The modal open from the URL, if any. */
@@ -446,7 +449,7 @@ export function SidePanel({
       : gameView.kind === 'scene'
         ? gameView.locationName
         : (scenario.locationsById[state.currentLocationId]?.name ?? state.currentLocationId);
-  const healthShort = catalogue.character.short(state.character.health, MAX_HEALTH);
+  const healthShort = catalogue.character.short(state.character.health, maxHealthFor(state));
   const itemsCount = catalogue.inventory.count(itemCount);
   const entriesCount = catalogue.journal.count(journalTotal);
   // The label and sublabel are separate inline spans, so the accessible name

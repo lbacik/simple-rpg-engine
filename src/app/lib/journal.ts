@@ -314,10 +314,10 @@ export function renderJournalEntry(
     };
   }
   if (entry.type === 'combat-round') {
-    return { label, html: renderCombatRoundEntry(record, catalogue), ...flagged };
+    return { label, html: renderCombatRoundEntry(record, catalogue, lang), ...flagged };
   }
   if (entry.type === 'combat-end') {
-    return { label, html: renderCombatEndEntry(record, catalogue), ...flagged };
+    return { label, html: renderCombatEndEntry(record, catalogue, lang), ...flagged };
   }
   return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`, ...flagged };
 }
@@ -590,6 +590,11 @@ function renderCombatStartEntry(
   lang: string,
   characterName: string,
 ): string {
+  // Legacy rows carry only the English sentence and are shown verbatim; new
+  // rows carry the structured participants and render through the catalogue.
+  if (!Array.isArray(record.participants)) {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
+  }
   const text = String(record.text ?? '');
   const narration = `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`;
   const participants = Array.isArray(record.participants) ? record.participants : [];
@@ -613,7 +618,18 @@ function renderCombatStartEntry(
  * through the entry's actor-to-`ref` mapping and write-time names. Engine
  * text, so it never carries a language flag.
  */
-function renderCombatRoundEntry(record: Record<string, unknown>, catalogue: Catalogue): string {
+function renderCombatRoundEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  // Legacy rows carry the English sentence and are shown verbatim; new rows
+  // carry the structured events (`version: 3`) and render through the Combat
+  // catalogue of the current Interface Language.
+  const text = record.text;
+  if (typeof text === 'string' && text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
   const combatText = getCombatCatalogue(catalogue.code);
   const round = typeof record.round === 'number' && Number.isFinite(record.round) ? record.round : 0;
   const names =
@@ -637,7 +653,17 @@ function renderCombatRoundEntry(record: Record<string, unknown>, catalogue: Cata
  * here; an unknown value falls back to the type label.) Engine text, so it
  * never carries a language flag.
  */
-function renderCombatEndEntry(record: Record<string, unknown>, catalogue: Catalogue): string {
+function renderCombatEndEntry(
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  // Legacy rows carry the English sentence and are shown verbatim; new rows
+  // carry the structured `howEnded` and render through the catalogue.
+  const text = record.text;
+  if (typeof text === 'string' && text !== '') {
+    return `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`;
+  }
   const howEnded = record.howEnded;
   if (howEnded === 'win' || howEnded === 'surrender' || howEnded === 'draw') {
     return `<p>${escapeHtml(catalogue.journal.combatEnd(howEnded))}</p>`;

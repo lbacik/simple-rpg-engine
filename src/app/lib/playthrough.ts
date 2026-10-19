@@ -4,9 +4,9 @@
 // This is the Scenario-aware read layer: the persistence store returns raw
 // stored state (parsed JSON, unvalidated) and every validation step lives
 // here, where the current Scenario is available for version-aware validation.
-// Only current v2 documents validate; unknown, newer (including retired v1)
-// and invalid documents fail validation without being interpreted or
-// rewritten.
+// Only current v2 and Combat MVP 1.0 v3 documents validate; unknown, newer
+// (including retired v1) and invalid documents fail validation without being
+// interpreted or rewritten.
 //
 // Incompatibility is derived on read, never stored: a missing or invalid
 // Scenario, an invalid stored document, or a failed reference check when the
@@ -26,14 +26,16 @@
 import type { Kysely } from 'kysely';
 import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
+import { verifyFrozenPlans } from '../../engine/combat/plan';
+import type { CombatState } from '../../engine/combat/index';
 import { PlaythroughStateSchema, type PlaythroughState } from '../../engine/state';
-import { readPlaythroughV3Document } from '../../engine/state-v3';
+import { readPlaythroughV3Document, type PlaythroughV3 } from '../../engine/state-v3';
 import { PlaythroughStore, type StoredPlaythrough } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
 
-/** A stored row whose state passed v1 validation. */
+/** A stored row whose state passed validation (v2 or Combat MVP 1.0 v3). */
 export type ValidatedStoredPlaythrough = Omit<StoredPlaythrough, 'state'> & {
-  state: PlaythroughState;
+  state: PlaythroughState | PlaythroughV3;
 };
 
 export type ResolvedPlaythrough =
@@ -47,13 +49,23 @@ export type ResolvedPlaythrough =
       scenario: Scenario | undefined;
       playthrough: StoredPlaythrough;
       /**
-       * The validated state when the stored document is valid v1 (content
-       * incompatibility or a missing Scenario with a readable document).
-       * Undefined when the stored document itself is invalid: the caller must
-       * render a safe Journal-only view and never interpret the raw bytes.
+       * The validated state when the stored document is valid v2 or v3
+       * (content incompatibility or a missing Scenario with a readable
+       * document). Undefined when the stored document itself is invalid: the
+       * caller must render a safe Journal-only view and never interpret the
+       * raw bytes.
        */
-      parsed: PlaythroughState | undefined;
+      parsed: PlaythroughState | PlaythroughV3 | undefined;
     };
+
+/**
+ * The frozen-plan check for stored v3 documents (S2): a Combat whose plans
+ * do not equal their recomputation reads as invalid, so the Playthrough
+ * stays read-only with its Journal.
+ */
+function verifyStoredFrozenPlans(combat: CombatState): boolean {
+  return verifyFrozenPlans(combat).length === 0;
+}
 
 /** Validate raw stored state against the current (v2) schema. Anything else (including retired v1 documents) is undefined. */
 export function validateStoredState(value: unknown): PlaythroughState | undefined {
@@ -70,6 +82,8 @@ export function validateStoredState(value: unknown): PlaythroughState | undefine
 export function safeCharacterName(rawState: unknown, fallback: string): string {
   const parsed = validateStoredState(rawState);
   if (parsed !== undefined) return parsed.character.name;
+  const v3 = readPlaythroughV3Document(rawState);
+  if (v3.ok) return v3.state.character.name;
   const record = (rawState ?? {}) as Record<string, unknown>;
   const character = record.character as Record<string, unknown> | undefined;
   const name = character?.name;
@@ -96,24 +110,98 @@ export async function resolvePlaythrough(
     return null;
   }
   const scenario = resolveScenario(row.scenarioId);
-  // Only current v2 documents validate here. Retired v1 documents (whose
-  // migration left with the tactical Combat in S4) and malformed envelopes
-  // are invalid: fail validation without rewriting them and without blocking
-  // Journal access.
-  const parsedV2 = validateStoredState(row.state);
-  const isV3 =
-    typeof row.state === 'object' &&
-    row.state !== null &&
-    'schemaVersion' in row.state &&
-    readPlaythroughV3Document(row.state).ok;
-  if (isV3) {
-    // Combat MVP 1.0 documents (P2, issue #232): malformed envelopes, unknown
-    // `schemaVersion` values and wrong `rulesVersion` values parse as invalid
-    // and read as read-only with the Journal. A valid v3 document stays
-    // read-only too until P6 wires the Scenario adapter (gameplay, rendering
-    // and the v3 reference check): the row is never rewritten here either way.
-    return { compatible: false, scenario, playthrough: row, parsed: undefined };
+  // Combat MVP 1.0 v3 documents (P6): validated with the frozen-plan check
+  // (S2), then resolved exactly like v2 documents below. A document the
+  // check rejects (malformed envelope, unknown `schemaVersion`, bad Combat,
+  // plan mismatch) reads as read-only with the Journal: the row is never
+  // rewritten here either way.
+  const isV3Envelope =
+    typeof row.state === 'object' && row.state !== null && 'schemaVersion' in row.state;
+  const v3read = isV3Envelope
+    ? readPlaythroughV3Document(row.state, { verifyFrozenPlans: verifyStoredFrozenPlans })
+    : null;
+  if (v3read !== null) {
+    if (!v3read.ok) {
+      return { compatible: false, scenario, playthrough: row, parsed: undefined };
+    }
+    if (scenario === undefined) {
+      // No state write: without the Scenario there is nothing valid to check
+      // towards. A valid v3 document still parses for read-only views; the
+      // Journal stays readable through the returned row id either way.
+      return {
+        compatible: false,
+        scenario: undefined,
+        playthrough: row,
+        parsed: v3read.state,
+      };
+    }
+    const v3state: PlaythroughV3 = v3read.state;
+    if (row.contentHash === scenario.contentHash) {
+      return { compatible: true, scenario, playthrough: { ...row, state: v3state } };
+    }
+    if (!checkPlaythroughCompatibility(scenario, v3state).ok) {
+      return { compatible: false, scenario, playthrough: row, parsed: v3state };
+    }
+    // A compatible Playthrough is written back with the pin, in the same
+    // step-guarded update, without advancing `step` and without a Journal
+    // entry.
+    const pinnedV3: PlaythroughV3 = {
+      ...v3state,
+      scenarioVersion: scenario.version,
+      contentHash: scenario.contentHash,
+    };
+    if (await store.updatePin(row.id, pinnedV3, row.step)) {
+      const updated = await store.findById(row.id);
+      const reparsed =
+        updated === null
+          ? null
+          : readPlaythroughV3Document(updated.state, {
+              verifyFrozenPlans: verifyStoredFrozenPlans,
+            });
+      if (updated !== null && reparsed !== null && reparsed.ok) {
+        return { compatible: true, scenario, playthrough: { ...updated, state: reparsed.state } };
+      }
+      return { compatible: true, scenario, playthrough: { ...row, state: pinnedV3 } };
+    }
+    // A turn committed between the read and the pin update: report its fresh
+    // row instead of overwriting it with the older state. Revalidate the fresh
+    // row the same way: never report an unvalidated document as current.
+    const freshV3 = await store.findById(row.id);
+    if (freshV3 === null || freshV3.sessionId !== sessionHash) {
+      return null;
+    }
+    const freshV3Envelope =
+      typeof freshV3.state === 'object' &&
+      freshV3.state !== null &&
+      'schemaVersion' in freshV3.state;
+    const freshV3read = freshV3Envelope
+      ? readPlaythroughV3Document(freshV3.state, { verifyFrozenPlans: verifyStoredFrozenPlans })
+      : null;
+    if (freshV3read === null) {
+      const freshState = validateStoredState(freshV3.state);
+      if (freshState === undefined) {
+        return { compatible: false, scenario, playthrough: freshV3, parsed: undefined };
+      }
+      if (freshV3.contentHash === scenario.contentHash) {
+        return { compatible: true, scenario, playthrough: { ...freshV3, state: freshState } };
+      }
+      if (!checkPlaythroughCompatibility(scenario, freshState).ok) {
+        return { compatible: false, scenario, playthrough: freshV3, parsed: freshState };
+      }
+      return { compatible: true, scenario, playthrough: { ...freshV3, state: freshState } };
+    }
+    if (!freshV3read.ok) {
+      return { compatible: false, scenario, playthrough: freshV3, parsed: undefined };
+    }
+    if (freshV3.contentHash === scenario.contentHash) {
+      return { compatible: true, scenario, playthrough: { ...freshV3, state: freshV3read.state } };
+    }
+    if (!checkPlaythroughCompatibility(scenario, freshV3read.state).ok) {
+      return { compatible: false, scenario, playthrough: freshV3, parsed: freshV3read.state };
+    }
+    return { compatible: true, scenario, playthrough: { ...freshV3, state: freshV3read.state } };
   }
+  const parsedV2 = validateStoredState(row.state);
   if (parsedV2 === undefined) {
     return { compatible: false, scenario, playthrough: row, parsed: undefined };
   }
@@ -164,15 +252,24 @@ export async function resolvePlaythrough(
   }
   // A turn committed between the read and the pin update: revalidate the
   // fresh row the same way, never reporting an unvalidated document as
-  // current v2. A v3 row committed meanwhile is read-only until P6 wires the
-  // adapter.
+  // playable. A v3 row committed meanwhile resolves through the v3 check.
   const freshIsV3 =
     typeof fresh.state === 'object' &&
     fresh.state !== null &&
-    'schemaVersion' in fresh.state &&
-    readPlaythroughV3Document(fresh.state).ok;
-  if (freshIsV3) {
-    return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
+    'schemaVersion' in fresh.state
+      ? readPlaythroughV3Document(fresh.state, { verifyFrozenPlans: verifyStoredFrozenPlans })
+      : null;
+  if (freshIsV3 !== null) {
+    if (!freshIsV3.ok) {
+      return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
+    }
+    if (fresh.contentHash === scenario.contentHash) {
+      return { compatible: true, scenario, playthrough: { ...fresh, state: freshIsV3.state } };
+    }
+    if (!checkPlaythroughCompatibility(scenario, freshIsV3.state).ok) {
+      return { compatible: false, scenario, playthrough: fresh, parsed: freshIsV3.state };
+    }
+    return { compatible: true, scenario, playthrough: { ...fresh, state: freshIsV3.state } };
   }
   const freshState = validateStoredState(fresh.state);
   if (freshState === undefined) {
