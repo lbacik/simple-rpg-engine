@@ -83,8 +83,26 @@ jobs:
       - run: npm run migrate
       - run: npm run migrate
 
+  # Gating end-to-end coverage (Combat MVP 1.0, P7 V1): Playwright in
+  # Chromium against the production build, with the throwaway database and
+  # Scenario directory from playwright.config.ts. The production build is the
+  # slow check, so this gets its own job and runs in parallel with `checks`.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      # Node 24 matches the production image (`node:24-bookworm-slim`) and
+      # package.json `engines`.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:e2e
+
   # Deliberately not here:
   #  - No `services:` block: the database is SQLite (a file), there is no
   #    external DB or cache.
-  #  - Playwright E2E (`npm run test:e2e`) is not gating; it was not in the
-  #    previous CI either.
