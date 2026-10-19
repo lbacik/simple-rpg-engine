@@ -12,6 +12,7 @@ import type { Kysely, Transaction } from 'kysely';
 import {
   ARENA_RUN_SCHEMA_VERSION,
   parseArenaRunDocument,
+  verifyFrozenPlans,
   type ArenaRunIssue,
   type ArenaRunOrigin,
   type ArenaRunV1,
@@ -459,6 +460,18 @@ function parseStoredJson(text: string): { ok: true; value: unknown } | { ok: fal
 }
 
 /**
+ * Read a stored Arena run through one strict parse with frozen-plan
+ * recomputation (combat-contract.md, handoff S2): a CHOOSE Combat whose
+ * frozen plans do not equal their recomputation reads as a failure the
+ * caller renders as "cannot be read". Plans are never repaired or replaced.
+ */
+function parseStoredArenaRun(value: unknown): ReturnType<typeof parseArenaRunDocument> {
+  return parseArenaRunDocument(value, {
+    verifyFrozenPlans: (state) => verifyFrozenPlans(state).length === 0,
+  });
+}
+
+/**
  * The Combat MVP 1.0 Arena fights (migration 005, ADR 0009): one versioned
  * run per Session in `arena_fights`, with the remembered Setup and the
  * monotonic step clock in `arena_remembered_setups`.
@@ -499,7 +512,7 @@ export class ArenaFightStore {
     if (!parsed.ok) {
       return { status: 'unreadable', step: row.step, issues: [{ code: 'malformed' }] };
     }
-    const run = parseArenaRunDocument(parsed.value);
+    const run = parseStoredArenaRun(parsed.value);
     if (!run.ok) {
       return { status: 'unreadable', step: row.step, issues: run.issues };
     }
@@ -660,7 +673,7 @@ export class ArenaFightStore {
       if (!parsed.ok) {
         return false;
       }
-      const run = parseArenaRunDocument(parsed.value);
+      const run = parseStoredArenaRun(parsed.value);
       if (!run.ok) {
         return false;
       }

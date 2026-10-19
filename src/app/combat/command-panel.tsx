@@ -218,7 +218,12 @@ export function CommandPanel(props: CommandPanelProps) {
                 action={props.confirmAction}
                 extraFields={props.confirmFields}
               />
-              <SurrenderForm state={state} text={text} action={props.surrenderAction} />
+              <SurrenderForm
+                state={state}
+                text={text}
+                action={props.surrenderAction}
+                extraFields={props.confirmFields}
+              />
             </>
           )}
         </div>
@@ -939,10 +944,12 @@ function SurrenderForm({
   state,
   text,
   action,
+  extraFields,
 }: {
   state: CombatState;
   text: CombatCatalogue;
   action: string;
+  extraFields?: Record<string, string>;
 }) {
   // In-page confirmation (handoff U7): a details/summary toggle works with
   // keyboard and without JavaScript, and never opens a browser dialog. The P5
@@ -954,6 +961,9 @@ function SurrenderForm({
       <p>{text.panel.surrenderAsk}</p>
       <form method="post" action={action}>
         <input type="hidden" name="round" value={String(state.round)} />
+        {extraFields === undefined
+          ? null
+          : Object.entries(extraFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <button type="submit">{text.panel.surrenderConfirm}</button>
       </form>
     </details>
