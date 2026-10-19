@@ -23,8 +23,32 @@ A single piece of pre-written narration with Choices, either triggered within a 
 _Avoid_: Event, page, node
 
 **Illustration**:
-An optional picture shown with a Scene, supplied by the Scenario and described by alternative text; a Scene is complete without one.
+An optional picture shown with a Scene or a Location, supplied by the Scenario and described by alternative text: a Still, optionally with Layers and a Camera that give it Motion; a Scene or Location is complete without one.
 _Avoid_: Artwork, picture, banner
+
+**Still**:
+The base picture of an Illustration, and all of it that is shown whenever Motion is off.
+_Avoid_: Base image, background, backdrop, poster
+
+**Layer**:
+A transparent picture composed over an Illustration's Still, optionally animated by its own frames, a Drift or a Flicker.
+_Avoid_: Overlay, sprite, sticker
+
+**Drift**:
+A Layer's travel from one point of the Still to another over a set time.
+_Avoid_: Movement, path, tween, travel
+
+**Flicker**:
+An engine-driven variation of a Layer's opacity, kept by the engine within safe limits.
+_Avoid_: Effect, pulse, glow
+
+**Camera**:
+A zoom, a pan or both, applied to an Illustration's Still and all its Layers together.
+_Avoid_: Ken Burns, view, viewport
+
+**Motion**:
+The decorative animation of an Illustration (its Layers' frames, Drifts and Flickers, and its Camera), identical on every showing; with Motion off, only the Still is shown.
+_Avoid_: Animation, ambience, effects
 
 **Choice**:
 An option offered by a Scene, optionally gated by a Condition and optionally resolved by a Test, leading to an Outcome.
