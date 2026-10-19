@@ -12,14 +12,15 @@
 // only while the Encounter is not defeated by its record. S4 (Combat MVP 1.0)
 // deletes the tactical Combat state, so there are no active-Combat membership
 // invariants; the Scenario Combat adapter (P6) re-adds its own. Subject to
-// those invariants, participant order, `startRange`, an Enemy's Attributes,
-// Damage, Reach and Behaviour, and a participant's Enemy kind may change
-// without failing the check.
+// those invariants, participant order, `startRange`, an Enemy's profile
+// (statistics come from the profile table), and a participant's Enemy kind
+// may change without failing the check.
 //
 // Pure and synchronous: the caller compares the hashes, derives
 // incompatibility on read (never stored), and updates the pin on a pass.
 
 import { isEquipmentSlot } from '../engine/inventory';
+import { PROFILES } from '../engine/combat/rules';
 import type { PlaythroughState } from '../engine/state';
 import type { Scenario } from './model';
 
@@ -101,11 +102,124 @@ export function checkPlaythroughCompatibility(
         recordedIds.every((participantId) => {
           const participant = encounter.participants.find((entry) => entry.id === participantId);
           if (participant === undefined) return false;
-          return (record[participantId] ?? 0) >= participant.enemy.health;
+          return (record[participantId] ?? 0) >= PROFILES[participant.enemy.profile].maxHp;
         });
       const names = added.map((participant) => participant.id).join('", "');
       if (defeatedByRecord) {
         fail(`encounter "${encounterId}" is defeated by its record and gains participant "${names}"`);
+<<<<<<< HEAD
+=======
+      } else if (state.activeCombat?.encounterId === encounterId) {
+        fail(
+          `encounter "${encounterId}" gains participant "${names}" during its active Combat`,
+        );
+      }
+    }
+  }
+  if (state.activeCombat != null) {
+    const combat = state.activeCombat;
+    const encounter = scenario.encountersById[combat.encounterId];
+    if (encounter === undefined) {
+      fail(`unknown encounter "${combat.encounterId}"`);
+    } else if (!isLegacyCombatShape(combat)) {
+      // A partially written v2 shape (a membership field missing) fails
+      // closed: the coerced empties trip the membership checks below instead
+      // of throwing on `undefined`. Production reads never reach this branch
+      // (the strict v2 schema requires every field), so this only hardens the
+      // function's verdict contract for direct callers.
+      const startedParticipants: string[] = Array.isArray(combat.startedParticipants)
+        ? combat.startedParticipants
+        : [];
+      const roundOrder: string[] = Array.isArray(combat.roundParticipantOrder)
+        ? combat.roundParticipantOrder
+        : [];
+      const actionState = combat.participants ?? {};
+      const byId = new Map(encounter.participants.map((participant) => [participant.id, participant]));
+      for (const participantId of startedParticipants) {
+        if (!byId.has(participantId)) {
+          fail(
+            `unknown participant "${participantId}" in the starting membership of encounter "${encounter.id}"`,
+          );
+        }
+      }
+      for (const participantId of roundOrder) {
+        if (!byId.has(participantId)) {
+          fail(
+            `unknown participant "${participantId}" in the Round tie-break order of encounter "${encounter.id}"`,
+          );
+        }
+      }
+      if (startedParticipants.length === 0) {
+        fail(`encounter "${encounter.id}" has no starting membership`);
+      }
+      if (roundOrder.length === 0) {
+        fail(`encounter "${encounter.id}" has no Round tie-break order`);
+      }
+      if (new Set(startedParticipants).size !== startedParticipants.length) {
+        fail(`encounter "${encounter.id}" repeats a participant in its starting membership`);
+      }
+      if (new Set(roundOrder).size !== roundOrder.length) {
+        fail(`encounter "${encounter.id}" repeats a participant in its Round tie-break order`);
+      }
+      const wounds = state.encounters?.[combat.encounterId] ?? {};
+      // Surviving participants under the current content: a participant
+      // without a record entry (added later) counts at full Health here, so
+      // the exact-match check below also rejects additions to an active
+      // Combat. Reviving a defeated participant without action state, or
+      // lowering a fighting participant's maximum Health to its Damage taken
+      // or below, moves it across this boundary and fails the same way.
+      const survivors = new Set(
+        encounter.participants
+          .filter((participant) => PROFILES[participant.enemy.profile].maxHp > (wounds[participant.id] ?? 0))
+          .map((participant) => participant.id),
+      );
+      const active = Object.keys(actionState);
+      const activeSet = new Set(active);
+      for (const participantId of active) {
+        const participant = byId.get(participantId);
+        if (participant === undefined) {
+          fail(
+            `unknown participant "${participantId}" with active Combat state in encounter "${encounter.id}"`,
+          );
+        } else if (!(PROFILES[participant.enemy.profile].maxHp > (wounds[participantId] ?? 0))) {
+          fail(
+            `participant "${participantId}" of encounter "${encounter.id}" no longer has more maximum Health (${PROFILES[participant.enemy.profile].maxHp}) than the Damage taken (${wounds[participantId] ?? 0})`,
+          );
+        }
+      }
+      const missingState = [...survivors].filter((participantId) => !activeSet.has(participantId)).sort();
+      const extraState = active.filter((participantId) => !survivors.has(participantId)).sort();
+      if (missingState.length > 0 || extraState.length > 0) {
+        fail(
+          `the active Combat state of encounter "${encounter.id}" no longer matches its surviving participants`,
+        );
+      }
+      const startedSet = new Set(startedParticipants);
+      for (const participantId of active) {
+        if (!startedSet.has(participantId)) {
+          fail(
+            `participant "${participantId}" with active Combat state is not in the starting membership of encounter "${encounter.id}"`,
+          );
+        }
+      }
+      const orderCounts = new Map<string, number>();
+      for (const participantId of roundOrder) {
+        orderCounts.set(participantId, (orderCounts.get(participantId) ?? 0) + 1);
+      }
+      for (const participantId of active) {
+        if ((orderCounts.get(participantId) ?? 0) !== 1) {
+          fail(
+            `participant "${participantId}" with active Combat state is not exactly once in the Round tie-break order of encounter "${encounter.id}"`,
+          );
+        }
+      }
+      for (const participantId of roundOrder) {
+        if (!startedSet.has(participantId)) {
+          fail(
+            `participant "${participantId}" in the Round tie-break order is not in the starting membership of encounter "${encounter.id}"`,
+          );
+        }
+>>>>>>> addc5e5 (Seal attempt work for #234 (model_limit_reached))
       }
     }
   }

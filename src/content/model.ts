@@ -27,6 +27,7 @@ import {
   ItemsCatalogSchema,
   LocationSchema,
   ManifestSchema,
+  OutcomeSchema,
   SceneSchema,
   TemplateSchema,
   TemplatesCatalogSchema,
@@ -280,7 +281,7 @@ type Lookups = {
 };
 
 function resolveOutcome(
-  parsed: z.infer<typeof EncounterSchema>['escape'],
+  parsed: z.infer<typeof OutcomeSchema>,
   lookups: Lookups,
 ): CompiledOutcome {
   return {
@@ -574,7 +575,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   });
   const encounterById = new Map(encounters.map((encounter) => [encounter.id, encounter]));
 
-  const parsedCompanions = files
+  const parsedCompanions = inputs.files
     .filter((file) => file.section === 'companions')
     .flatMap((file) => CompanionsCatalogSchema.parse(file.value));
   const companions: CompiledCompanion[] = parsedCompanions.map((parsed) => ({

@@ -260,19 +260,34 @@ function overlayTranslation(scenario: Scenario, translation: CompiledTranslation
   });
   const sceneById = new Map(scenes.map((scene) => [scene.id, scene]));
 
+  const companions = scenario.companions.map((companion) => {
+    const translated = translation.companions[companion.id];
+    return {
+      ...companion,
+      name: translated?.name ?? companion.name,
+      description: translated?.description ?? companion.description,
+    };
+  });
+  const companionById = new Map(companions.map((companion) => [companion.id, companion]));
+
   const encounters: CompiledEncounter[] = scenario.encounters.map((encounter) => {
     const translated = translation.encounters[encounter.id];
     return {
       ...encounter,
       // Participants carry no text (docs/spec/scenario-format.md): only the
-      // Enemy reference is re-pointed at the overlaid Enemy.
+      // Enemy reference is re-pointed at the overlaid Enemy; the authored
+      // Range and tuning pass through untouched.
       participants: encounter.participants.map((participant) => ({
         id: participant.id,
         enemy: required(enemyById.get(participant.enemy.id), `enemy "${participant.enemy.id}"`),
+        startRange: participant.startRange,
+        phaseOffset: participant.phaseOffset,
+        power: participant.power,
       })),
       text: translated?.text ?? encounter.text,
       victory: undefined as CompiledOutcome | undefined,
-      escape: undefined as unknown as CompiledOutcome,
+      surrender: undefined as unknown as CompiledOutcome,
+      draw: undefined as unknown as CompiledOutcome,
     };
   });
   const encounterById = new Map(encounters.map((encounter) => [encounter.id, encounter]));
@@ -321,7 +336,8 @@ function overlayTranslation(scenario: Scenario, translation: CompiledTranslation
     const translated = translation.encounters[base.id];
     encounter.victory =
       base.victory === undefined ? undefined : overlayOutcome(base.victory, translated?.victory, lookups, endingsRecord);
-    encounter.escape = overlayOutcome(base.escape, translated?.escape, lookups, endingsRecord);
+    encounter.surrender = overlayOutcome(base.surrender, translated?.surrender, lookups, endingsRecord);
+    encounter.draw = overlayOutcome(base.draw, translated?.draw, lookups, endingsRecord);
   });
 
   const templates = scenario.templates.map((template) => {
@@ -350,6 +366,7 @@ function overlayTranslation(scenario: Scenario, translation: CompiledTranslation
     items,
     enemies,
     encounters,
+    companions,
     templates,
     endings,
     images,
@@ -358,6 +375,7 @@ function overlayTranslation(scenario: Scenario, translation: CompiledTranslation
     itemsById: Object.fromEntries(itemById),
     enemiesById: Object.fromEntries(enemyById),
     encountersById: Object.fromEntries(encounterById),
+    companionsById: Object.fromEntries(companionById),
     templatesById: Object.fromEntries(templates.map((template) => [template.id, template])),
     endingsById: endingsRecord,
     imagesById: Object.fromEntries(imageById),

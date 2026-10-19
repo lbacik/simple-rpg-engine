@@ -13,6 +13,12 @@ import type {
   CompiledScene,
 } from '../content/model';
 import { effectiveAttributes, evaluateCondition } from './conditions';
+import {
+  legacyEncounterRange,
+  legacyEnemyStats,
+  legacyEscapeOutcome,
+  legacyParticipantRange,
+} from './legacyStats';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
@@ -889,6 +895,15 @@ function applyEffect(
         amount: effect.damage,
       },
     };
+  }
+  // Companion join/leave are validated content (P3) but take effect only in
+  // the Scenario adapter (P6): the old tactical engine keeps no Companion
+  // state, so they are no-ops here.
+  if ('companion-join' in effect || 'companion-leave' in effect) {
+    return { state, entry: undefined };
+  }
+  if (!('reveal' in effect)) {
+    return { state, entry: undefined };
   }
   const target = effect.reveal;
   const name = scenario.locationsById[target]?.name ?? target;

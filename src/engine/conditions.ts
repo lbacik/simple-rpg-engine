@@ -6,6 +6,7 @@
 // covers every fact Connections can test.
 
 import type { CompiledCondition, Scenario } from '../content/model';
+import { PROFILES } from './combat/rules';
 import type { PlaythroughState } from './state';
 
 const ATTRIBUTE_NAMES = ['might', 'agility', 'wits', 'presence'] as const;
@@ -41,7 +42,7 @@ function isDefeated(scenario: Scenario, state: PlaythroughState, encounterId: st
   // content later) is at full Health.
   const wounds = state.encounters?.[encounterId] ?? {};
   return encounter.participants.every(
-    (participant) => (wounds[participant.id] ?? 0) >= participant.enemy.health,
+    (participant) => (wounds[participant.id] ?? 0) >= PROFILES[participant.enemy.profile].maxHp,
   );
 }
 
@@ -64,6 +65,8 @@ export type Condition =
       };
     }
   | { health: { atLeast?: number; atMost?: number } }
+  | { companion: string }
+  | { companionLost: string }
   | { all: Condition[] }
   | { any: Condition[] }
   | { not: Condition };
@@ -93,6 +96,10 @@ export function evaluateCondition(
     if (c.health.atMost !== undefined) return state.character.health <= c.health.atMost;
     return true;
   }
+  // Companion presence/loss is wired by P6 (Scenario adapter); until then both
+  // facts read as false so content referencing them stays inert but valid.
+  if ('companion' in c) return false;
+  if ('companionLost' in c) return false;
   if ('all' in c) {
     return c.all.every((branch) => evaluateCondition(scenario, state, branch));
   }
