@@ -1,11 +1,13 @@
-// Combat inside a Playthrough on Combat MVP 1.0 rules (P6a, Scenario
-// adapter; #183, ADR 0010; contract docs/spec/combat-contract.md).
+// Combat inside a Playthrough on Combat MVP 1.0 rules (P6 Scenario adapter;
+// #183, ADR 0010; contract docs/spec/combat-contract.md).
 //
 // Pure and framework-free like the journey engine: an Encounter starts a
 // Combat from the authored arrangement with the Character's current Health,
 // Rounds resolve through the shared core, and the result routes to the right
-// Outcome with Health, wounds and the Journal written once at the end. No
-// Companion fights in this slice (P6b owns it): the hero fights alone.
+// Outcome with Health, wounds and the Journal written once at the end. The
+// present Companion (P6b) fights automatically at full HP in every Combat; a
+// Companion at 0 HP when the fight ends is lost for the rest of the
+// Playthrough, and the fight's routing continues.
 //
 // While a Combat runs, the hero's Combat Health (`h01`) in the Combat state is
 // authoritative; `character.health` and `encounters` wounds are written once,
@@ -13,7 +15,12 @@
 // presence cross the Combat boundary.
 
 import { buildInitialCombatState } from '../content/combatBuilder';
-import type { CompiledEncounter, CompiledEnding, CompiledOutcome } from '../content/model';
+import type {
+  CompiledCompanion,
+  CompiledEncounter,
+  CompiledEnding,
+  CompiledOutcome,
+} from '../content/model';
 import { PROFILES, startCombat, submitRound, surrender } from './combat/index';
 import type { CombatEvent, CombatState, RoundCommand } from './combat/index';
 import { substituteName } from './narration';
@@ -29,6 +36,8 @@ export type ScenarioCombatJournalEntry =
       text: string;
       /** The Participants in authored order, with names as presented. */
       participants: { ref: string; name: string }[];
+      /** The Companion fighting alongside, when one is present. */
+      companion?: { ref: string; name: string };
     }
   | {
       type: 'combat-round';
@@ -51,11 +60,22 @@ export type ScenarioCombatJournalEntry =
       howEnded: 'win' | 'surrender' | 'draw';
     };
 
+/**
+ * Companion presence entries (G4/G6): joining and leaving through Effects,
+ * and permanent loss in Combat. Each stores the Companion name as presented
+ * plus the Companion id as event data, and renders from the catalogue on
+ * read — never from Scenario content.
+ */
+export type ScenarioCompanionJournalEntry =
+  | { type: 'companion-joined'; lang: string; companionId: string; name: string }
+  | { type: 'companion-left'; lang: string; companionId: string; name: string }
+  | { type: 'companion-lost'; lang: string; companionId: string; name: string };
+
 export type ScenarioCombatResult =
   | {
       ok: true;
       state: PlaythroughV3;
-      journal: ScenarioCombatJournalEntry[];
+      journal: Array<ScenarioCombatJournalEntry | ScenarioCompanionJournalEntry>;
       /**
        * The routed Outcome when the Combat ended on this turn: the
        * Encounter's `victory`, `surrender` or `draw` Outcome, or `'death'`
@@ -84,15 +104,21 @@ function isDefeatedByRecord(
  * Start a Combat from an Encounter's authored arrangement (#183 Q1): the hero
  * enters at the Character's current Health, survivors only, every fighter
  * fresh (full stamina, Round-1 cooldowns, no Prepare, authored groups and
- * engagements). Appends the `combat-start` entry. Never advances `step`: the
- * surrounding `step` (the Choice that led to the Encounter) advances it.
+ * engagements). The present Companion, if any, enters at full HP and stamina
+ * in the hero's group with its definition id as `ref` (#183 Q4). Appends the
+ * `combat-start` entry, naming the Companion when one fights. Never advances
+ * `step`: the surrounding `step` (the Choice that led to the Encounter)
+ * advances it.
  */
 export function startScenarioCombat(args: {
   encounter: CompiledEncounter;
   state: PlaythroughV3;
   lang: string;
+  /** The present Companion's definition, if one fights. */
+  companion?: CompiledCompanion | null;
 }): ScenarioCombatResult {
   const { encounter, state, lang } = args;
+  const companion = args.companion ?? null;
   if (state.status !== 'active') {
     return { ok: false, reason: 'ended' };
   }
@@ -106,7 +132,7 @@ export function startScenarioCombat(args: {
   const initial = buildInitialCombatState(encounter, {
     heroHp: state.character.health,
     wounds,
-    companion: null,
+    companion,
   });
   const started = startCombat(initial);
   if (!started.ok) {
@@ -135,6 +161,9 @@ export function startScenarioCombat(args: {
           ref: participant.id,
           name: participant.enemy.name,
         })),
+        ...(companion === null
+          ? {}
+          : { companion: { ref: companion.id, name: companion.name } }),
       },
     ],
   };
@@ -145,14 +174,21 @@ function actorNames(
   encounter: CompiledEncounter,
   state: PlaythroughV3,
   combat: CombatState,
+  companion: CompiledCompanion | null,
 ): Record<string, string> {
   const byRef = new Map(encounter.participants.map((participant) => [participant.id, participant.enemy.name]));
   const names: Record<string, string> = {};
   for (const actor of combat.actors) {
-    names[actor.id] =
-      actor.role === 'hero'
-        ? state.character.name
-        : (byRef.get(actor.ref ?? '') ?? actor.id);
+    if (actor.role === 'hero') {
+      names[actor.id] = state.character.name;
+    } else if (actor.role === 'companion') {
+      names[actor.id] =
+        companion !== null && (actor.ref === null || actor.ref === companion.id)
+          ? companion.name
+          : (actor.ref ?? actor.id);
+    } else {
+      names[actor.id] = byRef.get(actor.ref ?? '') ?? actor.id;
+    }
   }
   return names;
 }
@@ -174,8 +210,11 @@ export function confirmScenarioCombatRound(args: {
   state: PlaythroughV3;
   command: RoundCommand;
   lang: string;
+  /** The present Companion's definition, for write-time names and loss. */
+  companion?: CompiledCompanion | null;
 }): ScenarioCombatResult {
   const { encounter, deathEnding, state, command, lang } = args;
+  const companion = args.companion ?? null;
   if (state.status !== 'active') {
     return { ok: false, reason: 'ended' };
   }
@@ -198,7 +237,7 @@ export function confirmScenarioCombatRound(args: {
     round: active.combat.round,
     events: submitted.events,
     actors: Object.fromEntries(submitted.state.actors.map((actor) => [actor.id, actor.ref])),
-    names: actorNames(encounter, state, submitted.state),
+    names: actorNames(encounter, state, submitted.state, companion),
   };
   if (submitted.state.result === null) {
     return {
@@ -218,6 +257,7 @@ export function confirmScenarioCombatRound(args: {
     combat: submitted.state,
     encounterId: active.encounterId,
     lang,
+    companion,
     extraJournal: [roundEntry],
   });
 }
@@ -256,6 +296,10 @@ function heroHealthAtEnd(combat: CombatState): number {
  * to `draw`; `LOSS_SURRENDER` appends `combat-end` (`surrender`) and routes to
  * `surrender` (the Encounter stays undefeated either way); `LOSS` ends the
  * Playthrough on the Scenario's death Ending with no `combat-end` entry.
+ * A Companion at 0 HP is lost permanently on any result (#183 Q4): removed
+ * from the Playthrough, recorded in `lostCompanions`, and announced with a
+ * `companion-lost` entry before the routed Outcome lands. The fight itself
+ * already continued past the fall, as in the MVP.
  */
 function routeFinishedCombat(args: {
   encounter: CompiledEncounter;
@@ -264,27 +308,50 @@ function routeFinishedCombat(args: {
   combat: CombatState;
   encounterId: string;
   lang: string;
+  companion: CompiledCompanion | null;
   extraJournal: ScenarioCombatJournalEntry[];
 }): ScenarioCombatResult {
-  const { encounter, deathEnding, state, combat, encounterId, lang, extraJournal } = args;
+  const { encounter, deathEnding, state, combat, encounterId, lang, companion, extraJournal } = args;
   const result = combat.result;
   if (result === null) {
     return { ok: false, reason: 'illegal-action' };
   }
   const wounds = woundsAtEnd(encounter, state, combat);
+  const fallen = combat.actors.find((actor) => actor.role === 'companion' && actor.hp <= 0);
+  const lostCompanionId =
+    fallen?.ref !== undefined &&
+    fallen.ref !== null &&
+    state.companion?.id === fallen.ref
+      ? fallen.ref
+      : null;
+  const journal: Array<ScenarioCombatJournalEntry | ScenarioCompanionJournalEntry> = [...extraJournal];
+  let next: PlaythroughV3 = state;
+  if (lostCompanionId !== null) {
+    const lost = next.lostCompanions.includes(lostCompanionId)
+      ? next.lostCompanions
+      : [...next.lostCompanions, lostCompanionId];
+    next = { ...next, companion: null, lostCompanions: lost };
+    journal.push({
+      type: 'companion-lost',
+      lang,
+      companionId: lostCompanionId,
+      name:
+        companion !== null && companion.id === lostCompanionId ? companion.name : lostCompanionId,
+    });
+  }
   if (result === 'LOSS') {
     return {
       ok: true,
       state: {
-        ...state,
-        step: state.step + 1,
+        ...next,
+        step: next.step + 1,
         status: 'ended',
         endingId: deathEnding.id,
-        character: { ...state.character, health: 0 },
-        encounters: { ...state.encounters, [encounter.id]: wounds },
+        character: { ...next.character, health: 0 },
+        encounters: { ...next.encounters, [encounter.id]: wounds },
         activeCombat: null,
       },
-      journal: extraJournal,
+      journal,
       end: { outcome: 'death' },
     };
   }
@@ -297,14 +364,14 @@ function routeFinishedCombat(args: {
   return {
     ok: true,
     state: {
-      ...state,
-      step: state.step + 1,
-      character: { ...state.character, health: heroHealthAtEnd(combat) },
-      encounters: { ...state.encounters, [encounter.id]: wounds },
+      ...next,
+      step: next.step + 1,
+      character: { ...next.character, health: heroHealthAtEnd(combat) },
+      encounters: { ...next.encounters, [encounter.id]: wounds },
       activeCombat: null,
     },
     journal: [
-      ...extraJournal,
+      ...journal,
       { type: 'combat-end', lang, encounterId, howEnded: routed.howEnded },
     ],
     end: { outcome: routed.outcome },
@@ -323,8 +390,11 @@ export function surrenderScenarioCombat(args: {
   state: PlaythroughV3;
   round: number;
   lang: string;
+  /** The present Companion's definition, for write-time names and loss. */
+  companion?: CompiledCompanion | null;
 }): ScenarioCombatResult {
   const { encounter, deathEnding, state, round, lang } = args;
+  const companion = args.companion ?? null;
   if (state.status !== 'active') {
     return { ok: false, reason: 'ended' };
   }
@@ -346,6 +416,7 @@ export function surrenderScenarioCombat(args: {
     combat: yielded.state,
     encounterId: active.encounterId,
     lang,
+    companion,
     extraJournal: [],
   });
 }

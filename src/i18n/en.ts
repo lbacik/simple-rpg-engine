@@ -361,6 +361,9 @@ export const en = {
       combatStart: 'Combat start',
       combatRound: 'Combat round',
       combatEnd: 'Combat end',
+      companionJoined: 'Companion joined',
+      companionLeft: 'Companion left',
+      companionLost: 'Companion lost',
     },
     travel: (name: string): string => `Travelled to ${name}.`,
     victory: 'Victory',
@@ -394,6 +397,10 @@ export const en = {
     used: (name: string, restored: number): string =>
       `Used: ${name} (+${whole(restored)} Health)`,
     combatStart: 'The combat begins. Opponents:',
+    combatWithCompanion: (name: string): string => `${name} fights alongside you.`,
+    companionJoined: (name: string): string => `${name} joins the party.`,
+    companionLeft: (name: string): string => `${name} leaves the party.`,
+    companionLost: (name: string): string => `${name} is lost in combat.`,
     combatEnd: (howEnded: 'win' | 'surrender' | 'draw'): string =>
       howEnded === 'win'
         ? 'The combat is won.'

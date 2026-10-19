@@ -116,6 +116,12 @@ export function journalEntryLabel(type: string, catalogue: Catalogue): string {
       return catalogue.journal.types.combatRound;
     case 'combat-end':
       return catalogue.journal.types.combatEnd;
+    case 'companion-joined':
+      return catalogue.journal.types.companionJoined;
+    case 'companion-left':
+      return catalogue.journal.types.companionLeft;
+    case 'companion-lost':
+      return catalogue.journal.types.companionLost;
     default:
       return type;
   }
@@ -318,6 +324,13 @@ export function renderJournalEntry(
   }
   if (entry.type === 'combat-end') {
     return { label, html: renderCombatEndEntry(record, catalogue, lang), ...flagged };
+  }
+  if (
+    entry.type === 'companion-joined' ||
+    entry.type === 'companion-left' ||
+    entry.type === 'companion-lost'
+  ) {
+    return { label, html: renderCompanionEntry(entry.type, record, catalogue, lang), ...flagged };
   }
   return { label, html: `<p lang="${escapeHtml(lang)}">${escapeHtml(text)}</p>`, ...flagged };
 }
@@ -605,11 +618,23 @@ function renderCombatStartEntry(
         : undefined,
     )
     .filter((name): name is string => typeof name === 'string' && name !== '');
-  if (names.length === 0) return narration;
   const items = names
     .map((name) => `<li lang="${escapeHtml(lang)}">${escapeHtml(name)}</li>`)
     .join('');
-  return `${narration}<p>${escapeHtml(catalogue.journal.combatStart)}</p><ul>${items}</ul>`;
+  const opponents =
+    items === '' ? '' : `<p>${escapeHtml(catalogue.journal.combatStart)}</p><ul>${items}</ul>`;
+  // The Companion, when one fights, joins the frame with its own catalogue
+  // line; rows written before Companions carry no `companion` and render as
+  // before.
+  const companion =
+    typeof record.companion === 'object' && record.companion !== null
+      ? (record.companion as { name?: unknown }).name
+      : undefined;
+  const alongside =
+    typeof companion === 'string' && companion !== ''
+      ? messageWithName(catalogue.journal.combatWithCompanion(companion), companion, lang)
+      : '';
+  return `${narration}${opponents}${alongside}`;
 }
 
 /**
@@ -669,4 +694,35 @@ function renderCombatEndEntry(
     return `<p>${escapeHtml(catalogue.journal.combatEnd(howEnded))}</p>`;
   }
   return `<p>${escapeHtml(catalogue.journal.types.combatEnd)}</p>`;
+}
+
+/**
+ * A Companion joined/left/lost entry (P6 G6): the Companion name as presented
+ * plus the Companion id as event data, rendered through the catalogue of the
+ * current Interface Language. The name keeps the entry's `lang`; like the
+ * other engine-generated entries these never carry a language flag.
+ */
+function renderCompanionEntry(
+  type: 'companion-joined' | 'companion-left' | 'companion-lost',
+  record: Record<string, unknown>,
+  catalogue: Catalogue,
+  lang: string,
+): string {
+  const name = typeof record.name === 'string' ? record.name : undefined;
+  if (name === undefined) {
+    const fallback =
+      type === 'companion-joined'
+        ? catalogue.journal.types.companionJoined
+        : type === 'companion-left'
+          ? catalogue.journal.types.companionLeft
+          : catalogue.journal.types.companionLost;
+    return `<p>${escapeHtml(fallback)}</p>`;
+  }
+  const message =
+    type === 'companion-joined'
+      ? catalogue.journal.companionJoined(name)
+      : type === 'companion-left'
+        ? catalogue.journal.companionLeft(name)
+        : catalogue.journal.companionLost(name);
+  return messageWithName(message, name, lang);
 }
