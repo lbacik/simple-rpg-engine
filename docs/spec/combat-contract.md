@@ -125,6 +125,8 @@ Enemies have no stamina and no card cooldowns; their constraints are the open ac
 | `insufficient_stamina` | `missing` | "Missing N stamina" |
 | `on_cooldown` | `availableRound` | "Available from round N" |
 | `stance_disallows` | — | — |
+| `no_shot_ability` | — | The hero has no shot in the base set (rules §5.8, §8) |
+| `not_engaged` | — | Counterattack and Disengage need an engagement (rules §5.3, §3.4) |
 | `target_far` | — | "The target is Far" |
 | `target_not_near` | — | — |
 | `must_disengage` | — | "Disengage first" |
