@@ -1,9 +1,0 @@
-id: ambush
-title: Ambush
-trigger: on-demand
-text: Something moves beyond the trees.
-choices:
-  - id: confront
-    text: Stand and confront it.
-    outcome:
-      start-combat: wolves-ambush
