@@ -472,6 +472,16 @@ export default async function PlayPage({
     }
     const combatSelection = parseSelection(query, combat);
     const combatNotice = combatPanelNotice(notice, reason, catalogue);
+    // G7: the running fight exports as a bare CombatState download, so it
+    // re-imports through the Arena import form. A plain link keeps the export
+    // working without JavaScript.
+    const combatExportLink = (
+      <p>
+        <a href={`${combatBase}/combat/export`} download>
+          {catalogue.game.exportCombat}
+        </a>
+      </p>
+    );
     return (
       <main>
         {chronicleHead}
@@ -482,6 +492,7 @@ export default async function PlayPage({
                 {noticeText}
               </p>
             ) : null}
+            {combatExportLink}
             {combat.phase === 'FINISHED' ? (
               <CommandPanel
                 state={combat}
