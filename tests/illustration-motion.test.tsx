@@ -312,6 +312,30 @@ describe('integrity phase: illustration size budget', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('a file spelled two ways counts as one distinct Layer file', () => {
+    const twoMib = 2 * 1024 * 1024;
+    const dir = makeScenarioDir('rpg-motion-', 'illustration-spelling');
+    writeMotionPackage(
+      dir,
+      `${STILL}  motion:\n    layers:\n      - path: images/layers/gleam.png\n      - path: ./images/layers/gleam.png\n`,
+      {
+        'images/gate.png': paddedPng(twoMib),
+        'images/layers/gleam.png': paddedPng(twoMib, 8, 4),
+      },
+    );
+    // Exactly 4 MiB: counted twice it would be 6 MiB and rejected.
+    const result = loadScenario(dir);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Both declarations resolve to the one registry entry under the
+    // normalized package path, so the asset route serves it either way.
+    const layers = result.scenario.imagesById['gate-img']?.motion?.layers;
+    expect(layers).toHaveLength(2);
+    expect(layers?.[0]?.path).toBe('images/layers/gleam.png');
+    expect(layers?.[1]?.path).toBe('images/layers/gleam.png');
+    expect(layers?.[0]?.file).toBe(layers?.[1]?.file);
+  });
+
   it('a file shared with another image counts in each image', () => {
     const twoMib = 1024 * 1024 * 2;
     const dir = makeScenarioDir('rpg-motion-', 'illustration-shared-across');

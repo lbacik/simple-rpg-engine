@@ -1192,14 +1192,17 @@ function checkMotionLayers(
     const key = normalizeListedPath(layerPath);
     if (!distinctSizes.has(key)) {
       distinctSizes.set(key, read.bytes.length);
+      // The registry path is the normalized package path, so `./glow.png`
+      // and `glow.png` are one distinct Layer file everywhere downstream
+      // (registry, content hash, asset route).
       layers.push({
-        path: layerPath,
+        path: key,
         format: read.format,
         width: read.width,
         height: read.height,
         hash: hashImageBytes(read.bytes),
       });
-      if (!layerBytes.has(layerPath)) layerBytes.set(layerPath, read.bytes);
+      if (!layerBytes.has(key)) layerBytes.set(key, read.bytes);
     }
   });
 

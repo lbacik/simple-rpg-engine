@@ -6,14 +6,15 @@
 //
 // An Illustration with `motion` adds its Layers as a JavaScript enhancement
 // (docs/spec/ui.md, motion): after hydration the client fetches every distinct
-// Layer file once, and only when all have loaded composes the Layers over the
-// Still in list order with a linear 1 s fade-in. Any Layer failure leaves the
-// Still for this Showing. Under `prefers-reduced-motion: reduce` Motion stays
-// off and no Layer file is fetched. Without JavaScript only the Still shows.
+// Layer file once, and once the Still and every Layer file have loaded it
+// composes the Layers over the Still in list order with a linear 1 s fade-in.
+// Any Layer failure leaves the Still for this Showing. Under
+// `prefers-reduced-motion: reduce` Motion stays off and no Layer file is
+// fetched. Without JavaScript only the Still shows.
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. */
 export type IllustrationMotionLayer = {
@@ -63,18 +64,32 @@ export function Illustration({
   /** `scene:<id>` or `location:<id>`; present only with `layers`. */
   showingKey?: string;
 }) {
-  const [motionReady, setMotionReady] = useState(false);
+  const [layersLoaded, setLayersLoaded] = useState(false);
+  const [stillLoaded, setStillLoaded] = useState(false);
   const [stillFailed, setStillFailed] = useState(false);
+  const stillRef = useRef<HTMLImageElement>(null);
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
 
-  // A new Showing restarts Motion; the same key continues it: the fetch and
-  // the fade-in below run only when the key (or the Layer set) changes, and
-  // the overlay is keyed by it so React remounts it on a new Showing.
+  // A new Still restarts Motion's start conditions. A Still already in the
+  // browser cache reports `complete`, since its `load` event fired before
+  // hydration and will not fire again.
   useEffect(() => {
-    setMotionReady(false);
-    if (stillFailed || layers === undefined || layers.length === 0 || showingKey === undefined) {
+    setStillLoaded(false);
+    setStillFailed(false);
+    const still = stillRef.current;
+    if (still !== null && still.complete && still.naturalWidth > 0) {
+      setStillLoaded(true);
+    }
+  }, [src]);
+
+  // A new Showing restarts Motion; the same key continues it: the fetch below
+  // runs only when the key (or the Layer set) changes, and the Layer
+  // composition is keyed by it so React remounts it on a new Showing.
+  useEffect(() => {
+    setLayersLoaded(false);
+    if (layers === undefined || layers.length === 0 || showingKey === undefined) {
       return;
     }
     // Motion stays off under reduced motion, and no Layer file is fetched.
@@ -95,10 +110,10 @@ export function Illustration({
     // and a failed Layer abandons Motion for this Showing, leaving the Still.
     void Promise.all(pending).then(
       () => {
-        if (!cancelled) setMotionReady(true);
+        if (!cancelled) setLayersLoaded(true);
       },
       () => {
-        if (!cancelled) setMotionReady(false);
+        if (!cancelled) setLayersLoaded(false);
       },
     );
     return () => {
@@ -109,18 +124,34 @@ export function Illustration({
     // the same key (which continues the Showing).
   }, [showingKey, srcKey]);
 
+  // Motion starts only once the Still and every Layer file have loaded
+  // (docs/spec/ui.md, start and fade-in). Fading the Layer composition over
+  // the plain Still is that composition fading in: the Still over itself is
+  // the Still.
+  const motionReady =
+    layersLoaded &&
+    stillLoaded &&
+    !stillFailed &&
+    layers !== undefined &&
+    layers.length > 0 &&
+    showingKey !== undefined;
+
   return (
     <span
       className="illustration-box"
       style={{ display: 'block', position: 'relative', isolation: 'isolate' }}
     >
       <img
+        ref={stillRef}
         src={src}
         width={width}
         height={height}
         alt={alt}
         className="illustration"
         style={{ maxWidth: '100%', height: 'auto' }}
+        onLoad={() => {
+          setStillLoaded(true);
+        }}
         onError={(event) => {
           // A Still that fails to load fetches no Layers and shows nothing.
           setStillFailed(true);

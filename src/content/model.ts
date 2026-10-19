@@ -11,6 +11,7 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { IntegrityImage, IntegrityMotionLayer } from './integrity';
+import { normalizeListedPath } from './paths';
 import {
   ConditionSchema,
   EffectSchema,
@@ -449,14 +450,19 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     const parsed = required(parsedImageById.get(image.id), `image "${image.id}"`);
     if (parsed.motion === undefined) return image;
     const fileByPath = new Map(image.layers.map((file) => [file.path, file]));
-    const layers: IntegrityMotionLayer[] = (parsed.motion.layers ?? []).map((layer) => ({
-      path: layer.path,
-      at: layer.at ?? { x: 50, y: 50 },
-      anchor: layer.anchor,
-      width: layer.width,
-      blend: layer.blend,
-      file: required(fileByPath.get(layer.path), `Layer file "${layer.path}"`),
-    }));
+    // The registry path is the normalized package path (integrity phase), so
+    // an author spelling like `./glow.png` resolves to the same file entry.
+    const layers: IntegrityMotionLayer[] = (parsed.motion.layers ?? []).map((layer) => {
+      const layerPath = normalizeListedPath(layer.path);
+      return {
+        path: layerPath,
+        at: layer.at ?? { x: 50, y: 50 },
+        anchor: layer.anchor,
+        width: layer.width,
+        blend: layer.blend,
+        file: required(fileByPath.get(layerPath), `Layer file "${layer.path}"`),
+      };
+    });
     return { ...image, motion: { layers } };
   });
   const imageById = new Map(images.map((image) => [image.id, image]));
