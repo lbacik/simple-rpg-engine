@@ -1,5 +1,7 @@
 # Tactical Combat implementation handoff
 
+> **Historical.** This document planned the tactical Combat (Speed/Agility order, Reach, Behaviour, escape, Near/Far-only Range) that the MVP 1.0 rules replace. It is kept for provenance only and is not implemented. The current rules are [`docs/sources/combat-mvp-1.0/rules.md`](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md); the delivery plan is the [Combat MVP 1.0 implementation handoff](combat-mvp-1.0-handoff.md).
+
 Status: accepted by the driving developer on 2026-10-12 after live review. The six packages, acceptance matrix and complete-release approach are accepted. Exact Polish tactical copy is implementer's discretion within the existing Interface Text rules and must use any canonical terms settled by the separate language effort; it is not a prerequisite design decision for this handoff. This document plans production implementation; it does not authorize deployment or execute the work packages.
 
 Source: [Tactical Combat specification and dependency-ordered implementation handoff](https://github.com/lbacik/simple-rpg-engine/issues/84), within [Map: tactical Combat with action-speed initiative and up to two Enemies](https://github.com/lbacik/simple-rpg-engine/issues/76).

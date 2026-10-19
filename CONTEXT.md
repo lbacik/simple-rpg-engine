@@ -59,7 +59,7 @@ An option offered by a Scene, optionally gated by a Condition and optionally res
 _Avoid_: Option, answer, link
 
 **Outcome**:
-What follows a Choice, a Test result, or the end of a Combat: narration, Effects, and where play continues.
+What follows a Choice, a Test result, or the end of a Combat: narration, Effects, and where play continues. A Combat ends in victory, surrender or draw (or the Character's death).
 _Avoid_: Result, consequence, branch
 
 **Condition**:
@@ -75,11 +75,11 @@ A named true/false fact an author sets and checks to remember what has happened 
 _Avoid_: Variable, switch
 
 **Encounter**:
-A named placement of one or two Enemies in a Scenario, as its Participants, with its own opening narration and Outcomes for victory and escape; it is defeated when every Participant is.
+A named placement of one to five Enemies as its Participants, each with its own starting Range, with its own opening narration and Outcomes for victory, surrender and draw; it is defeated when every Participant is. A Companion may fight alongside the Character.
 _Avoid_: Fight, battle instance
 
 **Participant**:
-One placement of an Enemy in an Encounter, with its own identity within that Encounter, its own wounds and its own defeat.
+One placement of an Enemy in an Encounter, with its own identity within that Encounter, its own starting Range, optional phase offset and power, its own wounds and its own defeat. The authored order of Participants is mechanically meaningful.
 _Avoid_: Enemy instance, combatant, foe, slot
 
 **Ending**:
@@ -97,6 +97,10 @@ _Avoid_: Default language, source language
 **Translation**:
 A complete rendering of all of a Scenario's text into one other language, adding no content and changing no mechanics.
 _Avoid_: Localisation, locale pack, language version
+
+**Content format version**:
+The manifest's `schemaVersion`. Version 2 is required; a version 1 package is rejected as a retired format.
+_Avoid_: Schema version (of a Playthrough or Arena run)
 
 ### Play
 
@@ -159,7 +163,7 @@ The target a Test must meet or exceed to succeed.
 _Avoid_: DC, target number
 
 **Health**:
-A combatant's remaining capacity to survive damage, bounded by their maximum Health; reaching zero kills the combatant.
+A combatant's remaining capacity to survive damage, bounded by their maximum Health; reaching zero kills the combatant. The Character's maximum is the hero profile's 40.
 _Avoid_: Hit points, life
 
 **Damage**:
@@ -167,43 +171,135 @@ A fixed amount of Health lost.
 _Avoid_: Attack power
 
 **Enemy**:
-A reusable Scenario-defined kind of opponent with the same four Attributes as a Character, plus its own maximum Health and attack Damage; it is fought through Encounters.
+A reusable, Scenario-defined, named kind of opponent bound to one fixed Combat profile. It has no Attributes or statistics of its own.
 _Avoid_: Monster, mob
 
+**Companion**:
+A Scenario-defined ally that joins a Playthrough, fights automatically in its Combats, and is lost permanently if slain in Combat.
+_Avoid_: Follower, party member
+
+**Companion definition**:
+The Scenario-level id, name and party profile (`party-sentinel` or `party-archer`) of a Companion.
+_Avoid_: Ally template
+
 **Combat**:
-A fight between the Character and the surviving Participants of one Encounter, ending in victory, death or the Character's escape.
+A fight between the hero (and the Companion, if present) and one to five enemies: one Encounter's surviving Participants in Scenario play, or an Arena Setup's opponents in the Arena. It ends in `WIN`, `LOSS`, `LOSS_SURRENDER` or `DRAW_LIMIT`. There is no escape from Combat.
 _Avoid_: Battle
 
 **Round**:
-One exchange of a Combat in which the Character takes one action and every surviving Participant carries out its Intent, all resolved in order of Speed and then Agility.
+One full Round of a Combat, resolved in the section 7 order (blow priority, then role, then actor id): the hero commits to a stance and one action, and every surviving enemy and the Companion carry out their frozen plans.
 _Avoid_: Turn, initiative pass
 
 **Intent**:
-The action a Participant has committed to for the current Round, chosen and shown before the Character acts; it resolves as shown or is cancelled, never swapped.
+The frozen plan of an enemy or the Companion for the current Round — stance, action, target and movement variant — chosen and shown before the hero commits; it resolves as shown or is cancelled, never swapped.
 _Avoid_: Telegraph, plan, enemy move
 
-**Behaviour**:
-An Enemy's engine-defined pattern for selecting its Intents, chosen by the author from a fixed list.
-_Avoid_: AI, profile, script, tactic
+**Stance**:
+The posture the hero takes for one Round — Aggressive, Balanced or Defensive — modifying attack and defense and restricting which Cards are available. Chosen anew every Round at no cost.
+_Avoid_: Posture, attitude
 
-**Speed**:
-Whether a Combat action or Intent resolves early, in the middle or late in a Round: fast, normal or slow.
-_Avoid_: Initiative, tempo
+**Card**:
+One of the six special Combat actions with a stamina cost and a cooldown: Heavy Blow (`heavy`), Counterattack (`counter`), Feint (`feint`), Cover (`cover`), Charge (`charge`) or Prepare (`prepare`).
+_Avoid_: Ability, special move
+
+**Cooldown**:
+The number of Rounds before a played Card is available again. A card played in Round r is available from r + CD + 1.
+_Avoid_: Recharge, refresh
+
+**Stamina**:
+The resource the hero and the Companion spend to play Cards, restored partly after every non-terminal Round. Enemies have no stamina.
+_Avoid_: Energy, action points
 
 **Range**:
-The current distance between the Character and one Participant during a Combat: either Near or Far; each Participant has its own.
+The distance between two characters during a Combat, computed as a relation: Melee (the pair is engaged), Near (same proximity group) or Far (different groups).
 _Avoid_: Zone, distance
 
-**Reach**:
-Whether an attack can be made only at Near Range (melee) or at any Range (ranged).
+**Group**:
+A proximity group: a label (`g0`, `g1`, …) shared by characters standing near each other. Characters in one group are mutually Near, except engaged pairs; different groups are Far.
+_Avoid_: Zone, cluster
+
+**Engagement**:
+A pair of opponents bound in Melee. An engagement exists only between living opponents in the same group, never between allies. An engaged actor cannot Approach, Charge or Withdraw.
+_Avoid_: Tie, lock
+
+**Attack slot**:
+One of the at most two enemy primary attacks that resolve in a Round. Enemies beyond the budget wait as Guarded Wait instead of attacking.
+_Avoid_: Attack turn, strike chance
+
+**Guarded Wait**:
+What an enemy without an attack slot does for the Round: no movement, no attack, guard 3 in the declaration phase, keeping its stance.
+_Avoid_: Pass, hold
+
+**Wait age**:
+How many Rounds an enemy attack candidate has gone without a slot. It breaks ties for the next Round's attack slots.
+_Avoid_: Waiting turns, seniority
+
+**Guard**:
+A numeric pool (`guard`) absorbing damage after armor within the Round it was gained in. Separate from redirection by Cover.
+_Avoid_: Shield, block pool
+
+**Exposed**:
+−2 to defense until the end of the current Round, taken on declaring a Heavy Blow.
+_Avoid_: Open, vulnerability window
+
+**Counterattack / Counter / Riposte**:
+Counterattack (`counter`) is the Card that parries the first legal blow against the character; the parry reduces that blow by 6. The Riposte is the single extra blow that is part of it; it triggers no further reactions.
+_Avoid_: Parry, revenge strike
+
+**Cover / Ward**:
+Cover (`cover`) is the Card that takes over one attack on a Near ally. The protector takes the blow; the ward is the ally covered.
+_Avoid_: Bodyguard, intercept
+
+**Primary attack**:
+Strike, Heavy Blow, Feint, the offensive part of Charge, or Shot. Only primary attacks compete for attack slots.
+_Avoid_: Main attack
+
+**Direct attack**:
+Strike, Heavy Blow or the offensive part of Charge. Only these trigger Counterattack.
+_Avoid_: Melee attack
+
+**Cancellation**:
+An announced effect that does not take place, for example because its target died or its range became illegal. The Round still resolves and the action for the Round is spent.
+_Avoid_: Fizzle, interrupt
+
+**Profile**:
+One closed set of Combat statistics (HP, stamina, skill, defense, armor, actions, cycle): `hero`, `party-sentinel`, `party-archer`, `raider`, `brute`, `sentinel` or `archer`. Content cannot author statistics.
+_Avoid_: Stat block, class
+
+**Rules version**:
+The identifier of the Combat rules a Combat state was written under: `simple-rpg-engine-stance-cards-1.0`. A mismatched version is rejected, never silently reinterpreted.
+_Avoid_: Rules edition, patch
+
+**Combat result**:
+How a Combat ended: `WIN`, `LOSS`, `LOSS_SURRENDER` or `DRAW_LIMIT`.
+_Avoid_: Outcome (of a Choice), ending
+
+**Surrender**:
+The hero yields a Combat and survives (`LOSS_SURRENDER`), routed to the Encounter's `surrender` Outcome. The Encounter is not defeated.
+_Avoid_: Escape, retreat, forfeit
+
+**Draw**:
+A Combat that reaches the 30-Round limit (`DRAW_LIMIT`), routed to the Encounter's `draw` Outcome. The Encounter is not defeated.
+_Avoid_: Stalemate, tie
+
+**Speed** (retired from Combat):
+Whether a tactical Combat action resolved early, in the middle or late in a Round. The MVP 1.0 order uses blow priority, role and actor id instead.
+_Avoid_: Initiative, tempo
+
+**Reach** (retired from Combat):
+Whether a tactical attack could be made only at Near Range or at any Range. Range legality now follows the Melee/Near/Far relation and each action's own condition.
 _Avoid_: Weapon type
 
+**Behaviour** (retired from Combat):
+A tactical Enemy's engine-defined pattern for selecting Intents. Enemies now follow their profile's open cycle with range adaptation.
+_Avoid_: AI, profile, script, tactic
+
 **Equipment**:
-Items worn or wielded by the Character, providing passive Attribute bonuses or determining attack Damage.
+Items worn or wielded by the Character, providing passive Attribute bonuses only. Weapon Damage and Reach are retired.
 _Avoid_: Gear, loadout
 
 **Consumable**:
-A single-use item that restores Health and is consumed when used.
+A single-use item that restores Health and is consumed when used. Usable only outside Combat.
 _Avoid_: Potion, charge
 
 **Arena**:
@@ -211,9 +307,13 @@ A mode next to Scenarios for testing the Combat mechanism: fights run directly f
 _Avoid_: Scenario, test fight
 
 **Arena Setup**:
-The description of one Arena fight: opponents with their Enemy definitions, a Range per opponent, and a Character with Attributes, Health and Equipment.
+The description of one Arena fight: one to five opponents from `raider`, `brute`, `sentinel` or `archer` in explicit order, each with a starting group, an engaged-with-hero flag, `phaseOffset` and `power`; an optional `party-sentinel` or `party-archer` Companion; the hero without equipment.
 _Avoid_: Encounter, Template
 
-**Bestiary**:
-The offer of Enemy kinds an Arena Setup draws its opponents from.
+**Arena run**:
+One persisted, versioned (`schemaVersion` 1) Arena fight: its origin, remembered Setup and Combat state, importable and exportable as Combat state JSON.
+_Avoid_: Saved fight, replay
+
+**Bestiary** (retired):
+The offer of Arena Enemy statistics opponents were once drawn from. The Arena now uses the closed profiles; there are no authored statistics.
 _Avoid_: Monster manual, catalogue

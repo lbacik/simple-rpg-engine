@@ -2,7 +2,7 @@
 
 The durable, reviewable input for adapting Combat to the stance, card and range system ("MVP 1.0"), across Arena and Scenario Combat in one release, v0.6.0 ([Combat MVP 1.0 implementation handoff](../../spec/combat-mvp-1.0-handoff.md)). It is recorded by [Preserve the normative simple-rpg-engine rule source and prototype decision](https://github.com/lbacik/simple-rpg-engine/issues/180) on the map [Map: adapt Combat to simple-rpg-engine MVP with command-panel UI](https://github.com/lbacik/simple-rpg-engine/issues/179).
 
-This folder is a **source**, not yet the integrated spec. [`docs/spec/`](../../spec/README.md), [`CONTEXT.md`](../../../CONTEXT.md) and the ADRs still describe the previous Combat rules. Where they conflict with these rules, the map's decisions will name the supersession explicitly; until then, neither silently overrides the other. Storing the rules here does not authorise building Combat.
+This folder is the **normative rule source** for MVP 1.0 Combat, and it is the integrated spec for Combat: [`docs/spec/`](../../spec/README.md), [`CONTEXT.md`](../../../CONTEXT.md) and the ADRs now describe these rules as current, and the [Combat contract](../../spec/combat-contract.md) is the integration surface the core, the adapters and the UI implement against. Where this folder and the integrated documents conflict, the map's decisions name the supersession explicitly, with the precedence below. Implementation proceeds through the packages of the [Combat MVP 1.0 implementation handoff](../../spec/combat-mvp-1.0-handoff.md).
 
 ## Files
 
@@ -55,7 +55,7 @@ Their "Wariant A/C" letters are rule variants, unrelated to the UI layouts A/B/C
 
 ## Terminology
 
-The terms the canon uses for the original's Polish terms. They are rule vocabulary for this source, not yet `CONTEXT.md` glossary entries; the glossary's current Range (Near/Far), Intent and Round describe the previous rules.
+The terms the canon uses for the original's Polish terms. They are rule vocabulary for this source, recorded as `CONTEXT.md` glossary entries.
 
 | Polish (original) | English (canon) | Identifier |
 |---|---|---|

@@ -244,6 +244,8 @@ not: <Condition>
 
 ### Item catalog
 
+> **Frozen pending the content migration (format v1).** The item, Enemy and Encounter catalogs below are what the loader still implements. Their tactical Combat assumptions — weapon Damage and Reach, Enemy Attributes/Health/Damage/Reach/Behaviour, Encounter-wide `startRange`, the `escape` Outcome, Health 1–12 — are superseded by the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) and the [Combat contract](combat-contract.md): escape is removed for required `surrender` and `draw` Outcomes, Enemies bind to fixed profiles, and Health is 0–40. The v2 format, conversion tables and migration guide land with the content package ([#184](https://github.com/lbacik/simple-rpg-engine/issues/184)). Do not author new content against the tactical fields below.
+
 A sequence of items, discriminated by `kind`.
 
 ```yaml
@@ -279,7 +281,7 @@ A sequence of items, discriminated by `kind`.
   health: 1-30                 # maximum Health
   damage: 1-6
   reach?: melee | ranged
-  behaviour?: steady | heavy   # default steady; see mechanics.md, Enemy Intents
+  behaviour?: steady | heavy   # default steady (frozen v1; see the banner above)
 ```
 
 ### Encounter catalog
@@ -660,6 +662,7 @@ choices:
 - [Scenario content model: Locations, Scenes, choices, conditions, effects](https://github.com/lbacik/simple-rpg-engine/issues/3#issuecomment-6099088394)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478)
 - [Location map: auto-laid-out graph vs author-provided coordinates](https://github.com/lbacik/simple-rpg-engine/issues/11#issuecomment-6099544434) (`map`)
-- [Combat presentation: abstract exchange vs simple grid board](https://github.com/lbacik/simple-rpg-engine/issues/9#issuecomment-6099395150) (`reach`, `startRange`)
+- [Combat presentation: abstract exchange vs simple grid board](https://github.com/lbacik/simple-rpg-engine/issues/9#issuecomment-6099395150) (historical: `reach`, `startRange`)
 - [Cross-file references in multi-file YAML packages](https://github.com/lbacik/simple-rpg-engine/issues/4) (background: [research notes](../research/multi-file-yaml-references.md))
-- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (Encounter `participants`, Enemy `behaviour`)
+- [Tactical Combat content, state migration and compatibility contracts](https://github.com/lbacik/simple-rpg-engine/issues/81) (historical: Encounter `participants`, Enemy `behaviour`)
+- [Define Scenario authoring and content migration for simple-rpg-engine](https://github.com/lbacik/simple-rpg-engine/issues/184) (content format v2: profiles, per-participant `startRange`, `surrender`/`draw`, Companions, Health 1–40)
