@@ -63,8 +63,9 @@ describe('inspectImage', () => {
   });
 
   it('reads extended WebP (VP8X) dimensions', () => {
-    // w-1 = 299, h-1 = 199 as 24-bit little-endian.
-    const payload = Buffer.from([0x00, 0x2b, 0x01, 0x00, 0xc7, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    // Flags byte, three reserved bytes, then w-1 = 299 and h-1 = 199 as
+    // 24-bit little-endian.
+    const payload = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x2b, 0x01, 0x00, 0xc7, 0x00, 0x00]);
     expect(inspectImage(webpChunk('VP8X', payload))).toEqual({
       format: 'webp',
       width: 300,
