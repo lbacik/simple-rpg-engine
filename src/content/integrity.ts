@@ -14,6 +14,7 @@ import {
   IMAGE_FORMAT_BY_EXTENSION,
   MAX_IMAGE_BYTES,
   MAX_IMAGE_SIDE,
+  MAX_ILLUSTRATION_BYTES,
   hashImageBytes,
   inspectImage,
 } from './images';
@@ -932,13 +933,47 @@ export type IntegrityImage = {
   height: number;
   hash: string;
   alt: string;
+  /**
+   * One entry per distinct Layer file of the image's Motion, in first-use
+   * order (docs/spec/scenario-format.md, Images; ADR 0007). Empty for an
+   * Illustration without Motion.
+   */
+  layers: IntegrityLayerFile[];
+  /** The image's Motion with every Layer's declaration, when it has one. */
+  motion?: IntegrityMotion;
+};
+
+/** One distinct Layer file of an Illustration's Motion, as the registry holds it. */
+export type IntegrityLayerFile = {
+  path: string;
+  format: ImageFormat;
+  width: number;
+  height: number;
+  hash: string;
+};
+
+/** One Motion Layer with its declaration (defaults applied) and its file. */
+export type IntegrityMotionLayer = {
+  path: string;
+  at: { x: number; y: number };
+  anchor: { x: number; y: number };
+  width: number;
+  blend: 'normal' | 'multiply' | 'screen';
+  file: IntegrityLayerFile;
+};
+
+/** An image entry's Motion, in Layer list order. */
+export type IntegrityMotion = {
+  layers: IntegrityMotionLayer[];
 };
 
 type ImageEntry = {
   id: string;
   imagePath: string;
   alt: string;
+  motion: unknown;
   file: ParsedFile;
+  index: number;
   path: (string | number)[];
 };
 
@@ -952,7 +987,9 @@ function collectImageEntries(files: ParsedFile[]): ImageEntry[] {
         id: entry['id'],
         imagePath: typeof entry['path'] === 'string' ? entry['path'] : '',
         alt: typeof entry['alt'] === 'string' ? entry['alt'] : '',
+        motion: entry['motion'],
         file,
+        index: entryIndex,
         path: [entryIndex, 'path'],
       });
     });
@@ -964,9 +1001,10 @@ function checkImages(
   files: ParsedFile[],
   scenarioDir: string,
   ctx: Ctx,
-): { images: IntegrityImage[]; imageBytes: Map<string, Buffer> } {
+): { images: IntegrityImage[]; imageBytes: Map<string, Buffer>; layerBytes: Map<string, Buffer> } {
   const images: IntegrityImage[] = [];
   const imageBytes = new Map<string, Buffer>();
+  const layerBytes = new Map<string, Buffer>();
   const seenPaths = new Map<string, ImageEntry>();
   for (const entry of collectImageEntries(files)) {
     const first = seenPaths.get(normalizeListedPath(entry.imagePath));
@@ -990,97 +1028,197 @@ function checkImages(
     }
     seenPaths.set(normalizeListedPath(entry.imagePath), entry);
 
-    const invalidReason = imagePathViolation(scenarioDir, entry.imagePath);
-    if (invalidReason !== undefined) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/invalid-image-path',
-        message: `invalid image path "${entry.imagePath}" ${invalidReason}`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
+    // Layer `path` values follow the same path rules but are not catalog
+    // entries: one file may serve several Layers and several Illustrations,
+    // so they never join `seenPaths` (docs/spec/validation.md,
+    // ref/duplicate-image-path).
+    const still = readImageFile(
+      scenarioDir,
+      entry.imagePath,
+      'image file',
+      entry.file,
+      entry.path,
+      ctx,
+    );
+    if (still === undefined) continue;
+    const layers = checkMotionLayers(entry, still.bytes.length, scenarioDir, layerBytes, ctx);
+    if (layers === undefined) continue;
 
-    let bytes: Buffer;
-    try {
-      bytes = fs.readFileSync(path.join(scenarioDir, entry.imagePath));
-    } catch {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/missing-image-file',
-        message: `image file "${entry.imagePath}" is missing or unreadable`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    const expected = IMAGE_FORMAT_BY_EXTENSION[path.extname(entry.imagePath)];
-    const inspected = inspectImage(bytes);
-    if (expected === undefined || inspected === undefined || inspected.format !== expected) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-format-mismatch',
-        message:
-          `image file "${entry.imagePath}" does not match its extension; ` +
-          `the signature must match ${expected === undefined ? 'a supported format' : `".${expected === 'jpeg' ? 'jpg"/".jpeg' : expected}"`} ` +
-          `(.png, .jpg, .jpeg or .webp, lowercase)`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    const tooLarge =
-      bytes.length > MAX_IMAGE_BYTES ||
-      (inspected.width !== undefined &&
-        inspected.height !== undefined &&
-        (inspected.width > MAX_IMAGE_SIDE || inspected.height > MAX_IMAGE_SIDE));
-    if (tooLarge) {
-      const detail =
-        bytes.length > MAX_IMAGE_BYTES
-          ? `is ${bytes.length} bytes; files must be at most 2 MiB`
-          : `is ${inspected.width}x${inspected.height} px; no side may exceed 4096 px`;
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-too-large',
-        message: `image file "${entry.imagePath}" ${detail}`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
-
-    if (inspected.width === undefined || inspected.height === undefined) {
-      ctx.push({
-        severity: 'error',
-        code: 'ref/image-format-mismatch',
-        message:
-          `image file "${entry.imagePath}" could not be read as ".${expected}"; ` +
-          `the file may be truncated or corrupt`,
-        file: entry.file.file,
-        range: nodeRangeOf(entry.file, entry.path),
-        path: entry.path,
-      });
-      continue;
-    }
     images.push({
       id: entry.id,
       path: entry.imagePath,
-      format: inspected.format,
-      width: inspected.width,
-      height: inspected.height,
-      hash: hashImageBytes(bytes),
+      format: still.format,
+      width: still.width,
+      height: still.height,
+      hash: hashImageBytes(still.bytes),
       alt: entry.alt,
+      layers,
     });
-    imageBytes.set(entry.id, bytes);
+    imageBytes.set(entry.id, still.bytes);
   }
-  return { images, imageBytes };
+  return { images, imageBytes, layerBytes };
+}
+
+type ReadImage = {
+  bytes: Buffer;
+  format: ImageFormat;
+  width: number;
+  height: number;
+};
+
+/**
+ * Read and inspect one Scenario image file: a Still or a Layer file. Reports
+ * the ref/ image codes (invalid-image-path, missing-image-file,
+ * image-format-mismatch, image-too-large) against `nodePath` and returns
+ * undefined on any of them.
+ */
+function readImageFile(
+  scenarioDir: string,
+  imagePath: string,
+  noun: string,
+  file: ParsedFile,
+  nodePath: (string | number)[],
+  ctx: Ctx,
+): ReadImage | undefined {
+  const at = {
+    file: file.file,
+    range: nodeRangeOf(file, nodePath),
+    path: nodePath,
+  };
+  const invalidReason = imagePathViolation(scenarioDir, imagePath);
+  if (invalidReason !== undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/invalid-image-path',
+      message: `invalid image path "${imagePath}" ${invalidReason}`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  let bytes: Buffer;
+  try {
+    bytes = fs.readFileSync(path.join(scenarioDir, imagePath));
+  } catch {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/missing-image-file',
+      message: `${noun} "${imagePath}" is missing or unreadable`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  const expected = IMAGE_FORMAT_BY_EXTENSION[path.extname(imagePath)];
+  const inspected = inspectImage(bytes);
+  if (expected === undefined || inspected === undefined || inspected.format !== expected) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-format-mismatch',
+      message:
+        `${noun} "${imagePath}" does not match its extension; ` +
+        `the signature must match ${expected === undefined ? 'a supported format' : `".${expected === 'jpeg' ? 'jpg"/".jpeg' : expected}"`} ` +
+        `(.png, .jpg, .jpeg or .webp, lowercase)`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  const tooLarge =
+    bytes.length > MAX_IMAGE_BYTES ||
+    (inspected.width !== undefined &&
+      inspected.height !== undefined &&
+      (inspected.width > MAX_IMAGE_SIDE || inspected.height > MAX_IMAGE_SIDE));
+  if (tooLarge) {
+    const detail =
+      bytes.length > MAX_IMAGE_BYTES
+        ? `is ${bytes.length} bytes; files must be at most 2 MiB`
+        : `is ${inspected.width}x${inspected.height} px; no side may exceed 4096 px`;
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-too-large',
+      message: `${noun} "${imagePath}" ${detail}`,
+      ...at,
+    });
+    return undefined;
+  }
+
+  if (inspected.width === undefined || inspected.height === undefined) {
+    ctx.push({
+      severity: 'error',
+      code: 'ref/image-format-mismatch',
+      message:
+        `${noun} "${imagePath}" could not be read as ".${expected}"; ` +
+        `the file may be truncated or corrupt`,
+      ...at,
+    });
+    return undefined;
+  }
+  return { bytes, format: inspected.format, width: inspected.width, height: inspected.height };
+}
+
+/**
+ * Check an image entry's Motion Layers (docs/spec/validation.md, Phase 3):
+ * every Layer `path` gets the image codes with the range on the Layer's
+ * `path`, and the Still plus every distinct Layer file must total at most 4
+ * MiB (ref/illustration-too-large). Returns the registry's distinct Layer
+ * files in first-use order, or undefined when the image is rejected.
+ *
+ * Phase 2 already proved the shapes, so the guards below only protect
+ * against programmer error: a non-record motion, a non-list `layers` or a
+ * Layer without a string `path` is skipped here.
+ */
+function checkMotionLayers(
+  entry: ImageEntry,
+  stillBytes: number,
+  scenarioDir: string,
+  layerBytes: Map<string, Buffer>,
+  ctx: Ctx,
+): IntegrityLayerFile[] | undefined {
+  const layers: IntegrityLayerFile[] = [];
+  const distinctSizes = new Map<string, number>();
+  let failed = false;
+  const motion = entry.motion;
+  const rawLayers = isRecord(motion) && Array.isArray(motion['layers']) ? motion['layers'] : [];
+  rawLayers.forEach((layer, layerIndex) => {
+    if (!isRecord(layer) || typeof layer['path'] !== 'string') return;
+    const layerPath = layer['path'];
+    const nodePath: (string | number)[] = [entry.index, 'motion', 'layers', layerIndex, 'path'];
+    const read = readImageFile(scenarioDir, layerPath, 'Layer file', entry.file, nodePath, ctx);
+    if (read === undefined) {
+      failed = true;
+      return;
+    }
+    const key = normalizeListedPath(layerPath);
+    if (!distinctSizes.has(key)) {
+      distinctSizes.set(key, read.bytes.length);
+      layers.push({
+        path: layerPath,
+        format: read.format,
+        width: read.width,
+        height: read.height,
+        hash: hashImageBytes(read.bytes),
+      });
+      if (!layerBytes.has(layerPath)) layerBytes.set(layerPath, read.bytes);
+    }
+  });
+
+  const total = stillBytes + [...distinctSizes.values()].reduce((sum, size) => sum + size, 0);
+  if (total > MAX_ILLUSTRATION_BYTES) {
+    failed = true;
+    const nodePath: (string | number)[] = [entry.index, 'motion'];
+    ctx.push({
+      severity: 'error',
+      code: 'ref/illustration-too-large',
+      message:
+        `illustration "${entry.id}" is ${total} bytes with its distinct Layer files; ` +
+        `a Still plus its distinct Layer files must total at most 4 MiB`,
+      file: entry.file.file,
+      range: nodeRangeOf(entry.file, nodePath),
+      path: nodePath,
+    });
+  }
+  return failed ? undefined : layers;
 }
 
 /** The invalid-image-path reason, or undefined when the path is acceptable. */
@@ -1104,15 +1242,17 @@ function imagePathViolation(scenarioDir: string, imagePath: string): string | un
 /**
  * Run the Integrity phase over the manifest and every listed content file.
  * Call only when Phase 2 produced no errors. Returns the resolved image
- * registry entries for the compiled model; the caller must ignore them when
- * the phase produced errors.
+ * registry entries (with one entry per distinct Layer file of each image's
+ * Motion) for the compiled model, with the Still bytes by image id and the
+ * Layer bytes by package path; the caller must ignore them when the phase
+ * produced errors.
  */
 export function runIntegrityPhase(
   manifest: ParsedFile,
   files: ParsedFile[],
   scenarioDir: string,
   push: (diagnostic: Diagnostic) => void,
-): { images: IntegrityImage[]; imageBytes: Map<string, Buffer> } {
+): { images: IntegrityImage[]; imageBytes: Map<string, Buffer>; layerBytes: Map<string, Buffer> } {
   const ctx: Ctx = { push };
   const { namespaces, choicesByScene } = collectDeclarations(manifest, files);
 

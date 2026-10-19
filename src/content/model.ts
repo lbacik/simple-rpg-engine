@@ -10,7 +10,7 @@
 
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import type { IntegrityImage } from './integrity';
+import type { IntegrityImage, IntegrityMotionLayer } from './integrity';
 import {
   ConditionSchema,
   EffectSchema,
@@ -20,6 +20,7 @@ import {
   EnemySchema,
   EncounterSchema,
   EndingSchema,
+  ImagesCatalogSchema,
   ItemSchema,
   ItemsCatalogSchema,
   LocationSchema,
@@ -323,6 +324,8 @@ export type ModelInputs = {
   files: ParsedFile[];
   images: IntegrityImage[];
   imageBytes: Map<string, Buffer>;
+  /** Raw bytes of every distinct Layer file, keyed by package path. */
+  layerBytes: Map<string, Buffer>;
   manifestBytes: Buffer;
   /** Listed file paths in manifest order. */
   listedPaths: string[];
@@ -341,14 +344,19 @@ export type ModelInputs = {
  * Compute the deterministic content hash: SHA-256 over the manifest bytes,
  * every listed file's bytes in manifest order, every listed Translation
  * manifest and every file it lists (accepted or rejected, so a
- * Translation-only change changes the hash), and every declared image's bytes
- * in declaration order, each bound to its path.
+ * Translation-only change changes the hash), every declared image's bytes
+ * in declaration order, and every distinct Layer file's bytes in
+ * package-path order, each bound to its path. A file used as a Still and a
+ * Layer, or as several Layers, counts once (its Still segment already covers
+ * it); a file shared with another image counts in each image's own budget
+ * but still hashes once.
  */
 export function computeContentHash(
   inputs: Pick<
     ModelInputs,
     | 'images'
     | 'imageBytes'
+    | 'layerBytes'
     | 'manifestBytes'
     | 'listedPaths'
     | 'fileBytes'
@@ -384,6 +392,15 @@ export function computeContentHash(
   for (const image of inputs.images) {
     segment(image.path, required(inputs.imageBytes.get(image.id), `image "${image.id}"`));
   }
+  const stillPaths = new Set(inputs.images.map((image) => image.path));
+  const layerPaths = [
+    ...new Set(inputs.images.flatMap((image) => image.layers.map((file) => file.path))),
+  ]
+    .filter((layerPath) => !stillPaths.has(layerPath))
+    .sort();
+  for (const layerPath of layerPaths) {
+    segment(layerPath, required(inputs.layerBytes.get(layerPath), `Layer file "${layerPath}"`));
+  }
   return hash.digest('hex');
 }
 
@@ -418,11 +435,31 @@ export function buildScenario(inputs: ModelInputs): Scenario {
   const parsedTemplates = bySection('templates').flatMap((file) =>
     TemplatesCatalogSchema.parse(file.value),
   );
+  const parsedImages = bySection('images').flatMap((file) => ImagesCatalogSchema.parse(file.value));
 
   const itemById = new Map(items.map((item) => [item.id, item]));
   const enemyById = new Map(enemies.map((enemy) => [enemy.id, enemy]));
   const endingById = new Map(endings.map((ending) => [ending.id, ending]));
-  const imageById = new Map(inputs.images.map((image) => [image.id, image]));
+  // Zod parsing applies the Motion defaults (anchor, width, blend); `at`
+  // keeps no schema default (it excludes the future `drift`), so the model
+  // centres it here. Phase 3 proved every Layer file, so the registry lookup
+  // below is total.
+  const parsedImageById = new Map(parsedImages.map((parsed) => [parsed.id, parsed]));
+  const images: IntegrityImage[] = inputs.images.map((image) => {
+    const parsed = required(parsedImageById.get(image.id), `image "${image.id}"`);
+    if (parsed.motion === undefined) return image;
+    const fileByPath = new Map(image.layers.map((file) => [file.path, file]));
+    const layers: IntegrityMotionLayer[] = (parsed.motion.layers ?? []).map((layer) => ({
+      path: layer.path,
+      at: layer.at ?? { x: 50, y: 50 },
+      anchor: layer.anchor,
+      width: layer.width,
+      blend: layer.blend,
+      file: required(fileByPath.get(layer.path), `Layer file "${layer.path}"`),
+    }));
+    return { ...image, motion: { layers } };
+  });
+  const imageById = new Map(images.map((image) => [image.id, image]));
 
   const locations: CompiledLocation[] = parsedLocations.map((parsed) => ({
     id: parsed.id,
@@ -557,7 +594,7 @@ export function buildScenario(inputs: ModelInputs): Scenario {
     encounters,
     templates,
     endings,
-    images: inputs.images,
+    images,
     translations: inputs.translations.map((translation) => translation.compiled),
     locationsById: Object.fromEntries(locationById),
     scenesById: Object.fromEntries(sceneById),

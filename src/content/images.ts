@@ -28,6 +28,14 @@ export const IMAGE_FORMAT_BY_EXTENSION: Readonly<Record<string, ImageFormat>> = 
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 export const MAX_IMAGE_SIDE = 4096;
 
+/**
+ * An Illustration's Still plus every distinct Layer file of its Motion must
+ * total at most 4 MiB (docs/spec/scenario-format.md, Images). A file shared
+ * by several Layers of one Illustration counts once; shared with another
+ * Illustration, it counts in each.
+ */
+export const MAX_ILLUSTRATION_BYTES = 4 * 1024 * 1024;
+
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const JPEG_SOI = Buffer.from([0xff, 0xd8]);
 

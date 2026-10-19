@@ -938,3 +938,124 @@ describe('structure range boundaries', () => {
     expect(high.path).toEqual([0, 'attributes', 'might']);
   });
 });
+
+describe('structure phase: illustration motion', () => {
+  const MOTION = `  motion:
+    layers:
+      - path: images/layers/gleam.png
+`;
+  const LAYER_FILE = 'images/layers/gleam.png';
+
+  /** A fresh valid package whose image carries one placed Layer, with the file on disk. */
+  function freshMotionDir(name: string): string {
+    const dir = freshValidDir(name);
+    mutate(dir, 'images.yaml', '  alt: An old gate.\n', `  alt: An old gate.\n${MOTION}`);
+    const full = path.join(dir, LAYER_FILE);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, makePng(8, 4));
+    return dir;
+  }
+
+  it('an image with motion.layers validates', () => {
+    const result = loadScenario(freshMotionDir('motion-valid'));
+    expect(result.ok).toBe(true);
+  });
+
+  it('schema/empty-motion for motion without layers', () => {
+    const diag = expectInvalid(
+      'motion-empty',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      '  alt: An old gate.\n  motion: {}\n',
+      'schema/empty-motion',
+    );
+    expect(diag.path).toEqual([0, 'motion']);
+  });
+
+  it('schema/empty-motion for an empty layers list', () => {
+    const diag = expectInvalid(
+      'motion-empty-layers',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      '  alt: An old gate.\n  motion:\n    layers: []\n',
+      'schema/empty-motion',
+    );
+    expect(diag.path).toEqual([0, 'motion']);
+  });
+
+  it('rejects out-of-range at, anchor and width, never clamping', () => {
+    const at = expectInvalid(
+      'motion-at-range',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        at: { x: 101, y: 50 }\n`,
+      'schema/invalid-value',
+    );
+    expect(at.path).toEqual([0, 'motion', 'layers', 0, 'at', 'x']);
+    const anchor = expectInvalid(
+      'motion-anchor-range',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        anchor: { x: 50, y: -1 }\n`,
+      'schema/invalid-value',
+    );
+    expect(anchor.path).toEqual([0, 'motion', 'layers', 0, 'anchor', 'y']);
+    const zero = expectInvalid(
+      'motion-width-zero',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        width: 0\n`,
+      'schema/invalid-value',
+    );
+    expect(zero.path).toEqual([0, 'motion', 'layers', 0, 'width']);
+    const wide = expectInvalid(
+      'motion-width-wide',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        width: 401\n`,
+      'schema/invalid-value',
+    );
+    expect(wide.path).toEqual([0, 'motion', 'layers', 0, 'width']);
+  });
+
+  it('rejects an unknown blend and unknown layer keys', () => {
+    const blend = expectInvalid(
+      'motion-blend',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        blend: glow\n`,
+      'schema/invalid-value',
+    );
+    expect(blend.path).toEqual([0, 'motion', 'layers', 0, 'blend']);
+    const key = expectInvalid(
+      'motion-unknown-key',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      `  alt: An old gate.\n${MOTION}        z: 1\n`,
+      'schema/unknown-key',
+    );
+    expect(key.path).toEqual([0, 'motion', 'layers', 0, 'z']);
+  });
+
+  it('rejects a camera until its ticket lands', () => {
+    const diag = expectInvalid(
+      'motion-camera-early',
+      'images.yaml',
+      '  alt: An old gate.\n',
+      '  alt: An old gate.\n  motion:\n    camera:\n      to: { zoom: 110, x: 30, y: 55 }\n      duration: 18\n',
+      'schema/unknown-key',
+    );
+    expect(diag.path).toEqual([0, 'motion', 'camera']);
+  });
+
+  it('accepts the boundary placement values', () => {
+    const dir = freshMotionDir('motion-boundaries');
+    mutate(
+      dir,
+      'images.yaml',
+      '      - path: images/layers/gleam.png\n',
+      '      - path: images/layers/gleam.png\n        at: { x: 0, y: 100 }\n        anchor: { x: 100, y: 0 }\n        width: 400\n        blend: screen\n',
+    );
+    expect(loadScenario(dir).ok).toBe(true);
+  });
+});

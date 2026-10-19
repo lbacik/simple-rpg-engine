@@ -546,6 +546,7 @@ export function runPlayabilityPhase(
   checkItems(ctx);
   checkEnemyUnused(ctx);
   checkImageUnused(ctx);
+  checkStaticLayers(ctx, files);
   checkMaps(ctx);
 }
 

@@ -243,6 +243,7 @@ export function loadScenario(dir: string): LoadScenarioResult {
     files: parsedFiles,
     images: integrity.images,
     imageBytes: integrity.imageBytes,
+    layerBytes: integrity.layerBytes,
     manifestBytes,
     listedPaths: listed.map((entry) => entry.value),
     fileBytes,

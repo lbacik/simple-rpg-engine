@@ -730,6 +730,33 @@ function checkEnding(value: unknown, path: readonly (string | number)[], ctx: Ct
 function checkImage(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
   if (!isRecord(value)) return;
   checkText(value['alt'], [...path, 'alt'], ctx);
+  if (value['motion'] !== undefined) checkMotion(value['motion'], [...path, 'motion'], ctx);
+}
+
+/**
+ * The Motion refinement (docs/spec/validation.md, schema/empty-motion): a
+ * `motion` with neither `layers` nor `camera`, or with an empty `layers`
+ * list. `camera` arrives with its own ticket; until then a motion without
+ * layers is empty. Ranges and defaults live in the Zod definitions
+ * (schema/invalid-value, schema/missing-field); the drift/frames refinements
+ * arrive with their tickets too.
+ */
+function checkMotion(value: unknown, path: readonly (string | number)[], ctx: Ctx): void {
+  if (!isRecord(value)) return;
+  const layers = value['layers'];
+  if (
+    (layers === undefined && value['camera'] === undefined) ||
+    (Array.isArray(layers) && layers.length === 0)
+  ) {
+    ctx.push({
+      severity: 'error',
+      code: 'schema/empty-motion',
+      message: '"motion" must declare at least one Layer or a "camera"',
+      file: ctx.file,
+      range: rangeOf(ctx, path),
+      path: [...path],
+    });
+  }
 }
 
 function checkCatalog(
