@@ -10,15 +10,17 @@
 // composes the Layers over the Still in list order with a linear 1 s fade-in.
 // A Layer with `drift` moves its anchor from `from` to `to` on the
 // Web Animations API from the shared timeline t = 0, clipped to the box by
-// the composition's overflow. Any Layer failure leaves the Still for this
-// Showing. Under `prefers-reduced-motion: reduce` Motion stays off and no
-// Layer file is fetched. Without JavaScript only the Still shows.
+// the composition's overflow. A flickering Layer varies its opacity along the
+// engine's fixed Flicker curve on the same API and timeline. Any Layer failure
+// leaves the Still for this Showing. Under `prefers-reduced-motion: reduce`
+// Motion stays off and no Layer file is fetched. Without JavaScript only the
+// Still shows.
 
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 
-/** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. A sprite-strip Layer also carries `frames` and `fps`. */
+/** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. A sprite-strip Layer also carries `frames` and `fps`; a flickering Layer also carries `flicker`. */
 export type IllustrationMotionLayer = {
   src: string;
   at: { x: number; y: number };
@@ -28,6 +30,8 @@ export type IllustrationMotionLayer = {
   frames?: number;
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
+  /** The Flicker depth, the deepest opacity dip in percent; present only when the Layer flickers. */
+  flicker?: { depth: number };
   blend: 'normal' | 'multiply' | 'screen';
   drift?: IllustrationMotionDrift;
   pixelWidth: number;
@@ -56,6 +60,127 @@ function geometryForPoint(
     layer.width * (file.pixelHeight / frameWidth) * (still.width / still.height);
   const topPct = point.y - (layer.anchor.y * heightPctOfBoxHeight) / 100;
   return { widthPct, leftPct, topPct };
+}
+
+/**
+ * The engine's fixed Flicker curve (docs/spec/ui.md, flicker), defined once:
+ * one cycle lasts 4 s with 8 keyframes at equal 4/7 s intervals, eased
+ * in-out between keyframes, repeating from t = 0. The author controls only
+ * `depth`; the rate is the engine's, below the WCAG 2.3.1 threshold by
+ * construction.
+ */
+
+/** One Flicker cycle lasts 4 s. */
+export const FLICKER_CYCLE_SEC = 4;
+
+/** The opacity dip at each of the 8 keyframes, from t = 0 to t = 4 s. */
+export const FLICKER_DIPS = [0, 0.6, 0.2, 1, 0.4, 0.8, 0.1, 0] as const;
+
+/** Seconds between two Flicker keyframes: 8 keyframes over the 4 s cycle. */
+const FLICKER_KEYFRAME_SEC = FLICKER_CYCLE_SEC / (FLICKER_DIPS.length - 1);
+
+/**
+ * The y of `cubic-bezier(x1, y1, x2, y2)` at x: Newton–Raphson on the
+ * x-projection with a bisection fallback, the scheme browsers use for CSS
+ * timing functions.
+ */
+function cubicBezierY(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x: number,
+): number {
+  const cx = 3 * x1;
+  const bx = 3 * (x2 - x1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * y1;
+  const by = 3 * (y2 - y1) - cy;
+  const ay = 1 - cy - by;
+  const sampleX = (t: number): number => ((ax * t + bx) * t + cx) * t;
+  const sampleY = (t: number): number => ((ay * t + by) * t + cy) * t;
+  const sampleDX = (t: number): number => (3 * ax * t + 2 * bx) * t + cx;
+  let t = x;
+  for (let i = 0; i < 8; i++) {
+    const error = sampleX(t) - x;
+    if (Math.abs(error) < 1e-7) return sampleY(t);
+    const derivative = sampleDX(t);
+    if (Math.abs(derivative) < 1e-7) break;
+    t -= error / derivative;
+  }
+  let low = 0;
+  let high = 1;
+  t = x;
+  while (high - low > 1e-7) {
+    const value = sampleX(t);
+    if (Math.abs(value - x) < 1e-7) break;
+    if (value < x) low = t;
+    else high = t;
+    t = (high + low) / 2;
+  }
+  return sampleY(t);
+}
+
+/**
+ * Ease a 0–1 segment progress in-out: the CSS `ease-in-out` timing function,
+ * `cubic-bezier(0.42, 0, 0.58, 1)` — the same easing the browser applies
+ * between Flicker keyframes — so the pure helper below traces exactly the
+ * curve the Web Animations API animates.
+ */
+function easeInOut(progress: number): number {
+  if (progress <= 0) return 0;
+  if (progress >= 1) return 1;
+  return cubicBezierY(0.42, 0, 0.58, 1, progress);
+}
+
+/**
+ * A flickering Layer's opacity `timeSec` seconds into the shared timeline
+ * (docs/spec/ui.md, flicker and timeline; t = 0 is the start of the fade):
+ * `1 − dip × depth / 100` along the fixed curve, repeating every 4 s from
+ * t = 0. Pure, so the curve the browser animates is testable without
+ * hydration.
+ */
+export function flickerOpacity(depth: number, timeSec: number): number {
+  const cycle = ((timeSec % FLICKER_CYCLE_SEC) + FLICKER_CYCLE_SEC) % FLICKER_CYCLE_SEC;
+  const segment = cycle / FLICKER_KEYFRAME_SEC;
+  const floored = Math.floor(segment);
+  const from = FLICKER_DIPS[floored % FLICKER_DIPS.length] as number;
+  const to = FLICKER_DIPS[(floored + 1) % FLICKER_DIPS.length] as number;
+  const dip = from + (to - from) * easeInOut(segment - floored);
+  return 1 - (dip * depth) / 100;
+}
+
+/**
+ * The Web Animations API keyframes for one Flicker cycle at `depth`: the 8
+ * dips as opacities, evenly spaced over the cycle by the browser, eased
+ * in-out between keyframes. Built from the one fixed curve, so every Flicker
+ * of one Illustration shares the same list for the same depth.
+ */
+export function flickerKeyframes(depth: number): Keyframe[] {
+  return FLICKER_DIPS.map((dip) => ({
+    opacity: 1 - (dip * depth) / 100,
+    easing: 'ease-in-out',
+  }));
+}
+
+/**
+ * Start every Flicker animation of one Illustration together
+ * (docs/spec/ui.md, flicker): sharing one start time on the timeline they
+ * mounted on keeps a flame and its glow pulsing together. A still-pending
+ * first animation has no start time yet; the animations then keep their own
+ * same-tick starts on the same timeline. Pure over the animation handles, so
+ * unison is testable without a browser.
+ */
+export function syncAnimationStartTimes(animations: readonly Pick<Animation, 'startTime'>[]): void {
+  const startTime = animations[0]?.startTime;
+  if (startTime === undefined || startTime === null) return;
+  for (const animation of animations) {
+    try {
+      animation.startTime = startTime;
+    } catch {
+      // Already finished or never started; it keeps its own start.
+    }
+  }
 }
 
 /**
@@ -157,14 +282,17 @@ export function Illustration({
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
-  // The Drift animation inputs of this Showing, as a stable key: the engine
-  // view rebuilds the Layer array on every render, but the declarations only
-  // change with the Showing (or the image). The key covers the Drift and the
-  // anchor and width its endpoints are computed from, so a changed endpoint
-  // restarts the animation.
-  const driftAnimKey = JSON.stringify(
+  // The animation inputs of this Showing (Drift and Flicker), as a stable key:
+  // the engine view rebuilds the Layer array on every render, but the
+  // declarations only change with the Showing (or the image). The key covers
+  // the Drift and the anchor and width its endpoints are computed from, so a
+  // changed endpoint restarts the animation. The animation effect keys on the
+  // Showing and this key, never on the Layer array identity, so a re-render
+  // with the same key continues the Showing instead of restarting it.
+  const animKey = JSON.stringify(
     (layers ?? []).map((layer) => ({
       drift: layer.drift ?? null,
+      flicker: layer.flicker ?? null,
       anchor: layer.anchor,
       width: layer.width,
     })),
@@ -234,47 +362,68 @@ export function Illustration({
     layers.length > 0 &&
     showingKey !== undefined;
 
-  // Drift runs on the Web Animations API from the shared timeline t = 0: the
-  // composition mounts when Motion starts (keyed by the Showing key), so an
+  // Drift and Flicker run on the Web Animations API from the shared timeline
+  // t = 0: the composition mounts when Motion starts (keyed by the Showing
+  // key), so every animation created here counts from the same start. A Drift
   // animation with `delay`, linear easing and a forwards fill waits at `from`,
-  // moves to `to` and holds there; a looping Drift repeats at once, since
-  // the delay applies only before the first pass. The effect keys on the
-  // Showing, never on the Layer array identity, so a re-render with the same
-  // key continues the Showing instead of restarting it. Freezing the timeline
-  // while the Illustration is off-screen or the tab is hidden (docs/spec/ui.md,
+  // moves to `to` and holds there; a looping Drift repeats at once, since the
+  // delay applies only before the first pass. A Flicker animation loops the
+  // one fixed 4 s curve forever; its keyframes carry the Layer's depth, so a
+  // flame and its glow pulse together. Freezing the timeline while the
+  // Illustration is off-screen or the tab is hidden (docs/spec/ui.md,
   // timeline) is a follow-up: these animations keep wall-clock time.
   useEffect(() => {
     if (!motionReady || layers === undefined || showingKey === undefined) {
       return;
     }
     const animations: Animation[] = [];
+    const flickers: Animation[] = [];
     layers.forEach((layer, index) => {
-      if (layer.drift === undefined) return;
       const img = layerRefs.current[index];
       if (!img || typeof img.animate !== 'function') return;
-      const fromGeometry = geometryForPoint(layer.drift.from, layer, layer, { width, height });
-      const toGeometry = geometryForPoint(layer.drift.to, layer, layer, { width, height });
-      try {
-        animations.push(
-          img.animate(
-            [
-              { left: `${fromGeometry.leftPct}%`, top: `${fromGeometry.topPct}%` },
-              { left: `${toGeometry.leftPct}%`, top: `${toGeometry.topPct}%` },
-            ],
-            {
-              duration: layer.drift.duration * 1000,
-              delay: layer.drift.delay * 1000,
-              easing: 'linear',
-              fill: 'forwards',
-              ...(layer.drift.loop ? { iterations: Infinity } : {}),
-            },
-          ),
-        );
-      } catch {
-        // The browser refuses to animate: the Layer stays at its from point
-        // over the Still (docs/spec/ui.md, the browser refuses to animate).
+      if (layer.drift !== undefined) {
+        const fromGeometry = geometryForPoint(layer.drift.from, layer, layer, { width, height });
+        const toGeometry = geometryForPoint(layer.drift.to, layer, layer, { width, height });
+        try {
+          animations.push(
+            img.animate(
+              [
+                { left: `${fromGeometry.leftPct}%`, top: `${fromGeometry.topPct}%` },
+                { left: `${toGeometry.leftPct}%`, top: `${toGeometry.topPct}%` },
+              ],
+              {
+                duration: layer.drift.duration * 1000,
+                delay: layer.drift.delay * 1000,
+                easing: 'linear',
+                fill: 'forwards',
+                ...(layer.drift.loop ? { iterations: Infinity } : {}),
+              },
+            ),
+          );
+        } catch {
+          // The browser refuses to animate: the Layer stays at its from point
+          // over the Still (docs/spec/ui.md, the browser refuses to animate).
+        }
+      }
+      if (layer.flicker !== undefined) {
+        try {
+          flickers.push(
+            img.animate(flickerKeyframes(layer.flicker.depth), {
+              duration: FLICKER_CYCLE_SEC * 1000,
+              iterations: Infinity,
+            }),
+          );
+        } catch {
+          // The browser refuses to animate: the Layer stays fully opaque over
+          // the Still (docs/spec/ui.md, the browser refuses to animate).
+        }
       }
     });
+    // Every Flicker of one Illustration runs in unison (docs/spec/ui.md,
+    // flicker): the animations share one start time on the timeline they
+    // mounted on.
+    syncAnimationStartTimes(flickers);
+    animations.push(...flickers);
     return () => {
       for (const animation of animations) {
         try {
@@ -284,7 +433,7 @@ export function Illustration({
         }
       }
     };
-  }, [motionReady, showingKey, driftAnimKey, width, height]);
+  }, [motionReady, showingKey, animKey, width, height]);
 
   return (
     <span
@@ -341,7 +490,10 @@ export function Illustration({
  * One Layer of the Motion composition (docs/spec/ui.md, motion): a plain
  * picture renders as one positioned image; a sprite strip renders as a
  * one-frame window with the full strip inside it, stepping through the frames.
- * Pure, so the frame markup is testable without hydration.
+ * A flickering Layer's opacity is animated by the parent on its outer element
+ * (the window for a strip, the image for a plain picture), so `frames` and
+ * `flicker` combine freely. Pure, so the frame markup is testable without
+ * hydration.
  */
 export function MotionLayer({
   layer,

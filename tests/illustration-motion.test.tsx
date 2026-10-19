@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { loadAllScenarios, loadScenario } from '../src/content/index';
 import type { Diagnostic } from '../src/content/index';
 import { GET } from '../src/app/scenarios/[scenarioId]/assets/[hash]/[...path]/route';
-import { Illustration, MotionLayer, layerGeometry, spriteDuration, spriteFrame } from '../src/app/play/[playthroughId]/illustration';
+import { Illustration, MotionLayer, FLICKER_CYCLE_SEC, FLICKER_DIPS, flickerKeyframes, flickerOpacity, layerGeometry, spriteDuration, spriteFrame, syncAnimationStartTimes } from '../src/app/play/[playthroughId]/illustration';
 import { startPlaythrough, view, type Rng } from '../src/engine/index';
 import { makePng } from './pngFixture';
 
@@ -861,5 +861,245 @@ describe('sprite strip rendering', () => {
     const html = renderToStaticMarkup(<MotionLayer layer={plain} still={still} index={0} />);
     expect(html).toContain('aspect-ratio:16 / 9');
     expect(html).not.toContain('illustration-sprite-step');
+  });
+});
+
+// Layer Flicker: an engine-driven variation of a Layer's opacity. The author
+// sets only `depth`, the deepest dip in percent; the engine fixes the curve
+// and its rate within safe limits. See docs/spec/scenario-format.md
+// (Illustration Motion), docs/spec/validation.md (Motion, play/static-layer)
+// and docs/spec/ui.md (Motion, Flicker).
+
+describe('structure phase: flicker', () => {
+  it('accepts a Layer with flicker depth', () => {
+    const dir = freshMotionDir('flicker-valid');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: { depth: 40 }',
+    );
+    expect(loadScenario(dir).ok).toBe(true);
+  });
+
+  it('schema/missing-field for flicker without depth', () => {
+    const dir = freshMotionDir('flicker-without-depth');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: {}',
+    );
+    const diag = only(fail(dir), 'schema/missing-field');
+    expect(diag.file).toBe('images.yaml');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'flicker', 'depth']);
+  });
+
+  it('rejects out-of-range depth, never clamping', () => {
+    for (const depth of [0, 101]) {
+      const dir = freshMotionDir(`flicker-range-${depth}`);
+      mutate(
+        dir,
+        'images.yaml',
+        '- path: images/layers/gleam.png',
+        `- path: images/layers/gleam.png\n        flicker: { depth: ${depth} }`,
+      );
+      const diag = only(fail(dir), 'schema/invalid-value');
+      expect(diag.file).toBe('images.yaml');
+      expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'flicker', 'depth']);
+    }
+  });
+
+  it('accepts a fractional depth, like fps', () => {
+    const dir = freshMotionDir('flicker-fraction');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: { depth: 2.5 }',
+    );
+    expect(loadScenario(dir).ok).toBe(true);
+  });
+
+  it('rejects a non-mapping flicker', () => {
+    const dir = freshMotionDir('flicker-scalar');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: true',
+    );
+    const diag = only(fail(dir), 'schema/invalid-value');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'flicker']);
+  });
+
+  it('rejects unknown flicker keys', () => {
+    const dir = freshMotionDir('flicker-unknown-key');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: { depth: 40, rate: 2 }',
+    );
+    const diag = only(fail(dir), 'schema/unknown-key');
+    expect(diag.path).toEqual([0, 'motion', 'layers', 0, 'flicker', 'rate']);
+  });
+
+  it('accepts the depth boundaries 1 and 100', () => {
+    const dir = makeScenarioDir('rpg-motion-', 'flicker-boundaries');
+    writeMotionPackage(
+      dir,
+      `${STILL}  motion:\n    layers:\n      - path: images/layers/narrow.png\n        flicker: { depth: 1 }\n      - path: images/layers/wide.png\n        flicker: { depth: 100 }\n`,
+      {
+        'images/layers/narrow.png': makePng(2, 1),
+        'images/layers/wide.png': makePng(4, 1),
+      },
+    );
+    expect(loadScenario(dir).ok).toBe(true);
+  });
+});
+
+describe('playability phase: flickering layers', () => {
+  it('a Layer with flicker no longer warns as static', () => {
+    const dir = freshMotionDir('flicker-not-static');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: { depth: 40 }',
+    );
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/mote.png',
+      '- path: images/layers/mote.png\n        flicker: { depth: 100 }',
+    );
+    const warnings = succeed(dir);
+    expect(warnings.filter((warning) => warning.code === 'play/static-layer')).toHaveLength(0);
+  });
+});
+
+describe('engine view with flicker', () => {
+  function loadFlickerScenario() {
+    const dir = freshMotionDir('engine-flicker');
+    mutate(
+      dir,
+      'images.yaml',
+      '- path: images/layers/gleam.png',
+      '- path: images/layers/gleam.png\n        flicker: { depth: 40 }',
+    );
+    const result = loadScenario(dir);
+    if (!result.ok) {
+      throw new Error(`flicker fixture failed to load: ${JSON.stringify(result.diagnostics)}`);
+    }
+    return result.scenario;
+  }
+
+  it('carries flicker depth on the Layer view', () => {
+    const scenario = loadFlickerScenario();
+    const started = startPlaythrough(scenario, 'drifter', 'Robin', rng);
+    if (!started.ok) throw new Error(`start failed: ${started.reason}`);
+    const locationView = view(scenario, { ...started.state, activeSceneId: null });
+    expect(locationView.kind).toBe('location');
+    if (locationView.kind !== 'location') throw new Error('expected a Location view');
+    expect(locationView.illustration?.layers?.[0]).toMatchObject({ flicker: { depth: 40 } });
+    expect(locationView.illustration?.layers?.[1]).not.toHaveProperty('flicker');
+  });
+});
+
+describe('flicker curve', () => {
+  it('pins the 4 s cycle with 8 keyframes at equal 4/7 s intervals', () => {
+    expect(FLICKER_CYCLE_SEC).toBe(4);
+    expect([...FLICKER_DIPS]).toEqual([0, 0.6, 0.2, 1, 0.4, 0.8, 0.1, 0]);
+    const keyframes = flickerKeyframes(40);
+    expect(keyframes).toHaveLength(8);
+    // Evenly spaced over the 4 s cycle, so consecutive keyframes sit 4/7 s apart.
+    expect(FLICKER_CYCLE_SEC / (keyframes.length - 1)).toBeCloseTo(4 / 7, 12);
+  });
+
+  it('maps opacity as 1 - dip * depth / 100 along the dips', () => {
+    const step = 4 / 7;
+    expect(flickerOpacity(100, 0)).toBeCloseTo(1, 12);
+    expect(flickerOpacity(100, step)).toBeCloseTo(0.4, 12);
+    expect(flickerOpacity(100, 2 * step)).toBeCloseTo(0.8, 12);
+    expect(flickerOpacity(100, 3 * step)).toBeCloseTo(0, 12);
+    expect(flickerOpacity(100, 4 * step)).toBeCloseTo(0.6, 12);
+    expect(flickerOpacity(100, 5 * step)).toBeCloseTo(0.2, 12);
+    expect(flickerOpacity(100, 6 * step)).toBeCloseTo(0.9, 12);
+    // A shallower depth dips less far: the full dip at depth 40 leaves 0.6.
+    expect(flickerOpacity(40, 3 * step)).toBeCloseTo(0.6, 12);
+    // Every keyframe eases between its neighbours, never below the full dip.
+    expect(flickerOpacity(40, 0)).toBe(1);
+    expect(flickerOpacity(1, 3 * step)).toBeCloseTo(0.99, 12);
+  });
+
+  it('eases in-out between keyframes and repeats from t = 0', () => {
+    const step = 4 / 7;
+    // A quarter of the way from dip 0 to dip 0.6 the CSS ease-in-out easing
+    // (cubic-bezier(0.42, 0, 0.58, 1)) has covered only about 0.129 of the
+    // segment — a slow start — so the opacity is about 0.9225, above the
+    // linear 0.85. The helper traces the same easing the browser animates.
+    expect(flickerOpacity(100, 0.25 * step)).toBeCloseTo(0.9225, 3);
+    expect(flickerOpacity(100, 0.25 * step)).toBeGreaterThan(0.85);
+    expect(flickerOpacity(100, 0.25 * step)).toBeLessThan(1);
+    // The 4 s cycle repeats: t = 4 is t = 0, and t = 4 + step is t = step.
+    expect(flickerOpacity(40, 4)).toBe(flickerOpacity(40, 0));
+    expect(flickerOpacity(40, 4 + step)).toBeCloseTo(flickerOpacity(40, step), 12);
+  });
+
+  it('builds one shared keyframe list, eased between keyframes', () => {
+    const keyframes = flickerKeyframes(40);
+    expect(keyframes.map((keyframe) => keyframe.easing)).toEqual(Array(8).fill('ease-in-out'));
+    const opacities = keyframes.map((keyframe) => Number(keyframe.opacity));
+    expect(opacities[0]).toBeCloseTo(1, 12);
+    expect(opacities[3]).toBeCloseTo(0.6, 12);
+    expect(Math.min(...opacities)).toBeCloseTo(0.6, 12);
+    expect(opacities[7]).toBeCloseTo(1, 12);
+  });
+
+  it('two Flickering Layers of one Illustration pulse in unison from t = 0', () => {
+    // The same depth builds the same keyframes, and the browser starts every
+    // Flicker of one Illustration together on the shared timeline t = 0 with
+    // the same 4 s infinite animation, so a flame and its glow pulse together.
+    expect(flickerKeyframes(40)).toEqual(flickerKeyframes(40));
+    expect(flickerOpacity(40, 0)).toBe(1);
+    expect(flickerOpacity(40, FLICKER_CYCLE_SEC)).toBe(1);
+  });
+
+  it('shares one start time across every Flicker animation', () => {
+    const first = { startTime: 123.5 };
+    const second = { startTime: 124.0 };
+    syncAnimationStartTimes([first, second]);
+    expect(first.startTime).toBe(123.5);
+    expect(second.startTime).toBe(123.5);
+  });
+
+  it('leaves pending animations alone when no start time is set yet', () => {
+    const first = { startTime: null as number | null };
+    const second = { startTime: null as number | null };
+    syncAnimationStartTimes([first, second]);
+    expect(first.startTime).toBeNull();
+    expect(second.startTime).toBeNull();
+    syncAnimationStartTimes([]);
+  });
+
+  it('renders a flickering sprite strip with both animations', () => {
+    const still = { width: 640, height: 360 };
+    const strip = {
+      src: '/scenarios/demo/assets/abc/images/layers/flame.png',
+      at: { x: 50, y: 50 },
+      anchor: { x: 50, y: 50 },
+      width: 50,
+      frames: 8,
+      fps: 4,
+      flicker: { depth: 40 },
+      blend: 'normal' as const,
+      pixelWidth: 8,
+      pixelHeight: 4,
+    };
+    // Frames and Flicker combine freely: the strip keeps stepping through its
+    // frames while the browser varies the Layer's opacity around it.
+    const html = renderToStaticMarkup(<MotionLayer layer={strip} still={still} index={0} />);
+    expect(html).toContain('animation:illustration-sprite-step 2s steps(8) infinite');
   });
 });

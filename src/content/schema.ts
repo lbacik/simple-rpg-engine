@@ -340,15 +340,18 @@ export const EndingSchema = z.strictObject({
 
 // ---------------------------------------------------------------------------
 // Illustration Motion (docs/spec/scenario-format.md, Motion): a Layer's
-// placement over the Still, with an optional Drift of its anchor. `at` has no
-// .default(): it is mutually exclusive with `drift` (schema/drift-and-at, a
-// loader-only refinement in structure.ts), so a Layer declaring `at` keeps
-// what it wrote and one declaring neither is centred to { x: 50, y: 50 } by
-// the model. `anchor` places the Layer only and never conflicts, so it
-// defaults here. `frames` and `fps` describe a horizontal sprite strip
-// (frames 2-64, fps 1-30); the exactly-one rule is a custom check
-// (schema/frames-fps), so both stay optional here. `flicker` and `camera`
-// arrive with their own tickets; the strict objects below reject them as
+// placement over the Still, with an optional Drift of its anchor and an
+// optional Flicker of its opacity. `at` has no .default(): it is mutually
+// exclusive with `drift` (schema/drift-and-at, a loader-only refinement in
+// structure.ts), so a Layer declaring `at` keeps what it wrote and one
+// declaring neither is centred to { x: 50, y: 50 } by the model. `anchor`
+// places the Layer only and never conflicts, so it defaults here. `frames`
+// and `fps` describe a horizontal sprite strip (frames 2-64, fps 1-30); the
+// exactly-one rule is a custom check (schema/frames-fps), so both stay
+// optional here. `flicker` carries only `depth`, the deepest opacity dip in
+// percent (1-100, fractions allowed like `fps`; rejected when out of range,
+// never clamped); the engine fixes the curve and its rate. `camera` arrives
+// with its own ticket; the strict objects below reject it as
 // schema/unknown-key until then.
 // ---------------------------------------------------------------------------
 
@@ -371,6 +374,10 @@ const driftSchema = z.strictObject({
   loop: z.boolean().default(false),
 });
 
+const flickerSchema = z.strictObject({
+  depth: z.number().min(1).max(100),
+});
+
 export const LayerSchema = z.strictObject({
   path: z.string(),
   at: motionPointSchema.optional(),
@@ -378,6 +385,7 @@ export const LayerSchema = z.strictObject({
   width: z.number().gt(0).max(400).default(100),
   frames: z.number().int().min(2).max(64).optional(),
   fps: z.number().min(1).max(30).optional(),
+  flicker: flickerSchema.optional(),
   blend: z.enum(['normal', 'multiply', 'screen']).default('normal'),
   drift: driftSchema.optional(),
 });

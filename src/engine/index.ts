@@ -3193,7 +3193,9 @@ export type ChoiceView = {
  * One Motion Layer as the UI renders it (docs/spec/ui.md, motion): the
  * declaration with defaults applied, the Layer file's asset URL under its own
  * hash and the file's pixel size. A sprite-strip Layer also carries `frames`
- * and `fps`, so the browser steps through one frame at a time.
+ * and `fps`, so the browser steps through one frame at a time. A flickering
+ * Layer also carries `flicker`, so the browser varies its opacity along the
+ * engine's fixed curve.
  */
 export type IllustrationLayerView = {
   path: string;
@@ -3204,6 +3206,8 @@ export type IllustrationLayerView = {
   frames?: number;
   /** Frames per second; present exactly when `frames` is. */
   fps?: number;
+  /** The Flicker depth, the deepest opacity dip in percent; present only when the Layer flickers. */
+  flicker?: { depth: number };
   blend: 'normal' | 'multiply' | 'screen';
   /** Present only when the Layer drifts (docs/spec/ui.md, drift). */
   drift?: {
@@ -3287,6 +3291,7 @@ export function illustrationView(
       width: layer.width,
       ...(layer.frames === undefined ? {} : { frames: layer.frames }),
       ...(layer.fps === undefined ? {} : { fps: layer.fps }),
+      ...(layer.flicker === undefined ? {} : { flicker: layer.flicker }),
       blend: layer.blend,
       ...(layer.drift === undefined ? {} : { drift: layer.drift }),
       src: sceneIllustrationUrl(scenarioId, layer.file),

@@ -84,6 +84,20 @@
                   "minimum": 1,
                   "maximum": 30
                 },
+                "flicker": {
+                  "type": "object",
+                  "properties": {
+                    "depth": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "depth"
+                  ],
+                  "additionalProperties": false
+                },
                 "blend": {
                   "default": "normal",
                   "type": "string",
