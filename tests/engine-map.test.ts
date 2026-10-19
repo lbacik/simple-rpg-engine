@@ -362,27 +362,12 @@ describe('travel targets', () => {
     ]);
   });
 
-  it('is empty while a Scene or Combat is active, or after the end', () => {
+  it('is empty while a Scene is active, or after the end', () => {
     const scenario = loadFixture();
     const base = startAt(scenario, { visited: ['home'] });
     expect(deriveMap(scenario, base).travelTargetIds).toEqual(['lane']);
     expect(
       deriveMap(scenario, { ...base, activeSceneId: 'path' }).travelTargetIds,
-    ).toEqual([]);
-    expect(
-      deriveMap(
-        scenario,
-        {
-          ...base,
-          activeCombat: {
-            encounterId: 'wolves',
-            round: 1,
-            startedParticipants: ['wolves-foe'],
-            roundParticipantOrder: ['wolves-foe'],
-            participants: { 'wolves-foe': { range: 'far', intent: 'strike', prepared: false } },
-          },
-        },
-      ).travelTargetIds,
     ).toEqual([]);
     expect(
       deriveMap(scenario, { ...base, status: 'ended', endingId: 'death' })

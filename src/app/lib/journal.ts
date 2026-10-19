@@ -13,23 +13,8 @@
 // with only their type label from the catalogue.
 
 import { escapeHtml, renderStoredText } from '../../engine/narration';
-import { combatRounds } from '../../engine/index';
-import type {
-  CombatParticipantRef,
-  TacticalActionEvent,
-} from '../../engine/index';
 import type { Catalogue } from '../../i18n/index';
 import { primaryLanguageSubtag } from '../../i18n/languages';
-import {
-  combatEndLine,
-  combatRollLine,
-  combatRoundLines,
-  combatStartLine,
-  enemyDefeatedLine,
-  tacticalParticipantName,
-  tacticalRoundHtml,
-  wrapScenarioNames,
-} from './combat-text';
 
 /** Entries per journal batch. */
 export const JOURNAL_BATCH_SIZE = 20 as const;
@@ -39,11 +24,10 @@ const NARRATION_ENTRY_TYPES: ReadonlySet<string> = new Set(['intro', 'scene', 'o
 
 /**
  * Entry types whose primary content is Scenario text (narration, Choice
- * wording, the Ending's title and closing narration, the Combat opening
- * narration): after a language switch these keep the language they were
- * presented in and are visibly marked when it differs from the Interface
- * Language (docs/spec/ui.md, journal). Engine-generated entries (Test, state
- * changes, travel, Combat rounds and ends, the Enemy-defeated notice,
+ * wording, the Ending's title and closing narration): after a language
+ * switch these keep the language they were presented in and are visibly
+ * marked when it differs from the Interface Language (docs/spec/ui.md,
+ * journal). Engine-generated entries (Test, state changes, travel,
  * inventory actions) carry no flag even when they mention a name: the name
  * inside them only carries its `lang`.
  */
@@ -53,7 +37,6 @@ const SCENARIO_TEXT_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'choice',
   'outcome',
   'ending',
-  'combat-start',
 ]);
 
 /** A Journal entry as the renderer reads it: stored rows and new engine entries alike. */
@@ -119,14 +102,6 @@ export function journalEntryLabel(type: string, catalogue: Catalogue): string {
       return catalogue.journal.types.stateChange;
     case 'travel':
       return catalogue.journal.types.travel;
-    case 'combat-start':
-      return catalogue.journal.types.combatStart;
-    case 'combat-round':
-      return catalogue.journal.types.combatRound;
-    case 'combat-end':
-      return catalogue.journal.types.combatEnd;
-    case 'enemy-defeated':
-      return catalogue.journal.types.enemyDefeated;
     case 'inventory':
       return catalogue.journal.types.inventory;
     case 'ending':
@@ -272,9 +247,8 @@ export function renderJournalEntries(
 /**
  * Render one journal entry to HTML through the catalogue of the Interface
  * Language current when the Journal is read. Structured entries (intro, Scene
- * narration, Choice taken, Outcome narration, travel, Combat start, rounds
- * and end, the Enemy-defeated notice, Ending, Test, state changes, inventory
- * actions) render their event data with the catalogue and their Scenario
+ * narration, Choice taken, Outcome narration, travel, Ending, Test, state
+ * changes, inventory actions) render their event data with the catalogue and their Scenario
  * text as presented, each name carrying the entry's `lang`. Rows stored
  * before structured events hold English text and are shown verbatim, with
  * only their type label from the catalogue. Entries holding Scenario text in
@@ -302,18 +276,6 @@ export function renderJournalEntry(
   }
   if (entry.type === 'travel') {
     return { label, html: renderTravelEntry(record, catalogue, lang), ...flagged };
-  }
-  if (entry.type === 'combat-start') {
-    return { label, html: renderCombatStartEntry(record, catalogue, lang, characterName), ...flagged };
-  }
-  if (entry.type === 'combat-round') {
-    return { label, html: renderCombatRoundEntry(record, catalogue, lang, characterName), ...flagged };
-  }
-  if (entry.type === 'combat-end') {
-    return { label, html: renderCombatEndEntry(record, catalogue, lang), ...flagged };
-  }
-  if (entry.type === 'enemy-defeated') {
-    return { label, html: renderEnemyDefeatedEntry(record, catalogue, lang), ...flagged };
   }
   if (entry.type === 'ending') {
     const kind =
@@ -359,171 +321,6 @@ function renderTravelEntry(
   const before = escapeHtml(message.slice(0, at));
   const after = escapeHtml(message.slice(at + name.length));
   return `<p>${before}<span lang="${escapeHtml(lang)}">${escapeHtml(name)}</span>${after}</p>`;
-}
-
-/** A Combat entry's Enemy name as presented; absent on legacy rows. */
-function combatEnemyName(record: Record<string, unknown>): string | undefined {
-  const name = typeof record.enemyName === 'string' ? record.enemyName : undefined;
-  return name === undefined || name === '' ? undefined : name;
-}
-
-/**
- * A tactical (v2) participant reference list, as stored on combat-start,
- * combat-end and enemy-defeated entries. The full per-lane report rendering
- * arrives with the application integration (I5); until then each participant
- * renders through the existing single-opponent line helpers.
- */
-function tacticalParticipants(record: Record<string, unknown>): CombatParticipantRef[] | undefined {
-  const participants = record.participants;
-  if (!Array.isArray(participants)) return undefined;
-  if (
-    !participants.every(
-      (entry) =>
-        typeof (entry as CombatParticipantRef).participantId === 'string' &&
-        typeof (entry as CombatParticipantRef).name === 'string',
-    )
-  ) {
-    return undefined;
-  }
-  return participants as CombatParticipantRef[];
-}
-
-/**
- * A Combat start entry: tactical (v2) rows carry every participant taking
- * part as presented and render the narration with one opponent line each;
- * v1 rows carry the opening narration plus the Enemy's name; legacy rows
- * carry the English narration only and are shown verbatim.
- */
-function renderCombatStartEntry(
-  record: Record<string, unknown>,
-  catalogue: Catalogue,
-  lang: string,
-  characterName: string,
-): string {
-  const text = String(record.text ?? '');
-  const narration = `<div lang="${escapeHtml(lang)}">${renderStoredText(text, characterName)}</div>`;
-  const participants = tacticalParticipants(record);
-  if (participants !== undefined) {
-    const names = participants.map(tacticalParticipantName);
-    const lines = participants
-      .map(
-        (ref) =>
-          `<p>${wrapScenarioNames(combatStartLine(tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
-      )
-      .join('');
-    return `${narration}${lines}`;
-  }
-  const enemyName = combatEnemyName(record);
-  if (enemyName === undefined) return narration;
-  return `${narration}<p>${wrapScenarioNames(combatStartLine(enemyName, catalogue), [enemyName], lang)}</p>`;
-}
-
-/**
- * A Combat round entry: tactical (v2) rows carry every action of the Round as
- * versioned events and render through the shared tactical report (ordered
- * executed/cancelled/dropped/not-reached actions, rolls and results, the
- * nested counterattack, defeats and the stop reason); v1 rows carry the Round
- * as events (action, rolls, Damage, Range before and after, guard); legacy rows
- * carry English text and are shown verbatim and are never reinterpreted as
- * tactical events.
- */
-function renderCombatRoundEntry(
-  record: Record<string, unknown>,
-  catalogue: Catalogue,
-  lang: string,
-  characterName: string,
-): string {
-  if (Array.isArray(record.actions)) {
-    const round = typeof record.round === 'number' ? record.round : undefined;
-    const stop =
-      record.stop === 'victory' || record.stop === 'death' || record.stop === 'escape'
-        ? record.stop
-        : undefined;
-    return tacticalRoundHtml(record.actions as TacticalActionEvent[], catalogue, lang, characterName, {
-      ...(round === undefined ? {} : { round }),
-      ...(stop === undefined ? {} : { stop }),
-    });
-  }
-  const enemyName = combatEnemyName(record);
-  if (enemyName === undefined) {
-    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
-  }
-  const encounterId = typeof record.encounterId === 'string' ? record.encounterId : '';
-  const [round] = combatRounds([{ type: 'combat-round', payload: record }], encounterId);
-  if (round === undefined) return '';
-  const names = [
-    characterName,
-    enemyName,
-    ...(typeof record.weaponName === 'string' ? [record.weaponName] : []),
-    ...(typeof record.itemName === 'string' ? [record.itemName] : []),
-  ];
-  const lines = combatRoundLines(round, catalogue)
-    .map((line) => `<p>${wrapScenarioNames(line, names, lang)}</p>`)
-    .join('');
-  const chips = round.rolls
-    .map(
-      (roll) =>
-        `<li>${wrapScenarioNames(combatRollLine(roll, catalogue, characterName, enemyName), names, lang)}</li>`,
-    )
-    .join('');
-  return `${lines}${chips === '' ? '' : `<ul class="combat-rolls">${chips}</ul>`}`;
-}
-
-/**
- * A Combat end entry: tactical (v2) rows carry every participant as presented
- * and render one closing line each; v1 rows carry how the Combat ended with
- * the Enemy's name; legacy rows carry the English sentence and are shown
- * verbatim.
- */
-function renderCombatEndEntry(
-  record: Record<string, unknown>,
-  catalogue: Catalogue,
-  lang: string,
-): string {
-  const participants = tacticalParticipants(record);
-  if (participants !== undefined) {
-    const names = participants.map(tacticalParticipantName);
-    const howEnded = record.howEnded === 'escape' ? 'escape' : 'victory';
-    return participants
-      .map(
-        (ref) =>
-          `<p>${wrapScenarioNames(combatEndLine(howEnded, tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
-      )
-      .join('');
-  }
-  const enemyName = combatEnemyName(record);
-  if (enemyName === undefined) {
-    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
-  }
-  const howEnded = record.howEnded === 'escape' ? 'escape' : 'victory';
-  return `<p>${wrapScenarioNames(combatEndLine(howEnded, enemyName, catalogue), [enemyName], lang)}</p>`;
-}
-
-/**
- * The Enemy-defeated notice: tactical (v2) rows carry every participant as
- * presented and render one notice line each; v1 rows carry the Enemy's name;
- * legacy rows carry the English sentence and are shown verbatim.
- */
-function renderEnemyDefeatedEntry(
-  record: Record<string, unknown>,
-  catalogue: Catalogue,
-  lang: string,
-): string {
-  const participants = tacticalParticipants(record);
-  if (participants !== undefined) {
-    const names = participants.map(tacticalParticipantName);
-    return participants
-      .map(
-        (ref) =>
-          `<p>${wrapScenarioNames(enemyDefeatedLine(tacticalParticipantName(ref), catalogue), names, lang)}</p>`,
-      )
-      .join('');
-  }
-  const enemyName = combatEnemyName(record);
-  if (enemyName === undefined) {
-    return `<p lang="${escapeHtml(lang)}">${escapeHtml(String(record.text ?? ''))}</p>`;
-  }
-  return `<p>${wrapScenarioNames(enemyDefeatedLine(enemyName, catalogue), [enemyName], lang)}</p>`;
 }
 
 export type JournalEnding = {

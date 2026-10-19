@@ -19,20 +19,7 @@ import { selectPlural } from './plural';
 
 const whole = (value: number): string => formatNumber('en', value);
 
-/** An ordinal place ("1st", "2nd", "3rd"): the arena holds at most three actions. */
-const ordinal = (value: number): string => {
-  const mod100 = value % 100;
-  const mod10 = value % 10;
-  const suffix =
-    mod10 === 1 && mod100 !== 11
-      ? 'st'
-      : mod10 === 2 && mod100 !== 12
-        ? 'nd'
-        : mod10 === 3 && mod100 !== 13
-          ? 'rd'
-          : 'th';
-  return `${whole(value)}${suffix}`;
-};
+// S4: `ordinal` served the removed tactical Combat order lines.
 
 const itemsCount = (count: number): string =>
   selectPlural('en', count, {
@@ -154,64 +141,13 @@ export const en = {
     statusEnded: 'Ended',
     statusIncompatible: 'Incompatible',
   },
+  // S4 (Combat MVP 1.0): the tactical Arena was removed with the old Combat
+  // rules. The stub page renders title + description only; the Arena returns
+  // on the shared Combat core with the P5 adapter.
   arena: {
     title: 'Arena',
     description:
       'Choose one or two opponents from the Bestiary and test the Combat rules. No Scenario, no Playthrough — just the fight.',
-    bestiaryHeading: 'Bestiary',
-    opponentOne: 'Opponent 1',
-    opponentTwo: 'Opponent 2 (optional)',
-    noSecondOpponent: 'No second opponent',
-    startingRange: 'Starting Range',
-    characterHeading: 'Your Character',
-    presetLabel: 'Character preset',
-    presetCustom: 'Custom',
-    presetHelp: 'Choosing a preset fills in the values below; they stay editable.',
-    attributesHelp: 'Attributes take 0–3 each, with no sum limit.',
-    healthLabel: 'Starting Health (1–12)',
-    equipmentHeading: 'Equipment',
-    weaponLabel: 'Weapon',
-    outfitLabel: 'Outfit',
-    talismanLabel: 'Talisman',
-    consumablesLabel: 'Consumables (0–3)',
-    consumablesHelp: (heal: number): string =>
-      `Each restores ${whole(heal)} Health. Using one at full Health is rejected.`,
-    characterLine: (
-      might: number,
-      agility: number,
-      wits: number,
-      presence: number,
-      health: number,
-    ): string =>
-      `Might ${whole(might)} · Agility ${whole(agility)} · Wits ${whole(wits)} · Presence ${whole(presence)} · Health ${whole(health)}`,
-    behaviour: {
-      steady: 'Steady',
-      heavy: 'Heavy',
-    },
-    enemyLine: (
-      might: number,
-      agility: number,
-      wits: number,
-      presence: number,
-      health: number,
-      damage: number,
-      reach: string,
-      behaviour: string,
-    ): string =>
-      `Might ${whole(might)} · Agility ${whole(agility)} · Wits ${whole(wits)} · Presence ${whole(presence)} · Health ${whole(health)} · Damage ${whole(damage)} · Reach ${reach} · ${behaviour}`,
-    start: 'Start the fight',
-    /** The default Character's name in roll lines. */
-    you: 'You',
-    rounds: (count: number): string =>
-      count === 1 ? '1 round' : `${whole(count)} rounds`,
-    backToSetup: 'Back to setup',
-    fightAgain: 'Fight again',
-    summaryHeading: 'Fight summary',
-    summaryOutcome: 'Outcome',
-    summaryRounds: 'Rounds fought',
-    summaryHealth: 'Remaining Health',
-    summaryHits: (hits: number, misses: number): string =>
-      `${selectPlural('en', hits, { one: '1 hit', other: `${whole(hits)} hits` })} · ${selectPlural('en', misses, { one: '1 miss', other: `${whole(misses)} misses` })}`,
   },
   notFound: {
     title: 'Page not found',
@@ -240,10 +176,7 @@ export const en = {
     hard: 'Hard',
     'very-hard': 'Very hard',
   },
-  range: {
-    near: 'Near',
-    far: 'Far',
-  },
+  // S4: the Near/Far Range vocabulary belonged to the tactical rules.
   reach: {
     melee: 'melee',
     ranged: 'ranged',
@@ -372,10 +305,6 @@ export const en = {
       outcome: 'Outcome',
       stateChange: 'State change',
       travel: 'Travel',
-      combatStart: 'Combat start',
-      combatRound: 'Combat round',
-      combatEnd: 'Combat end',
-      enemyDefeated: 'Enemy defeated',
       inventory: 'Inventory',
       ending: 'Ending',
     },
@@ -411,160 +340,11 @@ export const en = {
     used: (name: string, restored: number): string =>
       `Used: ${name} (+${whole(restored)} Health)`,
   },
-  readOnly: {
-    combat: 'Combat',
-    roundRange: (round: number, range: string) =>
-      `Round ${formatNumber('en', round)} · Range: ${range}`,
-    health: (
-      character: string,
-      now: number,
-      max: number,
-      enemy: string,
-      enemyNow: number,
-      enemyMax: number,
-    ) =>
-      `${character}: Health ${formatNumber('en', now)}/${formatNumber('en', max)} · ` +
-      `${enemy}: Health ${formatNumber('en', enemyNow)}/${formatNumber('en', enemyMax)}`,
-  },
-  combat: {
-    title: 'Combat',
-    round: (round: number) => `Round ${whole(round)}`,
-    log: 'Log',
-    lastRound: (round: number) => `Last round · ${whole(round)}`,
-    noRolls: 'No rolls yet.',
-    noConsumables: 'No Consumables held.',
-    guardUp: 'Guard up',
-    unarmed: 'Bare hands',
-    groups: {
-      position: 'Position',
-      fight: 'Fight',
-      items: 'Items',
-      leave: 'Leave',
-    },
-    advance: 'Advance',
-    fallBack: 'Fall back',
-    attack: 'Attack',
-    attackWith: (weapon: string) => `Attack: ${weapon}`,
-    defend: 'Defend',
-    distract: 'Distract',
-    useItem: (item: string) => `Use: ${item}`,
-    escape: 'Escape',
-    reasonAlreadyAt: (range: string) => `Already at ${range} Range.`,
-    reasonNeedsNear: (weapon: string, range: string) => `Your ${weapon} needs ${range} Range.`,
-    reasonNeedsNearUnarmed: (range: string) => `Unarmed attacks need ${range} Range.`,
-    reasonFullHealth: 'Already at full Health.',
-    reasonWary: 'Wary: cannot be distracted.',
-    reasonNeedsNearTarget: (weapon: string, needRange: string, target: string, targetRange: string) =>
-      `Your ${weapon} needs ${needRange} Range; ${target} is ${targetRange}.`,
-    reasonNeedsNearUnarmedTarget: (needRange: string, target: string, targetRange: string) =>
-      `Unarmed attacks need ${needRange} Range; ${target} is ${targetRange}.`,
-    reasonAlreadyNearTarget: (target: string, range: string) =>
-      `You are already ${range} ${target}.`,
-    reasonWaryTarget: (target: string, round: number) =>
-      `${target} is wary of tricks until the end of round ${whole(round)}.`,
-    arenaLabel: 'Combat arena',
-    speeds: {
-      fast: 'Fast',
-      normal: 'Normal',
-      slow: 'Slow',
-    },
-    intents: {
-      strikeMelee: 'Strike',
-      strikeRanged: 'Shoot',
-      closeIn: 'Close in',
-      prepareMelee: 'Wind up',
-      prepareRanged: 'Take aim',
-      heavyMelee: 'Heavy blow',
-      heavyRanged: 'Aimed shot',
-    },
-    thisRound: 'This round',
-    orderHint: 'Focus an action to preview its place here.',
-    previewChip: (order: number, label: string) => `#${whole(order)} ${label} (preview)`,
-    placeOf: (position: number, total: number) => `${ordinal(position)} of ${whole(total)}`,
-    actsOrder: (position: number, total: number) =>
-      `acts ${ordinal(position)} of ${whole(total)}`,
-    needsThreshold: (threshold: number) => `needs ${whole(threshold)}+`,
-    towards: (target: string) => `→ ${target}`,
-    escapeBonus: (bonus: number) => `includes +${whole(bonus)} committed bonus`,
-    targetPicker: 'Target',
-    targetNote: 'Used by Attack, Distract and Advance.',
-    preparedMelee: 'Wound up',
-    preparedRanged: 'Aiming',
-    waryUntil: (round: number) => `Wary · to round ${whole(round)}`,
-    defeatedBadge: 'Defeated',
-    hitsYouOn: (hit: number, guarded: number) =>
-      `hits you on ${whole(hit)}+, ${whole(guarded)}+ if you Defend`,
-    preparesNext: (intent: string, speed: string, damage: number) =>
-      `next round: ${intent}, ${speed.toLowerCase()}, ${whole(damage)} Damage`,
-    arenaRange: (range: string) => `Range: ${range}`,
-    farMarker: (range: string) => `‹ — — ${range} — — ›`,
-    damage: (amount: number) => `${whole(amount)} Damage`,
-    rollScore: (die1: number, die2: number, modifier: number, total: number, target: number) =>
-      `${whole(die1)}+${whole(die2)}+${whole(modifier)}=${whole(total)} vs ${whole(target)}`,
-    rollHit: (who: string, score: string, damage: string) => `${who}: ${score} — hit, ${damage}`,
-    rollSuccess: (who: string, score: string) => `${who}: ${score} — success`,
-    rollMiss: (who: string, score: string) => `${who}: ${score} — miss`,
-    lineAdvance: (range: string) => `Advance — now at ${range} Range.`,
-    lineFallBackSuccess: (score: string, range: string) =>
-      `Fall back (${score}): success, now at ${range} Range.`,
-    lineFallBackFailure: (score: string, range: string) =>
-      `Fall back (${score}): failure, staying at ${range} Range.`,
-    lineEscapeSuccess: (score: string) => `Escape (${score}): success.`,
-    lineEscapeFailure: (score: string) => `Escape attempt (${score}): failure.`,
-    lineUseItem: (item: string, health: number) => `Use: ${item} — Health +${whole(health)}.`,
-    lineDefend: 'You raise your guard.',
-    lineAttackHit: (weapon: string, score: string, damage: string) =>
-      `Attack: ${weapon} (${score}) — hit, ${damage}.`,
-    lineAttackMiss: (weapon: string, score: string) => `Attack: ${weapon} (${score}) — miss.`,
-    lineEnemyAttackHit: (enemy: string, score: string, damage: string) =>
-      `${enemy} attacks (${score}) — hit, ${damage}.`,
-    lineEnemyAttackMiss: (enemy: string, score: string, counter: boolean) =>
-      counter
-        ? `${enemy} attacks (${score}) — miss; your counterattack deals 1 Damage.`
-        : `${enemy} attacks (${score}) — miss.`,
-    lineEnemyClosesIn: (enemy: string, range: string) =>
-      `${enemy} closes in to ${range} Range instead of attacking.`,
-    opponent: (enemy: string) => `Opponent: ${enemy}.`,
-    combatEndVictory: (enemy: string) => `${enemy} is defeated.`,
-    combatEndEscape: (enemy: string) => `You escape from ${enemy}.`,
-    enemyDefeated: (enemy: string) => `The ${enemy} is defeated.`,
-    tactical: {
-      speedFast: 'Fast',
-      speedNormal: 'Normal',
-      speedSlow: 'Slow',
-      intentStrike: 'Strike',
-      intentCloseIn: 'Close in',
-      intentPrepare: 'Prepare',
-      intentHeavyAttack: 'Heavy attack',
-      cancelled: (reason: string) => `Cancelled: ${reason}.`,
-      cancelInterrupted: 'interrupted by your distraction',
-      cancelTargetDefeated: 'the target had already fallen',
-      cancelOutOfReach: 'out of Reach',
-      cancelAlreadyNear: 'already Near',
-      cancelNoneNear: 'nothing was Near any more',
-      dropped: 'Did not act: defeated earlier this round.',
-      notReached: 'Did not happen: the fight was already over.',
-      stopEscape: 'You escape.',
-      stopVictory: 'Every enemy has fallen.',
-      stopDeath: 'You fell.',
-      falls: (name: string) => `— ${name} falls.`,
-      counter: '↳ Counterattack:',
-      guarded: 'Guarded until the end of the round',
-      waryUntil: (round: number) => `Wary until the end of round ${whole(round)}`,
-      prepared: 'prepares; its heavy attack comes next round',
-      preparationLost: 'its preparation is lost',
-      nowNear: (name: string) => `now Near ${name}`,
-      nowFar: 'now Far',
-      healed: (amount: number) => `+${whole(amount)} Health`,
-      guardHeld: '(your guard held)',
-      guardThrough: '(through your guard)',
-      hit: (damage: string) => `hit, ${damage}`,
-      miss: 'miss',
-      success: 'success',
-      failure: 'failure',
-      actionInterrupted: (name: string) => `${name}'s action is interrupted`,
-    },
-  },
+  // S4: the readOnly Combat/Range/Health lines belonged to the tactical rules.
+  // S4: the Combat catalogue (actions, intents, roll lines, escape,
+  // combatEndEscape, the tactical block with stopEscape) belonged to the
+  // removed tactical rules. Scenario/Arena Combat return on the shared
+  // Combat core with the adapter tickets.
   closePanel: (title: string) => `Close ${title}`,
 };
 

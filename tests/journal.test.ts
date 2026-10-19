@@ -43,7 +43,6 @@ function makeState(): PlaythroughState {
     equipment: {},
     currentLocationId: 'glade',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['glade'],
     revealed: [],
     firedScenes: [],
@@ -268,18 +267,21 @@ describe('renderJournalEntry', () => {
     ).toBe('Podróż');
   });
 
-  it('renders Combat start narration with the Markdown subset', () => {
+  // S4: the tactical Combat renderers are gone; legacy combat rows render
+  // verbatim (raw type as label, escaped text, no Markdown, no flag).
+  it('renders a legacy Combat start row verbatim', () => {
     const rendered = renderJournalEntry(
       { type: 'combat-start', lang: 'en', payload: { text: 'A **wolf** lunges from the *mist*!' } },
       en,
       name,
     );
-    expect(rendered.label).toBe('Combat start');
-    expect(rendered.html).toContain('<strong>wolf</strong>');
-    expect(rendered.html).toContain('<em>mist</em>');
+    expect(rendered.label).toBe('combat-start');
+    expect(rendered.html).toContain('A **wolf** lunges from the *mist*!');
+    expect(rendered.html).not.toContain('<strong>');
+    expect(rendered.html).not.toContain('<em>');
   });
 
-  it('renders a Combat round as plain text', () => {
+  it('renders a legacy Combat round verbatim', () => {
     const rendered = renderJournalEntry(
       {
         type: 'combat-round',
@@ -289,27 +291,27 @@ describe('renderJournalEntry', () => {
       en,
       name,
     );
-    expect(rendered.label).toBe('Combat round');
+    expect(rendered.label).toBe('combat-round');
     expect(rendered.html).toContain('Round 1');
   });
 
-  it('renders Combat end as plain text', () => {
+  it('renders a legacy Combat end verbatim', () => {
     const rendered = renderJournalEntry(
       { type: 'combat-end', lang: 'en', payload: { text: 'Victory! The wolf falls.' } },
       en,
       name,
     );
-    expect(rendered.label).toBe('Combat end');
+    expect(rendered.label).toBe('combat-end');
     expect(rendered.html).toContain('Victory! The wolf falls.');
   });
 
-  it('renders the Enemy-defeated notice as plain text', () => {
+  it('renders a legacy Enemy-defeated notice verbatim', () => {
     const rendered = renderJournalEntry(
       { type: 'enemy-defeated', lang: 'en', payload: { text: 'The wolf is defeated.' } },
       en,
       name,
     );
-    expect(rendered.label).toBe('Enemy defeated');
+    expect(rendered.label).toBe('enemy-defeated');
     expect(rendered.html).toContain('The wolf is defeated.');
   });
 

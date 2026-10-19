@@ -1,7 +1,7 @@
 // Test-only Combat core probe route (P1a K4). A client component imports
 // the shared core, proving it builds for the browser. Nothing links from
 // production navigation, and the page answers 404 unless
-// E2E_TEST_ROUTES=1, like the test-tactical route.
+// E2E_TEST_ROUTES=1 (the former test-tactical route was removed in S4).
 
 import { notFound } from 'next/navigation';
 import CombatCoreProbe from './CombatCoreProbe';

@@ -102,21 +102,8 @@ describe('illustration in view', () => {
     expect(location.illustration).toBeUndefined();
   });
 
-  it('carries no illustration on Combat and Ending views', () => {
+  it('carries no illustration on Ending views', () => {
     const { scenario, state: started } = startWoods();
-    const combat = view(scenario, {
-      ...started,
-      activeSceneId: null,
-      activeCombat: {
-        encounterId: 'camp-bandit',
-        round: 1,
-        startedParticipants: ['bandit-archer'],
-        roundParticipantOrder: ['bandit-archer'],
-        participants: { 'bandit-archer': { range: 'far', intent: 'strike', prepared: false } },
-      },
-    });
-    expect(combat.kind).toBe('combat');
-    expect('illustration' in combat).toBe(false);
     const ended = view(scenario, { ...started, status: 'ended', endingId: 'death' });
     expect(ended.kind).toBe('ended');
     expect('illustration' in ended).toBe(false);

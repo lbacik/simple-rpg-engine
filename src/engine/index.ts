@@ -8,10 +8,8 @@ import type {
   AttributeName,
   CompiledChoice,
   CompiledEffect,
-  CompiledEncounter,
   CompiledImageEntry,
   CompiledOutcome,
-  CompiledParticipant,
   CompiledScene,
 } from '../content/model';
 import { effectiveAttributes, evaluateCondition } from './conditions';
@@ -19,16 +17,6 @@ import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inve
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
 import { MAX_HEALTH, STATE_VERSION, type PlaythroughState } from './state';
-import {
-  CHARACTER_ACTION_SPEED,
-  INTENT_SPEED,
-  intentInReach,
-  orderActions,
-  selectIntents,
-  type QueuedAction,
-  type Speed,
-} from './tactical';
-import type { IntentKind } from './state';
 
 export type { PlaythroughState } from './state';
 export {
@@ -39,62 +27,6 @@ export {
 } from './state';
 export { effectiveAttributes, evaluateCondition } from './conditions';
 export { escapeHtml, renderNarration, renderStoredText, substituteName } from './narration';
-// Intent selection, Speed and the Round order live in `tactical.ts` so the
-// v1 migration (issue #124) reuses the same rules with the Prepare draw
-// disabled, instead of a second Behaviour engine.
-export {
-  CHARACTER_ACTION_SPEED,
-  INTENT_SPEED,
-  orderActions,
-  selectIntents,
-  type QueuedAction,
-  type SelectIntentsOptions,
-  type SelectIntentsResult,
-  type SelectionParticipant,
-  type Speed,
-} from './tactical';
-// Version-aware validation and the deterministic v1 migration live in
-// `migrate.ts` so the read and turn layers share them (issue #124).
-export {
-  migratePlaythroughState,
-  parseVersionedState,
-  type MigrationResult,
-  type VersionedState,
-} from './migrate';
-// Arena mode: engine-level Combat testing without any authored Scenario,
-// Encounter, Outcome or Ending (issue #165). The Arena reuses Intent
-// selection and the Round order from `tactical.ts` and resolves every Round
-// under the unchanged Combat rules; its state is never a Playthrough.
-export {
-  applyArenaAction,
-  arenaActions,
-  arenaResult,
-  arenaSetupSchema,
-  arenaSummary,
-  arenaView,
-  startArena,
-  validateArenaSetup,
-  type ApplyArenaActionResult,
-  type ArenaAction,
-  type ArenaAvailability,
-  type ArenaCharacterDefinition,
-  type ArenaCombatAction,
-  type ArenaConsumables,
-  type ArenaDisabledReason,
-  type ArenaEnemyDefinition,
-  type ArenaJournalEntry,
-  type ArenaOpponentDefinition,
-  type ArenaOpponentState,
-  type ArenaResult,
-  type ArenaSetup,
-  type ArenaSetupIssue,
-  type ArenaState,
-  type ArenaSummary,
-  type ArenaSummaryOpponent,
-  type ArenaWeapon,
-  type StartArenaResult,
-  type ValidateArenaSetupResult,
-} from './arena';
 export {
   MAP_ASPECT_RATIO,
   MAP_CENTRE,
@@ -131,143 +63,21 @@ export type Difficulty = keyof typeof DIFFICULTY_TARGETS;
  */
 export type InventoryReason = 'in-combat' | 'full-health';
 
-/** Why Equip/Unequip is unavailable outside the Location/Scene position. */
+/**
+ * Why Equip/Unequip is unavailable outside the Location/Scene position. S4
+ * (Combat MVP 1.0): the tactical Combat is deleted, so nothing is ever
+ * in Combat; the `in-combat` reason returns when the P6 adapter re-adds it
+ * against the v3 document.
+ */
 export function inventoryEquipReason(state: PlaythroughState): InventoryReason | undefined {
-  return state.activeCombat != null ? 'in-combat' : undefined;
+  void state;
+  return undefined;
 }
 
-/** Why Use item is unavailable: in Combat, or at full Health outside it. */
+/** Why Use item is unavailable: at full Health. */
 export function inventoryUseReason(state: PlaythroughState): InventoryReason | undefined {
-  if (state.activeCombat != null) return 'in-combat';
   return state.character.health >= MAX_HEALTH ? 'full-health' : undefined;
 }
-
-/**
- * One side's roll inside a Combat round: both dice, the attacker's modifier,
- * the total, the target and the Damage dealt (docs/spec/mechanics.md, hitting).
- * Attacks roll Might; a Distract rolls Wits.
- */
-export type CombatRoll = {
-  side: 'character' | 'enemy';
-  die1: number;
-  die2: number;
-  /** The attacker's Might (the effective value for the Character), or Wits on a Distract. */
-  modifier: number;
-  total: number;
-  target: number;
-  hit: boolean;
-  /** Damage dealt by this roll: the attacker's Damage on a hit, else 0. */
-  damage: number;
-};
-
-/** Character actions (docs/spec/mechanics.md, character actions). */
-export type CombatAction =
-  | 'advance'
-  | 'attack'
-  | 'defend'
-  | 'distract'
-  | 'fall-back'
-  | 'escape'
-  | 'use-item';
-
-export type CombatRange = 'near' | 'far';
-
-/**
- * One participant as presented in a tactical Combat event
- * (docs/spec/playthrough-state.md, Combat events): the participant id, its
- * Enemy id, the Enemy name as presented and an ordinal — the 1-based position
- * among the participants of the same Enemy kind in its Encounter, or none
- * when the kind is unique there. The ordinal tells two grey wolves apart
- * without authored names; wording is presentation.
- */
-export type CombatParticipantRef = {
-  participantId: string;
-  enemyId: string;
-  /** The Enemy name as presented. */
-  name: string;
-  /** 1-based position among same-kind participants; absent when unique. */
-  ordinal?: number;
-};
-
-/** The actor of one action inside a Combat round: the Character or a participant. */
-export type TacticalActor = { kind: 'character' } | ({ kind: 'participant' } & CombatParticipantRef);
-
-/** How one queued action came out of the resolution order. */
-export type TacticalActionStatus = 'executed' | 'cancelled' | 'dropped' | 'not-reached';
-
-/** Why an announced action was cancelled at its place in the order. */
-export type TacticalCancelReason =
-  | 'interrupted'
-  | 'target-defeated'
-  | 'out-of-reach'
-  | 'already-near'
-  | 'none-near';
-
-/**
- * One action of a Combat round, in resolution order: its actor (the Character
- * or a participant reference), its action or Intent kind and its Speed, its
- * target for a targeted Character action (Intents always target the
- * Character), its status, and — for an executed action — what it did: the
- * roll (both dice, modifier, total, target, success), the Damage dealt and to
- * whom, Range changes, the prepared state it left and the participants it
- * defeated. Display text is never stored here, only names as presented.
- */
-export type TacticalActionEvent = {
-  actor: TacticalActor;
-  /** The Character's action id, or the participant's Intent kind. */
-  kind: CombatAction | IntentKind;
-  speed: Speed;
-  /** The 1-based place in the Round's resolution order. */
-  order: number;
-  target?: TacticalActor;
-  status: TacticalActionStatus;
-  cancelReason?: TacticalCancelReason;
-  /** The roll, when the executed action rolls (an attack). */
-  roll?: CombatRoll;
-  /** Damage dealt by the executed action. */
-  damage?: number;
-  /** A Guarded Character (from Defend): the effect this executed action applied. */
-  guarded?: boolean;
-  /** A distracted participant's Wary: its last round, set by a successful Distract. */
-  waryUntilRound?: number;
-  /**
-   * The counterattack reaction inside the missed melee attack it answers
-   * (docs/spec/mechanics.md, temporary effects): its roll, its Damage and any
-   * defeat. A reaction triggers no further reaction.
-   */
-  counter?: {
-    roll: CombatRoll;
-    damage: number;
-    defeatedParticipants?: string[];
-  };
-  rangeBefore?: CombatRange;
-  rangeAfter?: CombatRange;
-  /**
-   * The participant's prepared state after this action: Prepare leaves it,
-   * and the Heavy attack it prepares clears it when it resolves or is
-   * cancelled for any reason.
-   */
-  prepared?: boolean;
-  /** Participant ids this action defeated. */
-  defeatedParticipants?: string[];
-  /** This action killed the Character. */
-  characterDefeated?: boolean;
-  /** The Character's weapon name as presented; on Attack when armed. */
-  weaponName?: string;
-  /** A Combat `use-item`: the Consumable id. */
-  itemId?: string;
-  /** A Combat `use-item`: the Consumable name as presented. */
-  itemName?: string;
-  /** A Combat `use-item`: the Health restored at execution. */
-  healed?: number;
-};
-
-/**
- * How the Round's sequence stopped, if it did: the last participant's defeat
- * (victory), the Character's death, or a successful Escape. Remaining actions
- * do not resolve. A partially defeated Round carries no stop.
- */
-export type CombatStopReason = 'victory' | 'death' | 'escape';
 
 /**
  * New Journal entries produced by one engine step.
@@ -356,60 +166,21 @@ export type NewJournalEntry =
       title: string;
       text: string;
     }
-  | {
-      type: 'combat-start';
-      lang: string;
-      encounterId: string;
-      /** The participants taking part, in participant order, as presented. */
-      participants: CombatParticipantRef[];
-      /** The opening narration as presented (Scenario text). */
-      text: string;
-    }
-  | {
-      type: 'combat-round';
-      lang: string;
-      encounterId: string;
-      /** The round this turn resolved: the Combat's round before it incremented. */
-      round: number;
-      /** Tactical payload version: every stored row without it is legacy v1. */
-      version: 2;
-      /** Every action of the Round, in resolution order. */
-      actions: TacticalActionEvent[];
-      /** How the sequence stopped, if it did; absent on a continuing Round. */
-      stop?: CombatStopReason;
-    }
-  | {
-      type: 'combat-end';
-      lang: string;
-      encounterId: string;
-      /** Every participant of the Encounter, in participant order, as presented. */
-      participants: CombatParticipantRef[];
-      howEnded: 'victory' | 'escape';
-    }
-  | {
-      type: 'enemy-defeated';
-      lang: string;
-      encounterId: string;
-      /** Every participant of the Encounter, in participant order, as presented. */
-      participants: CombatParticipantRef[];
-    };
 
 /**
  * Journal entry types that make up the Outcome modal
  * (docs/spec/playthrough-state.md, outcome modal): the Test, Outcome
- * narration and state changes of the latest step, plus Combat end and
- * the Enemy-defeated notice. The intro is not part of it: at the start of a
- * Playthrough it shows in a modal over the starting Location instead.
- * Scene narration, travel, Combat start and rounds are revealed after
- * acknowledgement through the existing engine sequence. Test and Combat
- * types arrive with their tickets; the set already lists them.
+ * narration and state changes of the latest step. The intro is not part of
+ * it: at the start of a Playthrough it shows in a modal over the starting
+ * Location instead. Scene narration and travel are revealed after
+ * acknowledgement through the existing engine sequence. S4 (Combat MVP 1.0)
+ * removes the Combat end and Enemy-defeated entries with the tactical Combat;
+ * the P6 adapter re-adds the v3 Combat entries.
  */
 export const OUTCOME_MODAL_ENTRY_TYPES: ReadonlySet<string> = new Set([
   'test',
   'outcome',
   'state-change',
-  'combat-end',
-  'enemy-defeated',
 ]);
 
 export type StartPlaythroughSuccess = {
@@ -479,7 +250,6 @@ export function startPlaythrough(
     equipment,
     currentLocationId: scenario.startLocation.id,
     activeSceneId: null,
-    activeCombat: null,
     visited: [scenario.startLocation.id],
     revealed: [],
     firedScenes: [],
@@ -504,8 +274,7 @@ export function startPlaythrough(
  * held Equipment item, Unequip names a slot, Use item names a held
  * Consumable. Choose names a Choice of the active Scene. Continue applies
  * the empty Outcome when no Choice is visible. Open Scene activates an
- * on-demand Scene of the current Location. A Combat action names one of the
- * Character actions; a Combat `use-item` also names the Consumable.
+ * on-demand Scene of the current Location.
  */
 export type Action =
   | {
@@ -542,21 +311,6 @@ export type Action =
       sceneId: string;
       expectedStep: number;
     }
-  | {
-      kind: 'combat';
-      combatAction: CombatAction;
-      /** The Consumable for a Combat `use-item`; ignored by other actions. */
-      itemId?: string;
-      /**
-       * The target participant id for a targeted Combat action (attack,
-       * distract, advance). With one surviving participant it may be omitted
-       * and is then that participant; with two it is required. A missing,
-       * unknown or defeated target, or a target on an action that takes none,
-       * is rejected (docs/spec/playthrough-state.md, actions).
-       */
-      targetParticipantId?: string;
-      expectedStep: number;
-    };
 
 export type ApplyActionSuccess = {
   ok: true;
@@ -598,7 +352,7 @@ export function applyAction(
   state: PlaythroughState,
   action: Action,
   // Kept for the engine contract: Travel, Scene and Location actions roll no
-  // dice; Tests and Combat do.
+  // dice; Tests do.
   rng: Rng,
 ): ApplyActionResult {
   if (action.expectedStep !== state.step) {
@@ -622,15 +376,6 @@ export function applyAction(
       return applyUnequip(scenario, state, action.slot);
     case 'use-item':
       return applyUseItem(scenario, state, action.itemId);
-    case 'combat':
-      return applyCombat(
-        scenario,
-        state,
-        action.combatAction,
-        rng,
-        action.itemId,
-        action.targetParticipantId,
-      );
     default:
       return { ok: false, reason: 'illegal-action' };
   }
@@ -666,7 +411,6 @@ function enterLocation(
     ...state,
     currentLocationId: location.id,
     activeSceneId: null,
-    activeCombat: null,
     visited: pushUnique(state.visited, location.id),
   };
   const onEnter = findOnEnterScene(scenario, entered, location.id);
@@ -718,8 +462,8 @@ function applyTravel(
   state: PlaythroughState,
   targetLocationId: string,
 ): ApplyActionResult {
-  // Travel is legal only in the Location view: no active Scene, no Combat.
-  if (state.activeSceneId != null || state.activeCombat != null) {
+  // Travel is legal only in the Location view: no active Scene.
+  if (state.activeSceneId != null) {
     return { ok: false, reason: 'illegal-action' };
   }
   const leadsThere = visibleConnections(scenario, state).some(
@@ -827,8 +571,8 @@ function applyChoose(
   choiceId: string,
   rng: Rng,
 ): ApplyActionResult {
-  // Choosing is legal only with a Scene active (and no Combat).
-  if (state.activeSceneId == null || state.activeCombat != null) {
+  // Choosing is legal only with a Scene active.
+  if (state.activeSceneId == null) {
     return { ok: false, reason: 'illegal-action' };
   }
   const scene = scenario.scenesById[state.activeSceneId];
@@ -846,8 +590,8 @@ function applyChoose(
   if (choice.once && isTakenOnce(state, scene.id, choice.id)) {
     return { ok: false, reason: 'illegal-action' };
   }
-  // Resolve the Test first: the roll picks the Outcome. Endings, lethal
-  // damage and `start-combat` are handled by applyOutcome.
+  // Resolve the Test first: the roll picks the Outcome. Endings and lethal
+  // damage are handled by applyOutcome.
   const test = choice.test === undefined ? undefined : resolveTest(scenario, state, choice.test, rng);
   const outcome = test?.outcome ?? choice.outcome;
 
@@ -874,7 +618,7 @@ function applyChoose(
     // Neither outcome nor Test: the empty Outcome, back to the Location view.
     next = { ...next, activeSceneId: null };
   } else {
-    const applied = applyOutcome(scenario, next, outcome, rng);
+    const applied = applyOutcome(scenario, next, outcome);
     next = applied.state;
     journal.push(...applied.journal);
   }
@@ -883,7 +627,7 @@ function applyChoose(
 
 /** The implicit Continue: a domain action applying the empty Outcome. */
 function applyContinue(scenario: Scenario, state: PlaythroughState): ApplyActionResult {
-  if (state.activeSceneId == null || state.activeCombat != null) {
+  if (state.activeSceneId == null) {
     return { ok: false, reason: 'illegal-action' };
   }
   const scene = scenario.scenesById[state.activeSceneId];
@@ -925,8 +669,8 @@ function applyOpenScene(
   state: PlaythroughState,
   sceneId: string,
 ): ApplyActionResult {
-  // Opening is legal only in the Location view: no active Scene, no Combat.
-  if (state.activeSceneId != null || state.activeCombat != null) {
+  // Opening is legal only in the Location view: no active Scene.
+  if (state.activeSceneId != null) {
     return { ok: false, reason: 'illegal-action' };
   }
   const scene = scenario.scenesById[sceneId];
@@ -960,13 +704,12 @@ function applyOpenScene(
  * skips the remaining Effects and the transition, and ends the Playthrough
  * on the Scenario's death Ending. An `end` transition sets the status to
  * `ended(endingId)` and appends the Ending entry. Either way the position
- * becomes Ended: no active Scene or Combat.
+ * becomes Ended: no active Scene.
  */
 function applyOutcome(
   scenario: Scenario,
   state: PlaythroughState,
   outcome: CompiledOutcome,
-  rng: Rng,
 ): { state: PlaythroughState; journal: NewJournalEntry[] } {
   let next = state;
   const journal: NewJournalEntry[] = [];
@@ -994,8 +737,7 @@ function applyOutcome(
         status: 'ended',
         endingId: scenario.deathEnding.id,
         activeSceneId: null,
-        activeCombat: null,
-      };
+          };
       journal.push(endingEntry(scenario, next, scenario.deathEnding));
       return { state: next, journal };
     }
@@ -1011,16 +753,15 @@ function applyOutcome(
       status: 'ended',
       endingId: outcome.end.id,
       activeSceneId: null,
-      activeCombat: null,
-    };
+      };
     journal.push(endingEntry(scenario, next, outcome.end));
     return { state: next, journal };
   }
-  if (outcome.startCombat !== undefined) {
-    const started = startCombat(scenario, next, outcome.startCombat.id, rng);
-    next = started.state;
-    journal.push(...started.journal);
-  } else if (outcome.next !== undefined) {
+  // S4 (Combat MVP 1.0): the tactical Combat entry is deleted and the shared
+  // core adapter (P6) is not wired yet, so a `start-combat` Outcome cannot
+  // enter Combat. Other transitions still apply; the Encounter stays
+  // undefeated and repeatable until the adapter lands.
+  if (outcome.next !== undefined) {
     const activated = activateScene(scenario, next, outcome.next.id);
     next = activated.state;
     journal.push(...activated.journal);
@@ -1169,17 +910,14 @@ function applyEffect(
 
 /**
  * Equip (docs/spec/playthrough-state.md): legal in the Location view and
- * while a Scene is active, never in Combat. The held Equipment moves into
- * its slot, replacing the occupant. Advances `step` with an inventory entry.
+ * while a Scene is active. The held Equipment moves into its slot, replacing
+ * the occupant. Advances `step` with an inventory entry.
  */
 function applyEquip(
   scenario: Scenario,
   state: PlaythroughState,
   itemId: string,
 ): ApplyActionResult {
-  if (state.activeCombat != null) {
-    return { ok: false, reason: 'illegal-action' };
-  }
   const item = scenario.itemsById[itemId];
   if (item === undefined || item.kind !== 'equipment') {
     return { ok: false, reason: 'illegal-action' };
@@ -1211,17 +949,14 @@ function applyEquip(
 }
 
 /**
- * Unequip: legal in the Location view and while a Scene is active, never in
- * Combat. Empties an occupied slot. Advances `step` with an inventory entry.
+ * Unequip: legal in the Location view and while a Scene is active. Empties
+ * an occupied slot. Advances `step` with an inventory entry.
  */
 function applyUnequip(
   scenario: Scenario,
   state: PlaythroughState,
   slot: string,
 ): ApplyActionResult {
-  if (state.activeCombat != null) {
-    return { ok: false, reason: 'illegal-action' };
-  }
   if (!isEquipmentSlot(slot)) {
     return { ok: false, reason: 'illegal-action' };
   }
@@ -1248,18 +983,15 @@ function applyUnequip(
 }
 
 /**
- * Use item outside Combat: a held Consumable below full Health heals (capped
- * at 12) and consumes one copy; the position is unchanged. At full Health
- * the use is rejected: nothing is consumed and `step` does not advance.
+ * Use item: a held Consumable below full Health heals (capped at 12) and
+ * consumes one copy; the position is unchanged. At full Health the use is
+ * rejected: nothing is consumed and `step` does not advance.
  */
 function applyUseItem(
   scenario: Scenario,
   state: PlaythroughState,
   itemId: string,
 ): ApplyActionResult {
-  if (state.activeCombat != null) {
-    return { ok: false, reason: 'illegal-action' };
-  }
   const item = scenario.itemsById[itemId];
   if (item === undefined || item.kind !== 'consumable') {
     return { ok: false, reason: 'illegal-action' };
@@ -1293,1873 +1025,6 @@ function applyUseItem(
       },
     ],
   };
-}
-
-/**
- * Whether every participant of an Encounter is defeated: each participant's
- * recorded Damage taken reaches its Enemy's current maximum Health
- * (docs/spec/content-semantics.md, conditions; docs/spec/mechanics.md,
- * persistence of wounds). A participant without an entry (one added to the
- * content later) is at full Health.
- */
-function encounterDefeated(
-  encounter: CompiledEncounter,
-  wounds: Record<string, number>,
-): boolean {
-  return encounter.participants.every(
-    (participant) => (wounds[participant.id] ?? 0) >= participant.enemy.health,
-  );
-}
-
-/** Surviving participants in encounter (participant) order. */
-function survivorsOf(
-  encounter: CompiledEncounter,
-  wounds: Record<string, number>,
-): CompiledParticipant[] {
-  return encounter.participants.filter(
-    (participant) => (wounds[participant.id] ?? 0) < participant.enemy.health,
-  );
-}
-
-/**
- * One participant as presented in a tactical Combat event: its participant
- * id, Enemy id and Enemy name as presented, with the same-kind ordinal the
- * Journal contract describes.
- */
-function participantRefOf(
-  encounter: CompiledEncounter,
-  participant: CompiledParticipant,
-): CombatParticipantRef {
-  const sameKind = encounter.participants.filter(
-    (candidate) => candidate.enemy.id === participant.enemy.id,
-  );
-  if (sameKind.length <= 1) {
-    return {
-      participantId: participant.id,
-      enemyId: participant.enemy.id,
-      name: participant.enemy.name,
-    };
-  }
-  return {
-    participantId: participant.id,
-    enemyId: participant.enemy.id,
-    name: participant.enemy.name,
-    ordinal: sameKind.findIndex((candidate) => candidate.id === participant.id) + 1,
-  };
-}
-
-/** Every participant of the Encounter in order, as presented, for end entries. */
-function allParticipantRefs(encounter: CompiledEncounter): CombatParticipantRef[] {
-  return encounter.participants.map((participant) => participantRefOf(encounter, participant));
-}
-
-/**
- * `start-combat: E` (docs/spec/playthrough-state.md, Combat): on an already
- * defeated Encounter a no-op back to the Location view (no Combat, no victory
- * Outcome). Otherwise create E's record (Damage taken per participant, 0 for
- * each participant without one) if absent, set the position to Combat with
- * each surviving participant at E's `startRange`, round 1, this Combat's
- * starting membership and Round tie-break order, select and store the first
- * Round's Intents, and append the opening narration. Re-entry after an escape
- * starts again at `startRange` with freshly selected Intents and no prepared
- * states or temporary effects, shows the opening narration again, and keeps
- * the Damage taken; its starting membership contains only the survivors.
- * Nothing resolves and no die is drawn beyond what Intent selection needs.
- */
-function startCombat(
-  scenario: Scenario,
-  state: PlaythroughState,
-  encounterId: string,
-  rng: Rng,
-): { state: PlaythroughState; journal: NewJournalEntry[] } {
-  const encounter = scenario.encountersById[encounterId];
-  if (encounter === undefined) {
-    return { state: { ...state, activeSceneId: null }, journal: [] };
-  }
-  const wounds: Record<string, number> = { ...(state.encounters[encounterId] ?? {}) };
-  for (const participant of encounter.participants) {
-    if (!(participant.id in wounds)) {
-      wounds[participant.id] = 0;
-    }
-  }
-  if (encounterDefeated(encounter, wounds)) {
-    return { state: { ...state, activeSceneId: null, activeCombat: null }, journal: [] };
-  }
-  const survivors = survivorsOf(encounter, wounds);
-  const order = survivors.map((participant) => participant.id);
-  const selection = selectIntents(
-    survivors.map((participant) => ({
-      participant,
-      range: encounter.startRange,
-      prepared: false,
-    })),
-    rng,
-  );
-  const participants: Record<
-    string,
-    { range: 'near' | 'far'; intent: IntentKind; prepared: boolean }
-  > = {};
-  for (const survivor of survivors) {
-    participants[survivor.id] = {
-      range: encounter.startRange,
-      intent: selection.intents[survivor.id] ?? 'strike',
-      prepared: selection.prepared[survivor.id] ?? false,
-    };
-  }
-  return {
-    state: {
-      ...state,
-      activeSceneId: null,
-      activeCombat: {
-        encounterId: encounter.id,
-        round: 1,
-        startedParticipants: order,
-        roundParticipantOrder: order,
-        participants,
-      },
-      encounters: { ...state.encounters, [encounterId]: wounds },
-    },
-    journal: [
-      {
-        type: 'combat-start',
-        lang: scenario.language,
-        encounterId: encounter.id,
-        participants: survivors.map((participant) => participantRefOf(encounter, participant)),
-        text: substituteName(encounter.text, state.character.name),
-      },
-    ],
-  };
-}
-
-/**
- * The Character's attack Damage and Reach: the equipped weapon's, or 2 /
- * `melee` unarmed (docs/spec/mechanics.md, Items).
- */
-function characterAttack(
-  scenario: Scenario,
-  state: PlaythroughState,
-): {
-  damage: number;
-  reach: 'melee' | 'ranged';
-  weaponId: string | undefined;
-  weaponName: string | undefined;
-} {
-  const weaponId = state.equipment.weapon;
-  const item = weaponId === undefined ? undefined : scenario.itemsById[weaponId];
-  if (item !== undefined && item.kind === 'equipment' && item.slot === 'weapon') {
-    return { damage: item.damage ?? 2, reach: item.reach, weaponId: item.id, weaponName: item.name };
-  }
-  return { damage: 2, reach: 'melee', weaponId: undefined, weaponName: undefined };
-}
-
-/** Action groups as codes; the catalogue renders them (docs/spec/ui.md, actions). */
-export type CombatActionGroup = 'position' | 'fight' | 'items' | 'leave';
-
-/**
- * Why an action is unavailable, as a code; the catalogue renders the reason in
- * the Interface Language.
- */
-export type CombatDisabledReason =
-  | 'already-near'
-  | 'already-far'
-  | 'needs-near'
-  | 'full-health'
-  | 'wary';
-
-export type CombatAvailability = {
-  id: CombatAction;
-  group: CombatActionGroup;
-  enabled: boolean;
-  reason?: CombatDisabledReason;
-  /** The Consumable a `use-item` entry uses; absent on every other action. */
-  itemId?: string;
-  /** The Consumable's name as presented; present only on `use-item`. */
-  itemName?: string;
-  /** The equipped weapon's id; absent from Attack when unarmed. */
-  weaponId?: string;
-  /** The equipped weapon's name as presented; absent from Attack when unarmed. */
-  weaponName?: string;
-};
-
-/**
- * Whether each Character action is available in the current Combat: Advance
- * while a surviving participant is Far, Fall back while one is Near, Attack
- * when the Character's Reach allows the Range to a surviving participant,
- * Defend and Escape always, Distract while a surviving participant is neither
- * Wary nor already past in the Round's order, and one Use entry per held
- * Consumable while below full Health. Entries carry codes and names as
- * presented; the UI renders labels and reasons through the catalogue. The
- * engine rejects unavailable actions independently. Per-target availability,
- * Speed, predicted order and roll thresholds arrive with the arena view
- * (`combatArena`, issue #123).
- */
-export function combatActions(
-  scenario: Scenario,
-  state: PlaythroughState,
-): CombatAvailability[] {
-  const combat = state.activeCombat;
-  if (combat == null) {
-    return [];
-  }
-  const encounter = scenario.encountersById[combat.encounterId];
-  const wounds = state.encounters[combat.encounterId] ?? {};
-  const survivors =
-    encounter === undefined ? [] : survivorsOf(encounter, wounds);
-  const ranges = survivors.map(
-    (participant) => combat.participants[participant.id]?.range ?? 'far',
-  );
-  const attack = characterAttack(scenario, state);
-  const inReach =
-    attack.reach === 'ranged' || ranges.some((range) => range === 'near');
-  const belowFull = state.character.health < MAX_HEALTH;
-  const consumables = Object.keys(state.inventory).filter(
-    (itemId) => scenario.itemsById[itemId]?.kind === 'consumable',
-  );
-  const anyFar = ranges.some((range) => range === 'far');
-  const anyNear = ranges.some((range) => range === 'near');
-  // Distract is available while a surviving participant is neither Wary nor
-  // already past in the Round's order. Distract is fast, so it precedes every
-  // Intent; the order check is defensive, and Wary is the bar that disables
-  // the entry in practice.
-  const effectiveAgility = effectiveAttributes(scenario, state).agility;
-  const distractOrder = orderActions(
-    [
-      { key: 'character', actor: 'character', speed: 'fast', agility: effectiveAgility },
-      ...survivors.map(
-        (participant): QueuedAction => ({
-          key: participant.id,
-          actor: 'participant',
-          participantId: participant.id,
-          speed: INTENT_SPEED[combat.participants[participant.id]?.intent ?? 'strike'],
-          agility: participant.enemy.attributes.agility,
-        }),
-      ),
-    ],
-    combat.roundParticipantOrder,
-  );
-  const distractPosition = distractOrder.findIndex((action) => action.actor === 'character');
-  const distractable = survivors.some(
-    (participant) =>
-      (combat.participants[participant.id]?.waryUntilRound ?? 0) < combat.round &&
-      distractOrder.findIndex((action) => action.participantId === participant.id) >
-        distractPosition,
-  );
-  return [
-    {
-      id: 'advance',
-      group: 'position',
-      enabled: anyFar,
-      reason: anyFar ? undefined : 'already-near',
-    },
-    {
-      id: 'fall-back',
-      group: 'position',
-      enabled: anyNear,
-      reason: anyNear ? undefined : 'already-far',
-    },
-    {
-      id: 'attack',
-      group: 'fight',
-      enabled: inReach,
-      reason: inReach ? undefined : 'needs-near',
-      weaponId: attack.weaponId,
-      weaponName: attack.weaponName,
-    },
-    { id: 'defend', group: 'fight', enabled: true },
-    {
-      id: 'distract',
-      group: 'fight',
-      enabled: distractable,
-      reason: distractable ? undefined : 'wary',
-    },
-    ...consumables.map((itemId): CombatAvailability => {
-      const name = scenario.itemsById[itemId]?.name ?? itemId;
-      return {
-        id: 'use-item',
-        group: 'items',
-        enabled: belowFull,
-        reason: belowFull ? undefined : 'full-health',
-        itemId,
-        itemName: name,
-      };
-    }),
-    { id: 'escape', group: 'leave', enabled: true },
-  ];
-}
-
-// ---------------------------------------------------------------------------
-// The tactical arena projection (R12, issue #123; docs/spec/ui.md, combat
-// panel). Everything the arena needs, derived from state and current content
-// with no RNG and no mutation, so repeated calls are identical and the Journal
-// is never read (projection works with an empty Journal):
-//
-// - arena membership: one lane per participant that started this Combat, in
-//   current content (participant) order, including grey lanes for participants
-//   defeated since (no Range, no Intent, never a target). Saved Round ties do
-//   not move lanes; re-entry after an Escape starts a new membership.
-// - legal targets: the surviving participants with active state, in
-//   participant order.
-// - disabled-action reason codes: the global `combatActions` codes plus a
-//   per-target code for Attack, Distract and Advance.
-// - roll thresholds: the 2d6 total each rolled action needs — the Character's
-//   Attack/Distract per target, Fall back against the highest Agility among
-//   Near survivors, Escape against the highest Agility among survivors (with
-//   the +2 retained from the Round as shown at commitment), and each Enemy
-//   attack with its guarded threshold (9 + Agility instead of 7, for Defend).
-// - Speed and predicted order positions: each Intent's place among the Intents
-//   and each Character action's place with itself inserted (exact: ordering
-//   involves no roll).
-// - badges: prepared and Wary (with its last round). Guarded is round-scoped
-//   and never stored, so the arena never shows it: `guarded` is always false
-//   here and Guarded appears only in the round log.
-// - preparation descriptions: the slow Heavy attack (base Damage +3) a Prepare
-//   or a prepared state is building towards.
-//
-// Names and ordinals are carried as presented; letters, labels and sentences
-// render through the Interface Text catalogue in the app, so the engine
-// produces no Interface Text here.
-/** One arena lane: a surviving participant, or a grey lane for one defeated. */
-export type CombatArenaParticipant = {
-  participantId: string;
-  enemyId: string;
-  /** The Enemy name as presented. */
-  name: string;
-  /** 1-based position among same-kind participants; absent when unique. */
-  ordinal?: number;
-  /** Defeated lanes keep no Range, Intent, threshold or badges. */
-  defeated: boolean;
-  /** Absent on defeated lanes. */
-  range?: CombatRange;
-  /** Remaining Health: 0 on defeated lanes. */
-  health: number;
-  maxHealth: number;
-  damage: number;
-  reach: 'melee' | 'ranged';
-  /** The committed Intent; absent on defeated lanes. */
-  intent?: IntentKind;
-  intentSpeed?: Speed;
-  /** The 1-based place among the Round's Intents; absent on defeated lanes. */
-  order?: number;
-  /** An attack Intent's 2d6 threshold: 7 + the Character's effective Agility. */
-  threshold?: number;
-  /** The same attack against a Guarded Character: 9 + Agility. */
-  guardedThreshold?: number;
-  prepared: boolean;
-  /** The last round of Wary; present only while Wary. */
-  waryUntilRound?: number;
-  /** What a Prepare (or a prepared state) is building towards. */
-  preparation?: {
-    kind: 'heavy-attack';
-    speed: Speed;
-    /** The Heavy attack's Damage: the Enemy's base Damage +3. */
-    damage: number;
-  };
-};
-
-/** One surviving participant as the target of a targeted Character action. */
-export type CombatArenaTarget = {
-  participantId: string;
-  /** The Enemy name as presented. */
-  name: string;
-  /** 1-based position among same-kind participants; absent when unique. */
-  ordinal?: number;
-  range: CombatRange;
-  enabled: boolean;
-  reason?: CombatDisabledReason;
-  /** The 2d6 threshold against this target, on rolled actions. */
-  threshold?: number;
-};
-
-/** One Character action with its Speed, predicted order and thresholds. */
-export type CombatArenaAction = {
-  id: CombatAction;
-  group: CombatActionGroup;
-  enabled: boolean;
-  reason?: CombatDisabledReason;
-  /** The Consumable a `use-item` entry uses; absent on every other action. */
-  itemId?: string;
-  /** The Consumable's name as presented; present only on `use-item`. */
-  itemName?: string;
-  /** The equipped weapon's id; absent from Attack when unarmed. */
-  weaponId?: string;
-  /** The equipped weapon's name as presented; absent from Attack when unarmed. */
-  weaponName?: string;
-  speed: Speed;
-  /** The predicted 1-based place with this action inserted among the Intents. */
-  order: number;
-  /** The 2d6 threshold of an untargeted rolled action (Fall back, Escape). */
-  threshold?: number;
-  /** Escape only: the +2 retained from the Round as shown at commitment. */
-  escapeBonus?: number;
-  /** Per-target availability; present on Attack, Distract and Advance. */
-  targets?: CombatArenaTarget[];
-};
-
-/** One committed Intent in the Round's resolution order. */
-export type CombatArenaOrderEntry = {
-  participantId: string;
-  /** The Enemy name as presented. */
-  name: string;
-  /** 1-based position among same-kind participants; absent when unique. */
-  ordinal?: number;
-  intent: IntentKind;
-  speed: Speed;
-  order: number;
-};
-
-/** The full arena projection for an active Combat. */
-export type CombatArenaView = {
-  encounterId: string;
-  round: number;
-  /** One lane per starting participant, in content order; defeated lanes grey. */
-  participants: CombatArenaParticipant[];
-  /** Surviving participant ids with active state, in participant order. */
-  legalTargets: string[];
-  /** The committed Intents in resolution order. */
-  order: CombatArenaOrderEntry[];
-  /** Every Character action with its Speed, predicted order and thresholds. */
-  actions: CombatArenaAction[];
-  /**
-   * Guarded is round-scoped and never stored, so the arena never shows it.
-   * Always false; Guarded appears only in the round log.
-   */
-  guarded: false;
-};
-
-/**
- * Derive the arena projection from state and current content. Pure: no RNG,
- * no mutation, no Journal. Returns undefined outside an active Combat on a
- * known Encounter.
- */
-export function combatArena(
-  scenario: Scenario,
-  state: PlaythroughState,
-): CombatArenaView | undefined {
-  const combat = state.activeCombat;
-  if (combat == null) {
-    return undefined;
-  }
-  const encounter = scenario.encountersById[combat.encounterId];
-  if (encounter === undefined) {
-    return undefined;
-  }
-  const wounds = state.encounters[combat.encounterId] ?? {};
-  const effective = effectiveAttributes(scenario, state);
-  const attack = characterAttack(scenario, state);
-  const taken = (participantId: string): number => wounds[participantId] ?? 0;
-  const byId = new Map(encounter.participants.map((participant) => [participant.id, participant]));
-  const started = new Set(combat.startedParticipants);
-  // A lane is active while its participant survives by current wounds and
-  // still holds active Combat state; anything else that started this Combat
-  // keeps a grey lane (docs/spec/ui.md, lane arena; M3).
-  const isActive = (participant: CompiledParticipant): boolean =>
-    started.has(participant.id) &&
-    combat.participants[participant.id] !== undefined &&
-    taken(participant.id) < participant.enemy.health;
-  const survivors = encounter.participants.filter(isActive);
-  const rangeOf = (participantId: string): CombatRange =>
-    combat.participants[participantId]?.range ?? encounter.startRange;
-
-  // The Intents' places among themselves, in resolution order.
-  const intentQueued: QueuedAction[] = survivors.map(
-    (participant): QueuedAction => ({
-      key: participant.id,
-      actor: 'participant',
-      participantId: participant.id,
-      speed: INTENT_SPEED[combat.participants[participant.id]?.intent ?? 'strike'],
-      agility: participant.enemy.attributes.agility,
-    }),
-  );
-  const intentOrdered = orderActions(intentQueued, combat.roundParticipantOrder);
-  const intentPosition = new Map(
-    intentOrdered.map((queued, index) => [queued.participantId ?? '', index + 1]),
-  );
-
-  /** The predicted place of a Character action with itself among the Intents. */
-  const predictOrder = (speed: Speed): number => {
-    const queued: QueuedAction[] = [
-      ...intentQueued,
-      { key: 'character', actor: 'character', speed, agility: effective.agility },
-    ];
-    const ordered = orderActions(queued, combat.roundParticipantOrder);
-    return ordered.findIndex((queuedAction) => queuedAction.actor === 'character') + 1;
-  };
-
-  const refOf = (
-    participant: CompiledParticipant,
-  ): { name: string; ordinal?: number } => {
-    const ref = participantRefOf(encounter, participant);
-    return ref.ordinal === undefined ? { name: ref.name } : { name: ref.name, ordinal: ref.ordinal };
-  };
-
-  const participants: CombatArenaParticipant[] = [];
-  // Lanes follow the current content order; starting ids the content no
-  // longer lists keep a trailing grey lane each.
-  for (const participant of encounter.participants) {
-    if (!started.has(participant.id)) {
-      continue;
-    }
-    const ref = refOf(participant);
-    if (!isActive(participant)) {
-      participants.push({
-        participantId: participant.id,
-        enemyId: participant.enemy.id,
-        ...ref,
-        defeated: true,
-        health: 0,
-        maxHealth: participant.enemy.health,
-        damage: participant.enemy.damage,
-        reach: participant.enemy.reach,
-        prepared: false,
-      });
-      continue;
-    }
-    const record = combat.participants[participant.id];
-    if (record === undefined) {
-      throw new Error(`active participant "${participant.id}" has no Combat state`);
-    }
-    const intent = record.intent;
-    const intentSpeed = INTENT_SPEED[intent];
-    const isAttack = intent === 'strike' || intent === 'heavy-attack';
-    const waryUntilRound = record.waryUntilRound;
-    participants.push({
-      participantId: participant.id,
-      enemyId: participant.enemy.id,
-      ...ref,
-      defeated: false,
-      range: record.range,
-      health: Math.max(0, participant.enemy.health - taken(participant.id)),
-      maxHealth: participant.enemy.health,
-      damage: participant.enemy.damage,
-      reach: participant.enemy.reach,
-      intent,
-      intentSpeed,
-      order: intentPosition.get(participant.id) ?? 0,
-      ...(isAttack
-        ? {
-            threshold: 7 + effective.agility,
-            guardedThreshold: 9 + effective.agility,
-          }
-        : {}),
-      prepared: record.prepared,
-      ...(waryUntilRound !== undefined && waryUntilRound >= combat.round
-        ? { waryUntilRound }
-        : {}),
-      ...(intent === 'prepare' || record.prepared
-        ? {
-            preparation: {
-              kind: 'heavy-attack' as const,
-              speed: INTENT_SPEED['heavy-attack'],
-              damage: participant.enemy.damage + 3,
-            },
-          }
-        : {}),
-    });
-  }
-  for (const participantId of combat.startedParticipants) {
-    if (byId.has(participantId)) {
-      continue;
-    }
-    participants.push({
-      participantId,
-      enemyId: participantId,
-      name: participantId,
-      defeated: true,
-      health: 0,
-      maxHealth: 0,
-      damage: 0,
-      reach: 'melee',
-      prepared: false,
-    });
-  }
-
-  const order: CombatArenaOrderEntry[] = intentOrdered.flatMap((queued) => {
-    const participant =
-      queued.participantId === undefined ? undefined : byId.get(queued.participantId);
-    if (participant === undefined) {
-      return [];
-    }
-    const intent = combat.participants[participant.id]?.intent ?? 'strike';
-    return [
-      {
-        participantId: participant.id,
-        ...refOf(participant),
-        intent,
-        speed: INTENT_SPEED[intent],
-        order: intentPosition.get(participant.id) ?? 0,
-      },
-    ];
-  });
-
-  const legalTargets = survivors.map((participant) => participant.id);
-  const nearSurvivors = survivors.filter(
-    (participant) => rangeOf(participant.id) === 'near',
-  );
-  const allFar =
-    survivors.length > 0 &&
-    survivors.every((participant) => rangeOf(participant.id) !== 'near');
-  const opposingAll =
-    survivors.length === 0
-      ? 0
-      : Math.max(...survivors.map((participant) => participant.enemy.attributes.agility));
-  const opposingNear = Math.max(
-    0,
-    ...nearSurvivors.map((participant) => participant.enemy.attributes.agility),
-  );
-
-  const availability = combatActions(scenario, state);
-  const actions: CombatArenaAction[] = availability.map((entry) => {
-    const speed = CHARACTER_ACTION_SPEED[entry.id];
-    const base = { ...entry, speed, order: predictOrder(speed) };
-    if (entry.id === 'attack') {
-      return {
-        ...base,
-        targets: survivors.map(
-          (participant): CombatArenaTarget => {
-            const range = rangeOf(participant.id);
-            const reachable = attack.reach === 'ranged' || range === 'near';
-            return {
-              participantId: participant.id,
-              ...refOf(participant),
-              range,
-              enabled: reachable,
-              ...(reachable ? {} : { reason: 'needs-near' as const }),
-              threshold: 7 + participant.enemy.attributes.agility,
-            };
-          },
-        ),
-      };
-    }
-    if (entry.id === 'distract') {
-      return {
-        ...base,
-        targets: survivors.map(
-          (participant): CombatArenaTarget => {
-            const wary =
-              (combat.participants[participant.id]?.waryUntilRound ?? 0) >= combat.round;
-            return {
-              participantId: participant.id,
-              ...refOf(participant),
-              range: rangeOf(participant.id),
-              enabled: !wary,
-              ...(wary ? { reason: 'wary' as const } : {}),
-              threshold: 7 + participant.enemy.attributes.wits,
-            };
-          },
-        ),
-      };
-    }
-    if (entry.id === 'advance') {
-      return {
-        ...base,
-        targets: survivors.map(
-          (participant): CombatArenaTarget => {
-            const range = rangeOf(participant.id);
-            const advanceable = range === 'far';
-            return {
-              participantId: participant.id,
-              ...refOf(participant),
-              range,
-              enabled: advanceable,
-              ...(advanceable ? {} : { reason: 'already-near' as const }),
-            };
-          },
-        ),
-      };
-    }
-    if (entry.id === 'fall-back') {
-      return {
-        ...base,
-        ...(nearSurvivors.length === 0 ? {} : { threshold: 7 + opposingNear }),
-      };
-    }
-    if (entry.id === 'escape') {
-      return {
-        ...base,
-        threshold: 7 + opposingAll,
-        escapeBonus: allFar ? 2 : 0,
-      };
-    }
-    return base;
-  });
-
-  return {
-    encounterId: encounter.id,
-    round: combat.round,
-    participants,
-    legalTargets,
-    order,
-    actions,
-    guarded: false,
-  };
-}
-
-/**
- * Victory (every participant's Damage taken ≥ its Enemy's maximum Health):
- * the Combat ends, a Combat end entry is appended, then the `victory` Outcome
- * is applied — or, without one, the Enemy-defeated notice, back in the
- * Location view of the fight. Entries carry every participant as presented
- * and how the Combat ended; their wording comes from the catalogue when they
- * are read. Victory resolves neither cleanup selection nor remaining actions.
- */
-function finishVictory(
-  scenario: Scenario,
-  state: PlaythroughState,
-  encounter: CompiledEncounter,
-  round: Extract<NewJournalEntry, { type: 'combat-round' }>,
-  health: number,
-  encounters: PlaythroughState['encounters'],
-  rng: Rng,
-  inventory: PlaythroughState['inventory'] = state.inventory,
-  equipment: PlaythroughState['equipment'] = state.equipment,
-): ApplyActionResult {
-  const end: NewJournalEntry = {
-    type: 'combat-end',
-    lang: scenario.language,
-    encounterId: encounter.id,
-    participants: allParticipantRefs(encounter),
-    howEnded: 'victory',
-  };
-  let next: PlaythroughState = {
-    ...state,
-    step: state.step + 1,
-    character: { ...state.character, health },
-    encounters,
-    inventory,
-    equipment,
-    activeSceneId: null,
-    activeCombat: null,
-  };
-  const journal: NewJournalEntry[] = [round, end];
-  if (encounter.victory !== undefined) {
-    const applied = applyOutcome(scenario, next, encounter.victory, rng);
-    next = applied.state;
-    journal.push(...applied.journal);
-  } else {
-    journal.push({
-      type: 'enemy-defeated',
-      lang: scenario.language,
-      encounterId: encounter.id,
-      participants: allParticipantRefs(encounter),
-    });
-  }
-  return { ok: true, state: next, journal };
-}
-
-/**
- * Escape (docs/spec/playthrough-state.md, transitions): the Combat ends, its
- * starting membership, tie-break order, Ranges and temporary effects are
- * discarded, the Encounter record keeps each participant's Damage taken
- * (including defeated participants), and the `escape` Outcome is applied.
- * Like victory it resolves neither cleanup selection nor remaining actions.
- */
-function finishEscape(
-  scenario: Scenario,
-  state: PlaythroughState,
-  encounter: CompiledEncounter,
-  round: Extract<NewJournalEntry, { type: 'combat-round' }>,
-  health: number,
-  encounters: PlaythroughState['encounters'],
-  rng: Rng,
-): ApplyActionResult {
-  const end: NewJournalEntry = {
-    type: 'combat-end',
-    lang: scenario.language,
-    encounterId: encounter.id,
-    participants: allParticipantRefs(encounter),
-    howEnded: 'escape',
-  };
-  const next: PlaythroughState = {
-    ...state,
-    step: state.step + 1,
-    character: { ...state.character, health },
-    encounters,
-    activeSceneId: null,
-    activeCombat: null,
-  };
-  const applied = applyOutcome(scenario, next, encounter.escape, rng);
-  return { ok: true, state: applied.state, journal: [round, end, ...applied.journal] };
-}
-
-/**
- * Character actions that name a target participant. Distract joins this set
- * with issue #122.
- */
-const TARGETED_COMBAT_ACTIONS: ReadonlySet<CombatAction> = new Set([
-  'attack',
-  'advance',
-  'distract',
-]);
-
-/**
- * One Combat Round (docs/spec/mechanics.md, rounds;
- * docs/spec/playthrough-state.md, Combat): the Character's action takes its
- * place in the order among the Round's committed Intents, and the whole Round
- * resolves in one atomic step — one action and one `step`. Actions resolve in
- * Speed order (fast, normal, slow), then by effective Agility (the Character
- * wins ties; equal Enemies use the saved participant order). A defeated
- * participant's queued action is dropped while the Round continues; defeating
- * the last participant, the Character's death, or a successful Escape stops
- * the sequence with later actions recorded as not reached. A continuing Round
- * increments the round number and `step` once, expires round-scoped effects,
- * captures the current content order and stores the next Round's Intents.
- *
- * Issue #120 resolves the targeted Attack (plus the Enemy Intents Strike,
- * Close in, Prepare and Heavy attack); issue #121 adds Advance, Fall back,
- * Escape and Consumable use; issue #122 adds Defend and Distract. Anything
- * else unknown is rejected without advancing `step`, drawing dice or changing
- * Intents, state or Journal.
- */
-function applyCombat(
-  scenario: Scenario,
-  state: PlaythroughState,
-  combatAction: CombatAction,
-  rng: Rng,
-  itemId?: string,
-  targetParticipantId?: string,
-): ApplyActionResult {
-  // A Combat `use-item` names its Consumable; the other actions take none.
-  // The Consumable resolves at its place in the order (issue #121).
-  const combat = state.activeCombat;
-  if (combat == null) {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  const encounter = scenario.encountersById[combat.encounterId];
-  if (encounter === undefined) {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  const woundsBefore = state.encounters[combat.encounterId] ?? {};
-  const survivors = survivorsOf(encounter, woundsBefore);
-
-  // Target validation (R10): a missing, unknown or defeated target, or a
-  // target on an action that takes none, is rejected before anything resolves.
-  let targetId = targetParticipantId;
-  if (targetId !== undefined && !TARGETED_COMBAT_ACTIONS.has(combatAction)) {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  if (TARGETED_COMBAT_ACTIONS.has(combatAction)) {
-    if (targetId === undefined) {
-      // One surviving participant permits an omitted target; two require one.
-      const only = survivors.length === 1 ? survivors[0] : undefined;
-      if (only === undefined) {
-        return { ok: false, reason: 'illegal-action' };
-      }
-      targetId = only.id;
-    } else if (!survivors.some((participant) => participant.id === targetId)) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-  }
-
-  // Availability at submission (R10): every known action resolves.
-  // Anything else unknown is rejected too.
-  const target = targetId === undefined ? undefined : encounter.participants.find(
-    (participant) => participant.id === targetId,
-  );
-  if (targetId !== undefined && target === undefined) {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  // A fresh non-optional binding: the closures below resolve at their place in
-  // the order, so they capture this instead of the narrowed `find` result.
-  const victim: CompiledParticipant | undefined = target;
-  const attack = characterAttack(scenario, state);
-  if (combatAction === 'attack' || combatAction === 'distract') {
-    if (victim === undefined) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-    if (combatAction === 'attack') {
-      const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
-      if (attack.reach === 'melee' && targetRange === 'far') {
-        return { ok: false, reason: 'illegal-action' };
-      }
-    }
-  } else if (combatAction === 'defend') {
-    // Defend is always available.
-  } else if (combatAction === 'advance') {
-    if (victim === undefined) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-    // Advance is available only while the Range to the target is Far.
-    const targetRange = combat.participants[victim.id]?.range ?? encounter.startRange;
-    if (targetRange === 'near') {
-      return { ok: false, reason: 'illegal-action' };
-    }
-  } else if (combatAction === 'fall-back') {
-    // Fall back is available while at least one surviving participant is Near.
-    const anyNear = survivors.some(
-      (participant) => (combat.participants[participant.id]?.range ?? encounter.startRange) === 'near',
-    );
-    if (!anyNear) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-  } else if (combatAction === 'use-item') {
-    const consumable = itemId === undefined ? undefined : scenario.itemsById[itemId];
-    if (
-      consumable === undefined ||
-      consumable.kind !== 'consumable' ||
-      (state.inventory[consumable.id] ?? 0) < 1
-    ) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-    // Use-item at full Health is rejected: nothing is consumed.
-    if (state.character.health >= MAX_HEALTH) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-  } else if (combatAction !== 'escape') {
-    return { ok: false, reason: 'illegal-action' };
-  }
-  // Escape is always available. The +2 bonus is captured from the Round as
-  // shown when the Character commits: when no surviving participant was Near
-  // then, an Enemy that closes in earlier in the order does not remove it.
-  const escapeBonus =
-    combatAction === 'escape' &&
-    survivors.every(
-      (participant) => (combat.participants[participant.id]?.range ?? encounter.startRange) !== 'near',
-    )
-      ? 2
-      : 0;
-
-  const effective = effectiveAttributes(scenario, state);
-  const characterRef: TacticalActor = { kind: 'character' };
-  // Captured for the resolvers below: narrowing of `combat` does not flow
-  // into their bodies.
-  const round = combat.round;
-  const wounds: Record<string, number> = { ...woundsBefore };
-  let health = state.character.health;
-  // A Combat `use-item` consumes its copy at execution; every exit path below
-  // carries these instead of the submitted inventory.
-  let inventory: PlaythroughState['inventory'] = { ...state.inventory };
-  let equipment: PlaythroughState['equipment'] = { ...state.equipment };
-  const ranges: Record<string, CombatRange> = {};
-  const prepared: Record<string, boolean> = {};
-  const waryUntil: Record<string, number | undefined> = {};
-  for (const [participantId, record] of Object.entries(combat.participants)) {
-    ranges[participantId] = record.range;
-    prepared[participantId] = record.prepared;
-    waryUntil[participantId] = record.waryUntilRound;
-  }
-
-  /**
-   * One roll: 2d6 plus the modifier against the base plus the defender's
-   * Agility (Might for attacks, Wits for a Distract; 9 instead of 7 against a
-   * Guarded Character). A miss deals no Damage.
-   */
-  const attackRoll = (
-    side: 'character' | 'enemy',
-    modifier: number,
-    agility: number,
-    damage: number,
-    base = 7,
-  ): CombatRoll => {
-    const die1 = rng(1, 7);
-    const die2 = rng(1, 7);
-    const total = die1 + die2 + modifier;
-    const targetNumber = base + agility;
-    const hit = total >= targetNumber;
-    return {
-      side,
-      die1,
-      die2,
-      modifier,
-      total,
-      target: targetNumber,
-      hit,
-      damage: hit ? damage : 0,
-    };
-  };
-
-  // Commit. The Character's action takes its place in the order among the
-  // Round's Intents. The order is fixed now; nothing during the Round
-  // reorders it.
-  const characterSpeed = CHARACTER_ACTION_SPEED[combatAction] ?? 'normal';
-  const queued: QueuedAction[] = [
-    { key: 'character', actor: 'character', speed: characterSpeed, agility: effective.agility },
-    ...survivors.map(
-      (participant): QueuedAction => ({
-        key: participant.id,
-        actor: 'participant',
-        participantId: participant.id,
-        speed: INTENT_SPEED[combat.participants[participant.id]?.intent ?? 'strike'],
-        agility: participant.enemy.attributes.agility,
-      }),
-    ),
-  ];
-  const ordered = orderActions(queued, combat.roundParticipantOrder);
-
-  if (combatAction === 'distract' && victim !== undefined) {
-    // A Wary target cannot be distracted again: the attempt is rejected.
-    if ((combat.participants[victim.id]?.waryUntilRound ?? 0) >= combat.round) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-    // The target's Intent must come later in the Round's order than the
-    // Distract. A fast Distract precedes every Intent, so this bar is
-    // defensive; it stays explicit because the spec requires it.
-    const distractPosition = ordered.findIndex((action) => action.actor === 'character');
-    const targetPosition = ordered.findIndex(
-      (action) => action.participantId === victim.id,
-    );
-    if (targetPosition <= distractPosition) {
-      return { ok: false, reason: 'illegal-action' };
-    }
-  }
-
-  // Resolve in order.
-  const actions: TacticalActionEvent[] = [];
-  let stop: CombatStopReason | undefined;
-  // Guarded from Defend's execution until cleanup: attacks against the
-  // Character use the guarded threshold. Round-scoped, never stored.
-  let guarded = false;
-  // At most one counterattack per Round: only the first missed melee attack
-  // against the Guarded Character triggers it.
-  let counterUsed = false;
-  // Participants whose Intent a successful Distract interrupted: cancelled at
-  // their place in the order.
-  const interrupted = new Set<string>();
-
-  /** The target participant as presented, for the Character's action. */
-  function targetRef(): TacticalActor {
-    if (victim === undefined) {
-      throw new Error('targeted action committed without a target');
-    }
-    return { kind: 'participant', ...participantRefOf(encounter, victim) };
-  }
-
-  /** The given participant as presented, for parameterized resolvers. */
-  function targetRefOf(participant: CompiledParticipant): TacticalActor {
-    return { kind: 'participant', ...participantRefOf(encounter, participant) };
-  }
-
-  /** One Enemy Intent at its place in the order. */
-  function resolveEnemyAction(
-    participant: CompiledParticipant,
-    actor: TacticalActor,
-    intent: IntentKind,
-    speed: Speed,
-    order: number,
-  ): void {
-    // Its actor was defeated earlier in the Round: the action is dropped.
-    if ((wounds[participant.id] ?? 0) >= participant.enemy.health) {
-      actions.push({
-        actor,
-        kind: intent,
-        speed,
-        order,
-        target: characterRef,
-        status: 'dropped',
-      });
-      return;
-    }
-    // A successful Distract interrupted its Intent: cancelled at its place in
-    // the order, never replaced. Only a Heavy attack builds on a stored
-    // preparation (selection keeps `prepared` only with that Intent, and a
-    // fast Distract resolves before any Prepare executes), so only its
-    // cancellation clears — and reports — one.
-    if (interrupted.has(participant.id)) {
-      if (intent === 'heavy-attack') {
-        prepared[participant.id] = false;
-      }
-      actions.push({
-        actor,
-        kind: intent,
-        speed,
-        order,
-        target: characterRef,
-        status: 'cancelled',
-        cancelReason: 'interrupted',
-        ...(intent === 'heavy-attack' ? { prepared: false } : {}),
-      });
-      return;
-    }
-    const range = ranges[participant.id] ?? encounter.startRange;
-    if (intent === 'close-in') {
-      if (range === 'near') {
-        actions.push({
-          actor,
-          kind: intent,
-          speed,
-          order,
-          target: characterRef,
-          status: 'cancelled',
-          cancelReason: 'already-near',
-        });
-      } else {
-        ranges[participant.id] = 'near';
-        actions.push({
-          actor,
-          kind: intent,
-          speed,
-          order,
-          target: characterRef,
-          status: 'executed',
-          rangeBefore: 'far',
-          rangeAfter: 'near',
-        });
-      }
-      return;
-    }
-    if (intent === 'prepare') {
-      prepared[participant.id] = true;
-      actions.push({
-        actor,
-        kind: intent,
-        speed,
-        order,
-        target: characterRef,
-        status: 'executed',
-        prepared: true,
-      });
-      return;
-    }
-    // Strike and Heavy attack. The Heavy attack is slow and deals base Damage
-    // +3. Its miss or Reach cancellation clears the preparation it builds on.
-    const heavy = intent === 'heavy-attack';
-    const damage = participant.enemy.damage + (heavy ? 3 : 0);
-    if (!intentInReach(participant.enemy.reach, range)) {
-      if (heavy) {
-        prepared[participant.id] = false;
-      }
-      actions.push({
-        actor,
-        kind: intent,
-        speed,
-        order,
-        target: characterRef,
-        status: 'cancelled',
-        cancelReason: 'out-of-reach',
-        ...(heavy ? { prepared: false } : {}),
-      });
-      return;
-    }
-    // Attacks against the Guarded Character need 9 + Agility instead of 7.
-    const roll = attackRoll(
-      'enemy',
-      participant.enemy.attributes.might,
-      effective.agility,
-      damage,
-      guarded ? 9 : 7,
-    );
-    if (roll.hit) {
-      health -= damage;
-    }
-    if (heavy) {
-      prepared[participant.id] = false;
-    }
-    const event: TacticalActionEvent = {
-      actor,
-      kind: intent,
-      speed,
-      order,
-      target: characterRef,
-      status: 'executed',
-      roll,
-      damage: roll.hit ? damage : 0,
-      ...(heavy ? { prepared: false } : {}),
-    };
-    // The first melee attack in the Round that misses the Guarded Character
-    // triggers the counterattack reaction: the Character's hit roll against
-    // that attacker for 1 Damage. Ranged misses trigger none, later misses
-    // trigger none, and the reaction triggers no further reaction.
-    if (!roll.hit && guarded && !counterUsed && participant.enemy.reach === 'melee') {
-      counterUsed = true;
-      const counterRoll = attackRoll(
-        'character',
-        effective.might,
-        participant.enemy.attributes.agility,
-        1,
-      );
-      let counterDefeated: string[] | undefined;
-      if (counterRoll.hit) {
-        wounds[participant.id] = (wounds[participant.id] ?? 0) + 1;
-        if ((wounds[participant.id] ?? 0) >= participant.enemy.health) {
-          counterDefeated = [participant.id];
-        }
-      }
-      event.counter = {
-        roll: counterRoll,
-        damage: counterRoll.hit ? 1 : 0,
-        ...(counterDefeated !== undefined ? { defeatedParticipants: counterDefeated } : {}),
-      };
-      if (counterDefeated !== undefined && encounterDefeated(encounter, wounds)) {
-        stop = 'victory';
-      }
-    }
-    if (roll.hit && health <= 0) {
-      event.characterDefeated = true;
-      stop = 'death';
-    }
-    actions.push(event);
-  }
-
-  /** Defend at its place in the order: no roll. The Character is Guarded now. */
-  function resolveCharacterDefend(order: number): void {
-    guarded = true;
-    actions.push({
-      actor: characterRef,
-      kind: 'defend',
-      speed: 'fast',
-      order,
-      status: 'executed',
-      guarded: true,
-    });
-  }
-
-  /** Distract at its place in the order: a Wits roll against the target. */
-  function resolveCharacterDistract(victim: CompiledParticipant, order: number): void {
-    const ref = targetRefOf(victim);
-    // Cancelled when the target has been defeated.
-    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
-      actions.push({
-        actor: characterRef,
-        kind: 'distract',
-        speed: 'fast',
-        order,
-        target: ref,
-        status: 'cancelled',
-        cancelReason: 'target-defeated',
-      });
-      return;
-    }
-    const roll = attackRoll(
-      'character',
-      effective.wits,
-      victim.enemy.attributes.wits,
-      0,
-    );
-    if (!roll.hit) {
-      // Failure has no effect: no interruption, no Wary, no prepared change.
-      actions.push({
-        actor: characterRef,
-        kind: 'distract',
-        speed: 'fast',
-        order,
-        target: ref,
-        status: 'executed',
-        roll,
-        damage: 0,
-      });
-      return;
-    }
-    // Success interrupts the announced Intent (cancelled at its place in the
-    // order), clears the preparation it builds on, and makes the target Wary
-    // until the end of the next Round. Only a Heavy attack carries a stored
-    // preparation into the Round (see resolveEnemyAction), so only its
-    // interruption reports one cleared; the interruption itself is recorded on
-    // the victim's cancelled action, correlated via this event's target.
-    interrupted.add(victim.id);
-    const wasPrepared = prepared[victim.id] ?? false;
-    if (wasPrepared) {
-      prepared[victim.id] = false;
-    }
-    waryUntil[victim.id] = round + 1;
-    actions.push({
-      actor: characterRef,
-      kind: 'distract',
-      speed: 'fast',
-      order,
-      target: ref,
-      status: 'executed',
-      roll,
-      damage: 0,
-      ...(wasPrepared ? { prepared: false } : {}),
-      waryUntilRound: round + 1,
-    });
-  }
-
-  /** The Character's Attack at its place in the order. */
-  function resolveCharacterAttack(order: number): void {
-    if (victim === undefined) {
-      throw new Error('attack committed without a target');
-    }
-    const ref = targetRef();
-    // Cancelled when the target has been defeated, or the Character's Reach
-    // no longer allows it at the Range to the target.
-    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
-      actions.push({
-        actor: characterRef,
-        kind: 'attack',
-        speed: 'normal',
-        order,
-        target: ref,
-        status: 'cancelled',
-        cancelReason: 'target-defeated',
-      });
-      return;
-    }
-    const currentRange = ranges[victim.id] ?? encounter.startRange;
-    if (attack.reach === 'melee' && currentRange === 'far') {
-      actions.push({
-        actor: characterRef,
-        kind: 'attack',
-        speed: 'normal',
-        order,
-        target: ref,
-        status: 'cancelled',
-        cancelReason: 'out-of-reach',
-      });
-      return;
-    }
-    const roll = attackRoll(
-      'character',
-      effective.might,
-      victim.enemy.attributes.agility,
-      attack.damage,
-    );
-    let defeatedParticipants: string[] | undefined;
-    if (roll.hit) {
-      wounds[victim.id] = (wounds[victim.id] ?? 0) + attack.damage;
-      if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
-        defeatedParticipants = [victim.id];
-      }
-    }
-    actions.push({
-      actor: characterRef,
-      kind: 'attack',
-      speed: 'normal',
-      order,
-      target: ref,
-      status: 'executed',
-      roll,
-      damage: roll.hit ? attack.damage : 0,
-      ...(attack.weaponName !== undefined ? { weaponName: attack.weaponName } : {}),
-      ...(defeatedParticipants !== undefined ? { defeatedParticipants } : {}),
-    });
-    if (defeatedParticipants !== undefined && encounterDefeated(encounter, wounds)) {
-      stop = 'victory';
-    }
-  }
-
-  /** Participants still standing at this place in the order. */
-  function currentSurvivors(): CompiledParticipant[] {
-    return survivors.filter(
-      (participant) => (wounds[participant.id] ?? 0) < participant.enemy.health,
-    );
-  }
-
-  /** The Character's Advance at its place in the order: no roll. */
-  function resolveCharacterAdvance(order: number): void {
-    if (victim === undefined) {
-      throw new Error('advance committed without a target');
-    }
-    const ref = targetRef();
-    // Cancelled when the target has been defeated, or a faster Close in has
-    // already made the Range Near. The Round is spent, not replaced.
-    if ((wounds[victim.id] ?? 0) >= victim.enemy.health) {
-      actions.push({
-        actor: characterRef,
-        kind: 'advance',
-        speed: characterSpeed,
-        order,
-        target: ref,
-        status: 'cancelled',
-        cancelReason: 'target-defeated',
-      });
-      return;
-    }
-    if ((ranges[victim.id] ?? encounter.startRange) === 'near') {
-      actions.push({
-        actor: characterRef,
-        kind: 'advance',
-        speed: characterSpeed,
-        order,
-        target: ref,
-        status: 'cancelled',
-        cancelReason: 'already-near',
-      });
-      return;
-    }
-    // Only the targeted Far lane moves; every other Range is untouched.
-    ranges[victim.id] = 'near';
-    actions.push({
-      actor: characterRef,
-      kind: 'advance',
-      speed: characterSpeed,
-      order,
-      target: ref,
-      status: 'executed',
-      rangeBefore: 'far',
-      rangeAfter: 'near',
-    });
-  }
-
-  /** The Character's Fall back at its place in the order: slow, one roll. */
-  function resolveCharacterFallBack(order: number): void {
-    // Cancelled when no surviving participant is Near at this place in the
-    // order. The opposing Agility is read now, from the currently Near
-    // survivors, so a participant defeated earlier no longer opposes.
-    const near = currentSurvivors().filter(
-      (participant) => (ranges[participant.id] ?? encounter.startRange) === 'near',
-    );
-    if (near.length === 0) {
-      actions.push({
-        actor: characterRef,
-        kind: 'fall-back',
-        speed: characterSpeed,
-        order,
-        status: 'cancelled',
-        cancelReason: 'none-near',
-      });
-      return;
-    }
-    const opposing = Math.max(
-      ...near.map((participant) => participant.enemy.attributes.agility),
-    );
-    const die1 = rng(1, 7);
-    const die2 = rng(1, 7);
-    const total = die1 + die2 + effective.agility;
-    const targetNumber = 7 + opposing;
-    const success = total >= targetNumber;
-    const roll: CombatRoll = {
-      side: 'character',
-      die1,
-      die2,
-      modifier: effective.agility,
-      total,
-      target: targetNumber,
-      hit: success,
-      damage: 0,
-    };
-    if (!success) {
-      actions.push({
-        actor: characterRef,
-        kind: 'fall-back',
-        speed: characterSpeed,
-        order,
-        status: 'executed',
-        roll,
-        damage: 0,
-      });
-      return;
-    }
-    // Success moves every Near lane to Far — including a later melee Heavy
-    // attack's lane, which then cancels as out of Reach at its own place in
-    // the order. Earlier normal actions already resolved and are unaffected.
-    for (const participant of near) {
-      ranges[participant.id] = 'far';
-    }
-    actions.push({
-      actor: characterRef,
-      kind: 'fall-back',
-      speed: characterSpeed,
-      order,
-      status: 'executed',
-      roll,
-      damage: 0,
-      rangeBefore: 'near',
-      rangeAfter: 'far',
-    });
-  }
-
-  /** The Character's Escape at its place in the order: never cancelled. */
-  function resolveCharacterEscape(order: number): void {
-    // The opposing Agility is read now, from the current survivors, while the
-    // +2 bonus was captured at commitment from the Round as shown then.
-    const alive = currentSurvivors();
-    const opposing = alive.length === 0
-      ? 0
-      : Math.max(...alive.map((participant) => participant.enemy.attributes.agility));
-    const die1 = rng(1, 7);
-    const die2 = rng(1, 7);
-    const modifier = effective.agility + escapeBonus;
-    const total = die1 + die2 + modifier;
-    const targetNumber = 7 + opposing;
-    const success = total >= targetNumber;
-    const roll: CombatRoll = {
-      side: 'character',
-      die1,
-      die2,
-      modifier,
-      total,
-      target: targetNumber,
-      hit: success,
-      damage: 0,
-    };
-    actions.push({
-      actor: characterRef,
-      kind: 'escape',
-      speed: characterSpeed,
-      order,
-      status: 'executed',
-      roll,
-      damage: 0,
-    });
-    if (success) {
-      stop = 'escape';
-    }
-  }
-
-  /** The Character's Consumable use at its place in the order: never cancelled. */
-  function resolveCharacterUseItem(order: number): void {
-    const consumable = itemId === undefined ? undefined : scenario.itemsById[itemId];
-    if (consumable === undefined || consumable.kind !== 'consumable') {
-      throw new Error('use-item committed without a consumable');
-    }
-    // Heals — and consumes — only at execution, from the current Health, so
-    // earlier Enemy actions in the order reduce the waste. A death earlier in
-    // the order stops the sequence before this action instead.
-    const restored =
-      Math.min(MAX_HEALTH, health + consumable.heal) - health;
-    health += restored;
-    const after = removeFromInventory({ ...state, inventory, equipment }, consumable.id, 1);
-    inventory = after.inventory;
-    equipment = after.equipment;
-    actions.push({
-      actor: characterRef,
-      kind: 'use-item',
-      speed: characterSpeed,
-      order,
-      status: 'executed',
-      itemId: consumable.id,
-      itemName: consumable.name,
-      healed: restored,
-    });
-  }
-
-  /** The Character's action at its place in the order. */
-  function resolveCharacterAction(order: number): void {
-    if (combatAction === 'advance') {
-      resolveCharacterAdvance(order);
-    } else if (combatAction === 'fall-back') {
-      resolveCharacterFallBack(order);
-    } else if (combatAction === 'escape') {
-      resolveCharacterEscape(order);
-    } else if (combatAction === 'use-item') {
-      resolveCharacterUseItem(order);
-    } else if (combatAction === 'defend') {
-      resolveCharacterDefend(order);
-    } else if (combatAction === 'distract') {
-      // Unreachable when the victim is missing: targeted actions always bind
-      // one at submission, and the resolvers below capture that binding.
-      if (victim !== undefined) {
-        resolveCharacterDistract(victim, order);
-      }
-    } else {
-      resolveCharacterAttack(order);
-    }
-  }
-
-  ordered.forEach((queuedAction, index) => {
-    const order = index + 1;
-    if (queuedAction.actor === 'participant') {
-      const participant = encounter.participants.find(
-        (candidate) => candidate.id === queuedAction.participantId,
-      );
-      if (participant === undefined) {
-        return;
-      }
-      const actor: TacticalActor = {
-        kind: 'participant',
-        ...participantRefOf(encounter, participant),
-      };
-      const intent = combat.participants[participant.id]?.intent ?? 'strike';
-      // The sequence stopped earlier: later actions are recorded as not
-      // reached. Otherwise the Intent resolves as announced or is cancelled;
-      // it is never swapped for another action.
-      if (stop !== undefined) {
-        actions.push({
-          actor,
-          kind: intent,
-          speed: INTENT_SPEED[intent],
-          order,
-          target: characterRef,
-          status: 'not-reached',
-        });
-        return;
-      }
-      resolveEnemyAction(participant, actor, intent, INTENT_SPEED[intent], order);
-      return;
-    }
-    if (stop !== undefined) {
-      actions.push({
-        actor: characterRef,
-        kind: combatAction,
-        speed: characterSpeed,
-        order,
-        ...(victim === undefined ? {} : { target: targetRef() }),
-        status: 'not-reached',
-      });
-      return;
-    }
-    resolveCharacterAction(order);
-  });
-
-  /**
-   * One Combat round entry: every action of the Round in order — executed,
-   * cancelled, dropped, or not reached because the sequence stopped — with
-   * the participant names as presented. Wording comes from the Interface Text
-   * catalogue when the entry is read, so no display text is stored here.
-   */
-  const roundEntry: Extract<NewJournalEntry, { type: 'combat-round' }> = {
-    type: 'combat-round',
-    lang: scenario.language,
-    encounterId: encounter.id,
-    round: combat.round,
-    version: 2,
-    actions,
-    ...(stop !== undefined ? { stop } : {}),
-  };
-  const encounters = { ...state.encounters, [encounter.id]: wounds };
-
-  // Character death ends the Playthrough on the death Ending: no cleanup
-  // selection, no remaining actions, only the death Outcome.
-  if (stop === 'death') {
-    const ended: PlaythroughState = {
-      ...state,
-      step: state.step + 1,
-      character: { ...state.character, health: 0 },
-      encounters,
-      status: 'ended',
-      endingId: scenario.deathEnding.id,
-      activeSceneId: null,
-      activeCombat: null,
-    };
-    return {
-      ok: true,
-      state: ended,
-      journal: [roundEntry, endingEntry(scenario, ended, scenario.deathEnding)],
-    };
-  }
-
-  // Victory ends the Combat: no cleanup selection, no remaining actions, only
-  // the applicable Encounter Outcome.
-  if (stop === 'victory') {
-    return finishVictory(scenario, state, encounter, roundEntry, health, encounters, rng, inventory, equipment);
-  }
-
-  // A successful Escape ends the Combat: later actions do not resolve, no
-  // next Intents are selected, and the `escape` Outcome is applied.
-  if (stop === 'escape') {
-    return finishEscape(scenario, state, encounter, roundEntry, health, encounters, rng);
-  }
-
-  // A continuing Round (R11): the round number and `step` increment once,
-  // round-scoped effects expire, then the current content order of the
-  // survivors is captured and their next Intents are selected and stored.
-  // Selection dice draw here, after the resolution rolls, in participant order.
-  const nextRound = combat.round + 1;
-  const remaining = survivorsOf(encounter, wounds);
-  const nextOrder = remaining.map((participant) => participant.id);
-  const selection = selectIntents(
-    remaining.map((participant) => ({
-      participant,
-      range: ranges[participant.id] ?? encounter.startRange,
-      prepared: prepared[participant.id] ?? false,
-    })),
-    rng,
-  );
-  const nextParticipants: Record<
-    string,
-    { range: CombatRange; intent: IntentKind; prepared: boolean; waryUntilRound?: number }
-  > = {};
-  for (const participant of remaining) {
-    const record: (typeof nextParticipants)[string] = {
-      range: ranges[participant.id] ?? encounter.startRange,
-      intent: selection.intents[participant.id] ?? 'strike',
-      prepared: selection.prepared[participant.id] ?? false,
-    };
-    // Wary outlasts the step: it lasts until the end of the next Round,
-    // including Wary a successful Distract applied this Round.
-    const until = waryUntil[participant.id];
-    if (until !== undefined && until >= nextRound) {
-      record.waryUntilRound = until;
-    }
-    nextParticipants[participant.id] = record;
-  }
-  const next: PlaythroughState = {
-    ...state,
-    step: state.step + 1,
-    character: { ...state.character, health },
-    encounters,
-    inventory,
-    equipment,
-    activeCombat: {
-      encounterId: encounter.id,
-      round: nextRound,
-      startedParticipants: combat.startedParticipants,
-      roundParticipantOrder: nextOrder,
-      participants: nextParticipants,
-    },
-  };
-  return { ok: true, state: next, journal: [roundEntry] };
-}
-
-/**
- * Journal rows the Combat panel reads (stored rows or new entries mapped to
- * `{ type, payload }`). The guard marker and the roll log derive from the
- * Journal, never from stored state: the Defend bonus expires within its turn.
- */
-export type CombatJournalRow = {
-  type: string;
-  payload: {
-    encounterId?: unknown;
-    guard?: unknown;
-  };
-};
-
-/**
- * Guard up when the latest round of this Encounter was a Defend. Walking back
- * stops at the Encounter's latest opening narration, so an earlier Combat
- * cannot leak its guard in. The marker survives a reload because the Journal
- * is the store. Tactical (v2) rounds carry no guard: Defend does not resolve
- * there yet (issue #122), so a v2 round reads as guard down.
- */
-export function combatGuardUp(
-  entries: ReadonlyArray<CombatJournalRow>,
-  encounterId: string,
-): boolean {
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const entry = entries[index];
-    if (entry === undefined || entry.payload.encounterId !== encounterId) {
-      continue;
-    }
-    if (entry.type === 'combat-round') {
-      if (isTacticalRoundPayload(entry.payload)) return false;
-      return entry.payload.guard === true;
-    }
-    if (entry.type === 'combat-start') {
-      return false;
-    }
-  }
-  return false;
-}
-
-/**
- * Whether a stored combat-round payload is a tactical (v2) round: every
- * action of the Round in resolution order, instead of the legacy v1
- * action/rolls/guard fields. The full v2 report rendering arrives with the
- * application integration (I5); the v1 readers below skip these rows.
- */
-function isTacticalRoundPayload(payload: { encounterId?: unknown; guard?: unknown }): boolean {
-  return Array.isArray((payload as { actions?: unknown }).actions);
-}
-
-export type CombatRoundView = {
-  round: number;
-  action: CombatAction;
-  rangeBefore: CombatRange;
-  rangeAfter: CombatRange;
-  guard: boolean;
-  rolls: CombatRoll[];
-  /**
-   * New rows: the Enemy's name as presented. Absent on legacy rows, which
-   * carry stored English text instead and are shown verbatim.
-   */
-  enemyName?: string;
-  /** New `attack` rows: the weapon name as presented; absent when unarmed. */
-  weaponName?: string;
-  /** New `use-item` rows: the Consumable's name as presented. */
-  itemName?: string;
-  /** New `use-item` rows: the Health restored. */
-  healed?: number;
-  /** Legacy rows only: the stored English text, shown verbatim. */
-  text?: string;
-};
-
-/**
- * The rounds of the current Combat: the Combat round entries since the latest
- * opening narration of the Encounter. New rows carry structured events and are
- * rendered through the catalogue; legacy rows carry stored text and are shown
- * verbatim. Tactical (v2) rounds are skipped: their ordered action report is
- * rendered by the application integration (I5), never reinterpreted as legacy
- * guard payloads.
- */
-export function combatRounds(
-  entries: ReadonlyArray<CombatJournalRow>,
-  encounterId: string,
-): CombatRoundView[] {
-  const rounds: CombatRoundView[] = [];
-  for (const entry of entries) {
-    if (entry.payload.encounterId !== encounterId) {
-      continue;
-    }
-    if (entry.type === 'combat-start') {
-      rounds.length = 0;
-    } else if (entry.type === 'combat-round') {
-      if (isTacticalRoundPayload(entry.payload)) continue;
-      const payload = entry.payload as {
-        round?: unknown;
-        action?: unknown;
-        rangeBefore?: unknown;
-        rangeAfter?: unknown;
-        guard?: unknown;
-        enemyName?: unknown;
-        weaponName?: unknown;
-        itemName?: unknown;
-        healed?: unknown;
-        text?: unknown;
-        rolls?: unknown;
-      };
-      rounds.push({
-        round: typeof payload.round === 'number' ? payload.round : rounds.length + 1,
-        action:
-          payload.action === 'advance' ||
-          payload.action === 'defend' ||
-          payload.action === 'fall-back' ||
-          payload.action === 'escape' ||
-          payload.action === 'use-item'
-            ? payload.action
-            : 'attack',
-        rangeBefore: payload.rangeBefore === 'near' ? 'near' : 'far',
-        rangeAfter: payload.rangeAfter === 'near' ? 'near' : 'far',
-        guard: payload.guard === true,
-        rolls: Array.isArray(payload.rolls) ? (payload.rolls as CombatRoll[]) : [],
-        ...(typeof payload.enemyName === 'string' ? { enemyName: payload.enemyName } : {}),
-        ...(typeof payload.weaponName === 'string' ? { weaponName: payload.weaponName } : {}),
-        ...(typeof payload.itemName === 'string' ? { itemName: payload.itemName } : {}),
-        ...(typeof payload.healed === 'number' ? { healed: payload.healed } : {}),
-        ...(typeof payload.text === 'string' ? { text: payload.text } : {}),
-      });
-    }
-  }
-  return rounds;
-}
-
-/**
- * One tactical (v2) round of the current Combat, in resolution order: every
- * action of the Round with its status, rolls and results, and how the sequence
- * stopped, if it did. Rendered through the shared tactical report (the full
- * Journal, the modal Journal, the Combat panel's last-round callout and the
- * decisive Round in the outcome modal), never reinterpreted as a legacy round.
- */
-export type TacticalRoundView = {
-  round: number;
-  actions: TacticalActionEvent[];
-  stop?: CombatStopReason;
-};
-
-/**
- * The tactical rounds of the current Combat: the versioned Combat round entries
- * since the latest opening narration of the Encounter. Legacy text, v1 and
- * guard payloads are skipped here and render through their own paths, so mixed
- * historical and new entries stay readable side by side.
- */
-export function tacticalCombatRounds(
-  entries: ReadonlyArray<CombatJournalRow>,
-  encounterId: string,
-): TacticalRoundView[] {
-  const rounds: TacticalRoundView[] = [];
-  for (const entry of entries) {
-    if (entry.payload.encounterId !== encounterId) {
-      continue;
-    }
-    if (entry.type === 'combat-start') {
-      rounds.length = 0;
-    } else if (entry.type === 'combat-round') {
-      if (!isTacticalRoundPayload(entry.payload)) continue;
-      const payload = entry.payload as {
-        round?: unknown;
-        actions?: unknown;
-        stop?: unknown;
-      };
-      if (!Array.isArray(payload.actions)) continue;
-      rounds.push({
-        round: typeof payload.round === 'number' ? payload.round : rounds.length + 1,
-        actions: payload.actions as TacticalActionEvent[],
-        ...(payload.stop === 'victory' || payload.stop === 'death' || payload.stop === 'escape'
-          ? { stop: payload.stop }
-          : {}),
-      });
-    }
-  }
-  return rounds;
 }
 export type ExitView = {
   targetLocationId: string;
@@ -3275,10 +1140,9 @@ export function sceneIllustrationUrl(scenarioId: string, image: { hash: string; 
  * undefined when the Scene or Location declares no Illustration
  * (docs/spec/ui.md, scene and location illustration): the hashed asset route
  * URL with the registry width, height and catalog alt. Every surface that
- * shows an Illustration — the Location view, the Scene view, the Scenario
- * intro modal over the starting Location and the Location shown behind
- * Combat — builds it through this helper, so Motion Layers, the Camera and
- * the Showing key (ADR 0007) land in one place.
+ * shows an Illustration — the Location view, the Scene view and the Scenario
+ * intro modal over the starting Location — builds it through this helper, so
+ * Motion Layers, the Camera and the Showing key (ADR 0007) land in one place.
  */
 export function illustrationView(
   scenarioId: string,
@@ -3318,7 +1182,7 @@ export function illustrationView(
   };
 }
 
-/** Derived projection the UI renders: Location view, Scene, Combat or Ended. */
+/** Derived projection the UI renders: Location view, Scene or Ended. */
 export type GameView =
   | {
       kind: 'location';
@@ -3353,41 +1217,6 @@ export type GameView =
       text: string;
       map: MapView;
     }
-  | {
-      kind: 'combat';
-      locationId: string;
-      locationName: string;
-      encounterId: string;
-      encounterName: string;
-      /** Raw opening narration; the UI renders it with the Character's name. */
-      text: string;
-      characterName: string;
-      range: CombatRange;
-      round: number;
-      character: {
-        health: number;
-        maxHealth: number;
-        /** The equipped weapon's name as presented; absent when unarmed. */
-        weaponName?: string;
-        reach: 'melee' | 'ranged';
-        damage: number;
-      };
-      enemy: {
-        name: string;
-        health: number;
-        maxHealth: number;
-        damage: number;
-        reach: 'melee' | 'ranged';
-      };
-      actions: CombatAvailability[];
-      /**
-       * The tactical arena projection (R12): membership, legal targets,
-       * reason codes, thresholds, Speed/order positions, badges and
-       * preparation descriptions, derived from state and current content.
-       */
-      arena: CombatArenaView;
-      map: MapView;
-    };
 
 /**
  * The current position: the Ending once ended, the active Scene with its
@@ -3414,60 +1243,7 @@ export function view(
       map: deriveMap(scenario, state, options),
     };
   }
-  if (state.activeCombat != null) {
-    const combat = state.activeCombat;
-    const encounter = scenario.encountersById[combat.encounterId];
-    if (encounter !== undefined) {
-      const location =
-        scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
-      const attack = characterAttack(scenario, state);
-      // The Combat view keeps its single-participant summary shape for the
-      // legacy panel; the full arena projection (membership, targets, order,
-      // badges) rides alongside it (issue #123, R12).
-      const wounds = state.encounters[combat.encounterId] ?? {};
-      const arena = combatArena(scenario, state);
-      if (arena === undefined) {
-        throw new Error(`combat on unknown encounter "${combat.encounterId}"`);
-      }
-      const leadParticipant =
-        survivorsOf(encounter, wounds)[0] ?? encounter.participants[0];
-      if (leadParticipant === undefined) {
-        throw new Error(`encounter "${encounter.id}" has no participants`);
-      }
-      const lead = leadParticipant.enemy;
-      const taken = wounds[leadParticipant.id] ?? 0;
-      return {
-        kind: 'combat',
-        locationId: location.id,
-        locationName: location.name,
-        encounterId: encounter.id,
-        encounterName: lead.name,
-        text: encounter.text,
-        characterName: state.character.name,
-        range: combat.participants[leadParticipant.id]?.range ?? encounter.startRange,
-        round: combat.round,
-        character: {
-          health: state.character.health,
-          maxHealth: MAX_HEALTH,
-          // The default weapon's name comes from the catalogue when rendered;
-          // the engine carries only the equipped weapon's name as presented.
-          ...(attack.weaponName === undefined ? {} : { weaponName: attack.weaponName }),
-          reach: attack.reach,
-          damage: attack.damage,
-        },
-        enemy: {
-          name: lead.name,
-          health: Math.max(0, lead.health - taken),
-          maxHealth: lead.health,
-          damage: lead.damage,
-          reach: lead.reach,
-        },
-        actions: combatActions(scenario, state),
-        arena,
-        map: deriveMap(scenario, state, options),
-      };
-    }
-  }
+
   if (state.activeSceneId != null) {
     const scene = scenario.scenesById[state.activeSceneId];
     if (scene !== undefined) {

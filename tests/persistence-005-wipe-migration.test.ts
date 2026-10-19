@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest';
 import { sql, type Kysely } from 'kysely';
 import { Migrator } from 'kysely/migration';
 
-import { PlaythroughStateV1Schema } from '../src/engine/state-v1';
 import { PlaythroughStateSchema } from '../src/engine/state';
 import {
   ArenaFightStore,
@@ -67,7 +66,6 @@ function v2Document(): unknown {
     equipment: { weapon: 'sword' },
     currentLocationId: 'glade',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['glade'],
     revealed: [],
     firedScenes: [],
@@ -77,7 +75,12 @@ function v2Document(): unknown {
   };
 }
 
-/** A schema-valid v1 Playthrough document (pre-release game data). */
+/**
+ * A retired v1 Playthrough document (pre-release game data). The v1 schema
+ * left with the tactical Combat in S4, so this is raw seed JSON the wipe
+ * discards without validating: shape fidelity does not matter, only that a
+ * row exists to be deleted.
+ */
 function v1Document(): unknown {
   return {
     stateVersion: 1,
@@ -109,7 +112,7 @@ async function seedPreRelease(db: Kysely<Database>): Promise<void> {
   const v2 = v2Document();
   const v1 = v1Document();
   expect(PlaythroughStateSchema.safeParse(v2).success).toBe(true);
-  expect(PlaythroughStateV1Schema.safeParse(v1).success).toBe(true);
+  expect(typeof v1).toBe('object');
 
   await new SessionStore(db).touch('session-keep');
 

@@ -109,40 +109,12 @@ describe('non-game interface text', () => {
       pl.scenarioLanguage.textBadge('en'),
       en.scenario.templateItemSuffix(1, null),
       pl.scenario.templateItemSuffix(2, 'Broń'),
+      // S4: the Arena stub renders title + description only; the setup,
+      // Bestiary, Equipment and summary strings return with the P6 adapter.
       en.arena.title,
       pl.arena.title,
       en.arena.description,
       pl.arena.description,
-      en.arena.bestiaryHeading,
-      pl.arena.bestiaryHeading,
-      en.arena.opponentOne,
-      pl.arena.opponentOne,
-      en.arena.opponentTwo,
-      pl.arena.opponentTwo,
-      en.arena.noSecondOpponent,
-      pl.arena.noSecondOpponent,
-      en.arena.startingRange,
-      pl.arena.startingRange,
-      en.arena.characterHeading,
-      pl.arena.characterHeading,
-      en.arena.start,
-      pl.arena.start,
-      en.arena.you,
-      pl.arena.you,
-      en.arena.backToSetup,
-      pl.arena.backToSetup,
-      en.arena.fightAgain,
-      pl.arena.fightAgain,
-      en.arena.summaryHeading,
-      pl.arena.summaryHeading,
-      en.arena.summaryOutcome,
-      pl.arena.summaryOutcome,
-      en.arena.summaryRounds,
-      pl.arena.summaryRounds,
-      en.arena.summaryHealth,
-      pl.arena.summaryHealth,
-      en.arena.summaryHits(3, 1),
-      pl.arena.summaryHits(3, 1),
       en.nav.arena,
       pl.nav.arena,
     ];
@@ -184,36 +156,9 @@ describe('non-game interface text', () => {
     expect(pl.startForm.invalidName()).toBe('Podaj imię o długości 1–40 znaków.');
   });
 
-  it('covers the Arena setup, stats and result', () => {
-    expect(en.arena.characterLine(2, 2, 1, 1, 12)).toBe(
-      'Might 2 · Agility 2 · Wits 1 · Presence 1 · Health 12',
-    );
-    expect(pl.arena.characterLine(2, 2, 1, 1, 12)).toBe(
-      'Krzepa 2 · Zręczność 2 · Spryt 1 · Prezencja 1 · Zdrowie 12',
-    );
-    expect(
-      en.arena.enemyLine(1, 2, 1, 0, 8, 2, en.reach.melee, en.arena.behaviour.steady),
-    ).toBe(
-      'Might 1 · Agility 2 · Wits 1 · Presence 0 · Health 8 · Damage 2 · Reach melee · Steady',
-    );
-    expect(
-      pl.arena.enemyLine(3, 0, 0, 1, 14, 3, pl.reach.melee, pl.arena.behaviour.heavy),
-    ).toBe(
-      'Krzepa 3 · Zręczność 0 · Spryt 0 · Prezencja 1 · Zdrowie 14 · Obrażenia 3 · Zasięg wręcz · Mocny',
-    );
-    expect(en.arena.rounds(1)).toBe('1 round');
-    expect(en.arena.rounds(5)).toBe('5 rounds');
-    expect(pl.arena.rounds(1)).toBe('1 runda');
-    expect(pl.arena.rounds(3)).toBe('3 rundy');
-    expect(pl.arena.rounds(5)).toBe('5 rund');
-    expect(en.arena.fightAgain).toBe('Fight again');
-    expect(pl.arena.fightAgain).toBe('Walcz ponownie');
-    expect(en.arena.summaryHits(1, 0)).toBe('1 hit · 0 misses');
-    expect(en.arena.summaryHits(3, 2)).toBe('3 hits · 2 misses');
-    expect(pl.arena.summaryHits(1, 1)).toBe('1 trafienie · 1 pudło');
-    expect(pl.arena.summaryHits(3, 2)).toBe('3 trafienia · 2 pudła');
-    expect(pl.arena.summaryHits(5, 5)).toBe('5 trafień · 5 pudeł');
-  });
+  // S4: the Arena setup/stats/result strings were removed with the tactical
+  // Arena. The stub page renders title + description only; the strings return
+  // with the P6 adapter.
 
   it('keeps the error page strings equal to the catalogue', () => {
     expect(errorStrings.en).toEqual(en.error);

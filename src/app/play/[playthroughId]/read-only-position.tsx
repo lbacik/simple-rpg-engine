@@ -112,37 +112,6 @@ export function ReadOnlyPosition({
       </>
     );
   }
-  if (gameView.kind === 'combat') {
-    return (
-      <>
-        <h1>
-          <span lang={lang}>{gameView.encounterName}</span>
-          {badge === undefined ? null : <> {badge}</>}
-        </h1>
-        <div
-          lang={lang}
-          dangerouslySetInnerHTML={{
-            __html: renderNarration(gameView.text, gameView.characterName),
-          }}
-        />
-        <section aria-label={catalogue.readOnly.combat}>
-          <p className="meta">
-            {catalogue.readOnly.roundRange(gameView.round, catalogue.range[gameView.range])}
-          </p>
-          <p className="meta">
-            {catalogue.readOnly.health(
-              characterName,
-              gameView.character.health,
-              gameView.character.maxHealth,
-              gameView.enemy.name,
-              gameView.enemy.health,
-              gameView.enemy.maxHealth,
-            )}
-          </p>
-        </section>
-      </>
-    );
-  }
   // Ended: when the content Ending is gone, read it from its Journal entry.
   const contentEndingGone =
     state.endingId !== undefined && scenario.endingsById[state.endingId] === undefined;

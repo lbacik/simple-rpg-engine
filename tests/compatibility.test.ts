@@ -74,7 +74,6 @@ function baseState(): PlaythroughState {
     equipment: { weapon: 'sword' },
     currentLocationId: 'glade',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['glade'],
     revealed: [],
     firedScenes: [],
@@ -90,13 +89,6 @@ describe('checkPlaythroughCompatibility', () => {
     const state: PlaythroughState = {
       ...baseState(),
       activeSceneId: 'path',
-      activeCombat: {
-        encounterId: 'enc1',
-        round: 2,
-        startedParticipants: ['wolf'],
-        roundParticipantOrder: ['wolf'],
-        participants: { wolf: { range: 'near', intent: 'strike', prepared: false } },
-      },
       visited: ['glade', 'grove'],
       revealed: ['grove'],
       firedScenes: ['path'],
@@ -115,7 +107,6 @@ describe('checkPlaythroughCompatibility', () => {
     ['fired scene', { firedScenes: ['renamed'] }],
     ['taken choice scene', { takenOnceChoices: [{ sceneId: 'renamed', choiceId: 'go' }] }],
     ['taken choice id', { takenOnceChoices: [{ sceneId: 'path', choiceId: 'renamed' }] }],
-    ['active encounter', { activeCombat: { encounterId: 'renamed', round: 1, startedParticipants: ['wolf'], roundParticipantOrder: ['wolf'], participants: { wolf: { range: 'near', intent: 'strike', prepared: false } } } }],
     ['encounter record', { encounters: { renamed: { wolf: 1 } } }],
     ['held item', { inventory: { renamed: 1 } }],
     ['equipped item', { equipment: { weapon: 'renamed' } }],
@@ -150,31 +141,6 @@ describe('checkPlaythroughCompatibility', () => {
     expect(
       checkPlaythroughCompatibility(scenario, { ...baseState(), equipment: { outfit: 'sword' } }).ok,
     ).toBe(false);
-  });
-
-  it('fails an active Combat whose Enemy no longer outlasts the Damage taken', () => {
-    const scenario = stubScenario();
-    const combat = {
-      encounterId: 'enc1',
-      round: 1,
-      startedParticipants: ['wolf'],
-      roundParticipantOrder: ['wolf'],
-      participants: { wolf: { range: 'near' as const, intent: 'strike' as const, prepared: false } },
-    };
-    expect(
-      checkPlaythroughCompatibility(scenario, {
-        ...baseState(),
-        activeCombat: combat,
-        encounters: { enc1: { wolf: 6 } },
-      }).ok,
-    ).toBe(false);
-    expect(
-      checkPlaythroughCompatibility(scenario, {
-        ...baseState(),
-        activeCombat: combat,
-        encounters: { enc1: { wolf: 5 } },
-      }),
-    ).toEqual({ ok: true });
   });
 
   it('ignores a changed trigger or Location membership of the active Scene', () => {

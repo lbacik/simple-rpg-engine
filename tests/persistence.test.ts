@@ -28,7 +28,6 @@ function makeState(overrides: Partial<PlaythroughState> = {}): PlaythroughState 
     equipment: { weapon: 'sword' },
     currentLocationId: 'glade',
     activeSceneId: null,
-    activeCombat: null,
     visited: ['glade'],
     revealed: [],
     firedScenes: [],

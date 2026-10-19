@@ -563,7 +563,10 @@ describe('outcomes, effects and transitions', () => {
     const pressed = choose(scenario, atEdge, 'press-on').state;
     const hollow = travel(scenario, pressed, 'wolf-hollow').state;
     expect(hollow.activeSceneId).toBe('wolf-den');
-    // Choosing the fight starts a Combat with the hollow-wolf Encounter.
+    // S4 (Combat MVP 1.0): the `start-combat` transition no longer enters
+    // Combat. Choosing the fight clears the Scene, journals the Choice and
+    // leaves the hollow-wolf Encounter undefeated and repeatable until the P6
+    // adapter lands.
     const fought = applyAction(
       scenario,
       hollow,
@@ -576,13 +579,9 @@ describe('outcomes, effects and transitions', () => {
     );
     expect(fought.ok).toBe(true);
     if (!fought.ok) throw new Error(`wolf-den fight failed: ${fought.reason}`);
-    expect(fought.state.activeCombat).toMatchObject({
-      encounterId: 'hollow-wolf',
-      round: 1,
-      participants: { 'grey-wolf': { range: 'far' } },
-    });
-    expect(fought.state.encounters['hollow-wolf']).toEqual({ 'grey-wolf': 0 });
-    expect(fought.journal.map((entry) => entry.type)).toEqual(['choice', 'combat-start']);
+    expect(fought.state.activeSceneId).toBeNull();
+    expect(fought.state.encounters['hollow-wolf']).toBeUndefined();
+    expect(fought.journal.map((entry) => entry.type)).toEqual(['choice']);
     // A hidden Choice cannot be taken, even by id.
     const keyed: PlaythroughState = { ...hollow };
     expect(
@@ -710,8 +709,10 @@ describe('conditions: every fact', () => {
 
 describe('outcome modal derivation and narration', () => {
   it('derives the modal entries from the latest step entries of the listed types only', () => {
+    // S4: the Combat end and Enemy-defeated entries left with the tactical
+    // Combat; the P6 adapter re-adds the v3 Combat entries.
     expect([...OUTCOME_MODAL_ENTRY_TYPES].sort()).toEqual(
-      ['combat-end', 'enemy-defeated', 'outcome', 'state-change', 'test'].sort(),
+      ['outcome', 'state-change', 'test'].sort(),
     );
     const { scenario, state: started } = startWoods();
     const listened = choose(scenario, started, 'listen').state;

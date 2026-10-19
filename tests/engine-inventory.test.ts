@@ -1,6 +1,7 @@
 // Engine unit tests for the inventory actions (docs/spec/playthrough-state.md,
-// Equip / Unequip / Use item): legality outside Combat only, the +2 bonus
-// cap, full-Health rejection, and the take-item unequip rule.
+// Equip / Unequip / Use item): legality, the +2 bonus cap, full-Health
+// rejection, and the take-item unequip rule. (S4 deleted the tactical Combat,
+// so there is no in-Combat rejection anymore; it returns with the P6 adapter.)
 
 import { describe, expect, it } from 'vitest';
 import type { Scenario } from '../src/content/index';
@@ -24,19 +25,6 @@ function started(scenario: Scenario): PlaythroughState {
   const result = startPlaythrough(scenario, 'hunter', 'Robin', rng);
   if (!result.ok) throw new Error('fixture start failed');
   return result.state;
-}
-
-function inCombat(state: PlaythroughState): PlaythroughState {
-  return {
-    ...state,
-    activeCombat: {
-      encounterId: 'ambush',
-      round: 1,
-      startedParticipants: ['ambush-foe'],
-      roundParticipantOrder: ['ambush-foe'],
-      participants: { 'ambush-foe': { range: 'far', intent: 'strike', prepared: false } },
-    },
-  };
 }
 
 describe('equip', () => {
@@ -108,13 +96,6 @@ describe('equip', () => {
     ).toEqual({ ok: false, reason: 'illegal-action' });
   });
 
-  it('is rejected during Combat with step unchanged', () => {
-    const scenario = loadFixture();
-    const state = inCombat({ ...started(scenario), equipment: {} });
-    const result = applyAction(scenario, state, { kind: 'equip', itemId: 'cloak', expectedStep: 0 }, rng);
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
-  });
-
   it('is legal while a Scene is active', () => {
     const scenario = loadFixture();
     const state = { ...started(scenario), equipment: {}, activeSceneId: 'path' };
@@ -160,13 +141,6 @@ describe('unequip', () => {
         rng,
       ),
     ).toEqual({ ok: false, reason: 'illegal-action' });
-  });
-
-  it('is rejected during Combat with step unchanged', () => {
-    const scenario = loadFixture();
-    const state = inCombat({ ...started(scenario), equipment: { outfit: 'cloak' } });
-    const result = applyAction(scenario, state, { kind: 'unequip', slot: 'outfit', expectedStep: 0 }, rng);
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
   });
 });
 
@@ -241,16 +215,6 @@ describe('use item', () => {
         applyAction(scenario, state, { kind: 'use-item', itemId, expectedStep: 0 }, rng),
       ).toEqual({ ok: false, reason: 'illegal-action' });
     }
-  });
-
-  it('is rejected during Combat with step unchanged', () => {
-    const scenario = loadFixture();
-    const state = inCombat({
-      ...started(scenario),
-      character: { templateId: 'hunter', name: 'Robin', baseAttributes: { might: 2, agility: 1, wits: 2, presence: 1 }, health: 5 },
-    });
-    const result = applyAction(scenario, state, { kind: 'use-item', itemId: 'herbs', expectedStep: 0 }, rng);
-    expect(result).toEqual({ ok: false, reason: 'illegal-action' });
   });
 });
 

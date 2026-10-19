@@ -1,8 +1,0 @@
-- id: death
-  kind: defeat
-  title: Gone
-  text: The end.
-- id: home
-  kind: victory
-  title: Home
-  text: You made it.

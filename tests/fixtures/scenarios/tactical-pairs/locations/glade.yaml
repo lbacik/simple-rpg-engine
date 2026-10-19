@@ -1,5 +1,0 @@
-id: glade
-name: Glade
-description: Sunlight through leaves.
-map: { x: 10, y: 20 }
-scenes: [ambush]

@@ -3,10 +3,10 @@
 //
 // This is the Scenario-aware read layer: the persistence store returns raw
 // stored state (parsed JSON, unvalidated) and every validation step lives
-// here, where the current Scenario is available for version-aware validation
-// and migration. A stored v1 document migrates deterministically against the
-// current Scenario before the reference check; unknown, newer and invalid
-// documents fail validation without being interpreted as v1 or rewritten.
+// here, where the current Scenario is available for version-aware validation.
+// Only current v2 documents validate; unknown, newer (including retired v1)
+// and invalid documents fail validation without being interpreted or
+// rewritten.
 //
 // Incompatibility is derived on read, never stored: a missing or invalid
 // Scenario, an invalid stored document, or a failed reference check when the
@@ -26,8 +26,8 @@
 import type { Kysely } from 'kysely';
 import { checkPlaythroughCompatibility } from '../../content/compatibility';
 import type { Scenario } from '../../content/loadScenario';
-import { migratePlaythroughState, parseVersionedState } from '../../engine/migrate';
 import { PlaythroughStateSchema, type PlaythroughState } from '../../engine/state';
+import { readPlaythroughV3Document } from '../../engine/state-v3';
 import { PlaythroughStore, type StoredPlaythrough } from '../../persistence/index';
 import type { Database } from '../../persistence/schema';
 
@@ -55,7 +55,7 @@ export type ResolvedPlaythrough =
       parsed: PlaythroughState | undefined;
     };
 
-/** Validate raw stored state against the current (v2) schema. V1 documents migrate through {@link parseVersionedState}, never here. */
+/** Validate raw stored state against the current (v2) schema. Anything else (including retired v1 documents) is undefined. */
 export function validateStoredState(value: unknown): PlaythroughState | undefined {
   const result = PlaythroughStateSchema.safeParse(value);
   return result.success ? result.data : undefined;
@@ -96,48 +96,42 @@ export async function resolvePlaythrough(
     return null;
   }
   const scenario = resolveScenario(row.scenarioId);
-  const versioned = parseVersionedState(row.state);
-  if (versioned.kind === 'invalid') {
-    // Invalid document: fail validation without rewriting it and without
-    // blocking Journal access.
+  // Only current v2 documents validate here. Retired v1 documents (whose
+  // migration left with the tactical Combat in S4) and malformed envelopes
+  // are invalid: fail validation without rewriting them and without blocking
+  // Journal access.
+  const parsedV2 = validateStoredState(row.state);
+  const isV3 =
+    typeof row.state === 'object' &&
+    row.state !== null &&
+    'schemaVersion' in row.state &&
+    readPlaythroughV3Document(row.state).ok;
+  if (isV3) {
+    // Combat MVP 1.0 documents (P2, issue #232): malformed envelopes, unknown
+    // `schemaVersion` values and wrong `rulesVersion` values parse as invalid
+    // and read as read-only with the Journal. A valid v3 document stays
+    // read-only too until P6 wires the Scenario adapter (gameplay, rendering
+    // and the v3 reference check): the row is never rewritten here either way.
     return { compatible: false, scenario, playthrough: row, parsed: undefined };
   }
-  if (versioned.kind === 'v3') {
-    // Combat MVP 1.0 documents (P2, issue #232): malformed envelopes, unknown
-    // `schemaVersion` values and wrong `rulesVersion` values already parse as
-    // `invalid` above and read as read-only with the Journal. A valid v3
-    // document stays read-only too until P6 wires the Scenario adapter
-    // (gameplay, rendering and the v3 reference check): the row is never
-    // rewritten here either way.
+  if (parsedV2 === undefined) {
     return { compatible: false, scenario, playthrough: row, parsed: undefined };
   }
   if (scenario === undefined) {
-    // No state write: a v1 row cannot be assigned participant ids without its
-    // Scenario, and there is nothing valid to migrate towards. A current v2
-    // document still parses for read-only views; the Journal stays readable
-    // through the returned row id either way.
+    // No state write: without the Scenario there is nothing valid to check
+    // towards. A current v2 document still parses for read-only views; the
+    // Journal stays readable through the returned row id either way.
     return {
       compatible: false,
       scenario: undefined,
       playthrough: row,
-      parsed: versioned.kind === 'v2' ? versioned.state : undefined,
+      parsed: parsedV2,
     };
   }
-  // Migration runs before both the same-hash fast path and the changed-hash
-  // reference check. A failed migration is incompatible without any write, so
-  // the original bytes survive and recover after content restoration.
-  let state: PlaythroughState;
-  let migrated = false;
-  if (versioned.kind === 'v1') {
-    const result = migratePlaythroughState(versioned.state, scenario);
-    if (!result.ok) {
-      return { compatible: false, scenario, playthrough: row, parsed: undefined };
-    }
-    state = result.state;
-    migrated = true;
-  } else {
-    state = versioned.state;
-  }
+  // The reference check runs before both the same-hash fast path and the
+  // changed-hash path below. Only v2 documents reach it.
+  const state: PlaythroughState = parsedV2;
+  const migrated = false;
   if (!migrated && row.contentHash === scenario.contentHash) {
     return { compatible: true, scenario, playthrough: { ...row, state } };
   }
@@ -163,29 +157,26 @@ export async function resolvePlaythrough(
   }
   // A turn committed between the read and the pin update: report its fresh
   // row instead of overwriting it with the older state. Revalidate the fresh
-  // row, migrating it first when it is still v1: never report an unvalidated
-  // fresh v1 row as current v2.
+  // row the same way: never report an unvalidated document as current v2.
   const fresh = await store.findById(row.id);
   if (fresh === null || fresh.sessionId !== sessionHash) {
     return null;
   }
-  const freshVersioned = parseVersionedState(fresh.state);
-  if (freshVersioned.kind === 'invalid') {
+  // A turn committed between the read and the pin update: revalidate the
+  // fresh row the same way, never reporting an unvalidated document as
+  // current v2. A v3 row committed meanwhile is read-only until P6 wires the
+  // adapter.
+  const freshIsV3 =
+    typeof fresh.state === 'object' &&
+    fresh.state !== null &&
+    'schemaVersion' in fresh.state &&
+    readPlaythroughV3Document(fresh.state).ok;
+  if (freshIsV3) {
     return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
   }
-  if (freshVersioned.kind === 'v3') {
-    // A v3 row committed meanwhile: read-only until P6 wires the adapter.
+  const freshState = validateStoredState(fresh.state);
+  if (freshState === undefined) {
     return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
-  }
-  let freshState: PlaythroughState;
-  if (freshVersioned.kind === 'v1') {
-    const freshMigrated = migratePlaythroughState(freshVersioned.state, scenario);
-    if (!freshMigrated.ok) {
-      return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
-    }
-    freshState = freshMigrated.state;
-  } else {
-    freshState = freshVersioned.state;
   }
   if (fresh.contentHash === scenario.contentHash) {
     return { compatible: true, scenario, playthrough: { ...fresh, state: freshState } };
@@ -228,7 +219,7 @@ export async function listSessionPlaythroughs(
 export function readOnlyGap(
   scenario: Scenario,
   state: ValidatedStoredPlaythrough['state'],
-  viewKind: 'location' | 'scene' | 'combat' | 'ended',
+  viewKind: 'location' | 'scene' | 'ended',
   hasRecordedEnding: boolean,
 ): 'location' | 'ending' | undefined {
   if (viewKind === 'ended') {

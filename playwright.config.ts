@@ -14,7 +14,7 @@ const PORT = Number(process.env.E2E_PORT ?? 3100);
 // webServer, so the temporary directory is built here at load — the webServer
 // starts before a globalSetup would — and pointed at for ALL specs. The
 // language suite asserts the full E2E collection lists (shipped Scenarios
-// plus the Translation and tactical-pair fixtures), so adding or removing a
+// plus the Translation fixtures), so adding or removing a
 // fixture directory here means updating its expectations.
 //
 // The directory is unique per config-loading process (`process.pid`): every
@@ -56,14 +56,6 @@ function buildE2EScenarioDir(): string {
   fs.cpSync(path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'two-bridges'), path.join(tmp, 'two-bridges'), {
     recursive: true,
   });
-  // The tactical pair fixture (tests/fixtures/scenarios/tactical-pairs): the
-  // two-Grey-Wolf Encounter the tactical Combat E2E reaches through the
-  // test-only entry path. A test/loader fixture only, never shipped.
-  fs.cpSync(
-    path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'tactical-pairs'),
-    path.join(tmp, 'tactical-pairs'),
-    { recursive: true },
-  );
   const staraSource = path.join(ROOT, 'tests', 'fixtures', 'scenarios', 'stara-studnia');
   const staraDest = path.join(tmp, 'stara-studnia');
   fs.cpSync(staraSource, staraDest, {
@@ -114,9 +106,9 @@ export default defineConfig({
       PORT: String(PORT),
       // The standalone server otherwise binds the machine hostname only.
       HOSTNAME: '127.0.0.1',
-      // Unlock the test-only tactical entry path (`/test-tactical`), which
-      // seeds real pair-Combat and legacy saves for the tactical E2E. Set
-      // only for the throwaway E2E server, never in production.
+      // Unlock the test-only Combat core probe (`/combat-core-probe`), which
+      // proves the shared core builds for the browser. Set only for the
+      // throwaway E2E server, never in production.
       E2E_TEST_ROUTES: '1',
     },
   },
