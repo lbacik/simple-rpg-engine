@@ -80,5 +80,5 @@ export type {
   ArenaRunV1,
   VerifyFrozenPlans,
 } from './arena-run';
-export type { Accepted, Previewed, PreviewResult, Rejected, StartResult, SubmitResult, SurrenderResult } from './resolve';
-export { COMBAT_EVENT_TYPES, COMBAT_RESULTS, previewRound, startCombat, submitRound, surrender } from './resolve';
+export type { Accepted, CancelReason, Previewed, PreviewResult, Rejected, StartResult, SubmitResult, SurrenderResult } from './resolve';
+export { CANCEL_REASONS, COMBAT_EVENT_TYPES, COMBAT_RESULTS, previewRound, startCombat, submitRound, surrender } from './resolve';

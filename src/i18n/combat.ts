@@ -14,10 +14,12 @@ import type { InterfaceLanguage } from './languages';
 
 export type {
   BlowParams,
+  CombatCancelReasons,
   CombatCatalogue,
   CombatEvents,
   CombatImportIssues,
   CombatNotices,
+  CombatPanelText,
   CombatParseIssues,
   CombatReasons,
   CombatResults,

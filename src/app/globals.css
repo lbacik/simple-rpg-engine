@@ -2395,3 +2395,216 @@ form.map-node button.map-travel:focus-visible .dot {
   background: #fff;
   border-bottom: 1px solid var(--chronicle-line, #dce3db);
 }
+
+/* Command panel (Combat MVP 1.0, UI C): three columns on wide screens —
+   hero/companion, intents as the target list, stance/cards/forecast. Below
+   the narrow breakpoint the intents sit above the cards with a sticky threat
+   strip, and the page never scrolls horizontally. */
+
+.cp-threat {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.9rem;
+}
+
+.cp-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.4fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.cp-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cp-box,
+.cp-intent,
+.cp-step {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 0.4rem;
+  padding: 0.75rem;
+}
+
+.cp-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cp-dim {
+  color: var(--muted);
+}
+
+.cp-notice {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.cp-intents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+a.cp-intent {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cp-intent.cp-selected,
+.cp-card.cp-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cp-intent-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.cp-intent-name {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cp-intent-plan {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.cp-badge {
+  white-space: nowrap;
+}
+
+.cp-badge-slot {
+  color: var(--accent);
+}
+
+.cp-badge-wait {
+  color: var(--muted);
+}
+
+.cp-meter {
+  height: 0.5rem;
+  background: var(--rule);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.cp-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.cp-out {
+  opacity: 0.75;
+}
+
+.cp-stances,
+.cp-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cp-stances a,
+.cp-cards a,
+.cp-cards span.cp-card {
+  border: 1px solid var(--rule);
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.cp-cards .cp-card {
+  flex: 1 1 8rem;
+}
+
+.cp-card small,
+.cp-intent small {
+  display: block;
+}
+
+.cp-ok {
+  color: inherit;
+}
+
+.cp-reason {
+  color: var(--enemy);
+}
+
+.cp-tag {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0.3rem;
+  padding: 0 0.35rem;
+  font-weight: normal;
+}
+
+.cp-cutoff {
+  font-weight: bold;
+}
+
+.cp-target {
+  font-weight: bold;
+}
+
+.cp fieldset.cp-step {
+  margin: 0;
+}
+
+.cp summary {
+  cursor: pointer;
+}
+
+.cp a:focus-visible,
+.cp button:focus-visible,
+.cp summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cp ul {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+  overflow-wrap: break-word;
+}
+
+.cp form {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 56rem) {
+  .cp-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cp-center {
+    order: -1;
+  }
+}
