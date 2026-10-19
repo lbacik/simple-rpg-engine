@@ -36,12 +36,30 @@ import {
   startScenarioCombat,
   surrenderScenarioCombat,
   type ScenarioCombatJournalEntry,
+  type ScenarioCompanionJournalEntry,
 } from './scenario-combat';
 import { PLAYTHROUGH_MAX_HEALTH, PLAYTHROUGH_SCHEMA_VERSION } from './state-v3';
 import type { PlaythroughV3 } from './state-v3';
 
-/** Journal entries one v3 turn produces: journey entries plus Combat entries. */
-export type ScenarioJournalEntry = NewJournalEntry | ScenarioCombatJournalEntry;
+/** Journal entries one v3 turn produces: journey entries plus Combat and Companion entries. */
+export type ScenarioJournalEntry =
+  | NewJournalEntry
+  | ScenarioCombatJournalEntry
+  | ScenarioCompanionJournalEntry;
+
+/**
+ * The present Companion's definition, resolved from the localized Scenario so
+ * names are stored as presented. Unknown ids read as absent: the reference
+ * check already holds those Playthroughs read-only.
+ */
+function presentCompanion(
+  scenario: Scenario,
+  state: PlaythroughV3,
+): import('../content/model').CompiledCompanion | null {
+  const id = state.companion?.id;
+  if (id === undefined) return null;
+  return scenario.companionsById[id] ?? null;
+}
 
 /**
  * Player actions on a v3 Playthrough. The journey actions mirror the v2
@@ -270,6 +288,7 @@ function applyCombatConfirmV3(
     state,
     command,
     lang: scenario.language,
+    companion: presentCompanion(scenario, state),
   });
   if (!confirmed.ok) {
     if (confirmed.reason === 'stale-round') return { ok: false, reason: 'stale-round' };
@@ -294,6 +313,7 @@ function applyCombatSurrenderV3(
     state,
     round,
     lang: scenario.language,
+    companion: presentCompanion(scenario, state),
   });
   if (!surrendered.ok) {
     if (surrendered.reason === 'stale-round') return { ok: false, reason: 'stale-round' };
@@ -736,6 +756,7 @@ export function applyScenarioOutcomeV3(
       encounter: outcome.startCombat,
       state: next,
       lang: scenario.language,
+      companion: presentCompanion(scenario, next),
     });
     if (!started.ok) {
       return { ok: false, reason: 'illegal-action' };

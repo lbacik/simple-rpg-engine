@@ -366,6 +366,9 @@ export const pl: Catalogue = {
       combatStart: 'Początek walki',
       combatRound: 'Runda walki',
       combatEnd: 'Koniec walki',
+      companionJoined: 'Towarzysz dołączył',
+      companionLeft: 'Towarzysz odszedł',
+      companionLost: 'Towarzysz poległ',
     },
     travel: (name: string): string => `Podróż: ${name}`,
     victory: 'Zwycięstwo',
@@ -411,6 +414,10 @@ export const pl: Catalogue = {
     used: (name: string, restored: number): string =>
       `Użyto: ${name} (+${whole(restored)} Zdrowia)`,
     combatStart: 'Walka się zaczyna. Przeciwnicy:',
+    combatWithCompanion: (name: string): string => `${name} walczy u twego boku.`,
+    companionJoined: (name: string): string => `${name} dołącza do drużyny.`,
+    companionLeft: (name: string): string => `${name} opuszcza drużynę.`,
+    companionLost: (name: string): string => `${name} ginie w walce.`,
     combatEnd: (howEnded: 'win' | 'surrender' | 'draw'): string =>
       howEnded === 'win' ? 'Walka wygrana.' : howEnded === 'surrender' ? 'Walka poddana.' : 'Walka nierozstrzygnięta.',
   },
