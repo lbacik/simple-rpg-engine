@@ -9,6 +9,8 @@ import { executeTurn } from '../src/app/lib/turn';
 import { resolvePlaythrough } from '../src/app/lib/playthrough';
 import { PLAYTHROUGH_SCHEMA_VERSION, readPlaythroughV3Document } from '../src/engine/state-v3';
 import type { PlaythroughV3 } from '../src/engine/state-v3';
+import { verifyFrozenPlans } from '../src/engine/combat/plan';
+import type { CombatState } from '../src/engine/combat/index';
 import { migrateDatabase, openDatabase, PlaythroughStore } from '../src/persistence/index';
 import { duelChooseState } from './combat-core-fixtures';
 import { loadCrossroadsScenario } from './fixtures/crossroads';
@@ -239,5 +241,22 @@ describe('Playthrough v3 documents', () => {
     } finally {
       await db.destroy();
     }
+  });
+
+  it('rejects a frozen-plan mismatch only when the verifier is given (S2)', () => {
+    const verify = (state: CombatState): boolean => verifyFrozenPlans(state).length === 0;
+    const genuine = makeV3({ activeCombat: { encounterId: 'enc-1', combat: duelChooseState() } });
+    expect(readPlaythroughV3Document(genuine, { verifyFrozenPlans: verify }).ok).toBe(true);
+    // Structurally valid but not the recomputation: a swapped stance.
+    const tamperedCombat = {
+      ...duelChooseState(),
+      frozenEnemyPlans: [{ ...duelChooseState().frozenEnemyPlans[0], stance: 'defensive' }],
+    };
+    const tampered = makeV3({ activeCombat: { encounterId: 'enc-1', combat: tamperedCombat } });
+    // Without the verifier only the structural checks apply.
+    expect(readPlaythroughV3Document(tampered).ok).toBe(true);
+    const read = readPlaythroughV3Document(tampered, { verifyFrozenPlans: verify });
+    expect(read.ok).toBe(false);
+    if (!read.ok) expect(read.issues[0]?.code).toBe('bad_frozen_plans');
   });
 });

@@ -85,7 +85,7 @@ function isDefeatedByRecord(
  * enters at the Character's current Health, survivors only, every fighter
  * fresh (full stamina, Round-1 cooldowns, no Prepare, authored groups and
  * engagements). Appends the `combat-start` entry. Never advances `step`: the
- * surrounding turn (the Choice that led to the Encounter) owns the clock.
+ * surrounding `step` (the Choice that led to the Encounter) advances it.
  */
 export function startScenarioCombat(args: {
   encounter: CompiledEncounter;
