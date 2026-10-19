@@ -26,6 +26,7 @@ Supporting material:
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
 - [Tactical Combat implementation handoff](tactical-combat-handoff.md): the accepted package boundaries, dependencies, acceptance matrix and release verification for tactical Combat. It supplements the normative rules; production implementation is a subsequent effort.
+- [Combat MVP 1.0 implementation handoff](combat-mvp-1.0-handoff.md): the accepted packages, gates, release and rollback procedure for replacing tactical Combat with the [MVP 1.0 rules](../sources/combat-mvp-1.0/rules.md) in release v0.6.0. Until its first package reconciles this spec, the documents here still describe the tactical rules.
 - Background research, non-normative: [cross-file references in multi-file YAML](../research/multi-file-yaml-references.md) and [Next.js architecture for a server-authoritative game engine](../research/nextjs-game-architecture.md).
 
 ## Standing decisions
