@@ -260,6 +260,133 @@ export function syncAnimationStartTimes(animations: readonly Pick<Animation, 'st
 }
 
 /**
+ * Whether the shared Motion timeline is frozen (docs/spec/ui.md, timeline,
+ * off-screen and hidden tab): it freezes while no part of the Illustration
+ * is in the viewport, or the tab is hidden, and runs otherwise. An
+ * Illustration covered by a side-panel or an outcome modal still intersects
+ * the viewport, so a modal never freezes it: there is deliberately no modal
+ * input here. Pure, so the freeze rule is testable without a browser.
+ */
+export function timelineFrozen(input: { inViewport: boolean; tabHidden: boolean }): boolean {
+  return !input.inViewport || input.tabHidden;
+}
+
+/** The handle a timeline freeze reads: the play state plus pause and resume. */
+type TimelineAnimation = Pick<Animation, 'playState' | 'pause' | 'play'>;
+
+/**
+ * Freeze the shared timeline (docs/spec/ui.md, timeline): pause every
+ * animation that has not ended, so the fade, frames, Drifts, Flickers and
+ * Camera all hold where they stopped. Finished one-shot Drifts and Cameras
+ * already hold their end state and are left alone. Pure over the animation
+ * handles, so freezing is testable without a browser.
+ */
+export function pauseTimelineAnimations(animations: readonly TimelineAnimation[]): void {
+  for (const animation of animations) {
+    if (animation.playState === 'finished') continue;
+    try {
+      animation.pause();
+    } catch {
+      // Already finished or never started; it holds its own state.
+    }
+  }
+}
+
+/**
+ * Resume the shared timeline (docs/spec/ui.md, timeline): replay every
+ * paused animation from where it stopped — no jump, no restart. Finished
+ * one-shots keep holding their end state (playing one would replay it from
+ * t = 0), and running ones are left alone. Pure over the animation handles,
+ * so resuming is testable without a browser.
+ */
+export function resumeTimelineAnimations(animations: readonly TimelineAnimation[]): void {
+  for (const animation of animations) {
+    if (animation.playState !== 'paused') continue;
+    try {
+      animation.play();
+    } catch {
+      // Never started or already gone; it holds its own state.
+    }
+  }
+}
+
+/**
+ * Whether a box shows any part in the viewport (docs/spec/ui.md, timeline,
+ * off-screen and hidden tab): any pixel counts, so only a fully out-of-view
+ * box freezes the timeline. The synchronous initial read for the clock below;
+ * the observer then keeps it live. Pure, so the rule is testable without a
+ * browser.
+ */
+export function rectInViewport(
+  rect: Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right'>,
+  viewport: { width: number; height: number },
+): boolean {
+  return (
+    rect.bottom > 0 && rect.top < viewport.height && rect.right > 0 && rect.left < viewport.width
+  );
+}
+
+/**
+ * The shared Motion timeline clock's frozen state for one Illustration
+ * (docs/spec/ui.md, timeline, off-screen and hidden tab): frozen while no
+ * part of `boxRef`'s box is in the viewport (any pixel counts, so scrolling
+ * it fully out freezes and scrolling any part back resumes), or the tab is
+ * hidden; live otherwise. A side-panel or outcome modal over the Illustration
+ * leaves the box intersecting the viewport, so modals never freeze it. This
+ * is not Motion off: nothing here unmounts the Layers, shows the Still or
+ * touches the Play/Pause control. Without `IntersectionObserver` the box
+ * counts as in the viewport; the tab counts as shown unless
+ * `document.hidden`. Client-only: effects never run on the server.
+ */
+function useTimelineFrozen(boxRef: { current: HTMLElement | null }): boolean {
+  const [frozen, setFrozen] = useState<boolean>(
+    () => typeof document !== 'undefined' && document.hidden,
+  );
+  useEffect(() => {
+    const box = boxRef.current;
+    if (box === null) return;
+    // A synchronous first read: Motion starting fully off-screen holds from
+    // t = 0 instead of ticking unseen until the observer's first callback.
+    let inViewport =
+      typeof window === 'undefined'
+        ? true
+        : rectInViewport(box.getBoundingClientRect(), {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          });
+    let tabHidden = document.hidden;
+    const update = (): void => {
+      setFrozen(timelineFrozen({ inViewport, tabHidden }));
+    };
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry !== undefined) {
+            inViewport = entry.isIntersecting;
+            update();
+          }
+        },
+        { threshold: 0 },
+      );
+      observer.observe(box);
+    }
+    const onVisibilityChange = (): void => {
+      tabHidden = document.hidden;
+      update();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    update();
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [boxRef]);
+  return frozen;
+}
+
+/**
  * A Layer's geometry over the Still's box, in percent
  * (docs/spec/ui.md, a Layer's size and place): the Layer's width is `width`
  * percent of the Still's width with its height following from the aspect ratio
@@ -363,6 +490,22 @@ export function Illustration({
   const stillRef = useRef<HTMLImageElement>(null);
   const layerRefs = useRef<(HTMLElement | null)[]>([]);
   const cameraRef = useRef<HTMLElement>(null);
+  const boxRef = useRef<HTMLSpanElement>(null);
+  // Every Web Animations API animation of this Showing (Drifts, Flickers and
+  // the Camera): the shared timeline clock pauses and resumes them together.
+  // Each animation effect registers its own and unregisters on cleanup, so
+  // the registry always holds exactly the live animations of this Showing.
+  const timelineAnimations = useRef<Animation[]>([]);
+  // Whether the shared timeline is frozen (docs/spec/ui.md, timeline,
+  // off-screen and hidden tab): the box fully out of the viewport, or the
+  // tab hidden, freezes the fade, frames, Drifts, Flickers and Camera where
+  // they stopped; visible again resumes them, with no jump and no restart.
+  const timelinePaused = useTimelineFrozen(boxRef);
+  // The animation effects below snapshot the frozen state at creation (they
+  // must not depend on it, or freezing would recreate and restart the
+  // animations), so the current value rides a ref.
+  const timelinePausedRef = useRef(timelinePaused);
+  timelinePausedRef.current = timelinePaused;
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
@@ -468,9 +611,12 @@ export function Illustration({
   // moves to `to` and holds there; a looping Drift repeats at once, since the
   // delay applies only before the first pass. A Flicker animation loops the
   // one fixed 4 s curve forever; its keyframes carry the Layer's depth, so a
-  // flame and its glow pulse together. Freezing the timeline while the
-  // Illustration is off-screen or the tab is hidden (docs/spec/ui.md,
-  // timeline) is a follow-up: these animations keep wall-clock time.
+  // flame and its glow pulse together. While the timeline is frozen
+  // (docs/spec/ui.md, timeline, off-screen and hidden tab) the animations
+  // hold where they stopped and resume from there: one-shot Drifts still end
+  // at the same timeline time as without the freeze. The effect never depends
+  // on the frozen state, so freezing never recreates (restarts) the
+  // animations; the freeze effect below pauses and resumes them in place.
   useEffect(() => {
     if (!motionReady || layers === undefined || showingKey === undefined) {
       return;
@@ -523,7 +669,19 @@ export function Illustration({
     // mounted on.
     syncAnimationStartTimes(flickers);
     animations.push(...flickers);
+    for (const animation of animations) {
+      timelineAnimations.current.push(animation);
+    }
+    // Motion starting while already frozen (off-screen, hidden tab) holds
+    // from t = 0 instead of ticking unseen.
+    if (timelinePausedRef.current) {
+      pauseTimelineAnimations(animations);
+    }
     return () => {
+      const ending = new Set(animations);
+      timelineAnimations.current = timelineAnimations.current.filter(
+        (animation) => !ending.has(animation),
+      );
       for (const animation of animations) {
         try {
           animation.cancel();
@@ -542,7 +700,9 @@ export function Illustration({
   // `duration` seconds each way, since the delay applies only before the
   // first pass. The effect keys on the Showing, never on the Layer array
   // identity, so a re-render with the same key continues the Showing instead
-  // of restarting it.
+  // of restarting it. Like the Drift and Flicker effect above, it never
+  // depends on the frozen state: the freeze effect below pauses and resumes
+  // the Camera in place.
   useEffect(() => {
     if (!motionReady || camera === undefined) {
       return;
@@ -565,7 +725,18 @@ export function Illustration({
       // The browser refuses to animate: the Still stays at the from framing
       // (docs/spec/ui.md, the browser refuses to animate).
     }
+    if (animation !== null) {
+      timelineAnimations.current.push(animation);
+      if (timelinePausedRef.current) {
+        pauseTimelineAnimations([animation]);
+      }
+    }
     return () => {
+      if (animation !== null) {
+        timelineAnimations.current = timelineAnimations.current.filter(
+          (live) => live !== animation,
+        );
+      }
       try {
         animation?.cancel();
       } catch {
@@ -574,8 +745,28 @@ export function Illustration({
     };
   }, [motionReady, showingKey, cameraAnimKey]);
 
+  // The shared timeline clock (docs/spec/ui.md, timeline, off-screen and
+  // hidden tab): freezing pauses every live Drift, Flicker and Camera where
+  // it stopped, and the thaw replays them from there — no jump, no restart,
+  // and finished one-shots keep holding their end state (see
+  // pauseTimelineAnimations and resumeTimelineAnimations). The CSS-driven
+  // fade and sprite frames read the same frozen state through
+  // `animationPlayState` in the markup below. Freezing is not Motion off:
+  // the Layers stay mounted and the Still is never swapped back in.
+  useEffect(() => {
+    if (!motionReady) {
+      return;
+    }
+    if (timelinePaused) {
+      pauseTimelineAnimations(timelineAnimations.current);
+    } else {
+      resumeTimelineAnimations(timelineAnimations.current);
+    }
+  }, [timelinePaused, motionReady]);
+
   return (
     <span
+      ref={boxRef}
       className="illustration-box"
       style={{ display: 'block', position: 'relative', isolation: 'isolate' }}
     >
@@ -596,9 +787,13 @@ export function Illustration({
           // Still, like the Layer composition does (docs/spec/ui.md, start
           // and fade-in): the Still over itself is the Still. With Layers the
           // composition below carries the fade instead, so the stage itself
-          // never fades twice.
+          // never fades twice. The fade reads the shared timeline clock
+          // through its play state, freezing off-screen and in a hidden tab.
           ...(motionReady && camera !== undefined && !hasLayers
-            ? { animation: 'illustration-motion-fade-in 1s linear' }
+            ? {
+                animation: 'illustration-motion-fade-in 1s linear',
+                ...(timelinePaused ? { animationPlayState: 'paused' as const } : {}),
+              }
             : {}),
         }}
       >
@@ -629,6 +824,9 @@ export function Illustration({
               inset: 0,
               overflow: 'hidden',
               animation: 'illustration-motion-fade-in 1s linear',
+              // The fade-in reads the shared timeline clock: freezing holds
+              // the fade where it stopped without unmounting the Layers.
+              ...(timelinePaused ? { animationPlayState: 'paused' as const } : {}),
             }}
           >
             {(layers ?? []).map((layer, index) => (
@@ -637,6 +835,7 @@ export function Illustration({
                 layer={layer}
                 still={{ width, height }}
                 index={index}
+                timelinePaused={timelinePaused}
                 elementRef={(element) => {
                   layerRefs.current[index] = element;
                 }}
@@ -662,12 +861,15 @@ export function MotionLayer({
   layer,
   still,
   index,
+  timelinePaused,
   elementRef,
 }: {
   layer: IllustrationMotionLayer;
   still: { width: number; height: number };
   /** The Layer's position in list order (Layers have no id); disambiguates shared files. */
   index: number;
+  /** The shared timeline clock's frozen state: the frames hold where they stopped. */
+  timelinePaused?: boolean;
   /** Receives the positioned element, the one a Drift animates. */
   elementRef?: (element: HTMLElement | null) => void;
 }) {
@@ -709,6 +911,9 @@ export function MotionLayer({
             maxWidth: 'none',
             height: 'auto',
             animation: `illustration-sprite-step ${spriteDuration(layer)}s steps(${layer.frames}) infinite`,
+            // The frames read the shared timeline clock: freezing holds the
+            // stepping where it stopped without unmounting the strip.
+            ...(timelinePaused ? { animationPlayState: 'paused' as const } : {}),
           }}
         />
       </span>
