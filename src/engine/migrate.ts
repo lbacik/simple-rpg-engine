@@ -30,6 +30,7 @@ import {
   STATE_VERSION,
   type PlaythroughState,
 } from './state';
+import { readPlaythroughV3Document, type PlaythroughV3 } from './state-v3';
 import {
   PlaythroughStateV1Schema,
   STATE_VERSION_V1,
@@ -37,20 +38,28 @@ import {
 } from './state-v1';
 import { selectIntents } from './tactical';
 
-/** A stored document by version: v1, current v2, or neither. */
+/** A stored document by version: v1, current v2, Combat MVP 1.0 v3, or neither. */
 export type VersionedState =
   | { kind: 'v1'; state: PlaythroughStateV1 }
   | { kind: 'v2'; state: PlaythroughState }
+  | { kind: 'v3'; state: PlaythroughV3 }
   | { kind: 'invalid' };
 
 /**
  * Validate a stored document against its own version's strict schema. Unknown
  * or newer versions, missing versions and invalid documents are `invalid`:
- * never interpreted as v1, never rewritten.
+ * never interpreted as v1, never rewritten. Combat MVP 1.0 documents name
+ * `schemaVersion: 3` and carry no `stateVersion`; the embedded §12 Combat is
+ * parsed strictly, so a wrong `rulesVersion` is `invalid` here and read-only
+ * downstream.
  */
 export function parseVersionedState(value: unknown): VersionedState {
   if (typeof value !== 'object' || value === null) {
     return { kind: 'invalid' };
+  }
+  if ('schemaVersion' in value) {
+    const v3 = readPlaythroughV3Document(value);
+    return v3.ok ? { kind: 'v3', state: v3.state } : { kind: 'invalid' };
   }
   const version = (value as { stateVersion?: unknown }).stateVersion;
   if (version === STATE_VERSION) {

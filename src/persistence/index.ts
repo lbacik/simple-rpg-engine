@@ -1,10 +1,10 @@
 // Store ports (PlaythroughStore, SessionStore), the Kysely implementation
 // and migrations (see docs/spec/architecture.md, persistence).
 
-export type { Database, PlaythroughRow, JournalEntryRow, SessionRow, ArenaRunRow, ArenaSetupRow } from './schema';
+export type { Database, PlaythroughRow, JournalEntryRow, SessionRow, ArenaRunRow, ArenaSetupRow, ArenaFightRow, ArenaRememberedSetupRow } from './schema';
 export { MIGRATIONS } from './migrations';
 export { openDatabase, getDatabase, setDatabase, migrateDatabase, databasePath, runSerialized } from './db';
-export { PlaythroughStore, SessionStore, ArenaStore, ArenaSetupStore } from './stores';
+export { PlaythroughStore, SessionStore, ArenaStore, ArenaSetupStore, ArenaFightStore } from './stores';
 export type {
   StoredPlaythrough,
   StoredJournalEntry,
@@ -12,4 +12,8 @@ export type {
   NewJournalInput,
   StoredSession,
   StoredArenaRun,
+  StoredArenaFight,
+  NewArenaFight,
+  ArenaFightRead,
+  PersistedPlaythroughState,
 } from './stores';
