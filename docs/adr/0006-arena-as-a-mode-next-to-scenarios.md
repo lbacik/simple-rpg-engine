@@ -15,3 +15,10 @@ The engine runs Combat for testing the Combat mechanism directly from an Arena S
 - An Arena Setup carries no consumables, so `use-item` is always unavailable there; the entry point still accepts the action and rejects it through the normal path, drawing no dice and advancing no step.
 - There is no Arena UI yet and no Arena persistence: fights run through the engine and its tests only. A future UI must hold Arena state outside the Playthrough stores, so Arena runs stay out of the Session's Playthroughs.
 - `docs/spec` no longer describes Combat as Encounter-only: [mechanics.md](../spec/mechanics.md), [content-semantics.md](../spec/content-semantics.md), [playthrough-state.md](../spec/playthrough-state.md) and [architecture.md](../spec/architecture.md) name the Arena where they did.
+
+## Combat MVP 1.0 amendment (accepted)
+
+Source: [ADR 0008](0008-shared-combat-core-replacing-tactical-rules.md) and the save-lifecycle decisions it builds on ([ADR 0009](0009-game-data-from-earlier-combat-rules-is-discarded-at-release.md)).
+
+- **The #181 supersessions.** Superseded by the shared Combat core: reusing the existing Intent selection, Round resolution, Range and Reach rules unchanged; at most 2 opponents; the Attribute 0–3 Setup; victory/death/escape results; Arena Consumables. Retained: an Arena is a mode, never a Playthrough; `kind: 'arena'`; no Scenario records. The Arena Setup is now 1–5 opponents from the closed MVP profiles with an optional Companion, positional actor ids, presets T1–T7, and results `WIN`/`LOSS`/`LOSS_SURRENDER`/`DRAW_LIMIT`.
+- **Arena persistence.** The outdated consequence "no Arena persistence" is corrected: an Arena run persists per Session in a versioned document (Arena run `schemaVersion: 1`) with `origin`, `setup` and `initial`, a monotonic `step`, import/export of the bare `CombatState`, and a projected log. Pre-v0.6.0 `arena_runs`/`arena_setups` rows are dropped by the release wipe.

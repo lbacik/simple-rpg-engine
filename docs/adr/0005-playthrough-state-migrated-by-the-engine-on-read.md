@@ -16,3 +16,10 @@ Tactical Combat changes the stored `state` document: Damage taken moves from one
 - Reading a page can write a row, as the pin update already does. The write is guarded by `step`. If a turn commits in between, the fresh row wins.
 - An incompatible Playthrough is never rewritten, so restoring the content restores the Playthrough, in keeping with incompatibility being derived on read.
 - State versions and database schema migrations are independent: a new state version needs no Kysely migration unless a column changes.
+
+## Combat MVP 1.0 amendment (accepted)
+
+Source: [ADR 0008](0008-shared-combat-core-replacing-tactical-rules.md) and [ADR 0009](0009-game-data-from-earlier-combat-rules-is-discarded-at-release.md).
+
+- **The v1→v2 application is removed.** The v1 schema, `migrate.ts` and the per-participant tactical migration are deleted with the old rules; there is no v2→v3 converter and nothing left to migrate.
+- **Its principles carry on for v3 onwards.** Migration by the engine on read, strict validation per version, a `step`-guarded writeback without advancing `step`, and never re-selecting a committed Intent remain the mechanism for any future v3→v4 change.

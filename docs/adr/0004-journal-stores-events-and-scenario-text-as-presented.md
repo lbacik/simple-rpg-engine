@@ -13,3 +13,10 @@ Content language follows the current Interface Language, so a player who switche
 - Rendering the Journal needs only the stored entries and the catalogue, never the Scenario content. An incompatible Playthrough, or one whose Scenario has left the collection ([ADR 0001](0001-content-compatibility-by-reference-check.md)), still shows its whole Journal.
 - Every event shape ever stored must stay renderable, so an event shape changes only together with a migration that rewrites the stored rows. Rows stored before this decision hold English text only. They are kept and shown verbatim, tagged `en`.
 - A name inside an engine message is Scenario text in the entry's language, so after a switch an English message can show a Polish name ("Attack: Miecz — hit, 3 damage"). It matches the narration stored around it and carries that narration's `lang`.
+
+## Combat MVP 1.0 amendment (accepted)
+
+Source: the scope change in the [Combat MVP 1.0 implementation handoff](../spec/combat-mvp-1.0-handoff.md#scope-change-at-this-ticket).
+
+- **The Journal guarantee holds for entries written from v0.6.0.** Scenario text stays stored as presented; engine-generated entries stay stored as structured events rendered through the catalogue on read.
+- **Earlier entries were discarded by the release.** The v0.6.0 migration deletes every Journal entry, so the frozen legacy renderers for v1/v2 Combat entries and their catalogue keys are removed with the old rules. The "kept and shown verbatim, tagged `en`" rows no longer exist.
