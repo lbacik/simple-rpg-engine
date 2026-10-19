@@ -23,6 +23,7 @@ import type {
   CompiledOutcome,
 } from '../src/content/model';
 import { evaluateCondition } from '../src/engine/conditions';
+import type { RoundCommand } from '../src/engine/combat/index';
 import {
   confirmScenarioCombatRound,
   startScenarioCombat,
@@ -62,7 +63,10 @@ function makeEncounter(): CompiledEncounter {
         enemy: { id: 'grey-wolf', name: 'Grey Wolf', profile: 'raider' },
         startRange: 'melee',
         phaseOffset: 0,
-        power: 0,
+        // Power 8: the wolf's hits (every fourth round, redirected by Astrid's
+        // Cover) fell her in round 9 (24 -> 16 -> 8 -> 0) while the bracing
+        // hero stays untouched — the shape a loss test needs.
+        power: 8,
       },
     ],
     text: 'A lone wolf bars the path.',
@@ -302,20 +306,20 @@ describe('the Companion in Combat', () => {
     });
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    // Eleven rounds against the lone wolf: the hero strikes first, then
-    // braces behind Astrid's Cover until she falls in round 10, and finishes
-    // the wolf in round 11.
+    // Ten rounds against the lone wolf: the hero strikes first, then
+    // braces behind Astrid's Cover until she falls in round 9, and finishes
+    // the wolf in round 10.
     let state = started.state;
-    const commands = [
+    const commands: RoundCommand[] = [
       { round: 1, stance: 'aggressive', actionId: 'strike', targetId: 'e01' },
-      ...Array.from({ length: 9 }, (_, index) => ({
+      ...Array.from({ length: 8 }, (_, index): RoundCommand => ({
         round: 2 + index,
         stance: 'defensive',
         actionId: 'brace',
         targetId: 'h01',
       })),
-      { round: 11, stance: 'aggressive', actionId: 'strike', targetId: 'e01' },
-    ] as const;
+      { round: 10, stance: 'aggressive', actionId: 'strike', targetId: 'e01' },
+    ];
     for (const command of commands) {
       const confirmed = confirmScenarioCombatRound({
         encounter,
@@ -350,7 +354,7 @@ describe('the Companion in Combat', () => {
     if (!started.ok) return;
     let state = started.state;
     for (let round = 1; round <= 10; round += 1) {
-      const command =
+      const command: RoundCommand =
         round === 1
           ? { round, stance: 'aggressive', actionId: 'strike', targetId: 'e01' }
           : { round, stance: 'defensive', actionId: 'brace', targetId: 'h01' };
@@ -366,7 +370,7 @@ describe('the Companion in Combat', () => {
       if (!confirmed.ok) return;
       state = confirmed.state;
     }
-    // Astrid fell in round 10; yielding now ends the fight undefeated.
+    // Astrid fell in round 9; yielding now ends the fight undefeated.
     const surrendered = surrenderScenarioCombat({
       encounter,
       deathEnding,

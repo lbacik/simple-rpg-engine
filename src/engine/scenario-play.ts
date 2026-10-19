@@ -14,6 +14,7 @@
 import type { Scenario } from '../content/index';
 import type {
   CompiledChoice,
+  CompiledCompanion,
   CompiledEffect,
   CompiledEncounter,
   CompiledOutcome,
@@ -55,7 +56,7 @@ export type ScenarioJournalEntry =
 function presentCompanion(
   scenario: Scenario,
   state: PlaythroughV3,
-): import('../content/model').CompiledCompanion | null {
+): CompiledCompanion | null {
   const id = state.companion?.id;
   if (id === undefined) return null;
   return scenario.companionsById[id] ?? null;
@@ -332,7 +333,7 @@ function applyCombatSurrenderV3(
 function applyCombatResultV3(
   scenario: Scenario,
   state: PlaythroughV3,
-  journal: ScenarioCombatJournalEntry[],
+  journal: Array<ScenarioCombatJournalEntry | ScenarioCompanionJournalEntry>,
   end: { outcome: CompiledOutcome | 'death' } | undefined,
 ): ApplyScenarioActionResult {
   if (end === undefined) {
@@ -737,9 +738,7 @@ export function applyScenarioOutcomeV3(
     }
     const applied = applyEffectV3(scenario, next, effect);
     next = applied.state;
-    if (applied.entry !== undefined) {
-      journal.push(applied.entry);
-    }
+    journal.push(...applied.entries);
   }
   if (outcome.end !== undefined) {
     next = {
@@ -778,28 +777,32 @@ export function applyScenarioOutcomeV3(
 }
 
 /**
- * One Effect and its state-change Journal entry. Content-driven `heal` at
- * full Health is a silent no-op: no state change, no entry. Companion
- * join/leave take effect on the v3 document (presence persists between
- * Combats); like Flag changes they append no Journal entry in this slice
- * (G6 carries no Companion entries).
+ * One Effect and its Journal entries. Content-driven `heal` at full Health is
+ * a silent no-op: no state change, no entry. Companion join/leave take effect
+ * on the v3 document (G4): joining a lost Companion — or the present one, or
+ * an unknown id — is a silent no-op; joining while another Companion is
+ * present replaces them, recording a departure (`companion-left` for the old
+ * Companion, never a loss) plus the arrival; leaving clears the presence with
+ * a departure entry and never records a loss, so a departed Companion may
+ * join again. Only a Companion at 0 HP when a Combat ends is lost (handled in
+ * `src/engine/scenario-combat.ts`).
  */
 function applyEffectV3(
   scenario: Scenario,
   state: PlaythroughV3,
   effect: CompiledEffect,
-): { state: PlaythroughV3; entry: NewJournalEntry | undefined } {
+): { state: PlaythroughV3; entries: ScenarioJournalEntry[] } {
   if ('set-flag' in effect) {
     const flag = effect['set-flag'];
     // Flag changes are the author's internal memory and are never presented,
     // neither on screen nor in the Journal.
-    return { state: { ...state, flags: pushUnique(state.flags, flag) }, entry: undefined };
+    return { state: { ...state, flags: pushUnique(state.flags, flag) }, entries: [] };
   }
   if ('clear-flag' in effect) {
     const flag = effect['clear-flag'];
     return {
       state: { ...state, flags: state.flags.filter((held) => held !== flag) },
-      entry: undefined,
+      entries: [],
     };
   }
   if ('give-item' in effect) {
@@ -810,14 +813,16 @@ function applyEffectV3(
         ...state,
         inventory: { ...state.inventory, [item]: (state.inventory[item] ?? 0) + quantity },
       },
-      entry: {
-        type: 'state-change',
-        lang: scenario.language,
-        change: 'item-received',
-        itemId: item,
-        name,
-        amount: quantity,
-      },
+      entries: [
+        {
+          type: 'state-change',
+          lang: scenario.language,
+          change: 'item-received',
+          itemId: item,
+          name,
+          amount: quantity,
+        },
+      ],
     };
   }
   if ('take-item' in effect) {
@@ -827,7 +832,7 @@ function applyEffectV3(
     const actual = Math.min(quantity, held);
     if (actual <= 0) {
       // Nothing held: no state change, so no Journal entry either.
-      return { state, entry: undefined };
+      return { state, entries: [] };
     }
     const left = held - actual;
     const inventory = { ...state.inventory };
@@ -850,14 +855,16 @@ function applyEffectV3(
     }
     return {
       state: { ...state, inventory, equipment },
-      entry: {
-        type: 'state-change',
-        lang: scenario.language,
-        change: 'item-lost',
-        itemId: item,
-        name,
-        amount: actual,
-      },
+      entries: [
+        {
+          type: 'state-change',
+          lang: scenario.language,
+          change: 'item-lost',
+          itemId: item,
+          name,
+          amount: actual,
+        },
+      ],
     };
   }
   if ('heal' in effect) {
@@ -865,19 +872,21 @@ function applyEffectV3(
       Math.min(PLAYTHROUGH_MAX_HEALTH, state.character.health + effect.heal) -
       state.character.health;
     if (restored <= 0) {
-      return { state, entry: undefined };
+      return { state, entries: [] };
     }
     return {
       state: {
         ...state,
         character: { ...state.character, health: state.character.health + restored },
       },
-      entry: {
-        type: 'state-change',
-        lang: scenario.language,
-        change: 'health-gained',
-        amount: restored,
-      },
+      entries: [
+        {
+          type: 'state-change',
+          lang: scenario.language,
+          change: 'health-gained',
+          amount: restored,
+        },
+      ],
     };
   }
   if ('damage' in effect) {
@@ -888,50 +897,88 @@ function applyEffectV3(
         ...state,
         character: { ...state.character, health: state.character.health - effect.damage },
       },
-      entry: {
-        type: 'state-change',
-        lang: scenario.language,
-        change: 'health-lost',
-        amount: effect.damage,
-      },
+      entries: [
+        {
+          type: 'state-change',
+          lang: scenario.language,
+          change: 'health-lost',
+          amount: effect.damage,
+        },
+      ],
     };
   }
   if ('companion-join' in effect) {
     const id = effect['companion-join'];
-    if (scenario.companionsById[id] === undefined) {
-      return { state, entry: undefined };
+    const incoming = scenario.companionsById[id];
+    if (incoming === undefined) {
+      // Unknown Companion: silent no-op, leaving any presence untouched.
+      return { state, entries: [] };
     }
-    return { state: { ...state, companion: { id } }, entry: undefined };
+    if (state.lostCompanions.includes(id)) {
+      // Lost in Combat: the loss is permanent, so rejoining is a no-op.
+      return { state, entries: [] };
+    }
+    const presentId = state.companion?.id;
+    if (presentId === id) {
+      // Already travelling together: nothing changes.
+      return { state, entries: [] };
+    }
+    const joined: ScenarioCompanionJournalEntry = {
+      type: 'companion-joined',
+      lang: scenario.language,
+      companionId: id,
+      name: incoming.name,
+    };
+    if (presentId === undefined) {
+      return { state: { ...state, companion: { id } }, entries: [joined] };
+    }
+    // A replacement records a departure, never a loss: the old Companion may
+    // join again later.
+    const departed = scenario.companionsById[presentId];
+    const left: ScenarioCompanionJournalEntry = {
+      type: 'companion-left',
+      lang: scenario.language,
+      companionId: presentId,
+      name: departed?.name ?? presentId,
+    };
+    return { state: { ...state, companion: { id } }, entries: [left, joined] };
   }
   if ('companion-leave' in effect) {
-    const id = state.companion?.id;
-    return {
-      state: {
-        ...state,
-        companion: null,
-        lostCompanions: id === undefined ? state.lostCompanions : pushUnique(state.lostCompanions, id),
-      },
-      entry: undefined,
+    const presentId = state.companion?.id;
+    if (presentId === undefined) {
+      return { state, entries: [] };
+    }
+    // Leaving is a departure, never a loss: `lostCompanions` is untouched, so
+    // the departed Companion may join again.
+    const departed = scenario.companionsById[presentId];
+    const left: ScenarioCompanionJournalEntry = {
+      type: 'companion-left',
+      lang: scenario.language,
+      companionId: presentId,
+      name: departed?.name ?? presentId,
     };
+    return { state: { ...state, companion: null }, entries: [left] };
   }
   if (!('reveal' in effect)) {
-    return { state, entry: undefined };
+    return { state, entries: [] };
   }
   const target = effect.reveal;
   const name = scenario.locationsById[target]?.name ?? target;
   if (state.visited.includes(target)) {
     // Revealing a visited Location is a spec no-op: no state change, no entry.
-    return { state, entry: undefined };
+    return { state, entries: [] };
   }
   return {
     state: { ...state, revealed: pushUnique(state.revealed, target) },
-    entry: {
-      type: 'state-change',
-      lang: scenario.language,
-      change: 'revealed',
-      itemId: target,
-      name,
-    },
+    entries: [
+      {
+        type: 'state-change',
+        lang: scenario.language,
+        change: 'revealed',
+        itemId: target,
+        name,
+      },
+    ],
   };
 }
 

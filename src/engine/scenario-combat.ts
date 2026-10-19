@@ -324,7 +324,7 @@ function routeFinishedCombat(args: {
     state.companion?.id === fallen.ref
       ? fallen.ref
       : null;
-  const journal: ScenarioCombatJournalEntry[] = [...extraJournal];
+  const journal: Array<ScenarioCombatJournalEntry | ScenarioCompanionJournalEntry> = [...extraJournal];
   let next: PlaythroughV3 = state;
   if (lostCompanionId !== null) {
     const lost = next.lostCompanions.includes(lostCompanionId)
