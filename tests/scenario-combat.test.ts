@@ -11,7 +11,7 @@ import type {
   CompiledEncounter,
   CompiledEnding,
 } from '../src/content/model';
-import { PROFILES } from '../src/engine/combat/index';
+import { PROFILES, planRound } from '../src/engine/combat/index';
 import {
   confirmScenarioCombatRound,
   startScenarioCombat,
@@ -184,7 +184,7 @@ describe('confirming a Combat Round', () => {
     });
     expect(confirmed.ok).toBe(true);
     if (!confirmed.ok) return;
-    // One accepted command is one turn on the document clock.
+    // One accepted command advances `step` by one.
     expect(confirmed.state.step).toBe(4);
     // G2: h01.hp is authoritative during Combat; the campaign copies wait.
     expect(confirmed.state.character.health).toBe(27);
@@ -311,12 +311,22 @@ describe('routing the end of a Combat', () => {
     const started = startScenarioCombat({ encounter, state: makeState(), lang: LANG });
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    // Thirty full Rounds pass with no result: resolve the thirtieth Round.
+    // Thirty full Rounds pass with no result: fast-forward to a planned
+    // round-30 state the same way the core's own suites do (PLAN shape through
+    // planRound, so the frozen plans verify).
+    const round1 = started.state.activeCombat!.combat;
+    const round30 = planRound({
+      ...round1,
+      phase: 'PLAN',
+      round: 30,
+      frozenEnemyPlans: [],
+      frozenCompanionPlan: null,
+    });
     const lastRound = {
       ...started.state,
       activeCombat: {
         encounterId: 'solo-fight',
-        combat: { ...started.state.activeCombat!.combat, round: 30 },
+        combat: round30,
       },
     };
     const confirmed = confirmScenarioCombatRound({

@@ -8,6 +8,7 @@
 // ticket.
 
 import type { AttributeName, Scenario } from '../content/model';
+import type { JourneyState } from './conditions';
 import type { PlaythroughState } from './state';
 
 export const EQUIPMENT_SLOTS = ['weapon', 'outfit', 'talisman'] as const;
@@ -27,7 +28,7 @@ export function isEquipmentSlot(value: string): value is EquipmentSlot {
  */
 export function equipmentBonusSources(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: JourneyState,
 ): Record<AttributeName, string[]> {
   const sources: Record<AttributeName, string[]> = {
     might: [],
@@ -50,7 +51,7 @@ export function equipmentBonusSources(
  * first, then remove the entry. Entries at zero are never kept.
  */
 export function removeFromInventory(
-  state: PlaythroughState,
+  state: JourneyState,
   itemId: string,
   count: number,
 ): { inventory: PlaythroughState['inventory']; equipment: PlaythroughState['equipment'] } {

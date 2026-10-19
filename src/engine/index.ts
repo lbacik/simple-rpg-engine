@@ -12,11 +12,12 @@ import type {
   CompiledOutcome,
   CompiledScene,
 } from '../content/model';
-import { effectiveAttributes, evaluateCondition } from './conditions';
+import { effectiveAttributes, evaluateCondition, isV3State } from './conditions';
 import { isEquipmentSlot, removeFromInventory, type EquipmentSlot } from './inventory';
 import { substituteName } from './narration';
 import { deriveMap, type MapOptions, type MapView } from './map';
 import { MAX_HEALTH, STATE_VERSION, type PlaythroughState } from './state';
+import { PLAYTHROUGH_MAX_HEALTH, type PlaythroughV3 } from './state-v3';
 
 export type { PlaythroughState } from './state';
 export {
@@ -25,7 +26,7 @@ export {
   STATE_VERSION,
   parsePlaythroughState,
 } from './state';
-export { effectiveAttributes, evaluateCondition } from './conditions';
+export { effectiveAttributes, evaluateCondition, isV3State, type JourneyState } from './conditions';
 export { escapeHtml, renderNarration, renderStoredText, substituteName } from './narration';
 export {
   MAP_ASPECT_RATIO,
@@ -64,19 +65,36 @@ export type Difficulty = keyof typeof DIFFICULTY_TARGETS;
 export type InventoryReason = 'in-combat' | 'full-health';
 
 /**
- * Why Equip/Unequip is unavailable outside the Location/Scene position. S4
- * (Combat MVP 1.0): the tactical Combat is deleted, so nothing is ever
- * in Combat; the `in-combat` reason returns when the P6 adapter re-adds it
- * against the v3 document.
+ * The Character's maximum Health on either document: 12 on the v2 journey,
+ * 40 (the hero profile's maximum) on Combat MVP 1.0 documents.
  */
-export function inventoryEquipReason(state: PlaythroughState): InventoryReason | undefined {
-  void state;
+export function maxHealthFor(state: PlaythroughState | PlaythroughV3): number {
+  return isV3State(state) ? PLAYTHROUGH_MAX_HEALTH : MAX_HEALTH;
+}
+
+/**
+ * Why Equip/Unequip is unavailable outside the Location/Scene position. S4
+ * (Combat MVP 1.0): the tactical Combat is deleted, so a v2 Playthrough is
+ * never in Combat; on a v3 document the inventory shows `in-combat` while a
+ * fight runs (G5).
+ */
+export function inventoryEquipReason(
+  state: PlaythroughState | PlaythroughV3,
+): InventoryReason | undefined {
+  if (isV3State(state) && state.activeCombat !== null) {
+    return 'in-combat';
+  }
   return undefined;
 }
 
-/** Why Use item is unavailable: at full Health. */
-export function inventoryUseReason(state: PlaythroughState): InventoryReason | undefined {
-  return state.character.health >= MAX_HEALTH ? 'full-health' : undefined;
+/** Why Use item is unavailable: in Combat, or at full Health. */
+export function inventoryUseReason(
+  state: PlaythroughState | PlaythroughV3,
+): InventoryReason | undefined {
+  if (isV3State(state) && state.activeCombat !== null) {
+    return 'in-combat';
+  }
+  return state.character.health >= maxHealthFor(state) ? 'full-health' : undefined;
 }
 
 /**
@@ -332,7 +350,7 @@ function pushUnique(list: string[], id: string): string[] {
 /** Visible Connections from the current Location, in authored order. */
 function visibleConnections(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: PlaythroughState | PlaythroughV3,
 ): import('../content/model').CompiledConnection[] {
   const current =
     scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
@@ -384,7 +402,7 @@ export function applyAction(
 /** First eligible on-enter Scene of a Location, in listed order. */
 function findOnEnterScene(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: PlaythroughState | PlaythroughV3,
   locationId: string,
 ): CompiledScene | undefined {
   const location = scenario.locationsById[locationId] ?? scenario.startLocation;
@@ -486,7 +504,7 @@ function applyTravel(
 }
 
 /** Whether a `once` Choice was already taken in its Scene. */
-function isTakenOnce(state: PlaythroughState, sceneId: string, choiceId: string): boolean {
+function isTakenOnce(state: PlaythroughState | PlaythroughV3, sceneId: string, choiceId: string): boolean {
   return state.takenOnceChoices.some(
     (taken) => taken.sceneId === sceneId && taken.choiceId === choiceId,
   );
@@ -498,7 +516,7 @@ function isTakenOnce(state: PlaythroughState, sceneId: string, choiceId: string)
  */
 export function visibleChoices(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: PlaythroughState | PlaythroughV3,
   scene: CompiledScene,
 ): CompiledChoice[] {
   return scene.choices.filter(
@@ -651,7 +669,7 @@ export type OnDemandSceneView = {
   title: string;
 };
 
-export function onDemandScenes(scenario: Scenario, state: PlaythroughState): OnDemandSceneView[] {
+export function onDemandScenes(scenario: Scenario, state: PlaythroughState | PlaythroughV3): OnDemandSceneView[] {
   const location =
     scenario.locationsById[state.currentLocationId] ?? scenario.startLocation;
   return location.scenes
@@ -1040,7 +1058,7 @@ export type ExitView = {
   label: string;
 };
 
-export function visibleExits(scenario: Scenario, state: PlaythroughState): ExitView[] {
+export function visibleExits(scenario: Scenario, state: PlaythroughState | PlaythroughV3): ExitView[] {
   return visibleConnections(scenario, state).map((connection) => ({
     targetLocationId: connection.to.id,
     label: connection.label,
@@ -1235,7 +1253,7 @@ export type GameView =
  */
 export function view(
   scenario: Scenario,
-  state: PlaythroughState,
+  state: PlaythroughState | PlaythroughV3,
   options: MapOptions = {},
 ): GameView {
   if (state.status === 'ended') {

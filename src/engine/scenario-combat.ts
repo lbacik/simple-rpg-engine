@@ -7,16 +7,17 @@
 // Outcome with Health, wounds and the Journal written once at the end. No
 // Companion fights in this slice (P6b owns it): the hero fights alone.
 //
-// While a Combat runs, `h01.hp` in the Combat state is authoritative;
-// `character.health` and `encounters` wounds are written once, when the
-// Combat ends, never per Round. Only Health, wounds and Companion presence
-// cross the Combat boundary.
+// While a Combat runs, the hero's Combat Health (`h01`) in the Combat state is
+// authoritative; `character.health` and `encounters` wounds are written once,
+// when the Combat ends, never per Round. Only Health, wounds and Companion
+// presence cross the Combat boundary.
 
 import { buildInitialCombatState } from '../content/combatBuilder';
-import type { CompiledEncounter, CompiledOutcome } from '../content/model';
+import type { CompiledEncounter, CompiledEnding, CompiledOutcome } from '../content/model';
 import { PROFILES, startCombat, submitRound, surrender } from './combat/index';
-import type { CombatEvent, CombatState, CombatResult, RoundCommand } from './combat/index';
-import type { PlaythroughV3 } from './state-v3';
+import type { CombatEvent, CombatState, RoundCommand } from './combat/index';
+import { substituteName } from './narration';
+import { PLAYTHROUGH_MAX_HEALTH, type PlaythroughV3 } from './state-v3';
 
 /** Journal entries the Scenario Combat lifecycle produces (G6). */
 export type ScenarioCombatJournalEntry =
@@ -129,7 +130,7 @@ export function startScenarioCombat(args: {
         type: 'combat-start',
         lang,
         encounterId: encounter.id,
-        text: encounter.text,
+        text: substituteName(encounter.text, state.character.name),
         participants: encounter.participants.map((participant) => ({
           ref: participant.id,
           name: participant.enemy.name,
@@ -158,18 +159,23 @@ function actorNames(
 
 /**
  * Resolve one Round in the command panel: the shared core validates and
- * resolves, the document clock advances one turn, and the Round's typed
- * events plus the actor-to-`ref` mapping append as one `combat-round`
- * (`version: 3`) entry. `character.health` and wounds wait for the end of the
- * fight. A stale round or an illegal command changes nothing.
+ * resolves, `step` advances by one, and the Round's typed events plus the
+ * actor-to-`ref` mapping append as one `combat-round` (`version: 3`) entry.
+ * `character.health` and wounds wait for the end of the fight. A stale round
+ * or an illegal command changes nothing. When the Round finishes the fight,
+ * Health and wounds are written back once and the result routes to the right
+ * Outcome (G3): `WIN` to `victory`, `DRAW_LIMIT` to `draw`, `LOSS` to the
+ * Scenario's death Ending (no `combat-end`: the ending entry is the journey
+ * layer's job).
  */
 export function confirmScenarioCombatRound(args: {
   encounter: CompiledEncounter;
+  deathEnding: CompiledEnding;
   state: PlaythroughV3;
   command: RoundCommand;
   lang: string;
 }): ScenarioCombatResult {
-  const { encounter, state, command, lang } = args;
+  const { encounter, deathEnding, state, command, lang } = args;
   if (state.status !== 'active') {
     return { ok: false, reason: 'ended' };
   }
@@ -194,23 +200,152 @@ export function confirmScenarioCombatRound(args: {
     actors: Object.fromEntries(submitted.state.actors.map((actor) => [actor.id, actor.ref])),
     names: actorNames(encounter, state, submitted.state),
   };
+  if (submitted.state.result === null) {
+    return {
+      ok: true,
+      state: {
+        ...state,
+        step: state.step + 1,
+        activeCombat: { encounterId: active.encounterId, combat: submitted.state },
+      },
+      journal: [roundEntry],
+    };
+  }
+  return routeFinishedCombat({
+    encounter,
+    deathEnding,
+    state,
+    combat: submitted.state,
+    encounterId: active.encounterId,
+    lang,
+    extraJournal: [roundEntry],
+  });
+}
+
+/**
+ * Damage taken per participant at the end of a fight: each surviving enemy's
+ * wounds are its profile maximum minus its remaining Combat Health; fighters
+ * already gone at the start keep their recorded wounds.
+ */
+function woundsAtEnd(
+  encounter: CompiledEncounter,
+  state: PlaythroughV3,
+  combat: CombatState,
+): Record<string, number> {
+  const prior = state.encounters[encounter.id] ?? {};
+  const record: Record<string, number> = {};
+  for (const participant of encounter.participants) {
+    const maxHealth = PROFILES[participant.enemy.profile].maxHp;
+    const fighter = combat.actors.find((actor) => actor.ref === participant.id);
+    record[participant.id] =
+      fighter === undefined ? (prior[participant.id] ?? 0) : maxHealth - fighter.hp;
+  }
+  return record;
+}
+
+/** The hero's Combat Health, within the campaign bounds. */
+function heroHealthAtEnd(combat: CombatState): number {
+  const hero = combat.actors.find((actor) => actor.role === 'hero');
+  return Math.max(0, Math.min(PLAYTHROUGH_MAX_HEALTH, hero?.hp ?? 0));
+}
+
+/**
+ * Write Health and wounds back once and route a finished Combat to the right
+ * Outcome (G2/G3). `WIN` appends `combat-end` (`win`) and routes to the
+ * Encounter's `victory`; `DRAW_LIMIT` appends `combat-end` (`draw`) and routes
+ * to `draw`; `LOSS_SURRENDER` appends `combat-end` (`surrender`) and routes to
+ * `surrender` (the Encounter stays undefeated either way); `LOSS` ends the
+ * Playthrough on the Scenario's death Ending with no `combat-end` entry.
+ */
+function routeFinishedCombat(args: {
+  encounter: CompiledEncounter;
+  deathEnding: CompiledEnding;
+  state: PlaythroughV3;
+  combat: CombatState;
+  encounterId: string;
+  lang: string;
+  extraJournal: ScenarioCombatJournalEntry[];
+}): ScenarioCombatResult {
+  const { encounter, deathEnding, state, combat, encounterId, lang, extraJournal } = args;
+  const result = combat.result;
+  if (result === null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  const wounds = woundsAtEnd(encounter, state, combat);
+  if (result === 'LOSS') {
+    return {
+      ok: true,
+      state: {
+        ...state,
+        step: state.step + 1,
+        status: 'ended',
+        endingId: deathEnding.id,
+        character: { ...state.character, health: 0 },
+        encounters: { ...state.encounters, [encounter.id]: wounds },
+        activeCombat: null,
+      },
+      journal: extraJournal,
+      end: { outcome: 'death' },
+    };
+  }
+  const routed: { outcome: CompiledOutcome; howEnded: 'win' | 'surrender' | 'draw' } =
+    result === 'WIN'
+      ? { outcome: encounter.victory ?? encounter.draw, howEnded: 'win' }
+      : result === 'DRAW_LIMIT'
+        ? { outcome: encounter.draw, howEnded: 'draw' }
+        : { outcome: encounter.surrender, howEnded: 'surrender' };
   return {
     ok: true,
     state: {
       ...state,
       step: state.step + 1,
-      activeCombat: { encounterId: active.encounterId, combat: submitted.state },
+      character: { ...state.character, health: heroHealthAtEnd(combat) },
+      encounters: { ...state.encounters, [encounter.id]: wounds },
+      activeCombat: null,
     },
-    journal: [roundEntry],
+    journal: [
+      ...extraJournal,
+      { type: 'combat-end', lang, encounterId, howEnded: routed.howEnded },
+    ],
+    end: { outcome: routed.outcome },
   };
 }
 
-/** Yield the Combat; the Encounter stays undefeated (routing lives here next). */
-export function surrenderScenarioCombat(_args: {
+/**
+ * Yield the Combat: the shared core ends the fight as `LOSS_SURRENDER`, `step`
+ * advances by one, and Health and wounds are written back once. The Encounter
+ * stays undefeated and the result routes to its `surrender` Outcome. A stale
+ * round or surrender with no fight running changes nothing.
+ */
+export function surrenderScenarioCombat(args: {
   encounter: CompiledEncounter;
+  deathEnding: CompiledEnding;
   state: PlaythroughV3;
   round: number;
   lang: string;
 }): ScenarioCombatResult {
-  throw new Error('not implemented');
+  const { encounter, deathEnding, state, round, lang } = args;
+  if (state.status !== 'active') {
+    return { ok: false, reason: 'ended' };
+  }
+  const active = state.activeCombat;
+  if (active === null) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  if (round !== active.combat.round) {
+    return { ok: false, reason: 'stale-round' };
+  }
+  const yielded = surrender(active.combat);
+  if (!yielded.ok) {
+    return { ok: false, reason: 'illegal-action' };
+  }
+  return routeFinishedCombat({
+    encounter,
+    deathEnding,
+    state,
+    combat: yielded.state,
+    encounterId: active.encounterId,
+    lang,
+    extraJournal: [],
+  });
 }
