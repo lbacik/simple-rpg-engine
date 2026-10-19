@@ -67,3 +67,15 @@ export {
 export { findOption, listOptions } from './options';
 export { isPrimaryAttack, planRound, verifyFrozenPlans } from './plan';
 export { parseCombatState } from './parse';
+export {
+  ARENA_RUN_SCHEMA_VERSION,
+  parseArenaRunDocument,
+} from './arena-run';
+export type {
+  ArenaRunIssue,
+  ArenaRunIssueCode,
+  ArenaRunOrigin,
+  ArenaRunRead,
+  ArenaRunV1,
+  VerifyFrozenPlans,
+} from './arena-run';

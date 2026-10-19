@@ -96,4 +96,36 @@ export const MIGRATIONS: Record<string, { up(db: Kysely<Database>): Promise<void
         .execute();
     },
   },
+  // Combat MVP 1.0, package P2 (handoff S1, issue #232): the v0.6.0 release
+  // discards pre-release game data instead of retiring it. Every Playthrough
+  // and Journal entry is deleted, `arena_runs` and `arena_setups` are dropped,
+  // and the versioned Arena tables are created. `sessions` is kept: ownership
+  // survives the wipe, game data does not. Nothing beyond this wipe is deleted
+  // or rewritten (handoff stop condition).
+  '005_combat_mvp_1_0': {
+    async up(db: Kysely<Database>): Promise<void> {
+      await db.deleteFrom('journal_entries').execute();
+      await db.deleteFrom('playthroughs').execute();
+      await db.schema.dropTable('arena_runs').execute();
+      await db.schema.dropTable('arena_setups').execute();
+      await db.schema
+        .createTable('arena_fights')
+        .ifNotExists()
+        .addColumn('session_id', 'text', (col) => col.primaryKey())
+        .addColumn('step', 'integer', (col) => col.notNull())
+        .addColumn('state', 'text', (col) => col.notNull())
+        .addColumn('created_at', 'text', (col) => col.notNull())
+        .addColumn('updated_at', 'text', (col) => col.notNull())
+        .execute();
+      await db.schema
+        .createTable('arena_remembered_setups')
+        .ifNotExists()
+        .addColumn('session_id', 'text', (col) => col.primaryKey())
+        .addColumn('setup', 'text', (col) => col.notNull())
+        .addColumn('next_step', 'integer', (col) => col.notNull())
+        .addColumn('created_at', 'text', (col) => col.notNull())
+        .addColumn('updated_at', 'text', (col) => col.notNull())
+        .execute();
+    },
+  },
 };

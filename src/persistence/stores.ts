@@ -10,7 +10,16 @@
 
 import type { Kysely, Transaction } from 'kysely';
 import type { ArenaJournalEntry, ArenaState } from '../engine/arena';
+import {
+  ARENA_RUN_SCHEMA_VERSION,
+  parseArenaRunDocument,
+  type ArenaRunIssue,
+  type ArenaRunOrigin,
+  type ArenaRunV1,
+  type CombatState as CombatMvpState,
+} from '../engine/combat/index';
 import type { PlaythroughState } from '../engine/state';
+import type { PlaythroughV3 } from '../engine/state-v3';
 import { runSerialized } from './db';
 import type { Database } from './schema';
 
@@ -52,6 +61,13 @@ export type JournalBatch = {
   nextCursor: number | undefined;
 };
 
+/**
+ * State documents the Playthrough store persists: v2 (tactical) and Combat
+ * MVP 1.0 v3. The store is a raw seam and never validates either shape;
+ * validation lives in the Scenario-aware read layer.
+ */
+export type PersistedPlaythroughState = PlaythroughState | PlaythroughV3;
+
 export type NewPlaythrough = {
   id: string;
   sessionId: string;
@@ -61,7 +77,7 @@ export type NewPlaythrough = {
   status: string;
   endingId?: string | null;
   step: number;
-  state: PlaythroughState;
+  state: PersistedPlaythroughState;
 };
 
 export type NewJournalInput = {
@@ -283,7 +299,7 @@ export class PlaythroughStore {
    * Resolves true when the pin moved, false when someone else moved on (the
    * caller re-reads or reports stale instead of overwriting the newer state).
    */
-  async updatePin(id: string, state: PlaythroughState, expectedStep: number): Promise<boolean> {
+  async updatePin(id: string, state: PersistedPlaythroughState, expectedStep: number): Promise<boolean> {
     const result = await this.db
       .updateTable('playthroughs')
       .set({
@@ -308,7 +324,7 @@ export class PlaythroughStore {
   async updateIfStepMatches(
     id: string,
     expectedStep: number,
-    next: { state: PlaythroughState; step: number; status: string; endingId?: string | null },
+    next: { state: PersistedPlaythroughState; step: number; status: string; endingId?: string | null },
   ): Promise<boolean> {
     const result = await this.db
       .updateTable('playthroughs')
@@ -339,7 +355,7 @@ export class PlaythroughStore {
   async commitTurn(
     id: string,
     expectedStep: number,
-    next: { state: PlaythroughState; step: number; status: string; endingId?: string | null },
+    next: { state: PersistedPlaythroughState; step: number; status: string; endingId?: string | null },
     journal: NewJournalInput[],
   ): Promise<boolean> {
     return this.withSerializedTransaction(async (trx) => {
@@ -589,5 +605,299 @@ export class ArenaSetupStore {
       .insertInto('arena_setups')
       .values({ session_id: sessionId, setup, created_at: now, updated_at: now })
       .execute();
+  }
+}
+
+export type StoredArenaFight = {
+  sessionId: string;
+  step: number;
+  origin: ArenaRunOrigin;
+  /** The remembered Setup this run started from; null for setup-less imports. */
+  setup: unknown;
+  /** The initial Combat state for Restart; null for CHOOSE/FINISHED imports. */
+  initial: unknown;
+  /** The running fight; validated strictly on read, never trusted blindly. */
+  combat: CombatMvpState;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NewArenaFight = {
+  origin: ArenaRunOrigin;
+  setup: unknown;
+  initial: unknown;
+  combat: CombatMvpState;
+};
+
+export type ArenaFightRead =
+  | { status: 'missing' }
+  | { status: 'ready'; fight: StoredArenaFight }
+  /**
+   * The row cannot be read (malformed, unknown `schemaVersion`, wrong
+   * `rulesVersion`, …). Reading never rewrites the row: it is replaced only
+   * by a user-initiated start or import.
+   */
+  | { status: 'unreadable'; step: number; issues: ArenaRunIssue[] };
+
+function parseStoredJson(text: string): { ok: true; value: unknown } | { ok: false } {
+  try {
+    return { ok: true, value: JSON.parse(text) as unknown };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/**
+ * The Combat MVP 1.0 Arena fights (migration 005, ADR 0009): one versioned
+ * run per Session in `arena_fights`, with the remembered Setup and the
+ * monotonic step clock in `arena_remembered_setups`.
+ *
+ * Every allocating path (start, rematch, restart, import) goes through
+ * `start`, which allocates a step above every step the Session has ever used:
+ * the clock survives fight clears, so a tab from a replaced run never matches
+ * `expectedStep`. Every write is guarded by `WHERE step = expected`.
+ */
+export class ArenaFightStore {
+  constructor(private readonly db: Kysely<Database>) {}
+
+  /**
+   * Run `fn` in a transaction serialized per database handle, like the
+   * Playthrough turn commit: the guarded `UPDATE … WHERE step = <expected>`
+   * stays the atomic compare-and-swap and the queue only keeps concurrent
+   * transaction bodies on better-sqlite3's single connection from
+   * interleaving.
+   */
+  private withSerializedTransaction<T>(fn: (trx: Transaction<Database>) => Promise<T>): Promise<T> {
+    return runSerialized(this.db, () => this.db.transaction().execute(fn));
+  }
+
+  /**
+   * Read the Session's fight without ever writing: a corrupt row reads as
+   * `unreadable` (with its stored `step` and the strict-parse issues) and the
+   * stored bytes are left alone for a user-initiated start or import to
+   * replace.
+   */
+  async read(sessionId: string): Promise<ArenaFightRead> {
+    const row = await this.db
+      .selectFrom('arena_fights')
+      .selectAll()
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    if (!row) return { status: 'missing' };
+    const parsed = parseStoredJson(row.state);
+    if (!parsed.ok) {
+      return { status: 'unreadable', step: row.step, issues: [{ code: 'malformed' }] };
+    }
+    const run = parseArenaRunDocument(parsed.value);
+    if (!run.ok) {
+      return { status: 'unreadable', step: row.step, issues: run.issues };
+    }
+    return {
+      status: 'ready',
+      fight: {
+        sessionId: row.session_id,
+        step: row.step,
+        origin: run.run.origin,
+        setup: run.run.setup,
+        initial: run.run.initial,
+        combat: run.run.combat,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      },
+    };
+  }
+
+  /** The Session's remembered Setup JSON, or null when none was remembered. */
+  async readSetup(sessionId: string): Promise<unknown> {
+    const row = await this.db
+      .selectFrom('arena_remembered_setups')
+      .select(['setup'])
+      .where('session_id', '=', sessionId)
+      .executeTakeFirst();
+    if (!row) return null;
+    const parsed = parseStoredJson(row.setup);
+    return parsed.ok ? parsed.value : null;
+  }
+
+  /**
+   * Remember the Session's Setup, replacing any previous one. The monotonic
+   * clock is preserved: remembering never rewinds the fight `step`.
+   */
+  async rememberSetup(sessionId: string, setup: unknown): Promise<void> {
+    const now = new Date().toISOString();
+    const body = JSON.stringify(setup);
+    await this.withSerializedTransaction(async (trx) => {
+      const existing = await trx
+        .selectFrom('arena_remembered_setups')
+        .select(['session_id'])
+        .where('session_id', '=', sessionId)
+        .executeTakeFirst();
+      if (existing) {
+        await trx
+          .updateTable('arena_remembered_setups')
+          .set({ setup: body, updated_at: now })
+          .where('session_id', '=', sessionId)
+          .execute();
+        return;
+      }
+      await trx
+        .insertInto('arena_remembered_setups')
+        .values({ session_id: sessionId, setup: body, next_step: 1, created_at: now, updated_at: now })
+        .execute();
+    });
+  }
+
+  /**
+   * Store the Session's fight, replacing any previous one. Used by every
+   * user-initiated replacement: start, rematch, restart and import. The new
+   * row's `step` beats every step the Session has used before (the clock
+   * survives clears), and the remembered Setup is refreshed when the
+   * replacement carries one. The Arena log is projected from the Combat log,
+   * so no journal is stored.
+   */
+  async start(sessionId: string, input: NewArenaFight): Promise<StoredArenaFight> {
+    const now = new Date().toISOString();
+    // Stored verbatim: the strict read validates the envelope, so a bad Setup
+    // from a caller surfaces as `unreadable` instead of failing the write.
+    const document = {
+      schemaVersion: ARENA_RUN_SCHEMA_VERSION,
+      origin: input.origin,
+      setup: input.setup,
+      initial: input.initial,
+      combat: input.combat,
+    };
+    const stored = await this.withSerializedTransaction(async (trx) => {
+      const [fight, memory] = await Promise.all([
+        trx
+          .selectFrom('arena_fights')
+          .select(['step'])
+          .where('session_id', '=', sessionId)
+          .executeTakeFirst(),
+        trx
+          .selectFrom('arena_remembered_setups')
+          .selectAll()
+          .where('session_id', '=', sessionId)
+          .executeTakeFirst(),
+      ]);
+      const step = Math.max(memory?.next_step ?? 1, (fight?.step ?? 0) + 1);
+      const state = JSON.stringify(document);
+      if (fight) {
+        await trx
+          .updateTable('arena_fights')
+          .set({ step, state, updated_at: now })
+          .where('session_id', '=', sessionId)
+          .execute();
+      } else {
+        await trx
+          .insertInto('arena_fights')
+          .values({ session_id: sessionId, step, state, created_at: now, updated_at: now })
+          .execute();
+      }
+      const setupBody = JSON.stringify(document.setup);
+      if (memory) {
+        await trx
+          .updateTable('arena_remembered_setups')
+          .set({
+            // An import without a Setup keeps the remembered one: forgetting
+            // is never a side effect of importing.
+            setup: document.setup === null ? memory.setup : setupBody,
+            next_step: step + 1,
+            updated_at: now,
+          })
+          .where('session_id', '=', sessionId)
+          .execute();
+      } else {
+        await trx
+          .insertInto('arena_remembered_setups')
+          .values({
+            session_id: sessionId,
+            setup: setupBody,
+            next_step: step + 1,
+            created_at: now,
+            updated_at: now,
+          })
+          .execute();
+      }
+      return { step };
+    });
+    const read = await this.read(sessionId);
+    if (read.status !== 'ready' || read.fight.step !== stored.step) {
+      throw new Error('arena fight start failed');
+    }
+    return read.fight;
+  }
+
+  /**
+   * Guarded Round commit: swaps the Combat state only when the stored `step`
+   * still equals `expectedStep`, advancing the row and the monotonic clock
+   * together. Resolves false when stale (a concurrent Round won, or the fight
+   * was replaced or cleared; nothing is written), when no fight is stored, or
+   * when the stored row cannot be read (a corrupt row is never overwritten
+   * blindly: only a user-initiated start or import replaces it).
+   */
+  async commit(sessionId: string, expectedStep: number, combat: CombatMvpState): Promise<boolean> {
+    return this.withSerializedTransaction(async (trx) => {
+      const row = await trx
+        .selectFrom('arena_fights')
+        .selectAll()
+        .where('session_id', '=', sessionId)
+        .executeTakeFirst();
+      if (!row || row.step !== expectedStep) {
+        return false;
+      }
+      const parsed = parseStoredJson(row.state);
+      if (!parsed.ok) {
+        return false;
+      }
+      const run = parseArenaRunDocument(parsed.value);
+      if (!run.ok) {
+        return false;
+      }
+      const next: ArenaRunV1 = { ...run.run, combat };
+      const now = new Date().toISOString();
+      const result = await trx
+        .updateTable('arena_fights')
+        .set({ step: expectedStep + 1, state: JSON.stringify(next), updated_at: now })
+        .where('session_id', '=', sessionId)
+        .where('step', '=', expectedStep)
+        .executeTakeFirst();
+      if ((result.numUpdatedRows ?? 0n) === 0n) {
+        return false;
+      }
+      const memory = await trx
+        .selectFrom('arena_remembered_setups')
+        .select(['session_id', 'next_step'])
+        .where('session_id', '=', sessionId)
+        .executeTakeFirst();
+      const nextStep = Math.max(memory?.next_step ?? 1, expectedStep + 2);
+      if (memory) {
+        await trx
+          .updateTable('arena_remembered_setups')
+          .set({ next_step: nextStep, updated_at: now })
+          .where('session_id', '=', sessionId)
+          .execute();
+      } else {
+        await trx
+          .insertInto('arena_remembered_setups')
+          .values({
+            session_id: sessionId,
+            setup: JSON.stringify(run.run.setup),
+            next_step: nextStep,
+            created_at: now,
+            updated_at: now,
+          })
+          .execute();
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Clear the Session's fight (going back to the setup). The remembered Setup
+   * and the monotonic clock survive: the next start allocates a higher step,
+   * so a tab from the cleared fight never matches.
+   */
+  async clear(sessionId: string): Promise<void> {
+    await this.db.deleteFrom('arena_fights').where('session_id', '=', sessionId).execute();
   }
 }

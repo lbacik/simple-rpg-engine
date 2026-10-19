@@ -69,6 +69,11 @@ export async function executeTurn(
   if (versioned.kind === 'invalid') {
     return { ok: false, reason: 'incompatible' };
   }
+  if (versioned.kind === 'v3') {
+    // Combat MVP 1.0 turns arrive with the P6 Scenario adapter; until then v3
+    // rows are read-only and no turn commits against them.
+    return { ok: false, reason: 'incompatible' };
+  }
   let state: PlaythroughState;
   let migrated = false;
   if (versioned.kind === 'v1') {

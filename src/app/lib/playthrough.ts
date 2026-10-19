@@ -102,6 +102,15 @@ export async function resolvePlaythrough(
     // blocking Journal access.
     return { compatible: false, scenario, playthrough: row, parsed: undefined };
   }
+  if (versioned.kind === 'v3') {
+    // Combat MVP 1.0 documents (P2, issue #232): malformed envelopes, unknown
+    // `schemaVersion` values and wrong `rulesVersion` values already parse as
+    // `invalid` above and read as read-only with the Journal. A valid v3
+    // document stays read-only too until P6 wires the Scenario adapter
+    // (gameplay, rendering and the v3 reference check): the row is never
+    // rewritten here either way.
+    return { compatible: false, scenario, playthrough: row, parsed: undefined };
+  }
   if (scenario === undefined) {
     // No state write: a v1 row cannot be assigned participant ids without its
     // Scenario, and there is nothing valid to migrate towards. A current v2
@@ -162,6 +171,10 @@ export async function resolvePlaythrough(
   }
   const freshVersioned = parseVersionedState(fresh.state);
   if (freshVersioned.kind === 'invalid') {
+    return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
+  }
+  if (freshVersioned.kind === 'v3') {
+    // A v3 row committed meanwhile: read-only until P6 wires the adapter.
     return { compatible: false, scenario, playthrough: fresh, parsed: undefined };
   }
   let freshState: PlaythroughState;
