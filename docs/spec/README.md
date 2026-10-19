@@ -22,6 +22,7 @@ Supporting material:
 - [ADR 0003: the engine emits no Interface Text; a typed catalogue renders it](../adr/0003-interface-text-from-a-typed-catalogue.md).
 - [ADR 0004: the Journal stores engine events and Scenario text as presented](../adr/0004-journal-stores-events-and-scenario-text-as-presented.md).
 - [ADR 0005: Playthrough state is migrated by the engine on read](../adr/0005-playthrough-state-migrated-by-the-engine-on-read.md).
+- [ADR 0007: Illustration Motion is engine-composed Layers over a Still, not an animated file](../adr/0007-motion-as-engine-composed-layers-over-a-still.md). The Motion spec was assembled from the planning map [Map: animated Illustrations (ambient motion for Scenes and Locations)](https://github.com/lbacik/simple-rpg-engine/issues/193).
 - The example Scenario, [`scenarios/whispering-woods/`](../../scenarios/whispering-woods/): 7 Locations, 14 Scenes, 3 Encounters, a magic talisman, an Illustration and 4 Endings. It conforms to the format, passes every validation phase with no diagnostics, and is the engine's and validator's reference fixture.
 - [Mockups](mockups/): throwaway HTML prototypes of the game screen, Combat presentation and Location map. [ui.md](ui.md) says what in them is normative.
 - [Tactical Combat implementation handoff](tactical-combat-handoff.md): the accepted package boundaries, dependencies, acceptance matrix and release verification for tactical Combat. It supplements the normative rules; production implementation is a subsequent effort.
@@ -61,6 +62,7 @@ These are intentionally left open. Choose freely within the constraints of the s
 - The Session cookie name, the Interface Language cookie name, and the hash used to store the Session id (for example SHA-256).
 - How the Scenario directory is configured (default `scenarios/` at the repository root), and where the example VS Code schema configuration lives.
 - Libraries not named by the spec, such as the Markdown-subset renderer and the image header reader.
+- How Motion is animated in the browser (CSS animations or the Web Animations API, the DOM structure of the composition) and the `localStorage` key and values of the Motion preference, as long as the composition and timeline follow [ui.md](ui.md#motion).
 
 ## Out of scope
 
@@ -73,6 +75,8 @@ These are intentionally left open. Choose freely within the constraints of the s
 - Requiring artwork for every Scene or Scenario.
 - A tactical grid board, three or more Range bands, and ranged attacks that roll Agility.
 - Fast travel to non-adjacent visited Locations, and auto-laid-out maps.
-- External image URLs, and Illustrations for Endings, Encounters, Locations or a Scenario cover.
+- External image URLs, and Illustrations for Endings, Encounters or a Scenario cover.
+- Animated files (video, animated AVIF, WebP, GIF or PNG, SVG, Lottie, Rive) and engine effect presets: Motion is Layers over a Still only.
+- Motion on other surfaces (Endings, the Combat arena, the Location map, a Scenario cover), Motion that reacts to Playthrough state, and sound.
 - Counters, conditional Location descriptions, and deleting Playthroughs.
 - Combat balance analysis and state-dependent soft-lock detection in the validator.

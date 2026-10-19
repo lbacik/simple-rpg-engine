@@ -86,10 +86,55 @@ The order within the column is always:
 ### Scene and location illustration
 
 - An Illustration sits directly below the Scene title or Location name and before the narration/description. It fills the width of the reading column and scales proportionally without cropping.
-- It is rendered as a plain `<img>` with `width` and `height` from the registry (so the layout does not shift), `alt` from the image catalog, and CSS `max-width: 100%; height: auto`. Its URL is the hashed asset route.
+- Its Still is rendered by the server as a plain `<img>` with `width` and `height` from the registry (so the layout does not shift), `alt` from the image catalog, and CSS `max-width: 100%; height: auto`. Its URL is the hashed asset route.
 - A Scene or Location without an Illustration renders **no image element and no reserved space**.
-- If the image fails to load in the browser, the element is removed: no frame, no alt-text box, no retry. Play continues.
+- If the Still fails to load in the browser, the element is removed: no frame, no alt-text box, no retry, and no Layers are fetched or shown. Play continues.
 - Encounters and Endings have no images.
+
+An Illustration with `motion` ([scenario-format.md](scenario-format.md#illustration-motion)) adds Motion on top of this, as a JavaScript enhancement. A Scene or Location stays complete on every path below, and Motion never blocks play.
+
+#### Motion
+
+The engine composes Motion from the Still and its Layers:
+
+- **The box.** The Illustration's box has the Still's size. Layers are drawn over the Still in list order, the first at the back, and are clipped to the box, so a Drift may start or end outside the Still. Layer pictures are decorative (`alt=""`); the Still's `alt` describes the whole Illustration.
+- **A Layer's size and place.** Its width is `width` percent of the Still's width, and its height follows from one frame's aspect ratio. The point `anchor` of the Layer (in percent of one frame) sits on `at`, or on the Drift's current point.
+- **Frames.** A strip of `frames` frames shows frame 0 at t = 0 and steps to the next frame every 1/`fps` seconds, looping for as long as the Layer is shown.
+- **Drift.** The Layer's anchor moves linearly from `from` to `to` in `duration` seconds, starting after `delay`. Before the delay ends it waits at `from`. A one-shot Drift then holds at `to`. A looping Drift jumps back to `from` at the end of each pass and starts again at once; its `delay` applies only before the first pass.
+- **Flicker.** The Layer's opacity is `1 − dip × depth / 100`. One cycle lasts **4 s** and has 8 keyframes at equal intervals of 4/7 s (about 0.57 s), whose dips are `0, 0.6, 0.2, 1, 0.4, 0.8, 0.1, 0`, eased (ease-in-out) between keyframes; the cycle repeats from t = 0. Every change takes longer than 0.5 s (under 2 Hz), far below the WCAG 2.3.1 flash threshold, so Flicker complies by construction. Every Flicker of one Illustration runs **in unison**, so a flame and its glow pulse together.
+- **Blend.** `multiply` and `screen` blend a Layer with everything drawn beneath it within the box (the Still and the earlier Layers), never with the page around it.
+- **Camera.** One transform scales the Still and every Layer together, so the Layers stay aligned with the painting. A framing `{ zoom, x, y }` with scale `s = zoom / 100` is `translate((1 − s) · x%, (1 − s) · y%) scale(s)` of the box, with its origin at the top-left corner, so the point (x, y) of the Still stays in place. The Camera holds `from` until its `delay` ends, then moves to `to` in `duration` seconds with a fixed ease-in-out. Interpolating between two framings keeps every intermediate a valid framing, so the view never leaves the Still and nothing is clamped. A one-shot Camera holds `to`. A looping Camera goes from `from` to `to` and back again, `duration` seconds each way, for as long as Motion runs; its `delay` applies only before the first pass.
+- Motion animates only `transform`, `opacity` and the frame steps. Its implementation technique (CSS animations, the Web Animations API) is the implementer's choice.
+
+#### Timeline
+
+- **Showing.** Motion starts afresh with every Showing ([`CONTEXT.md`](../../CONTEXT.md)). The engine view carries the Illustration's **Showing key**, the Scene or Location it is shown with: `scene:<id>` while a Scene is active, otherwise `location:<id>` ([architecture.md](architecture.md#engine-contract)). The UI keys the Illustration by it: a new key starts a new Showing, and a re-render with the same key continues it. A page load or reload always starts a new Showing.
+  - A Showing continues across re-renders that stay on the same Scene or Location: an Outcome that stays there, the outcome modal, the side-panel modals (Character, Inventory, Journal, Map), a language switch, a rejection notice.
+  - Every arrival from another Scene or Location starts a new one, even when that one shows the same image. Location A → Scene X → Location A starts a new Showing of A, and so does a return to A after Combat, since the key changes along the way.
+  - Re-entering without leaving **continues** the Showing: a `move` to the current Location, or a repeatable Scene whose `next` leads back to itself.
+  - Nothing is remembered between Showings, neither in the Playthrough nor in browser storage, so a one-shot Drift or Camera replays on a return visit and on a reload.
+- **Start and fade-in.** Motion starts only once the Still and every Layer file have loaded. The composition (the Still and every Layer, at the Camera's `from` framing) then fades in over the plain Still: opacity 0 → 1, linear, over **1 s**. Timeline t = 0 is the start of the fade: frames, Drifts, delays, Flickers and the Camera all count from it.
+- **Off-screen and hidden tab.** While no part of the Illustration is in the viewport, or the tab is hidden, the timeline freezes; it resumes where it stopped when the Illustration is visible again. This is not Motion off: the Still is not swapped in, the Layers stay and the control does not change. An Illustration covered by a modal counts as visible. Timeline time is therefore the time the Illustration has been visible with Motion on since Motion last started.
+- **End state.** When every one-shot Drift and Camera has ended, the final composition holds: a one-shot Drift's Layer stays at its end point and a one-shot Camera at its end framing. Frames, Flickers and looping Drifts and Cameras keep running. The control stays: Pause shows the Still, and Play replays Motion from t = 0.
+- **Pause and Play.** Pause shows the Still **at once**, with no fade-out: the composition is removed and the Layers may be unmounted. Play restarts Motion from t = 0, fade-in included, never resuming where it stopped. The same holds whenever Motion turns off and on within a Showing for any other reason, such as a live change of the OS reduced-motion setting.
+
+#### Loading and failure
+
+- The Still loads as above, with the page. Layer files are fetched by the client after hydration, and only while Motion is on. If Motion is off when the Showing begins, they are fetched on the first Play. They are never preloaded in the HTML, and other Scenes' or Locations' Layers are never prefetched. A file used by several Layers is fetched once.
+- **All or nothing.** Until every Layer file has loaded, the Still shows alone, never a half-assembled composition. There is no timeout: a slow load only starts Motion later. Pausing before the Layers have loaded keeps Motion from starting.
+- **Layer failure.** If any Layer file fails to load, Motion is abandoned for this Showing: the Still stays and the control is hidden, since there is nothing to play. The next Showing tries again.
+- **The browser refuses to animate.** Motion that cannot start for any other reason leaves the Still shown and the control showing Play. Play retries; if Motion still cannot start, the Still stays. The refusal is never stored as the player's preference.
+
+#### Play/Pause control and reduced motion
+
+- **Reduced motion.** Under `prefers-reduced-motion: reduce`, with no stored choice, Motion is off: the player sees the Still, and the Layer files are not fetched. The player can still start Motion with Play.
+- **The control.** Every Illustration with Motion has one engine-provided Play/Pause button, overlaid in the bottom-right corner of the Illustration's box and not moved by the Camera. It is always visible (not on hover only), its touch target is at least 44×44 px, and it shows a ⏸ or ▶ icon with the accessible name "Pause animation" or "Play animation" from the Interface Text catalogue. The phone layout uses the same control. It is rendered only with JavaScript, appears with the Still on hydration and reflects the preference before the Layers have loaded. It is not rendered for an Illustration without Motion, and is hidden after a Layer failure.
+- **A global preference.** The control sets one preference for every Illustration: after Pause, every later Illustration starts with Motion off, and Play turns Motion back on everywhere.
+- **Precedence.** An explicit choice from the control wins in both directions. Without one, the OS `prefers-reduced-motion` setting decides, including a live change while the page is open.
+- **Persistence.** The choice is kept in `localStorage`, per browser and device. It is not stored with the Session or the Playthrough. When storage is unavailable or empty, the OS setting decides.
+- **Scope.** The preference governs Illustration Motion only. Other UI motion, such as a Range change on the Combat lane arena, keeps honouring `prefers-reduced-motion` alone.
+- WCAG 2.2.2 (Pause, Stop, Hide) is met by the control. There is no automatic stop after a number of seconds or loops.
+- **Without JavaScript** the player sees the Still, with no control and no Layers fetched.
 
 ### Character and inventory panel
 
@@ -212,6 +257,7 @@ Everything the UI shows that does not come from a Scenario goes through the cata
 - Journal entry type labels and the wording of engine-generated entries;
 - Test descriptions (the Attribute, Difficulty, dice, modifier, total, success or failure) and the Test shown on a Choice;
 - Combat round messages, roll lines, the Combat panel's labels, the lane arena, Intent names and bubbles, Speeds, places in the order, target picker, state badges (prepared, Wary, Defeated), thresholds and cancellation reasons;
+- the accessible names of the Illustration's Play/Pause control ("Pause animation", "Play animation");
 - inventory and state-change wording ("received", "lost", Health gained or lost, …);
 - disabled-action reasons, in inventory and in Combat;
 - the names of the engine's own vocabulary: Attributes, Difficulty levels, Ranges, Reach, Equipment slots, Victory and Defeat. These are never shown as raw ids;
@@ -272,6 +318,10 @@ The mockups are throwaway specification artifacts, not application code, and mus
 - [Combat presentation: abstract exchange vs simple grid board](https://github.com/lbacik/simple-rpg-engine/issues/9#issuecomment-6099395150)
 - [Location map: auto-laid-out graph vs author-provided coordinates](https://github.com/lbacik/simple-rpg-engine/issues/11#issuecomment-6099544434)
 - [Scene illustration assets: authoring, references and loading contract](https://github.com/lbacik/simple-rpg-engine/issues/14#issuecomment-6099824478)
+- [Motion accessibility policy for animated Illustrations](https://github.com/lbacik/simple-rpg-engine/issues/195#issuecomment-6250154872) (the Still, the Play/Pause control, the global preference, the fallback chain)
+- [Prototype: one Scene rendered with competing animation approaches](https://github.com/lbacik/simple-rpg-engine/issues/196#issuecomment-6250531255) (composition of Layers and Camera)
+- [Timeline semantics for layered Illustrations](https://github.com/lbacik/simple-rpg-engine/issues/200#issuecomment-6250649432) (Showing, Pause and Play, off-screen freezing, loading, end state)
+- [Clarify the Motion spec gaps found by the example](https://github.com/lbacik/simple-rpg-engine/issues/212#issuecomment-6261254575) (Showing key, fade-in, Flicker curve, `anchor`)
 - [Architecture: engine boundaries, persistence and Session handling in Next.js](https://github.com/lbacik/simple-rpg-engine/issues/8#issuecomment-6099767575) (routes, rejection notices)
 - [Interface text catalogue](https://github.com/lbacik/simple-rpg-engine/issues/60) (Interface Text, `lang`, Polish terms)
 - [Journal across languages](https://github.com/lbacik/simple-rpg-engine/issues/61) (Journal rendering after a language switch)
