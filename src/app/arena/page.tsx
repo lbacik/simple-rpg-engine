@@ -20,6 +20,7 @@ import {
   type ArenaRunIssueCode,
   type ArenaSetupIssueCode,
   type CombatActor,
+  type ParseIssueCode,
   type ReasonCode,
 } from '@/engine/combat/index';
 import { getCombatCatalogue } from '@/i18n/combat';
@@ -65,22 +66,131 @@ function initialQuery(params: SearchParams): Record<string, string> {
  * URL — and codes outside all three families (a tampered URL) fall back to
  * the raw value, never to a crash.
  */
+/** A raw string parameter off the rejection URL (a tampered URL reads empty). */
+function paramText(params: SearchParams, key: string): string {
+  return first(params, key) ?? '';
+}
+
+/** A numeric parameter off the rejection URL (a tampered URL reads zero). */
+function paramCount(params: SearchParams, key: string): number {
+  const value = Number(first(params, key) ?? '');
+  return Number.isInteger(value) ? value : 0;
+}
+
+/**
+ * Render a strict-parser failure with its ParseIssue Interface Text (handoff
+ * A3): import failures carry a ParseIssue code with its parameters on the
+ * URL. Codes outside the ParseIssue family read as null and fall through to
+ * the reason-code rendering below.
+ */
+function parseIssueText(
+  combatText: ReturnType<typeof getCombatCatalogue>,
+  reason: string,
+  params: SearchParams,
+): string | null {
+  const code = reason as ParseIssueCode;
+  const issues = combatText.parseIssues;
+  switch (code) {
+    case 'bad_rules_version':
+      return issues.bad_rules_version(paramText(params, 'actual'));
+    case 'unexpected_state_version':
+      return issues.unexpected_state_version;
+    case 'bad_round':
+      return issues.bad_round;
+    case 'bad_phase':
+      return issues.bad_phase;
+    case 'bad_result':
+      return issues.bad_result;
+    case 'finished_without_result':
+      return issues.finished_without_result;
+    case 'result_before_finish':
+      return issues.result_before_finish;
+    case 'bad_next_group_serial':
+      return issues.bad_next_group_serial;
+    case 'bad_actors':
+      return issues.bad_actors;
+    case 'duplicate_actor_id':
+      return issues.duplicate_actor_id(paramText(params, 'id'));
+    case 'bad_actor_id':
+      return issues.bad_actor_id(paramText(params, 'id'));
+    case 'unknown_profile':
+      return issues.unknown_profile({ id: paramText(params, 'id'), profileId: paramText(params, 'profileId') });
+    case 'bad_team_role':
+      return issues.bad_team_role(paramText(params, 'id'));
+    case 'bad_stance':
+      return issues.bad_stance(paramText(params, 'id'));
+    case 'bad_group_id':
+      return issues.bad_group_id(paramText(params, 'id'));
+    case 'hp_out_of_range':
+      return issues.hp_out_of_range({ id: paramText(params, 'id'), max: paramCount(params, 'max') });
+    case 'bad_stamina':
+      return issues.bad_stamina(paramText(params, 'id'));
+    case 'bad_ready_round':
+      return issues.bad_ready_round(paramText(params, 'id'));
+    case 'bad_available_round':
+      return issues.bad_available_round(paramText(params, 'id'));
+    case 'bad_power':
+      return issues.bad_power(paramText(params, 'id'));
+    case 'bad_phase_offset':
+      return issues.bad_phase_offset(paramText(params, 'id'));
+    case 'bad_wait_age':
+      return issues.bad_wait_age(paramText(params, 'id'));
+    case 'missing_hero':
+      return issues.missing_hero;
+    case 'too_many_companions':
+      return issues.too_many_companions(paramCount(params, 'count'));
+    case 'bad_enemy_count':
+      return issues.bad_enemy_count(paramCount(params, 'count'));
+    case 'bad_state':
+      return issues.bad_state;
+    case 'bad_ref':
+      return issues.bad_ref(paramText(params, 'id'));
+    case 'bad_profile_role':
+      return issues.bad_profile_role(paramText(params, 'id'));
+    case 'no_living_hero':
+      return issues.no_living_hero;
+    case 'no_living_enemies':
+      return issues.no_living_enemies;
+    case 'bad_engagements':
+      return issues.bad_engagements;
+    case 'bad_engagement':
+      return issues.bad_engagement({
+        a: paramText(params, 'a'),
+        b: paramText(params, 'b'),
+        // `reason` carries the issue code on the URL as `detail` (the route
+        // renames it so it never overwrites the issue code itself).
+        reason: paramText(params, 'detail'),
+      });
+    case 'bad_frozen_plans':
+      return issues.bad_frozen_plans;
+    case 'bad_frozen_plan':
+      return issues.bad_frozen_plan(paramText(params, 'detail'));
+    case 'bad_log':
+      return issues.bad_log;
+  }
+  // Exhaustive over the ParseIssue family: a new code without a case above
+  // fails typecheck here. At runtime a non-ParseIssue code (a reason code or
+  // a tampered URL) falls through every case and reads as null, never
+  // crashing.
+  const _exhaustive: never = code;
+  void _exhaustive;
+  return null;
+}
+
 function rejectedText(
   catalogue: Catalogue,
   reason: string,
   params: SearchParams,
 ): string {
   const combatText = getCombatCatalogue(catalogue.code);
+  const parseText = parseIssueText(combatText, reason, params);
+  if (parseText !== null) return parseText;
   const code = reason as ReasonCode | ArenaSetupIssueCode | ArenaRunIssueCode;
-  const count = (key: string): number => {
-    const value = Number(first(params, key) ?? '');
-    return Number.isInteger(value) ? value : 0;
-  };
   switch (code) {
     case 'insufficient_stamina':
-      return combatText.reasons.insufficient_stamina(count('missing'));
+      return combatText.reasons.insufficient_stamina(paramCount(params, 'missing'));
     case 'on_cooldown':
-      return combatText.reasons.on_cooldown(count('availableRound'));
+      return combatText.reasons.on_cooldown(paramCount(params, 'availableRound'));
     case 'stance_disallows':
       return combatText.reasons.stance_disallows;
     case 'no_shot_ability':
@@ -168,6 +278,7 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
         <p>{catalogue.arena.description}</p>
         <p role="status">{combatText.notices.unreadable}</p>
         <SetupSection catalogue={catalogue} needsConfirm={false} />
+        <TransferSection catalogue={catalogue} canExport={false} needsConfirm={false} />
       </main>
     );
   }
@@ -183,6 +294,7 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
           </p>
         )}
         <SetupSection catalogue={catalogue} needsConfirm={false} />
+        <TransferSection catalogue={catalogue} canExport={false} needsConfirm={false} />
       </main>
     );
   }
@@ -196,6 +308,9 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
       <main>
         <h1>{catalogue.arena.title}</h1>
         <p>{catalogue.arena.description}</p>
+        {fight.origin === 'import' ? (
+          <p role="status">{combatText.notices.importUnverified}</p>
+        ) : null}
         <CommandPanel
           state={state}
           language={catalogue.code}
@@ -215,6 +330,7 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
             ) : undefined
           }
         />
+        <TransferSection catalogue={catalogue} canExport={true} needsConfirm={false} />
         {remembered.ok ? null : (
           <>
             <p role="status">{catalogue.arena.noRememberedSetup}</p>
@@ -225,7 +341,11 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
     );
   }
 
-  const canRestart = fight.origin === 'setup' && fight.initial !== null;
+  // Restart returns to the opening `initial`: Setup-started runs always
+  // carry one, and so do PLAN imports (A3); CHOOSE and FINISHED imports
+  // store none.
+  const canRestart =
+    (fight.origin === 'setup' || fight.origin === 'import') && fight.initial !== null;
   // Pre-rendered display names by actor id: functions cannot cross the
   // server/client boundary, so the interactive panel takes these serializable
   // names (the server-rendered result panel below keeps getActorName).
@@ -235,6 +355,9 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
     <main>
       <h1>{catalogue.arena.title}</h1>
       <p>{catalogue.arena.description}</p>
+      {fight.origin === 'import' ? (
+        <p role="status">{combatText.notices.importUnverified}</p>
+      ) : null}
       <CommandPanelInteractive
         state={state}
         language={catalogue.code}
@@ -273,6 +396,7 @@ export default async function ArenaPage({ searchParams }: { searchParams: Promis
           </p>
         </section>
       ) : null}
+      <TransferSection catalogue={catalogue} canExport={true} needsConfirm={true} />
       <SetupSection catalogue={catalogue} needsConfirm={true} />
     </main>
   );
@@ -392,6 +516,59 @@ function SetupSection({ catalogue, needsConfirm }: { catalogue: Catalogue; needs
             </li>
           ))}
         </ul>
+      </section>
+    </>
+  );
+}
+
+/**
+ * Import and export (handoff A3): the export is a plain link to the download
+ * route, and the import is one form with both a file input and a plain
+ * `<textarea>` paste, so both work without JavaScript. The file wins when
+ * both are submitted; both go through the one strict parse in the import
+ * route. Replacing a CHOOSE fight needs the in-page confirmation, like the
+ * Setup and preset forms above.
+ */
+function TransferSection({
+  catalogue,
+  canExport,
+  needsConfirm,
+}: {
+  catalogue: Catalogue;
+  canExport: boolean;
+  needsConfirm: boolean;
+}) {
+  return (
+    <>
+      {canExport ? (
+        <p>
+          <a href="/arena/export" download>
+            {catalogue.arena.exportFight}
+          </a>
+        </p>
+      ) : null}
+      <section aria-label={catalogue.arena.importHeading}>
+        <h2>{catalogue.arena.importHeading}</h2>
+        <p className="cp-dim">{catalogue.arena.importBlurb}</p>
+        <form method="post" action="/arena/import" encType="multipart/form-data">
+          <p>
+            <label htmlFor="arena-import-file">{catalogue.arena.fileLabel} </label>
+            <input id="arena-import-file" type="file" name="file" accept="application/json,.json" />
+          </p>
+          <p>
+            <label htmlFor="arena-import-pasted">{catalogue.arena.pasteLabel}</label>
+            <br />
+            <textarea id="arena-import-pasted" name="pasted" rows={8} cols={60} />
+          </p>
+          {needsConfirm ? (
+            <p role="status">
+              <label>
+                <input type="checkbox" name="confirm" value="1" required /> {catalogue.arena.replaceBody}
+              </label>
+            </p>
+          ) : null}
+          <button type="submit">{catalogue.arena.importSubmit}</button>
+        </form>
       </section>
     </>
   );

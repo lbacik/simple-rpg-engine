@@ -173,6 +173,13 @@ export const en = {
     restartConfirmBody: 'The current round is discarded and the fight starts over from its opening state.',
     keepFighting: 'Keep fighting',
     noRememberedSetup: 'No remembered setup yet — configure the fight below.',
+    importHeading: 'Import a fight',
+    importBlurb:
+      'Load a fight file (a CombatState JSON document, at most 1 MB) or paste its contents. A bad import explains itself.',
+    fileLabel: 'Fight file',
+    pasteLabel: 'Or paste the fight JSON',
+    importSubmit: 'Import the fight',
+    exportFight: 'Export the current fight',
     profiles: {
       hero: 'Hero',
       raider: 'Raider',

@@ -1,10 +1,10 @@
 // Arena restart route (Combat MVP 1.0, P5 A4): a plain POST restarting a
-// Setup-started mid-fight from its opening state, behind the in-page
-// confirmation (`confirm=1`). The replacement allocates a fresh step above
-// every step the Session has used, so a tab from the replaced fight never
-// matches. Setup-started runs only for now: `PLAN`-import restarts belong to
-// the import package (A3, #241), which stores the opening `initial` they
-// return to.
+// Setup-started or PLAN-imported mid-fight from its opening state, behind
+// the in-page confirmation (`confirm=1`). The replacement allocates a fresh
+// step above every step the Session has used, so a tab from the replaced
+// fight never matches. Only runs carrying their opening `initial` restart:
+// Setup-started runs and PLAN imports (A3); CHOOSE and FINISHED imports
+// store no `initial`.
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -27,7 +27,8 @@ export async function POST(request: Request): Promise<never> {
 
   const fight = await readArenaFightForWrite(sessionHash);
   const initial = parseCombatState(fight.initial);
-  if (fight.origin !== 'setup' || fight.combat.phase !== 'CHOOSE' || !initial.ok) {
+  const restartableOrigin = fight.origin === 'setup' || fight.origin === 'import';
+  if (!restartableOrigin || fight.combat.phase !== 'CHOOSE' || !initial.ok) {
     redirect('/arena');
   }
   if (formField(formData, 'confirm') !== '1') redirect('/arena?confirm=restart');
@@ -41,7 +42,7 @@ export async function POST(request: Request): Promise<never> {
     redirect(`/arena?notice=rejected&reason=${encodeURIComponent(restarted.reason)}`);
   }
   await fights.start(sessionHash, {
-    origin: 'setup',
+    origin: fight.origin,
     setup: fight.setup,
     initial: fight.initial,
     combat: restarted.state,
