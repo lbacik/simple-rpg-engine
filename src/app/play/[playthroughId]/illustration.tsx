@@ -14,13 +14,33 @@
 // the engine's fixed Flicker curve on the same API and timeline. A Camera
 // moves the Still and every Layer together with one transform of the same
 // stage, from the same t = 0, so the Layers stay aligned with the Still.
-// Any Layer failure leaves the Still for this Showing. Under
-// `prefers-reduced-motion: reduce` Motion stays off and no Layer file is
-// fetched. Without JavaScript only the Still shows.
+// Any Layer failure abandons Motion for this Showing and hides the control:
+// the Still stays. Under `prefers-reduced-motion: reduce` with no stored
+// choice Motion stays off and no Layer file is fetched. Without JavaScript
+// only the Still shows.
+//
+// Every Illustration with Motion carries one engine-provided Play/Pause button
+// (docs/spec/ui.md, play/pause control and reduced motion): overlaid in the
+// bottom-right corner of the Illustration's box, outside the composition the
+// Camera moves, always visible, with a ⏸/▶ icon and the catalogue accessible
+// name. The button sets one global Motion preference in `localStorage` (see
+// motion-preference.ts): Pause shows the Still at once with no fade-out, and
+// Play restarts Motion from t = 0, fade-in included, never resuming. When the
+// browser refuses to animate, the Still stays with the control on Play; Play
+// retries, and the refusal is never stored.
 
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {
+  motionControlState,
+  readStoredMotionChoice,
+  resolveMotionOn,
+  writeStoredMotionChoice,
+  type MotionChoice,
+  type MotionStorage,
+  type StoredMotionChoice,
+} from './motion-preference';
 
 /** One Motion Layer as the Illustration view carries it: declaration (with defaults applied), asset URL and pixel size. A sprite-strip Layer also carries `frames` and `fps`; a flickering Layer also carries `flicker`. */
 export type IllustrationMotionLayer = {
@@ -460,6 +480,19 @@ export function spriteDuration(layer: Pick<IllustrationMotionLayer, 'frames' | '
   return (layer.frames ?? 1) / (layer.fps ?? 1);
 }
 
+/**
+ * The browser's storage for the Motion preference, or null when merely
+ * touching it throws: when storage is unavailable the OS setting decides,
+ * without errors (docs/spec/ui.md, persistence).
+ */
+function safeLocalStorage(): MotionStorage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function Illustration({
   src,
   width,
@@ -468,6 +501,8 @@ export function Illustration({
   layers,
   camera,
   showingKey,
+  pauseAnimationLabel = 'Pause animation',
+  playAnimationLabel = 'Play animation',
 }: {
   src: string;
   width: number;
@@ -479,13 +514,34 @@ export function Illustration({
   camera?: IllustrationMotionCamera;
   /** `scene:<id>` or `location:<id>`; present only with Motion (Layers or a Camera). */
   showingKey?: string;
+  /**
+   * The control's accessible names from the Interface Text catalogue
+   * (docs/spec/ui.md, interface text). The server passes the rendered
+   * strings, since catalogue functions cannot cross into this Client
+   * Component; the English defaults keep the Motion possible without them.
+   */
+  pauseAnimationLabel?: string;
+  /** The Play half of the control's accessible names; see above. */
+  playAnimationLabel?: string;
 }) {
-  const [layersLoaded, setLayersLoaded] = useState(false);
+  /** The Showing (and Layer set) whose files have loaded; Motion starts only for it. */
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [stillLoaded, setStillLoaded] = useState(false);
   const [stillFailed, setStillFailed] = useState(false);
-  // A Camera-only Illustration fetches no Layer file, so nothing sets
-  // `layersLoaded` for it: this Showing's Motion is live as soon as it is
-  // allowed (not under reduced motion).
+  /** A Layer file failed for this Showing: Motion is abandoned, the control hidden. */
+  const [layerFailed, setLayerFailed] = useState(false);
+  /** The browser refused to animate this Showing: the Still stays, the control on Play. */
+  const [animationRefused, setAnimationRefused] = useState(false);
+  // The control renders only with JavaScript: it appears with the Still on
+  // hydration, never in the server markup a no-JavaScript browser would keep.
+  const [hydrated, setHydrated] = useState(false);
+  // The global Motion preference (docs/spec/ui.md, a global preference): the
+  // player's explicit choice, or null until hydration reads it. The OS
+  // `prefers-reduced-motion` decides while it is null.
+  const [storedChoice, setStoredChoice] = useState<StoredMotionChoice>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // A Camera-only Illustration fetches no Layer file: this Showing's Motion is
+  // live as soon as it is allowed (the preference is on).
   const [cameraLive, setCameraLive] = useState(false);
   const stillRef = useRef<HTMLImageElement>(null);
   const layerRefs = useRef<(HTMLElement | null)[]>([]);
@@ -506,9 +562,18 @@ export function Illustration({
   // animations), so the current value rides a ref.
   const timelinePausedRef = useRef(timelinePaused);
   timelinePausedRef.current = timelinePaused;
+  // Whether this Illustration carries Motion at all: the control never renders
+  // without it.
+  const hasLayers = layers !== undefined && layers.length > 0;
+  const hasMotion = showingKey !== undefined && (hasLayers || camera !== undefined);
+  const motionOn = resolveMotionOn(storedChoice, prefersReducedMotion);
   // A file shared by several Layers is fetched once.
   const distinctSrcs = [...new Set((layers ?? []).map((layer) => layer.src))];
   const srcKey = distinctSrcs.join('\n');
+  // The fetch and the composition key on the Showing and the Layer set
+  // together: a new key starts a new Showing, a re-render with the same key
+  // continues it.
+  const loadKey = `${showingKey ?? ''}\n${srcKey}`;
   // The animation inputs of this Showing (Drift and Flicker), as a stable key:
   // the engine view rebuilds the Layer array on every render, but the
   // declarations only change with the Showing (or the image). The key covers
@@ -540,25 +605,44 @@ export function Illustration({
     }
   }, [src]);
 
-  // A new Showing restarts Motion; the same key continues it: the fetch below
-  // runs only when the key (or the Layer set, or the Camera) changes, and the
-  // Layer composition is keyed by it so React remounts it on a new Showing.
-  // A Camera-only Illustration sets no fetch in motion: its Motion goes live
-  // at once, with no Layer fetches.
+  // Hydration reads the global Motion preference before any Layer loads: the
+  // stored explicit choice, else the OS `prefers-reduced-motion` setting. A
+  // live change of the OS setting applies while no choice is stored, turning
+  // Motion off and on within the Showing like Pause and Play do. Storage
+  // reads never throw: when storage is unavailable the OS setting decides.
   useEffect(() => {
-    setLayersLoaded(false);
+    setHydrated(true);
+    setStoredChoice(readStoredMotionChoice(safeLocalStorage()));
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(media.matches);
+    const onChange = (event: MediaQueryListEvent): void => {
+      setPrefersReducedMotion(event.matches);
+    };
+    media.addEventListener('change', onChange);
+    return () => {
+      media.removeEventListener('change', onChange);
+    };
+  }, []);
+
+  // A new Showing restarts Motion's start conditions; the same key continues
+  // it. On a new Showing the next attempt fetches the Layer files again.
+  useEffect(() => {
+    setLoadedKey(null);
+    setLayerFailed(false);
+    setAnimationRefused(false);
     setCameraLive(false);
-    if ((layers === undefined || layers.length === 0) && camera === undefined) {
+  }, [showingKey, srcKey, cameraAnimKey]);
+
+  // A new Showing restarts Motion; the same key continues it: the fetch below
+  // runs only when the key (or the Layer set, or the Camera) changes or Motion
+  // turns on, and the Layer composition is keyed by it so React remounts it on
+  // a new Showing. A Camera-only Illustration sets no fetch in motion: its
+  // Motion goes live at once, with no Layer fetches.
+  useEffect(() => {
+    if (!hasMotion || !hydrated || !motionOn || layerFailed || loadedKey === loadKey) {
       return;
     }
-    if (showingKey === undefined) {
-      return;
-    }
-    // Motion stays off under reduced motion, and no Layer file is fetched.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-    if (layers === undefined || layers.length === 0) {
+    if (!hasLayers) {
       setCameraLive(true);
       return;
     }
@@ -573,13 +657,16 @@ export function Illustration({
         }),
     );
     // All or nothing: the Still shows alone until every Layer file has loaded,
-    // and a failed Layer abandons Motion for this Showing, leaving the Still.
+    // and a failed Layer abandons Motion for this Showing, leaving the Still
+    // and hiding the control. There is no timeout: a slow load only starts
+    // Motion later. Pausing before the Layers have loaded cancels the wait and
+    // keeps Motion from starting; Play fetches on the first press.
     void Promise.all(pending).then(
       () => {
-        if (!cancelled) setLayersLoaded(true);
+        if (!cancelled) setLoadedKey(loadKey);
       },
       () => {
-        if (!cancelled) setLayersLoaded(false);
+        if (!cancelled) setLayerFailed(true);
       },
     );
     return () => {
@@ -587,22 +674,28 @@ export function Illustration({
     };
     // `srcKey` stands in for the Layer set and `cameraAnimKey` for the
     // Camera: the fetch restarts only when the Showing, the distinct Layer
-    // files or the Camera change, never on a re-render with the same key
-    // (which continues the Showing).
-  }, [showingKey, srcKey, cameraAnimKey]);
+    // files or the Camera change, or when Motion turns on — never on a
+    // re-render with the same key (which continues the Showing), and never
+    // twice for one Showing (`loadedKey`).
+  }, [hasMotion, hydrated, motionOn, layerFailed, loadedKey, loadKey, showingKey, srcKey, cameraAnimKey]);
 
-  // Motion starts only once the Still and every Layer file have loaded
-  // (docs/spec/ui.md, start and fade-in). Fading the Layer composition over
-  // the plain Still is that composition fading in: the Still over itself is
-  // the Still. A Camera-only Illustration has no Layer file to wait for, so
-  // its Motion starts once the Still has loaded.
-  const hasLayers = layers !== undefined && layers.length > 0;
+  // Motion starts only once the preference allows it and the Still and every
+  // Layer file have loaded (docs/spec/ui.md, start and fade-in). Fading the
+  // Layer composition over the plain Still is that composition fading in: the
+  // Still over itself is the Still. A Camera-only Illustration has no Layer
+  // file to wait for, so its Motion starts once the Still has loaded. Pause
+  // unmounts the composition and shows the Still at once, with no fade-out;
+  // Play remounts it, restarting Motion from t = 0, fade-in included.
   const motionReady =
+    hydrated &&
+    motionOn &&
+    !animationRefused &&
     stillLoaded &&
     !stillFailed &&
+    !layerFailed &&
     showingKey !== undefined &&
     (camera !== undefined || hasLayers) &&
-    (hasLayers ? layersLoaded : cameraLive);
+    (hasLayers ? loadedKey === loadKey : cameraLive);
 
   // Drift and Flicker run on the Web Animations API from the shared timeline
   // t = 0: the composition mounts when Motion starts (keyed by the Showing
@@ -676,6 +769,19 @@ export function Illustration({
     // from t = 0 instead of ticking unseen.
     if (timelinePausedRef.current) {
       pauseTimelineAnimations(animations);
+    }
+    // The browser refuses to animate (docs/spec/ui.md, the browser refuses to
+    // animate): no animation of this Showing could start. The Still stays and
+    // the control shows Play; Play retries, and the refusal is never stored.
+    // Layers without Drift or Flicker step through their sprite frames in CSS
+    // and need no Web Animations API start, so only a Showing that needs the
+    // API but started nothing counts as refused.
+    if (
+      animations.length === 0 &&
+      layers.some((layer) => layer.drift !== undefined || layer.flicker !== undefined)
+    ) {
+      setAnimationRefused(true);
+      return;
     }
     return () => {
       const ending = new Set(animations);
@@ -764,6 +870,30 @@ export function Illustration({
     }
   }, [timelinePaused, motionReady]);
 
+  // Pause shows the Still at once, with no fade-out: the composition below
+  // unmounts. Play restarts Motion from t = 0, fade-in included, never
+  // resuming: the composition remounts and every animation counts from the
+  // same fresh start. The press becomes the global preference for every
+  // Illustration; Play after a refusal retries the same Showing.
+  const toggleMotion = (): void => {
+    const choice: MotionChoice = motionOn && !animationRefused ? 'off' : 'on';
+    writeStoredMotionChoice(safeLocalStorage(), choice);
+    setStoredChoice(choice);
+    if (choice === 'on') {
+      setAnimationRefused(false);
+    }
+  };
+
+  // Pause while Motion is on, Play while it is off or refused, and none
+  // without Motion, before hydration, or after a failure took Motion away.
+  const control = motionControlState({
+    hasMotion,
+    hydrated,
+    failed: stillFailed || layerFailed,
+    motionOn,
+    refused: animationRefused,
+  });
+
   return (
     <span
       ref={boxRef}
@@ -844,6 +974,17 @@ export function Illustration({
           </span>
         ) : null}
       </span>
+      {control === null ? null : (
+        <button
+          type="button"
+          className="illustration-motion-toggle"
+          aria-label={control === 'pause' ? pauseAnimationLabel : playAnimationLabel}
+          aria-pressed={control === 'pause'}
+          onClick={toggleMotion}
+        >
+          <span aria-hidden="true">{control === 'pause' ? '⏸' : '▶'}</span>
+        </button>
+      )}
     </span>
   );
 }

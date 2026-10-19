@@ -359,6 +359,10 @@ export const pl: Catalogue = {
     showUnknown: 'Pokaż niewidoczne wyjścia',
     hideUnknown: 'Ukryj niewidoczne wyjścia',
   },
+  illustration: {
+    pauseAnimation: 'Wstrzymaj animację',
+    playAnimation: 'Odtwórz animację',
+  },
   journal: {
     title: 'Dziennik',
     name: (entries: string) => `Dziennik, ${entries}`,

@@ -344,6 +344,10 @@ export const en = {
     showUnknown: 'Show unseen exits',
     hideUnknown: 'Hide unseen exits',
   },
+  illustration: {
+    pauseAnimation: 'Pause animation',
+    playAnimation: 'Play animation',
+  },
   journal: {
     title: 'Journal',
     name: (entries: string) => `Journal, ${entries}`,
