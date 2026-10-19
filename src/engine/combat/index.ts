@@ -13,6 +13,7 @@ export type {
   CombatResult,
   CombatState,
   CommandOption,
+  FrozenPlan,
   GroupId,
   InitialCombatState,
   MoveVariant,
@@ -33,6 +34,7 @@ export {
   BASIC_ACTIONS,
   CARDS,
   COUNTER_PARRY,
+  ENEMY_CYCLES,
   EXPOSED_PENALTY,
   FEINT_BASE_VS_DEFENSIVE,
   GUARD,
@@ -52,7 +54,7 @@ export {
   SUPPORTED_RULES_VERSIONS,
   isCardId,
 } from './rules';
-export type { BasicActionRules, CardRules, ProfileStats, RulesVersion, StanceModifiers } from './rules';
+export type { BasicActionRules, CardRules, CycleEntry, ProfileStats, RulesVersion, StanceModifiers } from './rules';
 export {
   addEngagement,
   canonicalizeEngagements,
@@ -63,4 +65,5 @@ export {
   removeEngagementsOf,
 } from './range';
 export { findOption, listOptions } from './options';
+export { isPrimaryAttack, planRound, verifyFrozenPlans } from './plan';
 export { parseCombatState } from './parse';
