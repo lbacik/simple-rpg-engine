@@ -333,8 +333,11 @@ describe('content format v2 catalogue (Q15)', () => {
     const empty = freshValidDir('no-participants');
     toParticipants(empty);
     mutate(empty, 'encounters.yaml', '  participants:\n    - enemy: rat\n      startRange: melee', '  participants: []');
-    const emptyDiag = only(fail(empty), 'schema/invalid-value');
+    const emptyDiags = fail(empty);
+    expect(emptyDiags).toHaveLength(1);
+    const emptyDiag = only(emptyDiags, 'schema/invalid-value');
     expect(emptyDiag.file).toBe('encounters.yaml');
+    expect(emptyDiag.path).toEqual([0, 'participants']);
 
     const many = freshValidDir('too-many-participants');
     toParticipants(many);
@@ -343,8 +346,11 @@ describe('content format v2 catalogue (Q15)', () => {
       (_, index) => `    - id: extra-${index + 1}\n      enemy: rat\n      startRange: near`,
     ).join('\n');
     mutate(many, 'encounters.yaml', '    - enemy: rat\n      startRange: melee', `    - id: first\n      enemy: rat\n      startRange: melee\n${extra}`);
-    const manyDiag = only(fail(many), 'schema/invalid-value');
+    const manyDiags = fail(many);
+    expect(manyDiags).toHaveLength(1);
+    const manyDiag = only(manyDiags, 'schema/invalid-value');
     expect(manyDiag.file).toBe('encounters.yaml');
+    expect(manyDiag.path).toEqual([0, 'participants']);
   });
 
   it('startRange is required beside the enemy shorthand and limited to melee|near|far', () => {
@@ -425,15 +431,35 @@ describe('content format v2 catalogue (Q15)', () => {
     expect(diag.path).toEqual([0, 'participants', 0, 'phaseOffset']);
   });
 
+  it('ref/phase-offset-out-of-cycle for a 3-cycle profile at offset 3', () => {
+    // brute/sentinel/archer cycles have length 3 (offsets 0–2); offset 3 is
+    // valid for raider but out of cycle here. See ENEMY_CYCLES.
+    const dir = freshValidDir('phase-offset-brute');
+    mutate(dir, 'enemies.yaml', '  profile: raider', '  profile: brute');
+    toParticipants(dir);
+    mutate(dir, 'encounters.yaml', '      startRange: melee', '      startRange: melee\n      phaseOffset: 3');
+    const diags = fail(dir);
+    expect(diags).toHaveLength(1);
+    const diag = only(diags, 'ref/phase-offset-out-of-cycle');
+    expect(diag.file).toBe('encounters.yaml');
+    expect(diag.severity).toBe('error');
+    expect(diag.path).toEqual([0, 'participants', 0, 'phaseOffset']);
+  });
+
   it.each([
-    ['companion-join', 'encounters.yaml', '  victory:', '  victory:\n    effects:\n      - companion-join: nobody'],
-    ['companion condition', 'scenes/gate.yaml', '    when: { flag: met-elder }', '    when: { companion: nobody }'],
-    ['companionLost condition', 'scenes/gate.yaml', '    when: { flag: met-elder }', '    when: { companionLost: nobody }'],
-  ])('ref/unknown-companion for %s naming no Companion', (_label, file, from, to) => {
+    ['companion-join', 'encounters.yaml', '  victory:', '  victory:\n    effects:\n      - companion-join: nobody', [0, 'victory', 'effects', 0, 'companion-join']],
+    // Both conditions below land on the fight-rats choice (choices index 3).
+    ['companion condition', 'scenes/gate.yaml', '    when: { flag: met-elder }', '    when: { companion: nobody }', ['choices', 3, 'when', 'companion']],
+    ['companionLost condition', 'scenes/gate.yaml', '    when: { flag: met-elder }', '    when: { companionLost: nobody }', ['choices', 3, 'when', 'companionLost']],
+  ])('ref/unknown-companion for %s naming no Companion', (_label, file, from, to, expectedPath) => {
     const dir = freshValidDir(`unknown-companion-${Date.now() % 100000}`);
     mutate(dir, file, from, to);
-    const diag = only(fail(dir), 'ref/unknown-companion');
+    const diags = fail(dir);
+    expect(diags).toHaveLength(1);
+    const diag = only(diags, 'ref/unknown-companion');
     expect(diag.file).toBe(file);
+    expect(diag.severity).toBe('error');
+    expect(diag.path).toEqual(expectedPath);
   });
 
   it('ref/duplicate-id for two Companions with one id', () => {
@@ -459,8 +485,30 @@ describe('content format v2 catalogue (Q15)', () => {
       '    - enemy: rat\n      startRange: melee',
       '    - enemy: rat\n      startRange: melee\n    - enemy: rat\n      startRange: near',
     );
-    const diag = only(fail(dir), 'ref/duplicate-participant-id');
+    const diags = fail(dir);
+    expect(diags).toHaveLength(1);
+    const diag = only(diags, 'ref/duplicate-participant-id');
     expect(diag.file).toBe('encounters.yaml');
+    expect(diag.severity).toBe('error');
+    // Both participants default to id "rat"; the second declaration is flagged.
+    expect(diag.path).toEqual([0, 'participants', 1, 'enemy']);
+  });
+
+  it('ref/duplicate-participant-id for two explicit duplicate ids', () => {
+    const dir = freshValidDir('duplicate-participant-explicit');
+    toParticipants(dir);
+    mutate(
+      dir,
+      'encounters.yaml',
+      '    - enemy: rat\n      startRange: melee',
+      '    - id: twin\n      enemy: rat\n      startRange: melee\n    - id: twin\n      enemy: rat\n      startRange: near',
+    );
+    const diags = fail(dir);
+    expect(diags).toHaveLength(1);
+    const diag = only(diags, 'ref/duplicate-participant-id');
+    expect(diag.file).toBe('encounters.yaml');
+    expect(diag.severity).toBe('error');
+    expect(diag.path).toEqual([0, 'participants', 1, 'id']);
   });
 
   it('play/companion-unused warns for a Companion that no companion-join references', () => {
@@ -475,36 +523,41 @@ describe('content format v2 catalogue (Q15)', () => {
     const warning = only(succeed(dir), 'play/companion-unused');
     expect(warning.severity).toBe('warning');
     expect(warning.file).toBe('companions.yaml');
+    // The path is the catalog entry's `id` key; file+range carry the entity
+    // location (see checkCompanionUnused in src/content/playability.ts).
     expect(warning.path).toEqual(['id']);
   });
 
-  it('companion and companionLost are unknown facts for playability, like health', () => {
-    // The only route to the dawn ending sits behind a companion condition.
-    // An unknown fact keeps the route reachable; a false one would report
-    // play/unreachable-ending and reject the package.
-    const dir = freshValidDir('companion-facts');
-    mutate(
-      dir,
-      'scenario.yaml',
-      'encounters:\n  - encounters.yaml',
-      'encounters:\n  - encounters.yaml\ncompanions:\n  - companions.yaml',
-    );
-    writePackage(dir, { 'companions.yaml': COMPANIONS });
-    mutate(
-      dir,
-      'scenes/gate.yaml',
-      '  - id: test-luck\n    text: Try the handle.',
-      '  - id: test-luck\n    text: Try the handle.\n    when: { companion: ada }',
-    );
-    mutate(
-      dir,
-      'encounters.yaml',
-      '    move: home\n  surrender:',
-      '    move: home\n    effects:\n      - companion-join: ada\n  surrender:',
-    );
-    const warnings = succeed(dir);
-    expect(warnings.filter((d) => d.code === 'play/unreachable-ending')).toHaveLength(0);
-  });
+  it.each(['companion', 'companionLost'])(
+    '%s is an unknown fact for playability, like health',
+    (condition) => {
+      // The only route to the dawn ending sits behind a companion condition.
+      // An unknown fact keeps the route reachable; a false one would report
+      // play/unreachable-ending and reject the package.
+      const dir = freshValidDir(`companion-facts-${condition}`);
+      mutate(
+        dir,
+        'scenario.yaml',
+        'encounters:\n  - encounters.yaml',
+        'encounters:\n  - encounters.yaml\ncompanions:\n  - companions.yaml',
+      );
+      writePackage(dir, { 'companions.yaml': COMPANIONS });
+      mutate(
+        dir,
+        'scenes/gate.yaml',
+        '  - id: test-luck\n    text: Try the handle.',
+        `  - id: test-luck\n    text: Try the handle.\n    when: { ${condition}: ada }`,
+      );
+      mutate(
+        dir,
+        'encounters.yaml',
+        '    move: home\n  surrender:',
+        '    move: home\n    effects:\n      - companion-join: ada\n  surrender:',
+      );
+      const warnings = succeed(dir);
+      expect(warnings.filter((d) => d.code === 'play/unreachable-ending')).toHaveLength(0);
+    },
+  );
 });
 
 /** Copy a shipped fixture to a temp directory under its own name (id rule). */
