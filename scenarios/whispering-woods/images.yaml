@@ -97,10 +97,34 @@
     track, with leaves swirling in the murmuring wind.
 
 - id: loc-hunters-camp
-  path: images/loc-hunters-camp.png
+  path: images/loc-hunters-camp.png              # the Still
   alt: >-
     An abandoned hunters' camp in a pine clearing, with a branch lean-to and a
     ring of blackened hearth stones.
+  motion:
+    layers:
+      - path: images/layers/hunters-camp-sun.webp  # sun shafts over the whole Still
+        blend: multiply
+        flicker: { depth: 40 }
+      - path: images/layers/crow.webp              # a crow standing on a stump
+        frames: 8
+        fps: 4
+        anchor: { x: 50, y: 100 }
+        at: { x: 33.4, y: 66.1 }
+        width: 4
+      - path: images/layers/bird.webp              # one-shot, starts mid-picture
+        frames: 4
+        fps: 5
+        width: 4
+        drift: { from: { x: 38, y: 16 }, to: { x: 108, y: 9 }, duration: 14, delay: 1.5 }
+      - path: images/layers/bird.webp              # looping, same file
+        frames: 4
+        fps: 6
+        width: 3.2
+        drift: { from: { x: -5, y: 23 }, to: { x: 105, y: 19 }, duration: 24, delay: 8, loop: true }
+    camera:
+      to: { zoom: 110, x: 30, y: 55 }              # one-shot push-in towards the lean-to
+      duration: 18
 
 - id: loc-wolf-hollow
   path: images/loc-wolf-hollow.png

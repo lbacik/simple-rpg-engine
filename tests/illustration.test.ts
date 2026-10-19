@@ -6,6 +6,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { checkPlaythroughCompatibility } from '../src/content/compatibility';
 import { loadScenario, type Scenario } from '../src/content/index';
 import {
   illustrationView,
@@ -149,5 +150,103 @@ describe('illustrationView', () => {
   it('returns undefined without an image entry', () => {
     const { scenario } = startWoods();
     expect(illustrationView(scenario.id, undefined)).toBeUndefined();
+  });
+});
+
+describe('layered loc-hunters-camp Illustration', () => {
+  it('exposes the spec Motion on the hunters-camp Location view', () => {
+    const { scenario, state: started } = startWoods();
+    const registered = scenario.imagesById['loc-hunters-camp'];
+    expect(registered).toBeDefined();
+    const location = view(scenario, {
+      ...started,
+      currentLocationId: 'hunters-camp',
+      activeSceneId: null,
+      visited: [...started.visited, 'hunters-camp'],
+    });
+    expect(location.kind).toBe('location');
+    if (location.kind !== 'location') throw new Error('expected a Location view');
+    const illustration = location.illustration;
+    expect(illustration).toBeDefined();
+    // The upscaled Still, so the one-shot Camera push-in passes
+    // `play/camera-low-resolution` (1600 × 100 / 110 = 1455 px).
+    expect(illustration).toMatchObject({
+      width: 1600,
+      height: 900,
+      showingKey: 'location:hunters-camp',
+    });
+    const layers = illustration?.layers ?? [];
+    expect(layers).toHaveLength(4);
+    // Sun shafts over the whole Still: multiply blend with Flicker.
+    expect(layers[0]).toMatchObject({
+      at: { x: 50, y: 50 },
+      anchor: { x: 50, y: 50 },
+      width: 100,
+      blend: 'multiply',
+      flicker: { depth: 40 },
+    });
+    expect(layers[0]).not.toHaveProperty('frames');
+    expect(layers[0]).not.toHaveProperty('drift');
+    // The crow standing on the stump, placed by its feet.
+    expect(layers[1]).toMatchObject({
+      frames: 8,
+      fps: 4,
+      anchor: { x: 50, y: 100 },
+      at: { x: 33.4, y: 66.1 },
+      width: 4,
+      blend: 'normal',
+      pixelWidth: 768,
+      pixelHeight: 96,
+    });
+    expect(layers[1]).not.toHaveProperty('drift');
+    // One-shot bird starting mid-picture.
+    expect(layers[2]).toMatchObject({
+      frames: 4,
+      fps: 5,
+      width: 4,
+      drift: { from: { x: 38, y: 16 }, to: { x: 108, y: 9 }, duration: 14, delay: 1.5, loop: false },
+    });
+    // Looping bird sharing the one file.
+    expect(layers[3]).toMatchObject({
+      frames: 4,
+      fps: 6,
+      width: 3.2,
+      drift: { from: { x: -5, y: 23 }, to: { x: 105, y: 19 }, duration: 24, delay: 8, loop: true },
+    });
+    // One-shot push-in towards the lean-to.
+    expect(illustration?.camera).toEqual({
+      from: { zoom: 100, x: 50, y: 50 },
+      to: { zoom: 110, x: 30, y: 55 },
+      duration: 18,
+      delay: 0,
+      loop: false,
+    });
+  });
+
+  it('serves the shared bird file once under one Layer hash', () => {
+    const { scenario, state: started } = startWoods();
+    const location = view(scenario, {
+      ...started,
+      currentLocationId: 'hunters-camp',
+      activeSceneId: null,
+      visited: [...started.visited, 'hunters-camp'],
+    });
+    expect(location.kind).toBe('location');
+    if (location.kind !== 'location') throw new Error('expected a Location view');
+    const layers = location.illustration?.layers ?? [];
+    expect(layers).toHaveLength(4);
+    // Both birds draw from the same file: the client fetches it once, and the
+    // 4 MiB Illustration budget counts it once.
+    expect(layers[2]?.src).toBe(layers[3]?.src);
+    expect(new Set(layers.map((layer) => layer.src)).size).toBe(3);
+  });
+
+  it('a pre-change Playthrough passes the reference check against the layered content', () => {
+    const { scenario, state: started } = startWoods();
+    // The content hash changed with the upscaled Still and the Layer files, but
+    // the reference check is id-based: no Scene, Location, item or other id a
+    // stored state points at moved.
+    const stored: PlaythroughState = { ...started, contentHash: 'pre-motion-hash' };
+    expect(checkPlaythroughCompatibility(scenario, stored)).toEqual({ ok: true });
   });
 });
