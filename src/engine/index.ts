@@ -3190,15 +3190,44 @@ export type ChoiceView = {
 };
 
 /**
+ * One Motion Layer as the UI renders it (docs/spec/ui.md, motion): the
+ * declaration with defaults applied, the Layer file's asset URL under its own
+ * hash and the file's pixel size.
+ */
+export type IllustrationLayerView = {
+  path: string;
+  at: { x: number; y: number };
+  anchor: { x: number; y: number };
+  width: number;
+  blend: 'normal' | 'multiply' | 'screen';
+  /** The Layer file's asset URL, under the file's own hash. */
+  src: string;
+  pixelWidth: number;
+  pixelHeight: number;
+};
+
+/**
  * A Scene or Location Illustration (docs/spec/ui.md, scene and location
  * illustration): the hashed asset route URL with the registry width, height
- * and catalog alt.
+ * and catalog alt. When the image has Motion, every Layer with defaults
+ * applied (its file's asset URL and pixel size) and the Showing key ride
+ * along; an image without Motion carries neither, so existing views compare
+ * unchanged.
  */
 export type IllustrationView = {
   src: string;
   width: number;
   height: number;
   alt: string;
+  /** Present only when the image has Motion. */
+  layers?: IllustrationLayerView[];
+  /**
+   * The Scene or Location the Illustration is shown with: `scene:<id>` while
+   * a Scene is active, otherwise `location:<id>`. Present only with `layers`;
+   * the UI keys the Illustration by it (docs/spec/ui.md, timeline). Derived
+   * from the current position only.
+   */
+  showingKey?: string;
 };
 
 /**
@@ -3222,15 +3251,33 @@ export function sceneIllustrationUrl(scenarioId: string, image: { hash: string; 
 export function illustrationView(
   scenarioId: string,
   image: CompiledImageEntry | undefined,
+  showingKey?: string,
 ): IllustrationView | undefined {
   if (image === undefined) {
     return undefined;
   }
-  return {
+  const still: IllustrationView = {
     src: sceneIllustrationUrl(scenarioId, image),
     width: image.width,
     height: image.height,
     alt: image.alt,
+  };
+  if (image.motion === undefined) {
+    return still;
+  }
+  return {
+    ...still,
+    layers: image.motion.layers.map((layer) => ({
+      path: layer.path,
+      at: layer.at,
+      anchor: layer.anchor,
+      width: layer.width,
+      blend: layer.blend,
+      src: sceneIllustrationUrl(scenarioId, layer.file),
+      pixelWidth: layer.file.width,
+      pixelHeight: layer.file.height,
+    })),
+    ...(showingKey === undefined ? {} : { showingKey }),
   };
 }
 
@@ -3397,7 +3444,7 @@ export function view(
         title: scene.title,
         text: scene.text,
         characterName: state.character.name,
-        illustration: illustrationView(scenario.id, scene.illustration),
+        illustration: illustrationView(scenario.id, scene.illustration, `scene:${scene.id}`),
         choices: visibleChoices(scenario, state, scene).map((choice) => ({
           id: choice.id,
           text: choice.text,
@@ -3421,7 +3468,7 @@ export function view(
     locationId: location.id,
     name: location.name,
     description: location.description,
-    illustration: illustrationView(scenario.id, location.illustration),
+    illustration: illustrationView(scenario.id, location.illustration, `location:${location.id}`),
     exits: visibleExits(scenario, state),
     onDemandScenes: onDemandScenes(scenario, state),
     map: deriveMap(scenario, state, options),

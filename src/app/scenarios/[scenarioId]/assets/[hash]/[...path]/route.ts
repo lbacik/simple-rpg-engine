@@ -30,9 +30,11 @@ function notFound(): Response {
 }
 
 /**
- * Serve one declared Scenario image. The bytes come from the Scenario
- * directory on every request, so a file deleted after startup is a 404 and the
- * browser drops the image without breaking the Scene.
+ * Serve one declared Scenario image or Motion Layer file. The bytes come from
+ * the Scenario directory on every request, so a file deleted after startup is
+ * a 404 and the browser drops the image without breaking the Scene. Each file
+ * is served under its own registry hash: a Still under the image hash, a Layer
+ * file under its Layer hash (docs/spec/architecture.md, scenario assets).
  */
 export async function GET(
   _request: Request,
@@ -45,7 +47,16 @@ export async function GET(
   if (relative === '' || isAbsolutePath(relative) || isUrl(relative) || hasDotDot(relative)) {
     return notFound();
   }
-  const image = scenario.images.find((entry) => entry.path === relative);
+  const still = scenario.images.find((entry) => entry.path === relative);
+  // A Layer file is not a catalog entry: one file may serve several Layers
+  // and several Illustrations, so it is found through every image's Motion.
+  const layer =
+    still === undefined
+      ? scenario.images
+          .flatMap((entry) => entry.motion?.layers.map((layerEntry) => layerEntry.file) ?? [])
+          .find((file) => file.path === relative)
+      : undefined;
+  const image = still ?? layer;
   if (image === undefined || image.hash !== hash) return notFound();
   const dir = path.resolve(scenario.dir);
   const full = path.resolve(dir, relative);
