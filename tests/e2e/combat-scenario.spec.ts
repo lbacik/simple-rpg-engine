@@ -1,0 +1,128 @@
+import { promises as fs } from 'node:fs';
+
+import { expect, test } from '@playwright/test';
+
+import {
+  CAMP_BANDIT_WIN_LINE,
+  logGroups,
+  playRound,
+  reachCampBandit,
+  roundInput,
+  startWhisperingPlaythrough,
+  submitArenaImport,
+  submitSelection,
+} from './combat-helpers';
+
+// Scenario Combat (Combat MVP 1.0, P6): the same command panel inside a
+// Playthrough. Each test walks a fresh whispering-woods hero to the
+// Hunters' Camp bandit fight (camp-bandit, a lone Bandit Archer starting
+// Far) and plays it to a different ending through the real UI.
+
+test('scenario: camp-bandit played to victory routes through the victory outcome', async ({
+  page,
+}) => {
+  await startWhisperingPlaythrough(page, 'Victor');
+  await reachCampBandit(page);
+  await expect(
+    page.getByRole('link', { name: 'Export the current fight' }),
+  ).toBeVisible();
+
+  for (const selection of CAMP_BANDIT_WIN_LINE.slice(0, 4)) {
+    await playRound(page, selection);
+  }
+  // The fifth Round ends the fight instead of opening a new one.
+  await submitSelection(page, CAMP_BANDIT_WIN_LINE[4]);
+  await expect(page).not.toHaveURL(/notice=/);
+
+  // WIN clears the fight and applies the victory Outcome in a modal.
+  const outcome = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByText('The bandit slumps against the cold firepit.')).toBeVisible();
+  await outcome.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: "Hunters' Camp" })).toBeVisible();
+  await expect(page.getByLabel('Round forecast')).toHaveCount(0);
+});
+
+test('scenario: surrender keeps the encounter undefeated and moves away', async ({
+  page,
+}) => {
+  await startWhisperingPlaythrough(page, 'Craven');
+  await reachCampBandit(page);
+
+  await page.locator('details.cp-confirm summary').click();
+  await page.getByRole('button', { name: 'Yes, surrender' }).click();
+  await expect(page).not.toHaveURL(/notice=/);
+
+  const outcome = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByText('You drop your weapon and raise empty hands.')).toBeVisible();
+  await outcome.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Forest Edge' })).toBeVisible();
+  await expect(page.getByLabel('Round forecast')).toHaveCount(0);
+});
+
+test('scenario: unguarded rounds end in death', async ({ page }) => {
+  await startWhisperingPlaythrough(page, 'Doomed');
+  await reachCampBandit(page);
+
+  // Aggressive stance with Prepare guards nothing, so the archer's shots
+  // accumulate until the hero falls. The exact round depends on engine
+  // tuning, so play until the death ending lands (bounded well past any
+  // tuned time-to-kill). The terminal submit clears the fight instead of
+  // opening another Round, so it cannot assert the next Round like
+  // playRound does: wait for either landing state, then branch.
+  const doomSelection = { stance: /Aggressive/, card: /^Prepare/, target: /^self/ };
+  const deathHeading = page.getByRole('heading', { name: 'Lost to the Woods' });
+  let dead = false;
+  for (let played = 0; played < 25 && !dead; played += 1) {
+    const marker = roundInput(page);
+    const next = String(Number(await marker.inputValue()) + 1);
+    await submitSelection(page, doomSelection);
+    await expect(page).not.toHaveURL(/notice=/);
+    await expect
+      .poll(async () => {
+        if ((await deathHeading.count()) > 0) return 'dead';
+        if ((await marker.count()) > 0 && (await marker.inputValue()) === next) return 'round';
+        return 'waiting';
+      })
+      .not.toBe('waiting');
+    dead = (await deathHeading.count()) > 0;
+  }
+
+  await expect(deathHeading).toBeVisible();
+  await expect(page.getByText('Defeat', { exact: true })).toBeVisible();
+  await expect(logGroups(page)).toHaveCount(0);
+});
+
+test('scenario: an exported fight re-imports into the Arena as unverified history', async ({
+  page,
+}) => {
+  await startWhisperingPlaythrough(page, 'Exporter');
+  await reachCampBandit(page);
+  await playRound(page, CAMP_BANDIT_WIN_LINE[0]);
+
+  // Export the mid-fight state (round 2) through the download.
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export the current fight' }).click();
+  const download = await downloadPromise;
+  const exportedPath = await download.path();
+  expect(exportedPath).not.toBeNull();
+  const exported = JSON.parse(await fs.readFile(exportedPath as string, 'utf8')) as {
+    round: number;
+  };
+  expect(exported.round).toBe(2);
+
+  // This session holds no Arena fight, so the Arena import needs no replace
+  // confirmation; the file input alone carries the document over.
+  await page.goto('/arena');
+  await expect(page.getByRole('heading', { name: 'Restart' })).toHaveCount(0);
+  await page.locator('#arena-import-file').setInputFiles({
+    name: 'combat-r02-CHOOSE.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(exported)),
+  });
+  await submitArenaImport(page);
+  await expect(page).not.toHaveURL(/notice=/);
+  await expect(roundInput(page)).toHaveValue('2');
+  await expect(page.getByText('Imported history is not verified.')).toBeVisible();
+});

@@ -91,6 +91,12 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
   },
+  // Gating coverage (Combat MVP 1.0, P7 V1) runs in Chromium against the
+  // production build; test.yml installs the browser, builds once and runs the
+  // Combat specs (`npm run test:e2e -- tests/e2e/arena.spec.ts ...`), which
+  // start the webServer below. The remaining specs still expect pre-Combat
+  // content and run locally only until their owners refresh them.
+  projects: [{ name: 'chromium' }],
   webServer: {
     // Start from a throwaway database (this runs before globalSetup would, so
     // the cleanup has to live here). `npm run start` runs the migrations (prestart) and then serves the
