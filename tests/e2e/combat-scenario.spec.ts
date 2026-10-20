@@ -1,3 +1,5 @@
+import { promises as fs } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
 
 import {
@@ -7,6 +9,7 @@ import {
   reachCampBandit,
   roundInput,
   startWhisperingPlaythrough,
+  submitArenaImport,
   submitSelection,
 } from './combat-helpers';
 
@@ -89,4 +92,37 @@ test('scenario: unguarded rounds end in death', async ({ page }) => {
   await expect(deathHeading).toBeVisible();
   await expect(page.getByText('Defeat', { exact: true })).toBeVisible();
   await expect(logGroups(page)).toHaveCount(0);
+});
+
+test('scenario: an exported fight re-imports into the Arena as unverified history', async ({
+  page,
+}) => {
+  await startWhisperingPlaythrough(page, 'Exporter');
+  await reachCampBandit(page);
+  await playRound(page, CAMP_BANDIT_WIN_LINE[0]);
+
+  // Export the mid-fight state (round 2) through the download.
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Export the current fight' }).click();
+  const download = await downloadPromise;
+  const exportedPath = await download.path();
+  expect(exportedPath).not.toBeNull();
+  const exported = JSON.parse(await fs.readFile(exportedPath as string, 'utf8')) as {
+    round: number;
+  };
+  expect(exported.round).toBe(2);
+
+  // This session holds no Arena fight, so the Arena import needs no replace
+  // confirmation; the file input alone carries the document over.
+  await page.goto('/arena');
+  await expect(page.getByRole('heading', { name: 'Restart' })).toHaveCount(0);
+  await page.locator('#arena-import-file').setInputFiles({
+    name: 'combat-r02-CHOOSE.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(exported)),
+  });
+  await submitArenaImport(page);
+  await expect(page).not.toHaveURL(/notice=/);
+  await expect(roundInput(page)).toHaveValue('2');
+  await expect(page.getByText('Imported history is not verified.')).toBeVisible();
 });

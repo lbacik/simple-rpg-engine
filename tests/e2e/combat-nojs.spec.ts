@@ -68,4 +68,17 @@ test('no-js scenario: one Round plays through links and a POST', async ({ page }
   await expect(page).not.toHaveURL(/notice=/);
   await expect(roundInput(page)).toHaveValue('2');
   await expect(page.getByLabel('Round forecast')).toBeVisible();
+
+  // Surrender is the same plain POST as in the JS flow: the victory outcome
+  // clears the fight and routes through the Latest-events modal.
+  await page.locator('details.cp-confirm summary').click();
+  await page.getByRole('button', { name: 'Yes, surrender' }).click();
+  await expect(page).not.toHaveURL(/notice=/);
+
+  const outcome = page.getByRole('dialog', { name: 'Latest events' });
+  await expect(outcome).toBeVisible();
+  await expect(outcome.getByText('You drop your weapon and raise empty hands.')).toBeVisible();
+  await outcome.getByRole('link', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Forest Edge' })).toBeVisible();
+  await expect(page.getByLabel('Round forecast')).toHaveCount(0);
 });

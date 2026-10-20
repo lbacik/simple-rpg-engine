@@ -68,9 +68,10 @@ export async function playRound(page: Page, selection: RoundSelection): Promise<
   await expect(page).not.toHaveURL(/notice=/);
 }
 
-/** Tick the replace confirmation and submit the Arena import form. */
+/** Tick the replace confirmation when mid-fight and submit the Arena import form. */
 export async function submitArenaImport(page: Page): Promise<void> {
-  await page.locator('form[action="/arena/import"] input[name="confirm"]').check();
+  const confirm = page.locator('form[action="/arena/import"] input[name="confirm"]');
+  if ((await confirm.count()) > 0) await confirm.check();
   await page.getByRole('button', { name: 'Import the fight', exact: true }).click();
 }
 
