@@ -81,9 +81,11 @@ export async function expectStaleLoser(tab: Page, notices: 1 | 2, round1Text: st
   await expect(
     tab.getByRole('status').filter({ hasText: 'advanced in another tab' }),
   ).toHaveCount(notices);
-  expect(await roundNumber(tab)).toBe(2);
+  // Retry the settled-state reads: under parallel workers the redirect lands
+  // before the re-rendered round marker and log settle.
+  await expect(roundInput(tab)).toHaveValue('2');
   // The loser reads the same resolved Round 1 as the winner's tab.
-  expect(await logRound(tab, 1).textContent()).toBe(round1Text);
+  await expect.poll(() => logRound(tab, 1).textContent()).toBe(round1Text);
 }
 
 /** Start a T1–T7 preset fight, ticking the replace confirmation when mid-fight. */

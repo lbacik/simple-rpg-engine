@@ -77,7 +77,7 @@ test('scenario stale: the loser sees the current state with a stale notice, once
     // notice twice (reading card and panel), and nothing appended twice.
     await submitSelection(tabB, CAMP_BANDIT_WIN_LINE[0]);
     await expectStaleLoser(tabB, 2, round1Winner);
-    expect(await journalEntryCount(tabB)).toBe(journalAfterWinner);
+    await expect.poll(() => journalEntryCount(tabB)).toBe(journalAfterWinner);
     await expect(logGroups(tabB)).toHaveCount(2);
 
     // The loser continues from the fresh state: round 2 applies exactly once.
